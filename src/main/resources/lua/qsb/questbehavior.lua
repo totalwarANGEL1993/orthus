@@ -2338,7 +2338,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateGroup);
 ---
 -- Creates an effect at the position.
 -- @param _EffectName [string] Name for the effect
--- @param _EntityType [string] Effect type name
+-- @param _EffectType [string] Effect type name
 -- @param _Position [number] Position of effect
 -- @within Rewards
 --

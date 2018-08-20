@@ -7,7 +7,6 @@ import java.util.Arrays;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-import javax.swing.event.ListSelectionEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import twa.siedelwood.s5.questeditor.extern.MapFileManager;
 import twa.siedelwood.s5.questeditor.gui.MainWindow;
@@ -125,7 +124,7 @@ public class MainWindowController
 			}
 			final InputStream qsb = MainWindowController.class.getResourceAsStream(resHome + "lua/qsb.lua");
 			
-			// TODO Create and move skript files!
+			// TODO Create and move script files!
 			
 			mfm.setMapPath(currentMapPath + ".unpacked");
 			mfm.add(qsb, "maps/externalmap/qsb.lua");

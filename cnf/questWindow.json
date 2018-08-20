@@ -1,16 +1,34 @@
 [
 {
 	"Test_Quest_A": {
+		"Receiver": 1,
 		"Time": -1,
-		"Title": "Das ist ein Test",
-		"Text": "Dieser Quest ist einzig und allein ein Test. Außer dazu ist der für nichts gut!",
-		
-		"Objectives": [
-			["Success"]
+		"Description": [
+			"MAINQUEST_OPEN",
+			"Das ist ein Test",
+			"Dieser Quest ist einzig und allein ein Test. Außer dazu ist der für nichts gut!"
+		],	
+		"Goal": [
+			["InstantSuccess"]
 		],
-		"Conditions": [
+		"Trigger": [
 			["Time", 5]
 		],
+		"Rewards": [],
+		"Reprisals": []
+	}
+},
+{
+	"QuestTemplate": {
+		"Receiver": 1,
+		"Time": -1,
+		"Description": [
+			"MAINQUEST_OPEN",
+			"",
+			""
+		],	
+		"Goal": [],
+		"Trigger": [],
 		"Rewards": [],
 		"Reprisals": []
 	}
