@@ -5,6 +5,15 @@
 -- #    Author:  ##MAP_AUTHOR## # --
 -- ########################################################################## --
 
+-- Load base scripts
+Script.Load(Folders.Map.. "qsb/oop.lua");
+Script.Load(Folders.Map.. "qsb/interaction.lua");
+Script.Load(Folders.Map.. "qsb/questsystem.lua");
+Script.Load(Folders.Map.. "qsb/questbehavior.lua");
+Script.Load(Folders.Map.. "qsb/questdebug.lua");
+
+-- Map Settings ----------------------------------------------------------------
+
 function InitDiplomacy()
     -- Add player to diplomacy menu
     local PlayersToSet = {##MISSION_ADD_PLAYER##};
@@ -45,7 +54,7 @@ end
 function InitPlayerColorMapping()
     local SetPlayerCollors = {##START_SET_COLORS##};
     for k, v in pairs(SetPlayerCollors) do
-        -- TBA
+        Display.SetPlayerColor(k, v);
     end
 end
 
