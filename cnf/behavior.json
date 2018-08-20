@@ -1,0 +1,160 @@
+[
+{
+	"Condition": [
+		["NeverTriggered"],
+		["Time", "Number"],
+		["Custom", "String"],
+		["Diplomacy", "PlayerID", "PlayerID", "Diplomacy"],
+		["Briefing", "QuestName"],
+		["QuestSuccess", "QuestName"],
+		["QuestFailure", "QuestName"],
+		["QuestInterrupt", "QuestName"],
+		["QuestActive", "QuestName"],
+		["QuestOver", "QuestName"],
+		["QuestNotTriggered", "QuestName"],
+		["Payday"],
+		["PlayerDestroyed", "PlayerID"],
+		["EntityDestroyed", "ScriptName"],
+		["WeatherState", "Number"],
+		["QuestAndQuest", "QuestName", "QuestName", "QuestResult"],
+		["QuestOrQuest", "QuestName", "QuestName", "QuestResult"],
+		["QuestXorQuest", "QuestName", "QuestName", "QuestResult"]
+    ],
+	"Objective": [
+		["Custom", "String"],
+		["Failure"],
+		["Success"],
+		["NoChange"],
+		["Destroy", "ScriptName"],
+		["Create", "String", "ScriptName", "Number", "Number"],
+		["Diplomacy", "PlayerID", "Diplomacy"],
+		["Produce", "ResourceType", "Number"],
+		["Protect", "ScriptName"],
+		["EntityDistance", "ScriptName", "ScriptName", "Distance", "Relation"],
+		["Workers", "Number", "Relation"],
+		["Motivation", "Number", "Relation"],
+		["Units", "String", "Number"],
+		["Technology", "String"],
+		["Headquarter", "Number"],
+		["NPC", "ScriptName", "ScriptName", "String"],
+		["DestroyType", "String"],
+		["DestroyCategory", "EntityCategory"],
+		["Tribute", "ResourceType", "Number", "String"],
+		["Settlers", "Number", "Relation"],
+		["Soldiers", "Number", "Relation"],
+		["WeatherState", "Number"]
+	],
+	"Reward": [
+		["Custom", "String"],
+		["Defeat"],
+		["Victory"],
+		["Briefing", "Function"],
+		["ChangePlayer", "ScriptName", "PlayerID"],
+		["Message", "String"],
+		["DestroyEntity", "ScriptName"],
+		["DestroyEffect", "String"],
+		["CreateEntity", "ScriptName", "String"],
+		["CreateGroup", "ScriptName", "String", "Number"],
+		["CreateEffect", "String", "String", "ScriptName"],
+		["Diplomacy", "PlayerID", "PlayerID", "Diplomacy"],
+		["Resource", "ResourceType", "Number"],
+		["RemoveQuest", "QuestName"],
+		["QuestSucceed", "QuestName"],
+		["QuestFail", "QuestName"],
+		["QuestInterrupt", "QuestName"],
+		["QuestActivate", "QuestName"],
+		["QuestRestart", "QuestName"],
+		["QuestRestartForceActive", "QuestName"],
+		["Technology", "String", "TechnologyState"],
+		["CreateMarker", "MarkerType", "ScriptName"],
+		["DestroyMarker", "ScriptName"],
+		["CreateAI", "PlayerID", "Number", "Boolean", "Boolean", "Boolean"]
+	],
+	"Reprisal": [
+		["Custom", "String"],
+		["Defeat"],
+		["Victory"],
+		["Briefing", "String"],
+		["ChangePlayer", "ScriptName", "PlayerID"],
+		["Message", "String"],
+		["DestroyEntity", "ScriptName"],
+		["DestroyEffect", "String"],
+		["Diplomacy", "PlayerID", "PlayerID", "Diplomacy"],
+		["RemoveQuest", "QuestName"],
+		["QuestSucceed", "QuestName"],
+		["QuestFail", "QuestName"],
+		["QuestInterrupt", "QuestName"],
+		["QuestActivate", "QuestName"],
+		["QuestRestart", "QuestName"],
+		["QuestRestartForceActive", "QuestName"],
+		["Technology", "String", "TechnologyState"]
+	]
+},
+{
+	"String": {
+		"JavaType": "StringParameter",
+		"Description": "String",
+		"Values": null
+	},
+	"Number": {
+		"JavaType": "IntegerParameter",
+		"Description": "Number",
+		"Values": null
+	},
+	"Boolean": {
+		"JavaType": "BooleanSelectParameter",
+		"Description": "Boolean",
+		"Values": [true, false]
+	},
+	"PlayerID": {
+		"JavaType": "NumberSelectParameter",
+		"Description": "Spielernummer",
+		"Values": [0, 1, 2, 3, 4, 5, 6, 7, 8]
+	},
+	"ArmyID": {
+		"JavaType": "NumberSelectParamater",
+		"Description": "Armeeidentifizierer",
+		"Values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+	},
+	"ScriptName": {
+		"JavaType": "StringSelectParameter",
+		"Description": "Skriptname",
+		"Values": []
+	},
+	"Diplomacy": {
+		"JavaType": "StringSelectParameter",
+		"Description": "Diplomatiestatus",
+		"Values": ["Neutral", "Hostile", "Friendly"]
+	},
+	"QuestName": {
+		"JavaType": "StringSelectParameter",
+		"Description": "Auftragsname",
+		"Values": []
+	},
+	"QuestResult": {
+		"JavaType": "StringSelectParameter",
+		"Description": "Auftragsresultat",
+		"Values": ["Undecided", "Success", "Failure", "Interrupted"]
+	},
+	"Relation": {
+		"JavaType": "StringSelectParameter",
+		"Description": "Mengenrelation",
+		"Values": [">=", "<"]
+	},
+	"ResourceType": {
+		"JavaType": "StringSelectParameter",
+		"Description": "Rohstofftyp",
+		"Values": ["Gold", "Clay", "Wood", "Stone", "Iron", "Sulfur"]
+	},
+	"TechnologyState": {
+		"JavaType": "StringSelectParameter",
+		"Description": "Technologiestatus",
+		"Values": ["Allow", "Forbid", "Research"]
+	},
+	"MarkerType": {
+		"JavaType": "StringSelectParameter",
+		"Description": "Markierungstyp",
+		"Values": ["StaticFriendly", "StaticNeutral", "StaticEnemy", "PulseFriendly", "PulseNeutral", "PulseEnemy"]
+	}
+}
+]
