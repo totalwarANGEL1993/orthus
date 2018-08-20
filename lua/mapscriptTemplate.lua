@@ -93,7 +93,9 @@ function InitPlayerColorMapping()
 end
 
 function FirstMapAction()
-    QuestSystemBehavior:PrepareQuestSystem();    
-    QuestSystemDebug:Activate(UseQuestTrace, UseDebugCheats, UseDebugShell);
+    QuestSystemBehavior:PrepareQuestSystem();
+    if UseQuestTrace or UseDebugCheats or UseDebugShell then
+        QuestSystemDebug:Activate(UseQuestTrace, UseDebugCheats, UseDebugShell);
+    end
     CreateQuests();
 end
