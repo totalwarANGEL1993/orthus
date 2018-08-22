@@ -9,6 +9,12 @@
 -- create quests much more simple. Also some behavior are recoded and there
 -- is a better AI control script for armies than the default controller.
 --
+-- <b>Required modules:</b>
+-- <ul>
+-- <li>oop.lua</li>
+-- <li>questsystem.lua</li>
+-- </ul>
+--
 -- @set sort=true
 --
 
@@ -29,6 +35,20 @@
 -- @param _Data [table] Quest description
 -- @return [number] Quest id
 -- @return [table] Quest instance
+--
+-- @usage CreateQuest {
+--     Name = "SomeQuestName",
+--     Description = {
+--         Title = "Name of quest",
+--         Text  = "Description of quest",
+--         Type  = MAINQUEST_OPEN,
+--         Info  = 1
+--     },
+--
+--     Goal_DestroyAllPlayerUnits(2),
+--     Reward_Victory(),
+--     Trigger_Time(0)
+-- }
 --
 function CreateQuest(_Data)
     local QuestName   = _Data.Name;
@@ -111,6 +131,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
         self.Data.SystemInitalized = true;
 
         QuestSystem:InstallQuestSystem();
+        Interaction:Install();
         self:CreateBehaviorConstructors();
     end
 end
@@ -978,28 +999,28 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Technology);
 -- @param _Level [number] Upgrades (1 or 2)
 -- @within Goals
 --
-function Goal_UpgradeHeadquarter(...)
-    return b_Goal_UpgradeHeadquarter:New(unpack(arg));
+function Goal_UpgradeHeadquarters(...)
+    return b_Goal_UpgradeHeadquarters:New(unpack(arg));
 end
 
-b_Goal_UpgradeHeadquarter = {
+b_Goal_UpgradeHeadquarters = {
     Data = {
-        Name = "Goal_UpgradeHeadquarter",
-        Type = Objectives.Headquarter
+        Name = "Goal_UpgradeHeadquarters",
+        Type = Objectives.Headquarters
     },
 };
 
-function b_Goal_UpgradeHeadquarter:AddParameter(_Index, _Parameter)
+function b_Goal_UpgradeHeadquarters:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.Level = _Parameter;
     end
 end
 
-function b_Goal_UpgradeHeadquarter:GetGoalTable()
+function b_Goal_UpgradeHeadquarters:GetGoalTable()
     return {self.Data.Type, self.Data.Level};
 end
 
-QuestSystemBehavior:RegisterBehavior(b_Goal_UpgradeHeadquarter);
+QuestSystemBehavior:RegisterBehavior(b_Goal_UpgradeHeadquarters);
 
 -- -------------------------------------------------------------------------- --
 
@@ -1017,7 +1038,7 @@ end
 b_Goal_NPC = {
     Data = {
         Name = "Goal_NPC",
-        Type = Objectives.NPC
+        Type = Objectives.MapScriptFunction
     },
 };
 
@@ -1033,6 +1054,33 @@ end
 
 function b_Goal_NPC:GetGoalTable()
     return {self.Data.Type, self.Data.Target, self.Data.Hero, self.Data.Message};
+end
+
+function b_Goal_NPC:CustomFunction(_Quest)
+    if not IsExisting(self.Data.Target) then
+        return false;
+    end
+    if not self.Data.NPC then
+        self.Data.NPC = new(NonPlayerCharacter, self.Data.Target):SetHero(self.Data.Hero):SetHeroInfo(self.Data.Message):Activate();
+    end
+    if self.Data.NPC:TalkedTo() then
+        return true;
+    end
+end
+
+function b_Goal_NPC:Debug(_Quest)
+    if Logic.IsSettler(GetID(self.Data.Target)) == 0 then
+        dbg(_Quest, self, "NPCs must be settlers!");
+        return true;
+    end
+    return false;
+end
+
+function b_Goal_NPC:Reset(_Quest)
+    if self.Data.NPC then
+        self.Data.NPC:Deactivate();
+    end
+    self.Data.NPC = nil;
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_NPC);
@@ -1193,7 +1241,7 @@ end
 b_Goal_BuyOffer = {
     Data = {
         Name = "Goal_BuyOffer",
-        Type = Objectives.BuyOffer
+        Type = Objectives.MapScriptFunction
     },
 };
 
@@ -1208,7 +1256,16 @@ function b_Goal_BuyOffer:AddParameter(_Index, _Parameter)
 end
 
 function b_Goal_BuyOffer:GetGoalTable()
-    return {self.Data.Type, self.Data.Merchant, self.Data.Offer, self.Data.Amount};
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_BuyOffer:CustomFunction(_Quest)
+    if not Interaction.IO[self.Data.Merchant] then
+        return false;
+    end
+    if Interaction.IO[self.Data.Merchant]:GetTradingVolume(self.Data.Offer) >= self.Data.Amount then
+        return true;
+    end
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_BuyOffer);
@@ -1788,28 +1845,28 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_Technology);
 -- @param _AreaCenter [string] Center of exploration
 -- @within Reprisals
 --
-function Reprisal_ConcilArea(...)
-    return b_Reprisal_ConcilArea:New(unpack(arg));
+function Reprisal_ConcealArea(...)
+    return b_Reprisal_ConcealArea:New(unpack(arg));
 end
 
-b_Reprisal_ConcilArea = {
+b_Reprisal_ConcealArea = {
     Data = {
-        Name = "Reprisal_ConcilArea",
-        Type = Reprisals.ConcilArea
+        Name = "Reprisal_ConcealArea",
+        Type = Reprisals.ConcealArea
     },
 };
 
-function b_Reprisal_ConcilArea:AddParameter(_Index, _Parameter)
+function b_Reprisal_ConcealArea:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.AreaCenter = _Parameter;
     end
 end
 
-function b_Reprisal_ConcilArea:GetReprisalTable()
+function b_Reprisal_ConcealArea:GetReprisalTable()
     return {self.Data.Type, self.Data.AreaCenter};
 end
 
-QuestSystemBehavior:RegisterBehavior(b_Reprisal_ConcilArea);
+QuestSystemBehavior:RegisterBehavior(b_Reprisal_ConcealArea);
 
 -- -------------------------------------------------------------------------- --
 
@@ -2225,20 +2282,20 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Technology);
 -- @param _AreaCenter [string] Center of exploration
 -- @within Rewards
 --
-function Reward_ConcilArea(...)
-    return b_Reward_ConcilArea:New(unpack(arg));
+function Reward_ConcealArea(...)
+    return b_Reward_ConcealArea:New(unpack(arg));
 end
 
-b_Reward_ConcilArea = copy(b_Reprisal_ConcilArea);
-b_Reward_ConcilArea.Data.Name = "Reward_ConcilArea";
-b_Reward_ConcilArea.Data.Type = Rewards.ConcilArea;
-b_Reward_ConcilArea.GetReprisalTable = nil;
+b_Reward_ConcealArea = copy(b_Reprisal_ConcealArea);
+b_Reward_ConcealArea.Data.Name = "Reward_ConcealArea";
+b_Reward_ConcealArea.Data.Type = Rewards.ConcealArea;
+b_Reward_ConcealArea.GetReprisalTable = nil;
 
-function b_Reward_ConcilArea:GetRewardTable()
+function b_Reward_ConcealArea:GetRewardTable()
     return {self.Data.Type, self.Data.AreaCenter};
 end
 
-QuestSystemBehavior:RegisterBehavior(b_Reward_ConcilArea);
+QuestSystemBehavior:RegisterBehavior(b_Reward_ConcealArea);
 
 -- -------------------------------------------------------------------------- --
 
@@ -2472,18 +2529,18 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_DestroyMarker);
 -- @param _Exploration [number] Size of exploration
 -- @within Rewards
 --
-function Reward_RevalArea(...)
-    return b_Reward_RevalArea:New(unpack(arg));
+function Reward_RevealArea(...)
+    return b_Reward_RevealArea:New(unpack(arg));
 end
 
-b_Reward_RevalArea = {
+b_Reward_RevealArea = {
     Data = {
-        Name = "Reward_RevalArea",
-        Type = Rewards.RevalArea
+        Name = "Reward_RevealArea",
+        Type = Rewards.RevealArea
     },
 };
 
-function b_Reward_RevalArea:AddParameter(_Index, _Parameter)
+function b_Reward_RevealArea:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.AreaCenter = _Parameter;
     elseif _Index == 2 then
@@ -2491,11 +2548,11 @@ function b_Reward_RevalArea:AddParameter(_Index, _Parameter)
     end
 end
 
-function b_Reward_RevalArea:GetRewardTable()
+function b_Reward_RevealArea:GetRewardTable()
     return {self.Data.Type, self.Data.AreaCenter, self.Data.Explore};
 end
 
-QuestSystemBehavior:RegisterBehavior(b_Reward_RevalArea);
+QuestSystemBehavior:RegisterBehavior(b_Reward_RevealArea);
 
 -- -------------------------------------------------------------------------- --
 

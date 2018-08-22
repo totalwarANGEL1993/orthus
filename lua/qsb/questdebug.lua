@@ -9,6 +9,11 @@
 -- on screen, advanced cheats and a simple shell for controlling quests while
 -- the map is in development.
 --
+-- <b>Required modules:</b>
+-- <ul>
+-- <li>questsystem.lua</li>
+-- </ul>
+--
 -- @set sort=true
 --
 
@@ -18,13 +23,15 @@ QuestSystemDebug = {};
 -- Activates the debug mode. Use the flags to decide which features you want
 -- to use.
 --
--- @param _QuestTrace [boolean] Display quest status changes
+-- @param _CheckQuests [boolean] Call debug check of behavior
 -- @param _DebugKeys [boolean] Activate debug cheats
 -- @param _DebugShell [boolean] Activate debug shell
--- @local
+-- @param _QuestTrace [boolean] Display quest status changes
+-- @within QuestSystemDebug
 --
-function QuestSystemDebug:Activate(_QuestTrace, _DebugKeys, _DebugShell)
+function QuestSystemDebug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)
     self.m_QuestTrace = _QuestTrace == true;
+    self.m_CheckQuests = _CheckQuests == true;
     self.m_DebugKeys = _DebugKeys == true;
     self.m_DebugShell = _DebugShell == true;
 
@@ -32,6 +39,51 @@ function QuestSystemDebug:Activate(_QuestTrace, _DebugKeys, _DebugShell)
     self:CreateCheats();
     self:CreateCheatMethods();
     self:ActivateConsole();
+    self:OverrideQuestSystemTriggerQuest();
+end
+
+---
+-- Overrides the trigger methods of the quests to activate or deactivate the
+-- check of custom behavior with the debug method.
+-- @within QuestSystemDebug
+-- @local
+--
+function QuestSystemDebug:OverrideQuestSystemTriggerQuest()
+    QuestTemplate.TriggerOriginal = QuestTemplate.Trigger;
+    QuestTemplate.Trigger = function(self)
+        if QuestSystemDebug.m_CheckQuests then
+            for i= 1, table.getn(self.m_Objectives), 1 do
+                if self.m_Objectives[i][2][2].Debug then
+                    if self.m_Objectives[i][2][2].Debug(self) then
+                        return;
+                    end
+                end
+            end
+            for i= 1, table.getn(self.m_Conditions), 1 do
+                if self.m_Conditions[i][2][2].Debug then
+                    if self.m_Conditions[i][2][2].Debug(self) then
+                        return;
+                    end
+                end
+            end
+            for i= 1, table.getn(self.m_Rewards), 1 do
+                if self.m_Rewards[i][2][2].Debug then
+                    if self.m_Rewards[i][2][2].Debug(self) then
+                        return;
+                    end
+                end
+            end
+            for i= 1, table.getn(self.m_Reprisals), 1 do
+                if self.m_Reprisals[i][2][2].Debug then
+                    if self.m_Reprisals[i][2][2].Debug(self) then
+                        return;
+                    end
+                end
+            end
+        end
+        
+        QuestTemplate.Trigger(self);
+    end
 end
 
 ---
@@ -42,6 +94,7 @@ end
 -- @param _QuestID [number] ID of quest
 -- @param _State [number] Quest state
 -- @param _Result [number] Result state
+-- @within QuestSystemDebug
 -- @local
 --
 function QuestSystemDebug:PrintQuestStatus(_QuestID, _State, _Result)
@@ -55,6 +108,7 @@ end
 
 ---
 -- Activates the cheat console if the debug shell flag is set.
+-- @within QuestSystemDebug
 -- @local
 --
 function QuestSystemDebug:ActivateConsole()
@@ -77,6 +131,7 @@ end
 ---
 -- Receives the message from the chat input and split it into tokens.
 -- @param _Message [string] Message to tokenize
+-- @within QuestSystemDebug
 -- @local
 --
 function QuestSystemDebug:TokenizeCommand(_Message)
@@ -143,6 +198,7 @@ end
 ---
 -- Takes a table with command tokens and executes the commands if possible.
 -- @param _Tokens [table] List of tokens
+-- @within QuestSystemDebug
 -- @local
 --
 function QuestSystemDebug:EvaluateCommand(_Tokens)
@@ -322,6 +378,7 @@ end
 ---
 -- Activates the cheat hotkeys. This function is automatically called when
 -- a save is loaded.
+-- @within QuestSystemDebug
 -- @local
 --
 function QuestSystemDebug:CreateCheats()
@@ -386,6 +443,7 @@ end
 
 ---
 -- Defines some functions used by the cheats.
+-- @within QuestSystemDebug
 -- @local
 --
 function QuestSystemDebug:CreateCheatMethods()
@@ -454,6 +512,7 @@ end
 
 ---
 -- Overrides the save loaded callback to restore the debug functionallity.
+-- @within QuestSystemDebug
 -- @local
 --
 function QuestSystemDebug:OverrideSaveGameLoaded()
@@ -472,6 +531,7 @@ end
 -- @param _Table [table] Questioned table
 -- @param _Value [mixed] Value to find
 -- @return [string] Key of value
+-- @within QuestSystemDebug
 --
 function QuestSystemDebug:GetKeyByValue(_Table, _Value)
     for k, v in pairs(_Table) do 

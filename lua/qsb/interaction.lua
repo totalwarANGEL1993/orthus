@@ -6,6 +6,8 @@
 
 ---
 -- Implements a npc system that can be run seperatly to the vanilla npc system.
+-- But it will still use some values from the original system!
+--
 -- Normal npcs can be configured just as the vanilla npcs. To create a normal
 -- npc use the following:
 -- <pre>local NPC = new(NonPlayerCharacter, "myNPC")
@@ -19,9 +21,15 @@
 --     :AddResourceOffer(ResourceType.Clay, 300, {Gold = 150}, 15, 2*60);
 --     :Activate();</pre>
 -- This merchant sells 15x300 clay for 150 gold each. After 2 minutes the
--- offer is restored by 1.
+-- offer is restored by 1. The price will have inflation and deflation.
 --
 -- Normal settlers can either be npcs or merchants!
+--
+-- <b>Required modules:</b>
+-- <ul>
+-- <li>oop.lua</li>
+-- <li>The original NPC system</li>
+-- </ul>
 --
 -- @set sort=true
 --

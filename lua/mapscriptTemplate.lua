@@ -54,7 +54,7 @@ local PlayerColors = {
 
 -- Quests ------------------------------------------------------------------- --
 
----
+--
 -- Declare your quests in this function.
 --
 function CreateQuests()
