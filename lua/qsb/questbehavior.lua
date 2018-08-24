@@ -11,8 +11,10 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>oop.lua</li>
--- <li>questsystem.lua</li>
+-- <li>qsb.oop</li>
+-- <li>qsb.questsystem</li>
+-- <li>qsb.interaction</li>
+-- <li>qsb.information</li>
 -- </ul>
 --
 -- @set sort=true
@@ -132,6 +134,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
 
         QuestSystem:InstallQuestSystem();
         Interaction:Install();
+        Information:Install();
         self:CreateBehaviorConstructors();
     end
 end
@@ -175,7 +178,7 @@ end
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAi(_PlayerID, _TechLevel)
+function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel)
     if self.Data.CreatedAiPlayers[_PlayerID] then
         return;
     end
@@ -220,7 +223,7 @@ end
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:UpgradeAi(_PlayerID, _NewTechLevel)
+function QuestSystemBehavior:UpgradeAI(_PlayerID, _NewTechLevel)
     if self.Data.CreatedAiPlayers[_PlayerID] then
         local OldLevel = self.Data.CreatedAiPlayers[_PlayerID].TechnologyLevel;
         if _NewTechLevel > 0 and _NewTechLevel < 5 and OldLevel < _NewTechLevel then
@@ -257,7 +260,7 @@ end
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAiArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
+function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
     self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
     _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
     
@@ -294,7 +297,7 @@ function QuestSystemBehavior:CreateAiArmy(_PlayerID, _Strength, _Position, _Rode
     if not _TroopTypes then
         _TroopTypes = copy(self.Data.AllowedTypesDefault);
     end
-    assert(type(_TroopTypes) == "table", "CreateAiArmy: _TroopTypes must be a table!");
+    assert(type(_TroopTypes) == "table", "CreateAIArmy: _TroopTypes must be a table!");
     table.insert(_TroopTypes, self.Data.CreatedAiPlayers[_PlayerID].CannonType);
 
     -- Create army
@@ -3361,18 +3364,18 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CloseMerchant);
 -- @param _TechLevel [number] Tech level
 -- @within Rewards
 --
-function Reward_CreateAi(...)
-    return b_Reward_CreateAi:New(unpack(arg));
+function Reward_CreateAI(...)
+    return b_Reward_CreateAI:New(unpack(arg));
 end
 
-b_Reward_CreateAi = {
+b_Reward_CreateAI = {
     Data = {
-        Name = "Reward_CreateAi",
+        Name = "Reward_CreateAI",
         Type = Rewards.MapScriptFunction
     },
 };
 
-function b_Reward_CreateAi:AddParameter(_Index, _Parameter)
+function b_Reward_CreateAI:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.PlayerID = _Parameter;
     elseif _Index == 2 then
@@ -3380,22 +3383,22 @@ function b_Reward_CreateAi:AddParameter(_Index, _Parameter)
     end
 end
 
-function b_Reward_CreateAi:GetRewardTable()
+function b_Reward_CreateAI:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
 
-function b_Reward_CreateAi:CustomFunction(_Quest)
-    QuestSystemBehavior:CreateAi(self.Data.PlayerID, self.Data.TechLevel);
+function b_Reward_CreateAI:CustomFunction(_Quest)
+    QuestSystemBehavior:CreateAI(self.Data.PlayerID, self.Data.TechLevel);
 end
 
-function b_Reward_CreateAi:Debug(_Quest)
+function b_Reward_CreateAI:Debug(_Quest)
     return false;
 end
 
-function b_Reward_CreateAi:Reset(_Quest)
+function b_Reward_CreateAI:Reset(_Quest)
 end
 
-QuestSystemBehavior:RegisterBehavior(b_Reward_CreateAi);
+QuestSystemBehavior:RegisterBehavior(b_Reward_CreateAI);
 
 -- -------------------------------------------------------------------------- --
 
@@ -3408,18 +3411,18 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateAi);
 -- @param _TroopType [number] Army troop type
 -- @within Rewards
 --
-function Reward_CreateAiArmy(...)
-    return b_Reward_CreateAiArmy:New(unpack(arg));
+function Reward_CreateAIArmy(...)
+    return b_Reward_CreateAIArmy:New(unpack(arg));
 end
 
-b_Reward_CreateAiArmy = {
+b_Reward_CreateAIArmy = {
     Data = {
-        Name = "Reward_CreateAiArmy",
+        Name = "Reward_CreateAIArmy",
         Type = Rewards.MapScriptFunction
     },
 };
 
-function b_Reward_CreateAiArmy:AddParameter(_Index, _Parameter)
+function b_Reward_CreateAIArmy:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.PlayerID = _Parameter;
     elseif _Index == 2 then
@@ -3433,22 +3436,22 @@ function b_Reward_CreateAiArmy:AddParameter(_Index, _Parameter)
     end
 end
 
-function b_Reward_CreateAiArmy:GetRewardTable()
+function b_Reward_CreateAIArmy:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
 
-function b_Reward_CreateAiArmy:CustomFunction(_Quest)
-    QuestSystemBehavior:CreateAiArmy(self.Data.PlayerID, self.Data.Strength, self.Data.Position, self.Data.RodeLength, self.Data.TroopType);
+function b_Reward_CreateAIArmy:CustomFunction(_Quest)
+    QuestSystemBehavior:CreateAIArmy(self.Data.PlayerID, self.Data.Strength, self.Data.Position, self.Data.RodeLength, self.Data.TroopType);
 end
 
-function b_Reward_CreateAiArmy:Debug(_Quest)
+function b_Reward_CreateAIArmy:Debug(_Quest)
     return false;
 end
 
-function b_Reward_CreateAiArmy:Reset(_Quest)
+function b_Reward_CreateAIArmy:Reset(_Quest)
 end
 
-QuestSystemBehavior:RegisterBehavior(b_Reward_CreateAiArmy);
+QuestSystemBehavior:RegisterBehavior(b_Reward_CreateAIArmy);
 
 -- -------------------------------------------------------------------------- --
 

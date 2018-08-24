@@ -35,17 +35,16 @@
 <h2>Contents</h2>
 <ul>
 <li><a href="#Functions">Functions</a></li>
-<li><a href="#QuestSystemDebug">QuestSystemDebug</a></li>
 </ul>
 
 
 <h2>Modules</h2>
 <ul class="nowrap">
-  <li><a href="../modules/qsb.information.html">qsb.information</a></li>
+  <li><strong>qsb.information</strong></li>
   <li><a href="../modules/qsb.interaction.html">qsb.interaction</a></li>
   <li><a href="../modules/qsb.oop.html">qsb.oop</a></li>
   <li><a href="../modules/qsb.questbehavior.html">qsb.questbehavior</a></li>
-  <li><strong>qsb.questdebug</strong></li>
+  <li><a href="../modules/qsb.questdebug.html">qsb.questdebug</a></li>
   <li><a href="../modules/qsb.questsystem.html">qsb.questsystem</a></li>
 </ul>
 
@@ -53,34 +52,30 @@
 
 <div id="content">
 
-<h1>Module <code>qsb.questdebug</code></h1>
-<p>Implements a debug mode for the quest system featuring visual quest trace
- on screen, advanced cheats and a simple shell for controlling quests while
- the map is in development.</p>
-<p>
-<p> <b>Required modules:</b>
- <ul>
- <li>qsb.questsystem</li>
- </ul>
+<h1>Module <code>qsb.information</code></h1>
+<p>This module adds some briefing improvements.</p>
+<p> Some are just for cosmetics,
+ some are fixing pittful bugs, some offer helpful new features.
 </p>
 
 
 <h2><a href="#Functions">Functions</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#IsValidPosition">IsValidPosition (_pos)</a></td>
-	<td class="summary">Checks if the position table contains a valid position on the map.</td>
+	<td class="name" nowrap><a href="#AddPages">AddPages (_briefing)</a></td>
+	<td class="summary">Creates the local briefing functions for adding pages.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#SoldierGetLeaderEntityID">SoldierGetLeaderEntityID (_eID)</a></td>
-	<td class="summary">Returns the leader entity ID of the soldier.</td>
+	<td class="name" nowrap><a href="#CountdownIsVisisble">CountdownIsVisisble ()</a></td>
+	<td class="summary">Returns true if a countdown is visible.</td>
 	</tr>
-</table>
-<h2><a href="#QuestSystemDebug">QuestSystemDebug</a></h2>
-<table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#QuestSystemDebug:Activate">QuestSystemDebug:Activate (_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)</a></td>
-	<td class="summary">Activates the debug mode.</td>
+	<td class="name" nowrap><a href="#StartCountdown">StartCountdown (_Limit, _Callback, _Show)</a></td>
+	<td class="summary">Starts a visible or invisible countdown.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#StopCountdown">StopCountdown (_Id)</a></td>
+	<td class="summary">Stops the countdown with the ID.</td>
 	</tr>
 </table>
 
@@ -92,24 +87,34 @@
 
     <dl class="function">
     <dt>
-    <a name = "IsValidPosition"></a>
-    <strong>IsValidPosition (_pos)</strong>
+    <a name = "AddPages"></a>
+    <strong>AddPages (_briefing)</strong>
     </dt>
     <dd>
-    Checks if the position table contains a valid position on the map.
+    Creates the local briefing functions for adding pages.
+<p> Functions created:
+ <ul>
+ <li>AP: Creates normal pages and multiple choice pages. You have full
+ control over all settings.</li>
+ <li>ASP: Creates a simplyfied page. A short notation good for dialogs.
+ can be used in talkative missions.</li>
+ </ul>
+
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_pos</span>
-         [table] Position to check
+        <li><span class="parameter">_briefing</span>
+         [table] Briefing
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
-
-        [boolean] Position valid
+        <li>
+        [function] AP function</li>
+        <li>
+        [function] ASP function</li>
     </ol>
 
 
@@ -117,57 +122,64 @@
 
 </dd>
     <dt>
-    <a name = "SoldierGetLeaderEntityID"></a>
-    <strong>SoldierGetLeaderEntityID (_eID)</strong>
+    <a name = "CountdownIsVisisble"></a>
+    <strong>CountdownIsVisisble ()</strong>
     </dt>
     <dd>
-    Returns the leader entity ID of the soldier.
+    Returns true if a countdown is visible.
 
 
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_eID</span>
-         [number] Entity ID of soldier
-        </li>
-    </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [number] Entity ID of leader
+        [boolean] Visible countdown
     </ol>
 
 
 
 
 </dd>
-</dl>
-    <h2 class="section-header "><a name="QuestSystemDebug"></a>QuestSystemDebug</h2>
-
-    <dl class="function">
     <dt>
-    <a name = "QuestSystemDebug:Activate"></a>
-    <strong>QuestSystemDebug:Activate (_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)</strong>
+    <a name = "StartCountdown"></a>
+    <strong>StartCountdown (_Limit, _Callback, _Show)</strong>
     </dt>
     <dd>
-    Activates the debug mode.  Use the flags to decide which features you want
- to use.
+    Starts a visible or invisible countdown.
+<p> <b>Note:</b> There can only be one visible but infinit invisible countdonws.
 
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_CheckQuests</span>
-         [boolean] Call debug check of behavior
+        <li><span class="parameter">_Limit</span>
+         [number] Time to count down
         </li>
-        <li><span class="parameter">_DebugKeys</span>
-         [boolean] Activate debug cheats
+        <li><span class="parameter">_Callback</span>
+         [function] Countdown callback
         </li>
-        <li><span class="parameter">_DebugShell</span>
-         [boolean] Activate debug shell
+        <li><span class="parameter">_Show</span>
+         [boolean] Countdown visible
         </li>
-        <li><span class="parameter">_QuestTrace</span>
-         [boolean] Display quest status changes
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "StopCountdown"></a>
+    <strong>StopCountdown (_Id)</strong>
+    </dt>
+    <dd>
+    Stops the countdown with the ID.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Id</span>
+         [number] Countdown ID
         </li>
     </ul>
 

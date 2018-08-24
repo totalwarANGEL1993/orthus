@@ -11,7 +11,7 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>questsystem.lua</li>
+-- <li>qsb.questsystem</li>
 -- </ul>
 --
 -- @set sort=true

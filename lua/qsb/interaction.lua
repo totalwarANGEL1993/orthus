@@ -6,7 +6,6 @@
 
 ---
 -- Implements a npc system that can be run seperatly to the vanilla npc system.
--- But it will still use some values from the original system!
 --
 -- Normal npcs can be configured just as the vanilla npcs. To create a normal
 -- npc use the following:
@@ -27,8 +26,7 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>oop.lua</li>
--- <li>The original NPC system</li>
+-- <li>qsb.oop</li>
 -- </ul>
 --
 -- @set sort=true
@@ -400,7 +398,6 @@ end
 --
 function NonPlayerCharacter:Controller()
     if self.m_Active == true then
-        UpdateHeroesTable();
 
         -- Follow hero
         if self.m_Follow ~= nil and not self.m_Arrived then
@@ -516,7 +513,14 @@ end
 -- @local
 --
 function NonPlayerCharacter:HeroesLookAtNpc()
-    for k, v in pairs(NPCTable_Heroes) do 
+    local HeroTypeList = {};
+    for k, v in pairs(Entities) do
+        if Logic.IsEntityTypeInCategory(v, EntityCategories.Hero) == 1 then
+            table.isert(HeroTypeList, v);
+        end
+    end
+    
+    for k, v in pairs(HeroTypeList) do 
         if v and IsExisting(v) and IsNear(v, self.m_ScriptName, 2000) then
             LookAt(v, self.m_ScriptName);
         end

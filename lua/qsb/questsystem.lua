@@ -28,7 +28,7 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>oop.lua</li>
+-- <li>qsb.oop</li>
 -- </ul>
 --
 -- @set sort=true
@@ -77,6 +77,24 @@ function QuestSystem:InstallQuestSystem()
         EndBriefing = function()
             EndBriefing_Orig_QuestSystem();
             QuestSystem.Briefings[briefingState.BriefingID] = true;
+        end
+
+        if StartCutscene then
+            StartCutscene_Orig_QuestSystem = StartCutscene;
+            StartCutscene = function(_Cutscene,_SkipCutscene)
+                StartCutscene_Orig_QuestSystem(_Cutscene,_SkipCutscene);
+                gvUniqueBriefingID = (gvUniqueBriefingID or 0) +1;
+                gvCutscene = gvCutscene or {};
+                gvCutscene.BriefingID = gvUniqueBriefingID;
+            end
+        end
+    
+        if CutsceneDone then
+            CutsceneDone_Orig_QuestSystem = CutsceneDone;
+            CutsceneDone = function()
+                CutsceneDone_Orig_QuestSystem();
+                QuestSystem.Briefings[gvCutscene.BriefingID] = true;
+            end
         end
     end
 end
