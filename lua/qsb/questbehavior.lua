@@ -108,6 +108,8 @@ QuestSystemBehavior = {
         SystemInitalized = false;
         Version = "ALPHA",
 
+        SaveLoadedActions = {},
+        PlayerColors = {},
         CreatedAiPlayers = {},
         CreatedAiArmies = {},
         AllowedTypesDefault = {
@@ -136,7 +138,38 @@ function QuestSystemBehavior:PrepareQuestSystem()
         Interaction:Install();
         Information:Install();
         self:CreateBehaviorConstructors();
+
+        Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
+        Mission_OnSaveGameLoaded = function()
+            Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior();
+            QuestSystemBehavior:CallSaveLoadActions();
+        end
+
+        -- Restore player colors
+        self:AddSaveLoadActions(QuestSystemBehavior.UpdatePlayerColors);
     end
+end
+
+---
+-- Calls all loaded actions after a save is loaded.
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:CallSaveLoadActions()
+    for k, v in pairs(self.Data.SaveLoadedActions) do 
+        v[1](v);
+    end
+end
+
+---
+-- Adds an action that is performed after a save is loaded.
+-- @param _Function [function] Action
+-- @param ... [mixed] Data
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:AddSaveLoadActions(_Function, ...)
+    table.insert(self.Data.SaveLoadedActions, {_Function, unpack(copy(arg))});
 end
 
 ---
@@ -323,6 +356,17 @@ function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Rode
     -- Default values
     AI.Army_BeAlwaysAggressive(_PlayerID, ArmyID);
     AI.Army_SetScatterTolerance(_PlayerID, ArmyID, 4);
+end
+
+-- Save Actions --
+
+function QuestSystemBehavior.UpdatePlayerColors()
+    for i= 1, 8, 1 do
+        local Color = QuestSystemBehavior.Data.PlayerColors[i];
+        if Color then
+            Display.SetPlayerColor(i, Color);
+        end
+    end
 end
 
 -- Controller --
@@ -3452,6 +3496,112 @@ function b_Reward_CreateAIArmy:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_CreateAIArmy);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Changes the color of a player.
+-- @param _PlayerID [number] ID of player
+-- @param _Color [number] Color index
+-- @within Rewards
+--
+function Reward_SetPlayerColor(...)
+    return b_Reward_SetPlayerColor:New(unpack(arg));
+end
+
+Reward_SetPlayerColor = {
+    Data = {
+        Name = "Reward_SetPlayerColor",
+        Type = Rewards.MapScriptFunction
+    },
+};
+
+function Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Color = _Parameter;
+    end
+end
+
+function Reward_SetPlayerColor:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function Reward_SetPlayerColor:CustomFunction(_Quest)
+    QuestSystemBehavior.Data.PlayerColors[self.Data.PlayerID] = self.Data.Color;
+    QuestSystemBehavior.UpdatePlayerColors();
+end
+
+function Reward_SetPlayerColor:Debug(_Quest)
+    if self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "PlayerID is wrong!");
+        return true;
+    end
+    return false;
+end
+
+function Reward_SetPlayerColor:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(Reward_SetPlayerColor);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Activates the debug mode.
+-- @param _UseDebugQuests [boolean] Activates the runtime debug für quests
+-- @param _UseCheats [boolean] Activates the cheats
+-- @param _UseShell [boolean] Activates the shell
+-- @param _UseQuestTrace [boolean] Activates the quest trace
+-- @within Rewards
+--
+function Reward_DEBUG(...)
+    return b_Reward_DEBUG:New(unpack(arg));
+end
+
+b_Reward_DEBUG = {
+    Data = {
+        Name = "Reward_DEBUG",
+        Type = Rewards.MapScriptFunction
+    },
+};
+
+function b_Reward_DEBUG:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.UseDebugQuests = _Parameter;
+    elseif _Index == 2 then
+        self.Data.UseCheats = _Parameter;
+    elseif _Index == 3 then
+        self.Data.UseShell = _Parameter;
+    elseif _Index == 4 then
+        self.Data.UseQuestTrace = _Parameter;
+    end
+end
+
+function b_Reward_DEBUG:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_DEBUG:CustomFunction(_Quest)
+    if QuestSystemDebug then
+        QuestSystemDebug:Activate(
+            self.Data.UseDebugQuests,
+            self.Data.UseCheats,
+            self.Data.UseShell,
+            self.Data.UseQuestTrace
+        );
+    end
+end
+
+function b_Reward_DEBUG:Debug(_Quest)
+    return false;
+end
+
+function b_Reward_DEBUG:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_DEBUG);
 
 -- -------------------------------------------------------------------------- --
 

@@ -65,6 +65,7 @@ function QuestSystem:InstallQuestSystem()
             ActivateBriefingExpansion();
         end
 
+        -- Briefing ID
         StartBriefing_Orig_QuestSystem = StartBriefing;
         StartBriefing = function(_Briefing)
             StartBriefing_Orig_QuestSystem(_Briefing);
@@ -73,12 +74,14 @@ function QuestSystem:InstallQuestSystem()
             return gvUniqueBriefingID;
         end
 
+        -- Briefing ID
         EndBriefing_Orig_QuestSystem = EndBriefing;
         EndBriefing = function()
             EndBriefing_Orig_QuestSystem();
             QuestSystem.Briefings[briefingState.BriefingID] = true;
         end
 
+        -- Briefing ID
         if StartCutscene then
             StartCutscene_Orig_QuestSystem = StartCutscene;
             StartCutscene = function(_Cutscene,_SkipCutscene)
@@ -89,6 +92,7 @@ function QuestSystem:InstallQuestSystem()
             end
         end
     
+        -- Briefing ID
         if CutsceneDone then
             CutsceneDone_Orig_QuestSystem = CutsceneDone;
             CutsceneDone = function()
