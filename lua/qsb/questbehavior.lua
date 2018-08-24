@@ -109,7 +109,7 @@ QuestSystemBehavior = {
         Version = "ALPHA",
 
         SaveLoadedActions = {},
-        PlayerColors = {},
+        PlayerColorAssigment = {},
         CreatedAiPlayers = {},
         CreatedAiArmies = {},
         AllowedTypesDefault = {
@@ -146,7 +146,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
         end
 
         -- Restore player colors
-        self:AddSaveLoadActions(QuestSystemBehavior.UpdatePlayerColors);
+        self:AddSaveLoadActions(QuestSystemBehavior.UpdatePlayerColorAssigment);
     end
 end
 
@@ -360,9 +360,9 @@ end
 
 -- Save Actions --
 
-function QuestSystemBehavior.UpdatePlayerColors()
+function QuestSystemBehavior.UpdatePlayerColorAssigment()
     for i= 1, 8, 1 do
-        local Color = QuestSystemBehavior.Data.PlayerColors[i];
+        local Color = QuestSystemBehavior.Data.PlayerColorAssigment[i];
         if Color then
             Display.SetPlayerColor(i, Color);
         end
@@ -822,6 +822,9 @@ function b_Goal_EntityDistance:AddParameter(_Index, _Parameter)
     elseif _Index == 3 then
         self.Data.Distance = _Parameter;
     elseif _Index == 4 then
+        if type(_Parameter) == "string" then
+            _Parameter = _Parameter == "<";
+        end
         self.Data.LowerThan = _Parameter;
     end
 end
@@ -856,6 +859,9 @@ function b_Goal_WorkerCount:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.Amount = _Parameter;
     elseif _Index == 2 then
+        if type(_Parameter) == "string" then
+            _Parameter = _Parameter == "<";
+        end
         self.Data.BeLowerThan = _Parameter;
     elseif _Index == 3 then
         self.Data.OtherPlayer = _Parameter;
@@ -892,6 +898,9 @@ function b_Goal_Motivation:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.Amount = _Parameter;
     elseif _Index == 2 then
+        if type(_Parameter) == "string" then
+            _Parameter = _Parameter == "<";
+        end
         self.Data.BeLowerThan = _Parameter;
     elseif _Index == 3 then
         self.Data.OtherPlayer = _Parameter;
@@ -928,6 +937,9 @@ function b_Goal_SettlerCount:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.Amount = _Parameter;
     elseif _Index == 2 then
+        if type(_Parameter) == "string" then
+            _Parameter = _Parameter == "<";
+        end
         self.Data.BeLowerThan = _Parameter;
     elseif _Index == 3 then
         self.Data.OtherPlayer = _Parameter;
@@ -964,6 +976,9 @@ function b_Goal_SoldierCount:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.Amount = _Parameter;
     elseif _Index == 2 then
+        if type(_Parameter) == "string" then
+            _Parameter = _Parameter == "<";
+        end
         self.Data.BeLowerThan = _Parameter;
     elseif _Index == 3 then
         self.Data.OtherPlayer = _Parameter;
@@ -1093,8 +1108,14 @@ function b_Goal_NPC:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.Target = _Parameter;
     elseif _Index == 2 then
+        if _Parameter == "" then
+            _Parameter = nil;
+        end
         self.Data.Hero = _Parameter;
     elseif _Index == 3 then
+        if _Parameter == "" then
+            _Parameter = nil;
+        end
         self.Data.Message = _Parameter;
     end
 end
@@ -3502,7 +3523,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateAIArmy);
 ---
 -- Changes the color of a player.
 -- @param _PlayerID [number] ID of player
--- @param _Color [number] Color index
+-- @param _Color [string|number] Color name or Color index
 -- @within Rewards
 --
 function Reward_SetPlayerColor(...)
@@ -3529,13 +3550,17 @@ function Reward_SetPlayerColor:GetRewardTable()
 end
 
 function Reward_SetPlayerColor:CustomFunction(_Quest)
-    QuestSystemBehavior.Data.PlayerColors[self.Data.PlayerID] = self.Data.Color;
-    QuestSystemBehavior.UpdatePlayerColors();
+    QuestSystemBehavior.Data.PlayerColorAssigment[self.Data.PlayerID] = _G[self.Data.Color] or self.Data.Color;
+    QuestSystemBehavior.UpdatePlayerColorAssigment();
 end
 
 function Reward_SetPlayerColor:Debug(_Quest)
     if self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
         dbg(_Quest, self, "PlayerID is wrong!");
+        return true;
+    end
+    if type(self.Data.Color) ~= "number" and not _G[self.Data.Color] then
+        dbg(_Quest, self, "Color does not exist!");
         return true;
     end
     return false;
