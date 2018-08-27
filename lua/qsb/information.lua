@@ -68,6 +68,10 @@ function Information:CreateAddPageFunctions()
                     if _page.dialogCamera and _page.entity then 
                         RotationAngle = Logic.GetEntityOrientation(GetID(_page.entity));
                     end
+
+                    if _page.title then
+                        _page.title = "@center " .. _page.title;
+                    end
     
                     zoom = (zoom ~= nil and zoom) or (_page.zoom ~= nil and _page.zoom) or ZoomDistance;
                     ang  = (ang ~= nil and ang) or (_page.angle ~= nil and _page.angle) or ZoomAngle;
@@ -97,7 +101,7 @@ function Information:CreateAddPageFunctions()
 
     function CreateShortPage(_entity, _title, _text, _dialog, _action)
         local page = {
-            title = "@center " .. _title,
+            title = _title,
             text = _text,
             position = GetPosition(_entity),
             entity = _entity,
@@ -157,7 +161,7 @@ function Information:OverrideCinematic()
         if XGUIEng.IsWidgetShown("GameClock") == 1 then
 			XGUIEng.ShowWidget("GameClock", 0);
 			gvGameClockWasShown = true;
-		end
+        end
 		Game.GameTimeReset();
         GUI.ClearNotes();
         return StartBriefing_Orig_Information(_briefing);
@@ -250,17 +254,17 @@ function Information:OverrideMultipleChoice()
             XGUIEng.DisableButton(theButton, 1);
             XGUIEng.DisableButton(theButton, 0);
         end
-        if _v1.action then
-            assert( type(_v1.action) == "function" );
-            if type(_v1.parameters) == "table" then
-                _v1.action(unpack(_v1.parameters));
+        if _page.action then
+            assert( type(_page.action) == "function" );
+            if type(_page.parameters) == "table" then
+                _page.action(unpack(_page.parameters));
 			else
-                _v1.action(_v1.parameters);
+                _page.action(_page.parameters);
             end
         end
 
         -- change bar design
-        Information:SetBriefingLooks();
+        Information:SetBriefingLooks(false);
 		if _page.mc ~= nil then
 			if _page.mc.text ~= nil then
 				assert(_page.mc.title~=nil);
@@ -277,7 +281,8 @@ function Information:OverrideMultipleChoice()
 				XGUIEng.ShowWidget("CinematicMC_Container",1);
 				XGUIEng.ShowWidget("CinematicBar01",1);
 				Mouse.CursorShow();
-				briefingState.waitingForMC = true;
+                briefingState.waitingForMC = true;
+                Information:SetBriefingLooks(true);
 				return;
 			end
 		end
@@ -300,25 +305,21 @@ end
 function Information:SetBriefingLooks(_IsCutscene)
     local size = {GUI.GetScreenSize()};
     local choicePosY = (size[2]*(768/size[2]))-240;
-    -- local button1Y = (size[2]-46)*(768/size[2]);
-    -- local button2Y = (size[2]-46)*(768/size[2]);
-    local button1Y = ((size[2]/2)-48)*(768/size[2]);
-    local button2Y = ((size[2]/2)+48)*(768/size[2]);
+    local button1Y = ((size[2]*0.76)-46)*(768/size[2]);
+    local button2Y = ((size[2]*0.76)+10)*(768/size[2]);
     local titlePosY = 45;
     local textPosY = ((size[2]*(768/size[2])))-100;
-    -- local button1SizeX = (((size[1]*(1024/size[1])))-660);
-    -- local button2SizeX = (((size[1]*(1024/size[1])))-660);
-    local button1SizeX = (((size[1]*(1024/size[1])))-660);
-    local button2SizeX = (((size[1]*(1024/size[1])))-660);
+    local button1SizeX = (((size[1]*(1024/size[1])))-500);
+    local button2SizeX = (((size[1]*(1024/size[1])))-500);
     local titleSize = (size[1]-200);
     local bottomBarX = (size[2]*(768/size[2]))-85;
     local bottomBarY = (size[2]*(768/size[2]))-85;
 
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Container",0,0,size[1],size[2]);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1",135,button1Y,button1SizeX,46);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2",518,button2Y,button2SizeX,46);
-    XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(150),textPosY,(730),100);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(150),textPosY,(730),100);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1",10,button1Y,button1SizeX,46);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2",10,button2Y,button2SizeX,46);
+    XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(200),textPosY,(680),100);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(200),textPosY,(680),100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
     XGUIEng.SetWidgetPositionAndSize("Cinematic_Headline",100,titlePosY,titleSize,15);
     XGUIEng.SetWidgetPositionAndSize("CinematicBar01",0,size[2],size[1],185);
