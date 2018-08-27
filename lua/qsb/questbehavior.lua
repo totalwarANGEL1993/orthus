@@ -18,7 +18,7 @@
 -- @set sort=true
 --
 
--- Quest --
+-- Quests and tools --
 
 ---
 -- Creates an quest from the given description.
@@ -76,6 +76,86 @@ function CreateQuest(_Data)
     return new(QuestTemplate, QuestName, Receiver, Time, QuestObjectives, QuestConditions, QuestRewards, QuestReprisals, Description);
 end
 
+---
+-- Creates an AI player and sets the technology level.
+--
+-- Use this function or the behavior to initalize the AI. An AI must first be
+-- initalized before an army can be created.
+--
+-- @param _PlayerID [number] PlayerID
+-- @param _TechLevel [number] Technology level [1|4]
+--
+-- @usage CreateAiPlayer(2, 4);
+--
+function CreateAiPlayer(_PlayerID, _TechLevel)
+    QuestSystemBehavior:CreateAi(_PlayerID, _TechLevel);
+end
+
+---
+-- Initalizes an army that is recruited by the AI player.
+--
+-- The AI player must be initalized first!
+--
+-- For the troop types either define a table of upgrade categories or use the
+-- constants from the QuestSystemBehavior.ArmyCategories table.
+--
+-- Use script entities named with PlayerX_AttackTargetY to define positions
+-- that will be attacked by the army. Replace X with the player ID and Y with
+-- a unique number starting by 1.
+--
+-- Also you can use entities named with PlayerX_PatrolPointY to define
+-- positions were the army will patrol. Also replace X with the player ID and
+-- Y with a unique number starting by 1.
+--
+-- @param _PlayerID [number] Owner of army.
+-- @param _Strength [number] Strength of army [1|8]
+-- @param _Position [string] Home Position of army
+-- @param _RodeLength [number] Action range of the army
+-- @param _TroopTypes [table] Upgrade categories to recruit
+--
+-- @usage CreateAiPlayer(2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
+--
+function CreateAiPlayerArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
+    QuestSystemBehavior:CreateAiArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes);
+end
+
+---
+-- Initalizes an army that is spawned until a generator entity is destroyed.
+--
+-- The AI player must be initalized first!
+--
+-- Define a list of troops that are sparned in this order. Troops will be
+-- spawrned as long as the generator exists.
+--
+-- Use script entities named with PlayerX_AttackTargetY to define positions
+-- that will be attacked by the army. Replace X with the player ID and Y with
+-- a unique number starting by 1.
+--
+-- Also you can use entities named with PlayerX_PatrolPointY to define
+-- positions were the army will patrol. Also replace X with the player ID and
+-- Y with a unique number starting by 1.
+--
+-- @param _PlayerID [number] Owner of army.
+-- @param _Strength [number] Strength of army [1|8]
+-- @param _Position [string] Home Position of army
+-- @param _LifeThread [string] Name of generator
+-- @param _RodeLength [number] Action range of the army
+-- @param _RespawnTime [number] Time till troops are refreshed
+-- @param ... [number] List of types to spawn
+--
+-- @usage CreateAiPlayerSpawnArmy(
+--     2, 8, "armyPos1", "lifethread", 5000,
+--     Entities.PU_LeaderSword2,
+--     Entities.PU_LeaderBow2,
+--     Entities.PV_Cannon2
+-- );
+--
+function CreateAiPlayerSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)
+    local EntityTypes = {unpack(arg)};
+    assert(table.getn(EntityTypes) > 0);
+    QuestSystemBehavior:CreateAiSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, EntityTypes, _RespawnTime);
+end
+
 -- Helper --
 
 function dbg(_Quest, _Behavior, _Message)
@@ -115,7 +195,7 @@ QuestSystemBehavior = {
 			UpgradeCategories.LeaderCavalry,
 			UpgradeCategories.LeaderHeavyCavalry,
 			UpgradeCategories.LeaderRifle
-        }
+        },
     }
 }
 
@@ -168,7 +248,7 @@ function QuestSystemBehavior:CreateBehaviorConstructors()
 end
 
 ---
--- Creates a AI player and upgrades the troops according to the technology 
+-- Creates a AI player and upgrades the troops according to the technology
 -- level.
 -- @param _PlayerID [number] ID of player
 -- @param _TechLevel [number] Technology level
@@ -200,7 +280,7 @@ function QuestSystemBehavior:CreateAi(_PlayerID, _TechLevel)
         Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderSword, _PlayerID);
         Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderPoleArm, _PlayerID);
     end
-    if _TechLevel == 4 then 
+    if _TechLevel == 4 then
         Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderCavalry, _PlayerID);
         Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderHeavyCavalry, _PlayerID);
         Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderRifle, _PlayerID);
@@ -231,7 +311,7 @@ function QuestSystemBehavior:UpgradeAi(_PlayerID, _NewTechLevel)
                 Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderSword, _PlayerID);
                 Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderPoleArm, _PlayerID);
             end
-            if _NewTechLevel == 4 then 
+            if _NewTechLevel == 4 then
                 Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderCavalry, _PlayerID);
                 Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderHeavyCavalry, _PlayerID);
                 Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderRifle, _PlayerID);
@@ -247,6 +327,50 @@ function QuestSystemBehavior:UpgradeAi(_PlayerID, _NewTechLevel)
 end
 
 ---
+-- Table of army categories
+-- @field City City troop types
+-- @field BlackKnight Black knight troop types
+-- @field Bandit Bandit troop types
+-- @field Barbarian Barbarian troop types
+-- @field Nephilim Nephilim troop types
+-- @within Constants
+--
+QuestSystemBehavior.ArmyCategories = {
+    City = {
+        UpgradeCategories.LeaderBow,
+        UpgradeCategories.LeaderSword,
+        UpgradeCategories.LeaderPoleArm,
+        UpgradeCategories.LeaderCavalry,
+        UpgradeCategories.LeaderHeavyCavalry,
+        UpgradeCategories.LeaderRifle
+    },
+    BlackKnight = {
+        UpgradeCategories.LeaderBanditBow,
+        UpgradeCategories.BlackKnightLeaderMace1,
+        UpgradeCategories.LeaderPoleArm,
+        UpgradeCategories.LeaderCavalry,
+        UpgradeCategories.LeaderHeavyCavalry
+    },
+    Bandit = {
+        UpgradeCategories.LeaderBanditBow,
+        UpgradeCategories.LeaderBandit,
+        UpgradeCategories.LeaderPoleArm,
+        UpgradeCategories.LeaderCavalry,
+        UpgradeCategories.LeaderHeavyCavalry
+    },
+    Barbarian = {
+        UpgradeCategories.LeaderBanditBow,
+        UpgradeCategories.LeaderBarbarian,
+        UpgradeCategories.LeaderCavalry,
+        UpgradeCategories.LeaderHeavyCavalry
+    },
+    Nephilim = {
+        UpgradeCategories.Evil_LeaderBearman,
+        UpgradeCategories.Evil_LeaderSkirmisher
+    },
+};
+
+---
 -- Creates an army for the AI that is recruited from the barracks of the player.
 -- The cannon type is automatically set by the technology level of the AI.
 -- @param _PlayerID [number] ID of player
@@ -260,12 +384,12 @@ end
 function QuestSystemBehavior:CreateAiArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
     self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
     _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
-    
+
     -- Check created AI
     if not self.Data.CreatedAiPlayers[_PlayerID] then
         return;
     end
-    
+
     -- Get army ID
     local ArmyID = table.getn(self.Data.CreatedAiArmies[_PlayerID]) +1;
     if ArmyID > 10 then
@@ -292,7 +416,7 @@ function QuestSystemBehavior:CreateAiArmy(_PlayerID, _Strength, _Position, _Rode
 
     -- Set allowed types
     if not _TroopTypes then
-        _TroopTypes = copy(self.Data.AllowedTypesDefault);
+        _TroopTypes = copy(QuestSystemBehavior.ArmyCategories.City);
     end
     assert(type(_TroopTypes) == "table", "CreateAiArmy: _TroopTypes must be a table!");
     table.insert(_TroopTypes, self.Data.CreatedAiPlayers[_PlayerID].CannonType);
@@ -315,6 +439,92 @@ function QuestSystemBehavior:CreateAiArmy(_PlayerID, _Strength, _Position, _Rode
 
     table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
     SetupAITroopGenerator("QuestSystemBehavior_AiArmies_" .._PlayerID.. "_" ..ArmyID, self.Data.CreatedAiArmies[_PlayerID][ArmyID]);
+    Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", "QuestSystemBehavior_AiArmiesController", 1, 0, {_PlayerID, ArmyID});
+
+    -- Default values
+    AI.Army_BeAlwaysAggressive(_PlayerID, ArmyID);
+    AI.Army_SetScatterTolerance(_PlayerID, ArmyID, 4);
+end
+
+---
+-- Creates an army for the AI that is spawned from a life thread building.
+-- @param _PlayerID [number] ID of player
+-- @param _Strength [number] Strength of army
+-- @param _Position [string] Home area center
+-- @param _LifeThread [string] Name of generator
+-- @param _RodeLength [number] Rode length
+-- @param _EntityTypes [table] Spawned troops
+-- @param _RespawnTime [number] Time to respawn
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:CreateAiSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _EntityTypes, _RespawnTime)
+    self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
+    _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
+
+    -- Check created AI
+    if not self.Data.CreatedAiPlayers[_PlayerID] then
+        return;
+    end
+
+    -- Get army ID
+    local ArmyID = table.getn(self.Data.CreatedAiArmies[_PlayerID]) +1;
+    if ArmyID > 10 then
+        return;
+    end
+
+    -- Get attack positions
+    local AttackPositions = GetEntitiesByPrefix("Player" .._PlayerID.. "_AttackTarget");
+    for i= 1, table.getn(AttackPositions), 1 do
+        AttackPositions[i] = Logic.GetEntityName(AttackPositions[i]);
+    end
+    if table.getn(AttackPositions) == 0 then
+        AttackPositions = nil;
+    end
+
+    -- Get patrol points
+    local PatrolPoints = GetEntitiesByPrefix("Player" .._PlayerID.. "_PatrolPoint");
+    for i= 1, table.getn(PatrolPoints), 1 do
+        PatrolPoints[i] = Logic.GetEntityName(PatrolPoints[i]);
+    end
+    if table.getn(PatrolPoints) == 0 then
+        PatrolPoints = {_Position};
+    end
+
+    -- Convert spawned types list
+    assert(type(_EntityTypes) == "table", "CreateAiSpawnArmy: _TroopTypes must be a table!");
+    local SpawnedTypes = {};
+    for i= 1, table.getn(_EntityTypes), 1 do
+        table.insert(SpawnedTypes, {_EntityTypes[i], 16});
+    end
+
+    -- Create army
+    local army 				     = {};
+    army.player 			     = _PlayerID;
+    army.id					     = ArmyID;
+    army.strength			     = _Strength;
+    army.position			     = GetPosition(_Position);
+    army.rodeLength			     = _RodeLength;
+    army.refresh 			     = true;
+    army.retreatStrength	     = math.ceil(_Strength/3);
+    army.baseDefenseRange	     = _RodeLength * 0.7;
+    army.outerDefenseRange	     = _RodeLength * 1.5;
+
+    army.spawnPos 		 	     = GetPosition(_Position);
+    army.spawnGenerator 		 = _LifeThread;
+    army.spawnTypes 			 = SpawnedTypes;
+    army.respawnTime 		     = _RespawnTime;
+    army.maxSpawnAmount 		 = math.ceil(_Strength/3);
+    army.endless 			     = true;
+    army.noEnemy 			     = true;
+    army.noEnemyDistance 	     = 700;
+
+    army.Advanced                = {};
+    army.Advanced.attackPosition = AttackPositions;
+    army.Advanced.patrolPoints   = PatrolPoints;
+
+    table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
+    SetupAITroopSpawnGenerator("QuestSystemBehavior_AiArmies_" .._PlayerID.. "_" ..ArmyID, self.Data.CreatedAiArmies[_PlayerID][ArmyID]);
     Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", "QuestSystemBehavior_AiArmiesController", 1, 0, {_PlayerID, ArmyID});
 
     -- Default values
@@ -375,12 +585,12 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
                     end
                 end
             end
-            
+
             -- No target found? Go to patrol
             if army.Advanced.Target == nil then
                 army.Advanced.State = QuestSystemBehavior.ArmyState.Patrol;
             end
-            
+
         -- Army is attacking a target
         elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Attack then
             -- Army needs to be refreshed
@@ -419,7 +629,7 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
                 if army.Advanced.StartTime + 5*60 < Logic.GetTime() then
                     army.Advanced.AnchorChanged = nil;
                     army.Advanced.Waypoint = army.Advanced.Waypoint +1;
-                    if army.Advanced.Waypoint > table.getn(army.Advanced.patrolPoints) then 
+                    if army.Advanced.Waypoint > table.getn(army.Advanced.patrolPoints) then
                         army.Advanced.Waypoint = 1;
                     end
                     army.Advanced.StartTime = Logic.GetTime();
@@ -434,7 +644,7 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
             if IsDeadWrapper(army) or IsArmyNear(army, army.position) then
                 army.Advanced.State = QuestSystemBehavior.ArmyState.Refresh;
             end
-            
+
         -- Army is refreshing troops
         elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Refresh then
             army.Advanced.Target = nil;
@@ -2625,7 +2835,7 @@ function QuestSystemBehavior_MoveAndReplaceController(_EntityID, _LookingPlayerI
     if not IsExisting(_EntityID) then
         return true;
     end
-    
+
     local PlayerID = Logic.EntityGetPlayer(_EntityID);
     local ScriptName = Logic.GetEntityName(_EntityID);
     local x, y, z = Logic.EntityGetPos(_EntityID);
@@ -3041,14 +3251,14 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestXorQuest);
 -- Creates an merchant with up to 4 offers. Each offer purchases a fixed
 -- amount of a resource for 1000 units of gold. Default inflation will be used.
 -- @param _Merchant [string] Merchant name
--- @param _OfferType1 [string] Resourcetype on sale
--- @param _OfferAmount1 [number] Quantity to post
--- @param _OfferType2 [string] Resourcetype on sale
--- @param _OfferAmount2 [number] Quantity to post
--- @param _OfferType3 [string] Resourcetype on sale
--- @param _OfferAmount3 [number] Quantity to post
--- @param _OfferType4 [string] Resourcetype on sale
--- @param _OfferAmount4 [number] Quantity to post
+-- @param _Offer1 [string] Resourcetype on sale
+-- @param _Amount1 [number] Quantity to post
+-- @param _Offer2 [string] Resourcetype on sale
+-- @param _Amount2 [number] Quantity to post
+-- @param _Offer3 [string] Resourcetype on sale
+-- @param _Amount3 [number] Quantity to post
+-- @param _Offer4 [string] Resourcetype on sale
+-- @param _Amount4 [number] Quantity to post
 -- @within Rewards
 --
 function Reward_OpenResourceSale(...)
@@ -3096,7 +3306,7 @@ function b_Reward_OpenResourceSale:CustomFunction(_Quest)
         ["Iron"]   = 1100,
         ["Sulfur"] = 850,
     };
-    
+
     if Interaction.IO[self.Data.Merchant] then
         Interaction.IO[self.Data.Merchant]:Deactivate();
     end
@@ -3138,14 +3348,14 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_OpenResourceSale);
 -- Creates an merchant with up to 4 offers. Each offer sells 1000 units of a
 -- resource for a fixed amount of gold. Default inflation will be used.
 -- @param _Merchant [string] Merchant name
--- @param _OfferType1 [string] Resourcetype on sale
--- @param _OfferAmount1 [number] Quantity to post
--- @param _OfferType2 [string] Resourcetype on sale
--- @param _OfferAmount2 [number] Quantity to post
--- @param _OfferType3 [string] Resourcetype on sale
--- @param _OfferAmount3 [number] Quantity to post
--- @param _OfferType4 [string] Resourcetype on sale
--- @param _OfferAmount4 [number] Quantity to post
+-- @param _Offer1 [string] Resourcetype on sale
+-- @param _Amount1 [number] Quantity to post
+-- @param _Offer2 [string] Resourcetype on sale
+-- @param _Amount2 [number] Quantity to post
+-- @param _Offer3 [string] Resourcetype on sale
+-- @param _Amount3 [number] Quantity to post
+-- @param _Offer4 [string] Resourcetype on sale
+-- @param _Amount4 [number] Quantity to post
 -- @within Rewards
 --
 function Reward_OpenResourcePurchase(...)
@@ -3193,7 +3403,7 @@ function b_Reward_OpenResourcePurchase:CustomFunction(_Quest)
         [ResourceType.Iron]   = 900,
         [ResourceType.Sulfur] = 1150,
     };
-    
+
     if Interaction.IO[self.Data.Merchant] then
         Interaction.IO[self.Data.Merchant]:Deactivate();
     end
@@ -3232,21 +3442,21 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_OpenResourcePurchase);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Creates an merchant with up to 4 offers. Each offer sells 1000 units of a
--- resource for a fixed amount of gold. Default inflation will be used.
+-- Creates an mercenary merchant with up to 4 offers.
+-- Default inflation will be used.
 -- @param _Merchant [string] Merchant name
--- @param _OfferType1 [string] Resourcetype on sale
--- @param _OfferCost1 [number] Gold costs
--- @param _OfferAmount1 [number] Quantity to post
--- @param _OfferType2 [string] Resourcetype on sale
--- @param _OfferCost2 [number] Gold costs
--- @param _OfferAmount2 [number] Quantity to post
--- @param _OfferType3 [string] Resourcetype on sale
--- @param _OfferCost3 [number] Gold costs
--- @param _OfferAmount3 [number] Quantity to post
--- @param _OfferType4 [string] Resourcetype on sale
--- @param _OfferCost4 [number] Gold costs
--- @param _OfferAmount4 [number] Quantity to post
+-- @param _Offer1 [string] Resourcetype on sale
+-- @param _Cost1 [number] Gold costs
+-- @param _Amount1 [number] Quantity to post
+-- @param _Offer2 [string] Resourcetype on sale
+-- @param _Cost2 [number] Gold costs
+-- @param _Amount2 [number] Quantity to post
+-- @param _Offer3 [string] Resourcetype on sale
+-- @param _Cost3 [number] Gold costs
+-- @param _Amount3 [number] Quantity to post
+-- @param _Offer4 [string] Resourcetype on sale
+-- @param _Cost4 [number] Gold costs
+-- @param _Amount4 [number] Quantity to post
 -- @within Rewards
 --
 function Reward_OpenMercenaryMerchant(...)
@@ -3429,7 +3639,8 @@ function b_Reward_CreateAiArmy:AddParameter(_Index, _Parameter)
     elseif _Index == 4 then
         self.Data.RodeLength = _Parameter;
     elseif _Index == 5 then
-        self.Data.TroopType = _Parameter;
+        _Parameter = _Parameter or "City";
+        self.Data.TroopType = QuestSystemBehavior.ArmyCategories[_Parameter];
     end
 end
 
@@ -3484,7 +3695,7 @@ end
 function b_Trigger_QuestSuccess:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then 
+    if QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -3539,7 +3750,7 @@ end
 function b_Trigger_QuestFailure:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_Result == QuestResults.Failure then 
+    if QuestSystem.Quests[QuestID].m_Result == QuestResults.Failure then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -3594,7 +3805,7 @@ end
 function b_Trigger_QuestOver:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then 
+    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -3649,7 +3860,7 @@ end
 function b_Trigger_QuestInterrupted:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over and QuestSystem.Quests[QuestID].m_Result == QuestStates.Interrupted then 
+    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over and QuestSystem.Quests[QuestID].m_Result == QuestStates.Interrupted then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -3704,7 +3915,7 @@ end
 function b_Trigger_QuestActive:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Active then 
+    if QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -3759,7 +3970,7 @@ end
 function b_Trigger_QuestNotTriggered:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Inactive then 
+    if QuestSystem.Quests[QuestID].m_State == QuestStates.Inactive then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -3779,4 +3990,3 @@ function b_Trigger_QuestNotTriggered:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestNotTriggered);
-
