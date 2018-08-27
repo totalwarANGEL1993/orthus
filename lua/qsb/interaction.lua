@@ -64,7 +64,7 @@ function Interaction:OverrideNpcInteraction()
 
         Interaction.LastInteractionHero = _Hero;
         Interaction.LastInteractionNpc = _NPC;
-        
+
         local EntityName = Logic.GetEntityName(_NPC);
         local ID = Logic.GetMerchantBuildingId(_NPC);
 
@@ -101,7 +101,7 @@ function Interaction:OverrideBriefing()
         return StartBriefing_Orig_Interaction(_briefing);
     end
 
-    if StartCutscene then 
+    if StartCutscene then
         StartCutscene_Orig_Interaction = StartCutscene;
         StartCutscene = function(_Cutscene, _EscapeMode)
             GUIAction_MerchantReady();
@@ -188,7 +188,7 @@ end
 -- @local
 --
 function Interaction:OnNpcInteraction(_Hero, _NpcInstance)
-    if not _NpcInstance then 
+    if not _NpcInstance then
         return;
     end
     _NpcInstance:Interact(_Hero);
@@ -203,7 +203,7 @@ end
 -- @local
 --
 function Interaction:OnMerchantInteraction(_Hero, _NpcInstance, _MerchantID)
-    if not _NpcInstance then 
+    if not _NpcInstance then
         return;
     end
     _NpcInstance:Interact(_Hero, _MerchantID);
@@ -217,7 +217,7 @@ end
 -- @local
 --
 function Interaction_Npc_Controller(_ScriptName)
-    if not Interaction.IO[_ScriptName] and not IsDead(_ScriptName) then 
+    if not Interaction.IO[_ScriptName] and not IsDead(_ScriptName) then
         return true;
     end
     return Interaction.IO[_ScriptName]:Controller();
@@ -225,7 +225,9 @@ end
 
 -- -------------------------------------------------------------------------- --
 
-NPC_ARRIVED_DISTANCE = 1200;
+NPC_ARRIVED_TARGET_DISTANCE = 1200;
+NPC_LOOK_AT_HERO_DISTANCE   = 2000;
+NPC_FOLLOW_HERO_DISTANCE    = 2000;
 
 ---
 -- Base class for NPCs that implements the vanilla functionality of an npc.
@@ -244,6 +246,7 @@ function NonPlayerCharacter:construct(_ScriptName)
     self.m_Follow      = nil;
     self.m_Target      = nil;
     self.m_WayCallback = nil;
+    self.m_Wanderer    = {};
     self.m_Waypoints   = {};
 
     Interaction.IO[_ScriptName] = self;
@@ -280,6 +283,19 @@ end
 --
 function NonPlayerCharacter:AddWaypoint(_Waypoint)
     table.insert(self.m_Waypoints, _Waypoint);
+    return self;
+end
+
+---
+-- Adds a stray position to the npc. The npc will walk to a random waypoint
+-- from the stray list.
+-- Waypoints must be reachable!
+-- @param _Waypoint [string] Waypoint to pass
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:AddStrayPoint(_Waypoint)
+    table.insert(self.m_Wanderer, _Waypoint);
     return self;
 end
 
@@ -400,18 +416,16 @@ end
 --
 function NonPlayerCharacter:Controller()
     if self.m_Active == true then
-        UpdateHeroesTable();
-
         -- Follow hero
         if self.m_Follow ~= nil and not self.m_Arrived then
             local FollowID;
             if type(self.m_Follow) == "string" then
                 FollowID = GetEntityId(self.m_Follow);
             else
-                FollowID = GetNearestHero(self.m_ScriptName, 2000);
+                FollowID = self:GetNearestHero(NPC_FOLLOW_HERO_DISTANCE);
             end
             if FollowID ~= nil and IsAlive(FollowID) then
-                if self.m_Target and IsNear(self.m_ScriptName, self.m_Target, self.m_ArrivedDistance or NPC_ARRIVED_DISTANCE) then
+                if self.m_Target and IsNear(self.m_ScriptName, self.m_Target, self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
                     Move(self.m_ScriptName, self.m_Target);
                     self.m_Arrived = true;
                 end
@@ -426,12 +440,11 @@ function NonPlayerCharacter:Controller()
             self.m_Waypoints.Current = self.m_Waypoints.Current or 1;
 
             local CurrentTime = Logic.GetTime();
-            local x, y, z = Logic.EntityGetPos(GetID(self.m_ScriptName));
             if self.m_Waypoints.LastTime < CurrentTime then
                 -- Check each 2 minutes
                 self.m_Waypoints.LastTime = CurrentTime + (self.m_Waittime or 2*60);
                 -- Set waypoint
-                if IsNear(self.m_ScriptName, self.m_Waypoints[self.m_Waypoints.Current], self.m_ArrivedDistance or NPC_ARRIVED_DISTANCE) then
+                if IsNear(self.m_ScriptName, self.m_Waypoints[self.m_Waypoints.Current], self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
                     self.m_Waypoints.Current = self.m_Waypoints.Current +1;
                     if self.m_Waypoints.Current > table.getn(self.m_Waypoints) then
                         self.m_Arrived = true;
@@ -444,12 +457,37 @@ function NonPlayerCharacter:Controller()
                     end
                 end
             end
+
+        -- Wander random positions
+        elseif table.getn(self.m_Wanderer) > 1 and not self.m_Arrived then
+            self.m_Wanderer.LastTime = self.m_Wanderer.LastTime or 0;
+            self.m_Wanderer.Current = self.m_Wanderer.Current or 1;
+
+            if not self:GetNearestHero(NPC_LOOK_AT_HERO_DISTANCE) then
+                local CurrentTime = Logic.GetTime();
+                if self.m_Wanderer.LastTime < CurrentTime then
+                    self.m_Wanderer.LastTime = CurrentTime + (self.m_Waittime or 5*60);
+                    if IsNear(self.m_ScriptName, self.m_Wanderer[self.m_Wanderer.Current], self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
+                        -- Select random waypoint
+                        local NewWaypoint;
+                        repeat
+                            NewWaypoint = math.random(1, table.getn(self.m_Wanderer));
+                        until (NewWaypoint ~= self.m_Wanderer.Current);
+                        self.m_Wanderer.Current = NewWaypoint;
+
+                        -- Move to waypoint
+                        if Logic.IsEntityMoving(GetID(self.m_ScriptName)) == false then
+                            Move(self.m_ScriptName, self.m_Wanderer[self.m_Wanderer.Current]);
+                        end
+                    end
+                end
+            end
         else
             self.m_Arrived = true;
         end
 
         if self.m_Arrived then
-            local NearestHero = GetNearestHero(self.m_ScriptName);
+            local NearestHero = self:GetNearestHero();
             LookAt(self.m_ScriptName, NearestHero);
         end
     end
@@ -463,7 +501,7 @@ end
 --
 function NonPlayerCharacter:Interact(_HeroID)
     GUIAction_MerchantReady();
-    if self.m_Follow then 
+    if self.m_Follow then
         if self.m_Target then
             if IsNear(self.m_ScriptName, self.m_Target, 1200) then
                 self.m_Callback(self, _HeroID);
@@ -471,12 +509,12 @@ function NonPlayerCharacter:Interact(_HeroID)
                 self:HeroesLookAtNpc();
                 self:Deactivate();
             else
-                if self.m_WayCallback then 
+                if self.m_WayCallback then
                     self.m_WayCallback(self, _HeroID);
                 end
             end
         else
-            if self.m_WayCallback then 
+            if self.m_WayCallback then
                 self.m_WayCallback(self, _HeroID);
             end
         end
@@ -489,7 +527,7 @@ function NonPlayerCharacter:Interact(_HeroID)
             self:HeroesLookAtNpc();
             self:Deactivate();
         else
-            if self.m_WayCallback then 
+            if self.m_WayCallback then
                 self.m_WayCallback(self, _HeroID);
             end
         end
@@ -497,7 +535,7 @@ function NonPlayerCharacter:Interact(_HeroID)
     else
         if self.m_Hero then
             if _HeroID ~= GetID(self.m_Hero) then
-                if self.m_HeroInfo then 
+                if self.m_HeroInfo then
                     Message(self.m_HeroInfo);
                 end
                 return;
@@ -516,11 +554,41 @@ end
 -- @local
 --
 function NonPlayerCharacter:HeroesLookAtNpc()
-    for k, v in pairs(NPCTable_Heroes) do 
-        if v and IsExisting(v) and IsNear(v, self.m_ScriptName, 2000) then
+    local HeroesTable = {};
+    Logic.GetHeroes(GUI.GetPlayerID(), HeroesTable);
+
+    for k, v in pairs(HeroesTable) do
+        if v and IsExisting(v) and IsNear(v, self.m_ScriptName, NPC_LOOK_AT_HERO_DISTANCE) then
             LookAt(v, self.m_ScriptName);
         end
     end
+end
+
+---
+-- Returns the nearest hero to the npc.
+-- @return [number] Hero ID
+-- @within NonPlayerCharacter
+-- @local
+--
+function NonPlayerCharacter:GetNearestHero(_Distance)
+    local HeroesTable = {};
+    Logic.GetHeroes(GUI.GetPlayerID(), HeroesTable);
+
+    local x1, y1, z1   = Logic.EntityGetPos(GetID(self.m_ScriptName));
+    local BestDistance = _Distance or Logic.WorldGetSize();
+    local BestHero     = nil;
+
+    for k, v in pairs(HeroesTable) do
+        if v and IsExisting(v) then
+            local x2, y2, z2 = Logic.EntityGetPos(v);
+			local Distance   = ((x2-x1)*(x2-x1))+((y2-y1)*(y2-y1));
+            if Distance < BestDistance then
+				BestDistance = Distance;
+				BestHero = v;
+			end
+        end
+    end
+    return BestHero;
 end
 
 -- -------------------------------------------------------------------------- --
@@ -607,7 +675,7 @@ end
 function NonPlayerMerchant:Interact(_HeroID, _TraderID)
     local CurrentPlayerID = GUI.GetPlayerID();
     local HeroOfPlayerID = Logic.EntityGetPlayer(_HeroID);
-    
+
     if HeroOfPlayerID == CurrentPlayerID then
         GUI.SelectEntity(_HeroID);
         XGUIEng.ShowAllSubWidgets(gvGUI_WidgetID.SelectionView, 0);
@@ -626,10 +694,10 @@ end
 -- @local
 --
 function NonPlayerMerchant:Controller()
-    for k, v in pairs(self.m_Offers) do 
+    for k, v in pairs(self.m_Offers) do
         if v and v.Refresh > -1 then
             self.m_Offers[k].LastRefresh = v.LastRefresh or Logic.GetTime();
-            if Logic.GetTime() > v.LastRefresh + v.Refresh then 
+            if Logic.GetTime() > v.LastRefresh + v.Refresh then
                 -- Update load
                 if self.m_Offers[k].Load < self.m_Offers[k].LoadMax then
                     self.m_Offers[k].Load = v.Load +1;
@@ -685,15 +753,15 @@ function NonPlayerMerchant:AddOffer(_Type, _Costs, _Amount, _Good, _Load, _Icon,
     };
 
     local Length = table.getn(self.m_Offers);
-    if Length < 4 then 
+    if Length < 4 then
         self.m_Offers[Length+1] = {
             Type = _Type,
             Costs = CostsTable,
             Amount = _Amount,
             Good = _Good,
-            Load = _Load, 
-            LoadMax = _Load, 
-            Icon = _Icon, 
+            Load = _Load,
+            LoadMax = _Load,
+            Icon = _Icon,
             Refresh = _Refresh or -1,
             Inflation = 1.0,
             Volume = 0,
@@ -723,20 +791,20 @@ function NonPlayerMerchant:AddTroopOffer(_Good, _Costs, _Amount, _Refresh)
 		Icon = "Buy_LeaderCavalryHeavy";
 	elseif Logic.IsEntityTypeInCategory(_Good, EntityCategories.CavalryLight) == 1 then
 		Icon = "Buy_LeaderCavalryLight";
-	elseif Logic.IsEntityTypeInCategory(_Good, EntityCategories.Rifle) == 1 then	
-		Icon = "Buy_LeaderRifle";		
-	elseif _Good == Entities.PV_Cannon1 then	
-		Icon = "Buy_Cannon1";		
-	elseif _Good == Entities.PV_Cannon2 then	
-		Icon = "Buy_Cannon2";		
-	elseif _Good == Entities.PV_Cannon3 then	
-		Icon = "Buy_Cannon3";		
-	elseif _Good == Entities.PV_Cannon4 then	
-		Icon = "Buy_Cannon4";		
+	elseif Logic.IsEntityTypeInCategory(_Good, EntityCategories.Rifle) == 1 then
+		Icon = "Buy_LeaderRifle";
+	elseif _Good == Entities.PV_Cannon1 then
+		Icon = "Buy_Cannon1";
+	elseif _Good == Entities.PV_Cannon2 then
+		Icon = "Buy_Cannon2";
+	elseif _Good == Entities.PV_Cannon3 then
+		Icon = "Buy_Cannon3";
+	elseif _Good == Entities.PV_Cannon4 then
+		Icon = "Buy_Cannon4";
 	elseif _Good == Entities.PU_Serf then
 		Icon = "Buy_Serf";
 	elseif _Good == Entities.PU_Thief then
-		Icon = "Buy_Thief";				
+		Icon = "Buy_Thief";
 	elseif _Good == Entities.PU_Scout then
         Icon = "Buy_Scout";
     end
@@ -795,7 +863,7 @@ end
 -- @within NonPlayerMerchant
 -- @local
 --
-function NonPlayerMerchant:UpdateOfferWidgets()  
+function NonPlayerMerchant:UpdateOfferWidgets()
     XGUIEng.ShowAllSubWidgets("TroopMerchantOffersContainer", 0);
     for k, v in pairs (self.m_Offers) do
         XGUIEng.ShowWidget("BuyTroopOfferContainer" ..k, 1);
@@ -816,7 +884,7 @@ function NonPlayerMerchant:UpdateOffer(_SlotIndex)
         GUIAction_MerchantReady();
         return;
     end
-    
+
     local CurrentWidgetID = XGUIEng.GetCurrentWidgetID();
     local AmountOfOffers = table.getn(self.m_Offers);
     local SourceButton = self.m_Offers[_SlotIndex].Icon;
@@ -854,7 +922,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
         end
 
         -- Remove costs
-        for k, v in pairs(Costs) do 
+        for k, v in pairs(Costs) do
             Logic.SubFromPlayersGlobalResource(PlayerID, k, v);
         end
 
@@ -886,7 +954,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
         else
             self.m_Offers[_SlotIndex].Good(self.m_Offers[_SlotIndex], self);
         end
-        
+
         GUIUpdate_TroopOffer(_SlotIndex);
     end
 end
@@ -906,7 +974,7 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
     local CostString = InterfaceTool_CreateCostString(Costs);
     local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
     local Description;
-    
+
     -- Mercenary
     if self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Unit then
         local EntityTypeName = Logic.GetEntityTypeName(self.m_Offers[_SlotIndex].Good);
@@ -916,7 +984,7 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
         local NameString = "names/" .. EntityTypeName
         Description = " @color:180,180,180,255 " .. XGUIEng.GetStringTableText(NameString) .. " @cr ";
         Description = Description .. XGUIEng.GetStringTableText("MenuMerchant/TroopOfferTooltipText");
-    
+
     -- Resource
     elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
         local GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameMoney");
@@ -941,15 +1009,15 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
             Title = "Buy " ..self.m_Offers[_SlotIndex].Amount.. " of this resource.";
         end
         Description = " @color:180,180,180,255 " .. Title .. " @cr @color:255,255,255,255 " ..Text;
-        
+
     -- Custom
     else
         local Title = self.m_Offers[_SlotIndex].Description.Title;
-        if type(Title) == "table" then 
+        if type(Title) == "table" then
             Title = Title[Language];
         end
         local Text  = self.m_Offers[_SlotIndex].Description.Text;
-        if type(Text) == "table" then 
+        if type(Text) == "table" then
             Text = Text[Language];
         end
         Description = " @color:180,180,180,255 " .. Title .. " @cr @color:255,255,255,255 " ..Text;
@@ -959,4 +1027,3 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
     XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomCosts, CostString);
     XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomShortCut, "");
 end
-
