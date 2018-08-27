@@ -87,10 +87,10 @@ end
 -- @param _PlayerID [number] PlayerID
 -- @param _TechLevel [number] Technology level [1|4]
 --
--- @usage CreateAiPlayer(2, 4);
+-- @usage CreateAIPlayer(2, 4);
 --
-function CreateAiPlayer(_PlayerID, _TechLevel)
-    QuestSystemBehavior:CreateAi(_PlayerID, _TechLevel);
+function CreateAIPlayer(_PlayerID, _TechLevel)
+    QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel);
 end
 
 ---
@@ -115,10 +115,10 @@ end
 -- @param _RodeLength [number] Action range of the army
 -- @param _TroopTypes [table] Upgrade categories to recruit
 --
--- @usage CreateAiPlayer(2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
+-- @usage CreateAIPlayer(2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
 --
-function CreateAiPlayerArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
-    QuestSystemBehavior:CreateAiArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes);
+function CreateAIPlayerArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
+    QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes);
 end
 
 ---
@@ -145,17 +145,17 @@ end
 -- @param _RespawnTime [number] Time till troops are refreshed
 -- @param ... [number] List of types to spawn
 --
--- @usage CreateAiPlayerSpawnArmy(
+-- @usage CreateAIPlayerSpawnArmy(
 --     2, 8, "armyPos1", "lifethread", 5000,
 --     Entities.PU_LeaderSword2,
 --     Entities.PU_LeaderBow2,
 --     Entities.PV_Cannon2
 -- );
 --
-function CreateAiPlayerSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)
+function CreateAIPlayerSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)
     local EntityTypes = {unpack(arg)};
     assert(table.getn(EntityTypes) > 0);
-    QuestSystemBehavior:CreateAiSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, EntityTypes, _RespawnTime);
+    QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, EntityTypes, _RespawnTime);
 end
 
 -- Helper --
@@ -494,7 +494,7 @@ end
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAiSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _EntityTypes, _RespawnTime)
+function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _EntityTypes, _RespawnTime)
     self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
     _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
 
@@ -528,7 +528,7 @@ function QuestSystemBehavior:CreateAiSpawnArmy(_PlayerID, _Strength, _Position, 
     end
 
     -- Convert spawned types list
-    assert(type(_EntityTypes) == "table", "CreateAiSpawnArmy: _TroopTypes must be a table!");
+    assert(type(_EntityTypes) == "table", "CreateAISpawnArmy: _TroopTypes must be a table!");
     local SpawnedTypes = {};
     for i= 1, table.getn(_EntityTypes), 1 do
         table.insert(SpawnedTypes, {_EntityTypes[i], 16});

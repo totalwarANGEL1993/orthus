@@ -17,7 +17,7 @@
 -- widget. Units, resources and custom actions can be traded and all offers
 -- can respawn. Example for a merchant:
 -- <pre>local NPC = new(NonPlayerMerchant, "myMerchant")
---     :AddResourceOffer(ResourceType.Clay, 300, {Gold = 150}, 15, 2*60);
+--     :AddResourceOffer(ResourceType.Clay, 300, {Gold = 150}, 15, 2*60)
 --     :Activate();</pre>
 -- This merchant sells 15x300 clay for 150 gold each. After 2 minutes the
 -- offer is restored by 1. The price will have inflation and deflation.
@@ -856,11 +856,11 @@ function NonPlayerMerchant:AddTechnologyOffer(_Good, _Costs)
     for k, v in pairs(Technologies) do
         if v == _Good then
             if string.find(k, "GT_") then
-                Icon = "Research_" .. string.sub(4, string.len(k));
+                Icon = "Research_" .. string.sub(k, 4, string.len(k));
             elseif string.find(k, "T_") then
-                Icon = "Research_" .. string.sub(3, string.len(k));
+                Icon = "Research_" .. string.sub(k, 3, string.len(k));
             elseif string.find(k, "B_") then
-                Icon = "Build_" .. string.sub(3, string.len(k));
+                Icon = "Build_" .. string.sub(k, 3, string.len(k));
             else
                 Icon = "Research_Literacy";
             end
@@ -910,6 +910,7 @@ end
 --
 function NonPlayerMerchant:UpdateOffer(_SlotIndex)
     local CurrentWidgetID = XGUIEng.GetCurrentWidgetID();
+    local PlayerID = GUI.GetPlayerID();
     local EntityID = GUI.GetSelectedEntity();
     if not IsExisting(EntityID) or string.find(Logic.GetCurrentTaskList(EntityID), "WALK") then
         GUIAction_MerchantReady();
@@ -919,13 +920,15 @@ function NonPlayerMerchant:UpdateOffer(_SlotIndex)
     -- Set icon
     local SourceButton = self.m_Offers[_SlotIndex].Icon;
     XGUIEng.TransferMaterials(SourceButton, CurrentWidgetID);
+    XGUIEng.HighLightButton(CurrentWidgetID, 0);
 
     -- Prevent buying already researched technologies
     if self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then
         if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 1 then
-            XGUIEng.DisableButton(CurrentWidgetID, 1);
-            return;
+            XGUIEng.HighLightButton(CurrentWidgetID, 1);
         end
+        XGUIEng.SetText(gvGUI_WidgetID.TroopMerchantOfferAmount[_SlotIndex], "");
+        return;
     end
 
     -- Set amount and disable sold out offers
@@ -961,6 +964,33 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
             end
         end
 
+        -- Mercenary
+        if self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Unit then
+            local Position = GetPosition(self.m_ScriptName);
+            if self.m_Spawnpoint then
+                Position = GetPosition(self.m_Spawnpoint);
+            else
+                Position = GetPosition(self.m_ScriptName);
+            end
+            local ID = AI.Entity_CreateFormation(PlayerID, self.m_Offers[_SlotIndex].Good, 0, 0, Position.X, Position.Y, 0, 0, 3, 0);
+            Tools.CreateSoldiersForLeader(ID, 16);
+
+        -- Resource
+        elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
+            Logic.AddToPlayersGlobalResource(PlayerID, self.m_Offers[_SlotIndex].Good +1, self.m_Offers[_SlotIndex].Amount);
+
+        -- Technology
+        elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then
+            if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 1 then
+                return;
+            end
+            ResearchTechnology(self.m_Offers[_SlotIndex].Good, PlayerID);
+
+        -- Custom
+        else
+            self.m_Offers[_SlotIndex].Good(self.m_Offers[_SlotIndex], self);
+        end
+
         -- Remove costs
         for k, v in pairs(Costs) do
             Logic.SubFromPlayersGlobalResource(PlayerID, k, v);
@@ -975,29 +1005,6 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
         self.m_Offers[_SlotIndex].Inflation = self.m_Offers[_SlotIndex].Inflation + 0.05;
         if self.m_Offers[_SlotIndex].Inflation > 1.75 then
             self.m_Offers[_SlotIndex].Inflation = 1.75;
-        end
-
-        -- Mercenary
-        if self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Unit then
-            local Position = GetPosition(self.m_ScriptName);
-            if self.m_Spawnpoint then
-                Position = GetPosition(self.m_Spawnpoint);
-            else
-                Position = GetPosition(self.m_ScriptName);
-            end
-            local ID = AI.Entity_CreateFormation(PlayerID, self.m_Offers[_SlotIndex].Good, 0, 0, Position.X, Position.Y, 0, 0, 3, 0);
-            Tools.CreateSoldiersForLeader(ID, 16);
-        -- Resource
-        elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
-            Logic.AddToPlayersGlobalResource(PlayerID, self.m_Offers[_SlotIndex].Good +1, self.m_Offers[_SlotIndex].Amount);
-        -- Technology
-        elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then
-            if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 0 then
-                ResearchTechnology(self.m_Offers[_SlotIndex].Good, PlayerID);
-            end
-        -- Custom
-        else
-            self.m_Offers[_SlotIndex].Good(self.m_Offers[_SlotIndex], self);
         end
 
         GUIUpdate_TroopOffer(_SlotIndex);
@@ -1056,7 +1063,7 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
         Description = " @color:180,180,180,255 " .. Title .. " @cr @color:255,255,255,255 " ..Text;
 
     -- Technology
-    elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then
+    elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then        
         local Title = "Wissen erwerben";
         if Language ~= "de" then
             Title = "Buy technology";
@@ -1065,6 +1072,19 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
         if Language ~= "de" then
             Title = "Get the knowledge about this technology.";
         end
+
+        local PlayerID = GUI.GetPlayerID();
+        if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 1 then
+            Title = "Heureka!";
+            if Language ~= "de" then
+                Title = "Eureka!";
+            end
+            Text = "Ihr habt diese Technologie bereits erforscht, Milord!";
+            if Language ~= "de" then
+                Title = "You have already researched this technology, your majesty!";
+            end
+        end
+
         Description = " @color:180,180,180,255 " .. Title .. " @cr @color:255,255,255,255 " ..Text;
 
     -- Custom
