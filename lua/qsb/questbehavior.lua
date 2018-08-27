@@ -3635,6 +3635,10 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CloseMerchant);
 
 ---
 -- Creates an AI player but don't creates any armies.
+--
+-- Initalising the AI is nessessary for usung the quest system behavior army
+-- controller.
+--
 -- @param _PlayerID [number] Id of player
 -- @param _TechLevel [number] Tech level
 -- @within Rewards
@@ -3679,6 +3683,11 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateAI);
 
 ---
 -- Defines an army that must be recruited by the AI.
+--
+-- Use script entities named with PlayerX_AttackTargetY to define positions
+-- that will be attacked by the army. Also you can use entities named with
+-- PlayerX_PatrolPointY to define positions were the army will patrol.
+--
 -- @param _PlayerID [number] Id of player
 -- @param _Strength [number] Strength of army
 -- @param _Position [string] Army base position

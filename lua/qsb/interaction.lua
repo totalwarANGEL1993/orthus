@@ -414,10 +414,6 @@ end
 --
 function NonPlayerCharacter:Controller()
     if self.m_Active == true then
-<<<<<<< HEAD
-
-=======
->>>>>>> development
         -- Follow hero
         if self.m_Follow ~= nil and not self.m_Arrived then
             local FollowID;
@@ -560,23 +556,11 @@ end
 -- @local
 --
 function NonPlayerCharacter:HeroesLookAtNpc()
-<<<<<<< HEAD
-    local HeroTypeList = {};
-    for k, v in pairs(Entities) do
-        if Logic.IsEntityTypeInCategory(v, EntityCategories.Hero) == 1 then
-            table.isert(HeroTypeList, v);
-        end
-    end
-    
-    for k, v in pairs(HeroTypeList) do 
-        if v and IsExisting(v) and IsNear(v, self.m_ScriptName, 2000) then
-=======
     local HeroesTable = {};
     Logic.GetHeroes(GUI.GetPlayerID(), HeroesTable);
 
     for k, v in pairs(HeroesTable) do
         if v and IsExisting(v) and IsNear(v, self.m_ScriptName, NPC_LOOK_AT_HERO_DISTANCE) then
->>>>>>> development
             LookAt(v, self.m_ScriptName);
         end
     end
