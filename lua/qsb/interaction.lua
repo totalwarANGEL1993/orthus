@@ -532,6 +532,10 @@ function NonPlayerCharacter:Interact(_HeroID)
             end
         end
 
+    elseif table.getn(self.m_Wanderer) > 0 then
+        if self.m_WayCallback then
+            self.m_WayCallback(self, _HeroID);
+        end
     else
         if self.m_Hero then
             if _HeroID ~= GetID(self.m_Hero) then
@@ -581,7 +585,7 @@ function NonPlayerCharacter:GetNearestHero(_Distance)
     for k, v in pairs(HeroesTable) do
         if v and IsExisting(v) then
             local x2, y2, z2 = Logic.EntityGetPos(v);
-			local Distance   = ((x2-x1)*(x2-x1))+((y2-y1)*(y2-y1));
+			local Distance   = ((x2-x1)^2)+((y2-y1)^2);
             if Distance < BestDistance then
 				BestDistance = Distance;
 				BestHero = v;
@@ -594,10 +598,11 @@ end
 -- -------------------------------------------------------------------------- --
 
 MerchantOfferTypes = {
-    Unit = 1,
-    Custom = 3,
-    Resource = 4,
-}
+    Unit       = 1,
+    Technology = 2,
+    Custom     = 3,
+    Resource   = 4,
+};
 
 ---
 -- Base class for NPCs that implements the vanilla functionality of an npc.
@@ -841,6 +846,33 @@ function NonPlayerMerchant:AddResourceOffer(_Good, _Amount, _Costs, _Load, _Refr
 end
 
 ---
+-- Adds a technology offer to the merchant. Technology offers do not respawn.
+-- @param _Good [number] Technology type
+-- @param _Costs [table] Costs table
+-- @return self
+-- @within NonPlayerMerchant
+--
+function NonPlayerMerchant:AddTechnologyOffer(_Good, _Costs)
+    -- Get icon
+    local Icon;
+    for k, v in pairs(Technologies) do
+        if v == _Good then
+            if string.find(k, "GT_") then
+                Icon = "Research_" .. string.sub(4, string.len(k));
+            elseif string.find(k, "T_") then
+                Icon = "Research_" .. string.sub(3, string.len(k));
+            elseif string.find(k, "B_") then
+                Icon = "Build_" .. string.sub(3, string.len(k));
+            else
+                Icon = "Research_Literacy";
+            end
+        end
+    end
+    -- Add offer
+    return self:AddOffer(MerchantOfferTypes.Technology, _Costs, 0, _Good, 1, Icon, -1);
+end
+
+---
 -- Adds an offer with a custom function. The function receives the data of
 -- the offer and the data of the whole npc.
 -- @param _Action [function] Custom function
@@ -879,17 +911,27 @@ end
 -- @local
 --
 function NonPlayerMerchant:UpdateOffer(_SlotIndex)
+    local CurrentWidgetID = XGUIEng.GetCurrentWidgetID();
     local EntityID = GUI.GetSelectedEntity();
     if not IsExisting(EntityID) or string.find(Logic.GetCurrentTaskList(EntityID), "WALK") then
         GUIAction_MerchantReady();
         return;
     end
 
-    local CurrentWidgetID = XGUIEng.GetCurrentWidgetID();
-    local AmountOfOffers = table.getn(self.m_Offers);
+    -- Set icon
     local SourceButton = self.m_Offers[_SlotIndex].Icon;
     XGUIEng.TransferMaterials(SourceButton, CurrentWidgetID);
 
+    -- Prevent buying already researched technologies
+    if self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then
+        if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 1 then
+            XGUIEng.DisableButton(CurrentWidgetID, 1);
+            return;
+        end
+    end
+
+    -- Set amount and disable sold out offers
+    local AmountOfOffers = table.getn(self.m_Offers);
     local Amount = self.m_Offers[_SlotIndex].Load;
     if Amount < 1 then
         Amount = "";
@@ -950,6 +992,11 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
         -- Resource
         elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
             Logic.AddToPlayersGlobalResource(PlayerID, self.m_Offers[_SlotIndex].Good +1, self.m_Offers[_SlotIndex].Amount);
+        -- Technology
+        elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then
+            if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 0 then
+                ResearchTechnology(self.m_Offers[_SlotIndex].Good, PlayerID);
+            end
         -- Custom
         else
             self.m_Offers[_SlotIndex].Good(self.m_Offers[_SlotIndex], self);
@@ -1007,6 +1054,18 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
         local Text = "Kauft " ..self.m_Offers[_SlotIndex].Amount.. " Einheiten dieses Rohstoffes.";
         if Language ~= "de" then
             Title = "Buy " ..self.m_Offers[_SlotIndex].Amount.. " of this resource.";
+        end
+        Description = " @color:180,180,180,255 " .. Title .. " @cr @color:255,255,255,255 " ..Text;
+
+    -- Technology
+    elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then
+        local Title = "Wissen erwerben";
+        if Language ~= "de" then
+            Title = "Buy technology";
+        end
+        local Text = "Eignet Euch das Wissen über diese Technologie an.";
+        if Language ~= "de" then
+            Title = "Get the knowledge about this technology.";
         end
         Description = " @color:180,180,180,255 " .. Title .. " @cr @color:255,255,255,255 " ..Text;
 
