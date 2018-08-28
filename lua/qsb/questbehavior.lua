@@ -3750,14 +3750,14 @@ function Reward_SetPlayerColor(...)
     return b_Reward_SetPlayerColor:New(unpack(arg));
 end
 
-Reward_SetPlayerColor = {
+b_Reward_SetPlayerColor = {
     Data = {
         Name = "Reward_SetPlayerColor",
         Type = Rewards.MapScriptFunction
     },
 };
 
-function Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
+function b_Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.PlayerID = _Parameter;
     elseif _Index == 2 then
@@ -3765,16 +3765,16 @@ function Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
     end
 end
 
-function Reward_SetPlayerColor:GetRewardTable()
+function b_Reward_SetPlayerColor:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
 
-function Reward_SetPlayerColor:CustomFunction(_Quest)
+function b_Reward_SetPlayerColor:CustomFunction(_Quest)
     QuestSystemBehavior.Data.PlayerColorAssigment[self.Data.PlayerID] = _G[self.Data.Color] or self.Data.Color;
     QuestSystemBehavior.UpdatePlayerColorAssigment();
 end
 
-function Reward_SetPlayerColor:Debug(_Quest)
+function b_Reward_SetPlayerColor:Debug(_Quest)
     if self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
         dbg(_Quest, self, "PlayerID is wrong!");
         return true;
@@ -3786,10 +3786,10 @@ function Reward_SetPlayerColor:Debug(_Quest)
     return false;
 end
 
-function Reward_SetPlayerColor:Reset(_Quest)
+function b_Reward_SetPlayerColor:Reset(_Quest)
 end
 
-QuestSystemBehavior:RegisterBehavior(Reward_SetPlayerColor);
+QuestSystemBehavior:RegisterBehavior(b_Reward_SetPlayerColor);
 
 -- -------------------------------------------------------------------------- --
 
