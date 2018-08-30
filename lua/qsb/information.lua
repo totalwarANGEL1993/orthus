@@ -26,6 +26,16 @@ function Information:Install()
 end
 
 ---
+-- Returns the number of the extension.
+-- @return [number] Extension number
+-- @within Information
+-- @local
+--
+function Information:GetExtraNumber()
+    return tonumber(string.sub(Framework.GetProgramVersion(), string.len(Version)));
+end
+
+---
 -- Initalizes the add pages functions for simpler briefing pages.
 -- @within Information
 -- @local
@@ -71,6 +81,9 @@ function Information:CreateAddPageFunctions()
 
                     if _page.title then
                         _page.title = "@center " .. _page.title;
+                    end
+                    if _page.mc and _page.mc.title then
+                        _page.mc.title = "@center " .. _page.mc.title;
                     end
     
                     zoom = (zoom ~= nil and zoom) or (_page.zoom ~= nil and _page.zoom) or ZoomDistance;
@@ -268,17 +281,17 @@ function Information:OverrideMultipleChoice()
 		if _page.mc ~= nil then
 			if _page.mc.text ~= nil then
 				assert(_page.mc.title~=nil);
-				PrintMCHeadline(_page.mc.title);
-				PrintMCText(_page.mc.text);
+				PrintBriefingHeadline(_page.mc.title);
+				PrintBriefingText(_page.mc.text);
 
 				assert(_page.mc.firstText~=nil);
 				assert(_page.mc.secondText~=nil);
 				PrintMCButton1Text(_page.mc.firstText);
 				PrintMCButton2Text(_page.mc.secondText);
 
-				XGUIEng.ShowWidget("Cinematic_Text",0);
-				XGUIEng.ShowWidget("Cinematic_Headline",0);
 				XGUIEng.ShowWidget("CinematicMC_Container",1);
+				XGUIEng.ShowWidget("CinematicMC_Text",0);
+				XGUIEng.ShowWidget("CinematicMC_Headline",0);
 				XGUIEng.ShowWidget("CinematicBar01",1);
 				Mouse.CursorShow();
                 briefingState.waitingForMC = true;
