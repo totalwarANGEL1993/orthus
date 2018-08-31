@@ -100,6 +100,8 @@ function QuestBriefing:OverrideCinematic()
 			XGUIEng.ShowWidget("GameClock", 1);
 			gvGameClockWasShown = false;
 		end
+        Display.SetRenderFogOfWar(1);
+        Display.SetRenderSky(0);
         return EndBriefing_Orig_QuestBriefing();
     end
 
@@ -138,7 +140,90 @@ end
 -- @local
 --
 function QuestBriefing:CreateAddPageFunctions()
+    ---
+    -- Creates the local briefing functions for adding pages.
+    --
+    -- Functions created:
+    -- <ul>
+    -- <li>AP: Creates normal pages and multiple choice pages. You have full
+    -- control over all settings.</li>
+    -- <li>ASP: Creates a simplyfied page. A short notation good for dialogs.
+    -- can be used in talkative missions.</li>
+    -- </ul>
+    --
+    -- @param _briefing [table] Briefing
+    -- @return [function] AP function
+    -- @return [function] ASP function
+    --
+    function AddPages(_briefing)
+        local AP = function(_page)
+            if _page then
+                local eID, ori, zoom, ang;
 
+                if _page.action then
+                    _page.actionOrig = _page.action;
+                end
+                _page.action = function()
+                    local Position = GetPosition(_page.position);
+                    local ZoomDistance = BRIEFING_ZOOMDISTANCE;
+                    if _page.dialogCamera then
+                        ZoomDistance = DIALOG_ZOOMDISTANCE;
+                    end
+                    local ZoomAngle = BRIEFING_ZOOMANGLE;
+                    if _page.dialogCamera then
+                        ZoomAngle = DIALOG_ZOOMANGLE;
+                    end
+                    local RotationAngle = -45;
+                    if _page.dialogCamera and _page.entity then
+                        RotationAngle = Logic.GetEntityOrientation(GetID(_page.entity));
+                    end
+
+                    if _page.title then
+                        _page.title = "@center " .. _page.title;
+                    end
+                    if _page.mc and _page.mc.title then
+                        _page.mc.title = "@center " .. _page.mc.title;
+                    end
+
+                    zoom = (zoom ~= nil and zoom) or (_page.zoom ~= nil and _page.zoom) or ZoomDistance;
+                    ang  = (ang ~= nil and ang) or (_page.angle ~= nil and _page.angle) or ZoomAngle;
+                    ori  = (ori ~= nil and ori) or (_page.rotation ~= nil and _page.rotation) or RotationAngle;
+
+                    Display.SetRenderFogOfWar(0);
+                    Display.SetRenderSky(1);
+
+                    Camera.StopCameraFlight();
+                    Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
+                    Camera.ZoomSetDistance(zoom);
+                    Camera.ZoomSetAngle(ang);
+                    Camera.RotSetAngle(ori);
+
+                    if _page.actionOrig then
+                        _page.actionOrig();
+                    end
+                end
+            end
+            table.insert(_briefing, _page);
+            return _page;
+        end
+        local ASP = function(_entity, _title, _text, _dialog, _action)
+            return AP(CreateShortPage(_entity, _title, _text, _dialog, _action));
+        end
+        return AP, ASP;
+    end
+
+    function CreateShortPage(_entity, _title, _text, _dialog, _action)
+        local page = {
+            title = _title,
+            text = _text,
+            position = GetPosition(_entity),
+            entity = _entity,
+            dialogCamera = (_dialog or false),
+            action = _action,
+            rotation = Logic.GetEntityOrientation(GetID(_entity)) + 90;
+        };
+        return page;
+    end
 end
 
 ---
@@ -147,21 +232,52 @@ end
 -- @within QuestBriefing
 -- @local
 --
-function QuestBriefing:DisplayOptionSelection()
+function QuestBriefing:DisplayOptionSelection(_Selected)
+    local Pages = math.ceil(_Selected/4);
+    local Offset = Pages * 4;
     local Options = briefingBook[1][briefingState.page].mc.options;
 
+    -- local Text = " @cr ";
+    -- if _Selected > 1 then
+    --     Text = "..." .. Text;
+    -- end
     local Text = "";
-    for i= 1, table.getn(Options), 1 do
-        if i == Options.current then
-            Text = Text .. " @color:244,184,0 ";
+
+    local HighestIndex = 0;
+    for i= Offset, table.getn(Options), 1 do
+        if i > Offset+3 then
+            -- Text = Text .. " ... ";
+            break;
         end
-        Text = Text .. Options[i][1] .. " @cr ";
+
+        HighestIndex = i;
+        if i == Options.current then
+            Text = Text .. "| ";
+        end
+        Text = Text .. Options[i][1] .. " @color:255,255,255 @cr ";
     end
+
+    if HighestIndex - Offset < 4 then
+        Text = Text .. string.rep(" @cr ", 4 - (HighestIndex - Offset));
+    end
+
+    -- local PageCount = math.ceil(table.getn(Options)/4);
+    -- if PageCount > 1 then
+    --     local CurrentPage = math.ceil(HighestIndex/4);
+    --     Text = Text .. " @ra (" ..CurrentPage.. "/" ..PageCount.. ")";
+    -- end
+    if HighestIndex > 4 then
+        Text = Text .. "<";
+    end
+    if HighestIndex < table.getn(Pages)-3 then
+        Text = Text .. " @ra >";
+    end
+
     PrintMCText(text);
 end
 
 ---
---
+-- Creates the key listener for the multiple choice briefings.
 --
 -- @within QuestBriefing
 -- @local
@@ -173,8 +289,12 @@ function QuestBriefing:ActivateBriefingHotKeys()
                 QuestBriefing:OnUpPressed();
             elseif _Action == 2 then
                 QuestBriefing:OnDownPressed();
-            else
+            elseif _Action == 3 then
                 QuestBriefing:OnEnterPressed();
+            elseif _Action == 4 then
+                QuestBriefing:OnLeftPressed();
+            elseif _Action == 5 then
+                QuestBriefing:OnRightPressed();
             end
         end
     end
@@ -182,6 +302,8 @@ function QuestBriefing:ActivateBriefingHotKeys()
     Input.KeyBindDown(Keys.Up, "KeyBinding_QuestBriefing_KeyboardAction(1)", 2);
     Input.KeyBindDown(Keys.Down, "KeyBinding_QuestBriefing_KeyboardAction(2)", 2);
     Input.KeyBindDown(Keys.Enter, "KeyBinding_QuestBriefing_KeyboardAction(3)", 2);
+    Input.KeyBindDown(Keys.Left, "KeyBinding_QuestBriefing_KeyboardAction(4)", 2);
+    Input.KeyBindDown(Keys.Right, "KeyBinding_QuestBriefing_KeyboardAction(5)", 2);
 end
 
 ---
@@ -295,7 +417,6 @@ end
 --
 function QuestBriefing:OverrideMultipleChoice()
     BriefingMCButtonSelected = function(_index)
-        -- Buttons are dead. :(
     end
 
     Briefing_Extra = function(_page,_firstPage)
@@ -314,13 +435,13 @@ function QuestBriefing:OverrideMultipleChoice()
 
         if _page.mc ~= nil then
 			if _page.mc.text ~= nil then
-				assert(_page.mc.title~=nil);
+				assert(_page.mc.title ~= nil);
                 Input.GameMode();
 				PrintBriefingHeadline(_page.mc.title);
 				PrintBriefingText(_page.mc.text);
                 briefingBook[1][briefingState.page].mc.options.current = 1;
                 QuestBriefing:SetBriefingLooks(true);
-                QuestBriefing:DisplayOptionSelection();
+                QuestBriefing:DisplayOptionSelection(1);
                 QuestBriefing:DeactivateAllHotKeys();
 
 				XGUIEng.ShowWidget("CinematicMC_Container", 1);
@@ -344,13 +465,13 @@ function QuestBriefing:OnUpPressed()
     if not briefingBook[1][briefingState.page].mc then
         return;
     end
-    
+
     assert(briefingBook[1][briefingState.page].mc.options, "Multiple choice options are missing!");
     briefingBook[1][briefingState.page].mc.options.current = briefingBook[1][briefingState.page].mc.options.current +1;
     if table.getn(briefingBook[1][briefingState.page].mc.options) < briefingBook[1][briefingState.page].mc.options.current then
         briefingBook[1][briefingState.page].mc.options.current = 1;
     end
-    self:DisplayOptionSelection();
+    self:DisplayOptionSelection(briefingBook[1][briefingState.page].mc.options.current);
 end
 
 ---
@@ -369,7 +490,49 @@ function QuestBriefing:OnDownPressed()
     if 1 > briefingBook[1][briefingState.page].mc.options.current then
         briefingBook[1][briefingState.page].mc.options.current = table.getn(briefingBook[1][briefingState.page].mc.options);
     end
-    self:DisplayOptionSelection();
+    self:DisplayOptionSelection(briefingBook[1][briefingState.page].mc.options.current);
+end
+
+---
+-- Decreases the current selected item by 4 and displays the previous part of
+-- the options list, if present.
+--
+-- @within QuestBriefing
+-- @local
+--
+function QuestBriefing:OnLeftPressed()
+    if not briefingBook[1][briefingState.page].mc then
+        return;
+    end
+
+    assert(briefingBook[1][briefingState.page].mc.options, "Multiple choice options are missing!");
+    local Current = briefingBook[1][briefingState.page].mc.options.current;
+    briefingBook[1][briefingState.page].mc.options.current = Current - 4;
+    if briefingBook[1][briefingState.page].mc.options.current < 1 then
+        briefingBook[1][briefingState.page].mc.options.current = 1;
+    end
+    self:DisplayOptionSelection(briefingBook[1][briefingState.page].mc.options.current);
+end
+
+---
+-- Increases the current selected item by 4 and displays the next part of the
+-- options list, if present.
+--
+-- @within QuestBriefing
+-- @local
+--
+function QuestBriefing:OnRightPressed()
+    if not briefingBook[1][briefingState.page].mc then
+        return;
+    end
+
+    assert(briefingBook[1][briefingState.page].mc.options, "Multiple choice options are missing!");
+    local Current = briefingBook[1][briefingState.page].mc.options.current;
+    briefingBook[1][briefingState.page].mc.options.current = Current + 4;
+    if briefingBook[1][briefingState.page].mc.options.current > table.getn(briefingBook[1][briefingState.page].mc.options) then
+        briefingBook[1][briefingState.page].mc.options.current = table.getn(briefingBook[1][briefingState.page].mc.options);
+    end
+    self:DisplayOptionSelection(briefingBook[1][briefingState.page].mc.options.current);
 end
 
 ---
@@ -387,9 +550,9 @@ function QuestBriefing:OnEnterPressed()
     local Current = briefingBook[1][briefingState.page].mc.options[briefingBook[1][briefingState.page].mc.options.current];
     briefingBook[1][briefingState.page].mc.selectedButton = briefingBook[1][briefingState.page].mc.options.current;
     if type(Current[2]) == "function" then
-        briefingState.page = Current[2](unpack(Current));
+        briefingState.page = Current[2](Current) -1;
     else
-        briefingState.page = Current[2];
+        briefingState.page = Current[2] -1;
     end
 
     self:ReactivateAllHotKeys();

@@ -93,7 +93,7 @@ function Information:CreateAddPageFunctions()
                     Display.SetRenderFogOfWar(0);
 
                     Camera.StopCameraFlight();
-                    Camera.ScrollSetLookAt(_page.position.X,_page.position.Y);
+                    Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
                     Camera.ZoomSetDistance(zoom);
                     Camera.ZoomSetAngle(ang);
                     Camera.RotSetAngle(ori);
