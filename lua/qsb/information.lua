@@ -60,22 +60,22 @@ function Information:CreateAddPageFunctions()
         local AP = function(_page)
             if _page then
                 local eID, ori, zoom, ang;
-    
+
                 if _page.action then
                     _page.actionOrig = _page.action;
                 end
                 _page.action = function()
                     local Position = GetPosition(_page.position);
                     local ZoomDistance = BRIEFING_ZOOMDISTANCE;
-                    if _page.dialogCamera then 
+                    if _page.dialogCamera then
                         ZoomDistance = DIALOG_ZOOMDISTANCE;
                     end
                     local ZoomAngle = BRIEFING_ZOOMANGLE;
-                    if _page.dialogCamera then 
+                    if _page.dialogCamera then
                         ZoomAngle = DIALOG_ZOOMANGLE;
                     end
                     local RotationAngle = -45;
-                    if _page.dialogCamera and _page.entity then 
+                    if _page.dialogCamera and _page.entity then
                         RotationAngle = Logic.GetEntityOrientation(GetID(_page.entity));
                     end
 
@@ -85,19 +85,19 @@ function Information:CreateAddPageFunctions()
                     if _page.mc and _page.mc.title then
                         _page.mc.title = "@center " .. _page.mc.title;
                     end
-    
+
                     zoom = (zoom ~= nil and zoom) or (_page.zoom ~= nil and _page.zoom) or ZoomDistance;
                     ang  = (ang ~= nil and ang) or (_page.angle ~= nil and _page.angle) or ZoomAngle;
                     ori  = (ori ~= nil and ori) or (_page.rotation ~= nil and _page.rotation) or RotationAngle;
-    
+
                     Display.SetRenderFogOfWar(0);
-    
+
                     Camera.StopCameraFlight();
                     Camera.ScrollSetLookAt(_page.position.X,_page.position.Y);
                     Camera.ZoomSetDistance(zoom);
                     Camera.ZoomSetAngle(ang);
                     Camera.RotSetAngle(ori);
-    
+
                     if _page.actionOrig then
                         _page.actionOrig();
                     end
@@ -133,7 +133,7 @@ end
 --
 function Information:OverrideEscape()
     GameCallback_Escape_Orig_Information = GameCallback_Escape;
-    GameCallback_Escape = function()        
+    GameCallback_Escape = function()
         -- Briefing no escape
         if IsBriefingActive() then
             if not briefingState.noEscape then
@@ -158,7 +158,7 @@ end
 -- <li>Implements the noEscape swith for briefings</li>
 -- <li>Fixes the buggy game clock</li>
 -- </ul>
--- 
+--
 -- @within Information
 -- @local
 --
@@ -235,7 +235,7 @@ end
 --
 function Information:OverrideMultipleChoice()
     BriefingMCButtonSelected = function(_index)
-		assert(briefingBook[1][briefingState.page].mc~=nil);
+		assert(briefingBook[1][briefingState.page].mc ~= nil);
 		briefingBook[1][briefingState.page].mc.selectedButton = _index;
 
 		if _index == 1 then
@@ -259,7 +259,7 @@ function Information:OverrideMultipleChoice()
 		briefingState.waitingForMC = false;
 		Mouse.CursorHide();
     end
-    
+
     Briefing_Extra = function(_page,_firstPage)
         -- Button fix
         for i = 1, 2 do
@@ -353,7 +353,7 @@ end
 -- Starts a visible or invisible countdown.
 --
 -- <b>Note:</b> There can only be one visible but infinit invisible countdonws.
--- 
+--
 -- @param _Limit [number] Time to count down
 -- @param _Callback [function] Countdown callback
 -- @param _Show [boolean] Countdown visible
