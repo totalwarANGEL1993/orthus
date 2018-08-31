@@ -35,6 +35,7 @@
 <h2>Contents</h2>
 <ul>
 <li><a href="#Functions">Functions</a></li>
+<li><a href="#Constants">Constants</a></li>
 <li><a href="#Goals">Goals</a></li>
 <li><a href="#Reprisals">Reprisals</a></li>
 <li><a href="#Rewards">Rewards</a></li>
@@ -74,8 +75,27 @@
 <h2><a href="#Functions">Functions</a></h2>
 <table class="function_list">
 	<tr>
+	<td class="name" nowrap><a href="#CreateAIPlayer">CreateAIPlayer (_PlayerID, _TechLevel)</a></td>
+	<td class="summary">Creates an AI player and sets the technology level.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#CreateAIPlayerArmy">CreateAIPlayerArmy (_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)</a></td>
+	<td class="summary">Initalizes an army that is recruited by the AI player.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#CreateAIPlayerSpawnArmy">CreateAIPlayerSpawnArmy (_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)</a></td>
+	<td class="summary">Initalizes an army that is spawned until a generator entity is destroyed.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#CreateQuest">CreateQuest (_Data)</a></td>
 	<td class="summary">Creates an quest from the given description.</td>
+	</tr>
+</table>
+<h2><a href="#Constants">Constants</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#QuestSystemBehavior.ArmyCategories">QuestSystemBehavior.ArmyCategories</a></td>
+	<td class="summary">Table of army categories</td>
 	</tr>
 </table>
 <h2><a href="#Goals">Goals</a></h2>
@@ -301,6 +321,10 @@
 	<td class="summary">Creates an minimap marker or minimap pulsar at the position.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#Reward_DEBUG">Reward_DEBUG (_UseDebugQuests, _UseCheats, _UseShell, _UseQuestTrace)</a></td>
+	<td class="summary">Activates the debug mode.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Reward_Defeat">Reward_Defeat (...)</a></td>
 	<td class="summary">The receiver loses the game.</td>
 	</tr>
@@ -338,15 +362,15 @@
  once it enters the fog.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_OpenMercenaryMerchant">Reward_OpenMercenaryMerchant (_Merchant, _OfferType1, _OfferCost1, _OfferAmount1, _OfferType2, _OfferCost2, _OfferAmount2, _OfferType3, _OfferCost3, _OfferAmount3, _OfferType4, _OfferCost4, _OfferAmount4)</a></td>
+	<td class="name" nowrap><a href="#Reward_OpenMercenaryMerchant">Reward_OpenMercenaryMerchant (_Merchant, _Offer1, _Cost1, _Amount1, _Offer2, _Cost2, _Amount2, _Offer3, _Cost3, _Amount3, _Offer4, _Cost4, _Amount4)</a></td>
+	<td class="summary">Creates an mercenary merchant with up to 4 offers.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_OpenResourcePurchase">Reward_OpenResourcePurchase (_Merchant, _Offer1, _Amount1, _Offer2, _Amount2, _Offer3, _Amount3, _Offer4, _Amount4)</a></td>
 	<td class="summary">Creates an merchant with up to 4 offers.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_OpenResourcePurchase">Reward_OpenResourcePurchase (_Merchant, _OfferType1, _OfferAmount1, _OfferType2, _OfferAmount2, _OfferType3, _OfferAmount3, _OfferType4, _OfferAmount4)</a></td>
-	<td class="summary">Creates an merchant with up to 4 offers.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Reward_OpenResourceSale">Reward_OpenResourceSale (_Merchant, _OfferType1, _OfferAmount1, _OfferType2, _OfferAmount2, _OfferType3, _OfferAmount3, _OfferType4, _OfferAmount4)</a></td>
+	<td class="name" nowrap><a href="#Reward_OpenResourceSale">Reward_OpenResourceSale (_Merchant, _Offer1, _Amount1, _Offer2, _Amount2, _Offer3, _Amount3, _Offer4, _Amount4)</a></td>
 	<td class="summary">Creates an merchant with up to 4 offers.</td>
 	</tr>
 	<tr>
@@ -380,6 +404,10 @@
 	<tr>
 	<td class="name" nowrap><a href="#Reward_RevealArea">Reward_RevealArea (_AreaCenter, _Exploration)</a></td>
 	<td class="summary">Explores an area around a script entity.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_SetPlayerColor">Reward_SetPlayerColor (_PlayerID, _Color)</a></td>
+	<td class="summary">Changes the color of a player.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reward_Technology">Reward_Technology (_Technology, _State)</a></td>
@@ -476,6 +504,139 @@
 
     <dl class="function">
     <dt>
+    <a name = "CreateAIPlayer"></a>
+    <strong>CreateAIPlayer (_PlayerID, _TechLevel)</strong>
+    </dt>
+    <dd>
+    Creates an AI player and sets the technology level.
+<p> Use this function or the behavior to initalize the AI. An AI must first be
+ initalized before an army can be created.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] PlayerID
+        </li>
+        <li><span class="parameter">_TechLevel</span>
+         [number] Technology level [1|4]
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">CreateAIPlayer(<span class="number">2</span>, <span class="number">4</span>);</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "CreateAIPlayerArmy"></a>
+    <strong>CreateAIPlayerArmy (_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)</strong>
+    </dt>
+    <dd>
+    Initalizes an army that is recruited by the AI player.
+<p> The AI player must be initalized first!
+<p> For the troop types either define a table of upgrade categories or use the
+ constants from the QuestSystemBehavior.ArmyCategories table.
+<p> Use script entities named with PlayerX_AttackTargetY to define positions
+ that will be attacked by the army. Replace X with the player ID and Y with
+ a unique number starting by 1.
+<p> Also you can use entities named with PlayerX_PatrolPointY to define
+ positions were the army will patrol. Also replace X with the player ID and
+ Y with a unique number starting by 1.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] Owner of army.
+        </li>
+        <li><span class="parameter">_Strength</span>
+         [number] Strength of army [1|8]
+        </li>
+        <li><span class="parameter">_Position</span>
+         [string] Home Position of army
+        </li>
+        <li><span class="parameter">_RodeLength</span>
+         [number] Action range of the army
+        </li>
+        <li><span class="parameter">_TroopTypes</span>
+         [table] Upgrade categories to recruit
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">CreateAIPlayer(<span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="number">5000</span>, QuestSystemBehavior.ArmyCategories.City);</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "CreateAIPlayerSpawnArmy"></a>
+    <strong>CreateAIPlayerSpawnArmy (_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)</strong>
+    </dt>
+    <dd>
+    Initalizes an army that is spawned until a generator entity is destroyed.
+<p> The AI player must be initalized first!
+<p> Define a list of troops that are sparned in this order. Troops will be
+ spawrned as long as the generator exists.
+<p> Use script entities named with PlayerX_AttackTargetY to define positions
+ that will be attacked by the army. Replace X with the player ID and Y with
+ a unique number starting by 1.
+<p> Also you can use entities named with PlayerX_PatrolPointY to define
+ positions were the army will patrol. Also replace X with the player ID and
+ Y with a unique number starting by 1.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] Owner of army.
+        </li>
+        <li><span class="parameter">_Strength</span>
+         [number] Strength of army [1|8]
+        </li>
+        <li><span class="parameter">_Position</span>
+         [string] Home Position of army
+        </li>
+        <li><span class="parameter">_LifeThread</span>
+         [string] Name of generator
+        </li>
+        <li><span class="parameter">_RodeLength</span>
+         [number] Action range of the army
+        </li>
+        <li><span class="parameter">_RespawnTime</span>
+         [number] Time till troops are refreshed
+        </li>
+        <li><span class="parameter">...</span>
+         [number] List of types to spawn
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">CreateAIPlayerSpawnArmy(
+    <span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="string">"lifethread"</span>, <span class="number">5000</span>,
+    Entities.PU_LeaderSword2,
+    Entities.PU_LeaderBow2,
+    Entities.PV_Cannon2
+);</pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "CreateQuest"></a>
     <strong>CreateQuest (_Data)</strong>
     </dt>
@@ -525,6 +686,42 @@
     Trigger_Time(<span class="number">0</span>)
 }</pre>
     </ul>
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Constants"></a>Constants</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "QuestSystemBehavior.ArmyCategories"></a>
+    <strong>QuestSystemBehavior.ArmyCategories</strong>
+    </dt>
+    <dd>
+    Table of army categories
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">City</span>
+         City troop types
+        </li>
+        <li><span class="parameter">BlackKnight</span>
+         Black knight troop types
+        </li>
+        <li><span class="parameter">Bandit</span>
+         Bandit troop types
+        </li>
+        <li><span class="parameter">Barbarian</span>
+         Barbarian troop types
+        </li>
+        <li><span class="parameter">Nephilim</span>
+         Nephilim troop types
+        </li>
+    </ul>
+
+
+
+
 
 </dd>
 </dl>
@@ -1596,6 +1793,9 @@
     </dt>
     <dd>
     Creates an AI player but don't creates any armies.
+<p> Initalising the AI is nessessary for usung the quest system behavior army
+ controller.
+
 
 
     <h3>Parameters:</h3>
@@ -1619,6 +1819,10 @@
     </dt>
     <dd>
     Defines an army that must be recruited by the AI.
+<p> Use script entities named with PlayerX_AttackTargetY to define positions
+ that will be attacked by the army. Also you can use entities named with
+ PlayerX_PatrolPointY to define positions were the army will patrol.
+
 
 
     <h3>Parameters:</h3>
@@ -1735,6 +1939,35 @@
         </li>
         <li><span class="parameter">_Position</span>
          [string] Position of marker
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reward_DEBUG"></a>
+    <strong>Reward_DEBUG (_UseDebugQuests, _UseCheats, _UseShell, _UseQuestTrace)</strong>
+    </dt>
+    <dd>
+    Activates the debug mode.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_UseDebugQuests</span>
+         [boolean] Activates the runtime debug für quests
+        </li>
+        <li><span class="parameter">_UseCheats</span>
+         [boolean] Activates the cheats
+        </li>
+        <li><span class="parameter">_UseShell</span>
+         [boolean] Activates the shell
+        </li>
+        <li><span class="parameter">_UseQuestTrace</span>
+         [boolean] Activates the quest trace
         </li>
     </ul>
 
@@ -1938,11 +2171,11 @@
 </dd>
     <dt>
     <a name = "Reward_OpenMercenaryMerchant"></a>
-    <strong>Reward_OpenMercenaryMerchant (_Merchant, _OfferType1, _OfferCost1, _OfferAmount1, _OfferType2, _OfferCost2, _OfferAmount2, _OfferType3, _OfferCost3, _OfferAmount3, _OfferType4, _OfferCost4, _OfferAmount4)</strong>
+    <strong>Reward_OpenMercenaryMerchant (_Merchant, _Offer1, _Cost1, _Amount1, _Offer2, _Cost2, _Amount2, _Offer3, _Cost3, _Amount3, _Offer4, _Cost4, _Amount4)</strong>
     </dt>
     <dd>
-    Creates an merchant with up to 4 offers.  Each offer sells 1000 units of a
- resource for a fixed amount of gold. Default inflation will be used.
+    Creates an mercenary merchant with up to 4 offers.
+ Default inflation will be used.
 
 
     <h3>Parameters:</h3>
@@ -1950,40 +2183,40 @@
         <li><span class="parameter">_Merchant</span>
          [string] Merchant name
         </li>
-        <li><span class="parameter">_OfferType1</span>
+        <li><span class="parameter">_Offer1</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferCost1</span>
+        <li><span class="parameter">_Cost1</span>
          [number] Gold costs
         </li>
-        <li><span class="parameter">_OfferAmount1</span>
+        <li><span class="parameter">_Amount1</span>
          [number] Quantity to post
         </li>
-        <li><span class="parameter">_OfferType2</span>
+        <li><span class="parameter">_Offer2</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferCost2</span>
+        <li><span class="parameter">_Cost2</span>
          [number] Gold costs
         </li>
-        <li><span class="parameter">_OfferAmount2</span>
+        <li><span class="parameter">_Amount2</span>
          [number] Quantity to post
         </li>
-        <li><span class="parameter">_OfferType3</span>
+        <li><span class="parameter">_Offer3</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferCost3</span>
+        <li><span class="parameter">_Cost3</span>
          [number] Gold costs
         </li>
-        <li><span class="parameter">_OfferAmount3</span>
+        <li><span class="parameter">_Amount3</span>
          [number] Quantity to post
         </li>
-        <li><span class="parameter">_OfferType4</span>
+        <li><span class="parameter">_Offer4</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferCost4</span>
+        <li><span class="parameter">_Cost4</span>
          [number] Gold costs
         </li>
-        <li><span class="parameter">_OfferAmount4</span>
+        <li><span class="parameter">_Amount4</span>
          [number] Quantity to post
         </li>
     </ul>
@@ -1995,7 +2228,7 @@
 </dd>
     <dt>
     <a name = "Reward_OpenResourcePurchase"></a>
-    <strong>Reward_OpenResourcePurchase (_Merchant, _OfferType1, _OfferAmount1, _OfferType2, _OfferAmount2, _OfferType3, _OfferAmount3, _OfferType4, _OfferAmount4)</strong>
+    <strong>Reward_OpenResourcePurchase (_Merchant, _Offer1, _Amount1, _Offer2, _Amount2, _Offer3, _Amount3, _Offer4, _Amount4)</strong>
     </dt>
     <dd>
     Creates an merchant with up to 4 offers.  Each offer sells 1000 units of a
@@ -2007,28 +2240,28 @@
         <li><span class="parameter">_Merchant</span>
          [string] Merchant name
         </li>
-        <li><span class="parameter">_OfferType1</span>
+        <li><span class="parameter">_Offer1</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferAmount1</span>
+        <li><span class="parameter">_Amount1</span>
          [number] Quantity to post
         </li>
-        <li><span class="parameter">_OfferType2</span>
+        <li><span class="parameter">_Offer2</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferAmount2</span>
+        <li><span class="parameter">_Amount2</span>
          [number] Quantity to post
         </li>
-        <li><span class="parameter">_OfferType3</span>
+        <li><span class="parameter">_Offer3</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferAmount3</span>
+        <li><span class="parameter">_Amount3</span>
          [number] Quantity to post
         </li>
-        <li><span class="parameter">_OfferType4</span>
+        <li><span class="parameter">_Offer4</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferAmount4</span>
+        <li><span class="parameter">_Amount4</span>
          [number] Quantity to post
         </li>
     </ul>
@@ -2040,7 +2273,7 @@
 </dd>
     <dt>
     <a name = "Reward_OpenResourceSale"></a>
-    <strong>Reward_OpenResourceSale (_Merchant, _OfferType1, _OfferAmount1, _OfferType2, _OfferAmount2, _OfferType3, _OfferAmount3, _OfferType4, _OfferAmount4)</strong>
+    <strong>Reward_OpenResourceSale (_Merchant, _Offer1, _Amount1, _Offer2, _Amount2, _Offer3, _Amount3, _Offer4, _Amount4)</strong>
     </dt>
     <dd>
     Creates an merchant with up to 4 offers.  Each offer purchases a fixed
@@ -2052,28 +2285,28 @@
         <li><span class="parameter">_Merchant</span>
          [string] Merchant name
         </li>
-        <li><span class="parameter">_OfferType1</span>
+        <li><span class="parameter">_Offer1</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferAmount1</span>
+        <li><span class="parameter">_Amount1</span>
          [number] Quantity to post
         </li>
-        <li><span class="parameter">_OfferType2</span>
+        <li><span class="parameter">_Offer2</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferAmount2</span>
+        <li><span class="parameter">_Amount2</span>
          [number] Quantity to post
         </li>
-        <li><span class="parameter">_OfferType3</span>
+        <li><span class="parameter">_Offer3</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferAmount3</span>
+        <li><span class="parameter">_Amount3</span>
          [number] Quantity to post
         </li>
-        <li><span class="parameter">_OfferType4</span>
+        <li><span class="parameter">_Offer4</span>
          [string] Resourcetype on sale
         </li>
-        <li><span class="parameter">_OfferAmount4</span>
+        <li><span class="parameter">_Amount4</span>
          [number] Quantity to post
         </li>
     </ul>
@@ -2241,6 +2474,29 @@
         </li>
         <li><span class="parameter">_Exploration</span>
          [number] Size of exploration
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reward_SetPlayerColor"></a>
+    <strong>Reward_SetPlayerColor (_PlayerID, _Color)</strong>
+    </dt>
+    <dd>
+    Changes the color of a player.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] ID of player
+        </li>
+        <li><span class="parameter">_Color</span>
+         [string|number] Color name or Color index
         </li>
     </ul>
 
@@ -2705,7 +2961,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2018-08-24 09:39:49 </i>
+<i style="float:right;">Last updated 2018-08-27 18:24:19 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

@@ -87,10 +87,10 @@ end
 -- @param _PlayerID [number] PlayerID
 -- @param _TechLevel [number] Technology level [1|4]
 --
--- @usage CreateAiPlayer(2, 4);
+-- @usage CreateAIPlayer(2, 4);
 --
-function CreateAiPlayer(_PlayerID, _TechLevel)
-    QuestSystemBehavior:CreateAi(_PlayerID, _TechLevel);
+function CreateAIPlayer(_PlayerID, _TechLevel)
+    QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel);
 end
 
 ---
@@ -115,10 +115,10 @@ end
 -- @param _RodeLength [number] Action range of the army
 -- @param _TroopTypes [table] Upgrade categories to recruit
 --
--- @usage CreateAiPlayer(2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
+-- @usage CreateAIPlayer(2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
 --
-function CreateAiPlayerArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
-    QuestSystemBehavior:CreateAiArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes);
+function CreateAIPlayerArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
+    QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes);
 end
 
 ---
@@ -145,17 +145,17 @@ end
 -- @param _RespawnTime [number] Time till troops are refreshed
 -- @param ... [number] List of types to spawn
 --
--- @usage CreateAiPlayerSpawnArmy(
+-- @usage CreateAIPlayerSpawnArmy(
 --     2, 8, "armyPos1", "lifethread", 5000,
 --     Entities.PU_LeaderSword2,
 --     Entities.PU_LeaderBow2,
 --     Entities.PV_Cannon2
 -- );
 --
-function CreateAiPlayerSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)
+function CreateAIPlayerSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)
     local EntityTypes = {unpack(arg)};
     assert(table.getn(EntityTypes) > 0);
-    QuestSystemBehavior:CreateAiSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, EntityTypes, _RespawnTime);
+    QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, EntityTypes, _RespawnTime);
 end
 
 -- Helper --
@@ -494,7 +494,7 @@ end
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAiSpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _EntityTypes, _RespawnTime)
+function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _EntityTypes, _RespawnTime)
     self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
     _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
 
@@ -528,7 +528,7 @@ function QuestSystemBehavior:CreateAiSpawnArmy(_PlayerID, _Strength, _Position, 
     end
 
     -- Convert spawned types list
-    assert(type(_EntityTypes) == "table", "CreateAiSpawnArmy: _TroopTypes must be a table!");
+    assert(type(_EntityTypes) == "table", "CreateAISpawnArmy: _TroopTypes must be a table!");
     local SpawnedTypes = {};
     for i= 1, table.getn(_EntityTypes), 1 do
         table.insert(SpawnedTypes, {_EntityTypes[i], 16});
@@ -3635,6 +3635,10 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CloseMerchant);
 
 ---
 -- Creates an AI player but don't creates any armies.
+--
+-- Initalising the AI is nessessary for usung the quest system behavior army
+-- controller.
+--
 -- @param _PlayerID [number] Id of player
 -- @param _TechLevel [number] Tech level
 -- @within Rewards
@@ -3679,6 +3683,11 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateAI);
 
 ---
 -- Defines an army that must be recruited by the AI.
+--
+-- Use script entities named with PlayerX_AttackTargetY to define positions
+-- that will be attacked by the army. Also you can use entities named with
+-- PlayerX_PatrolPointY to define positions were the army will patrol.
+--
 -- @param _PlayerID [number] Id of player
 -- @param _Strength [number] Strength of army
 -- @param _Position [string] Army base position
@@ -3741,14 +3750,14 @@ function Reward_SetPlayerColor(...)
     return b_Reward_SetPlayerColor:New(unpack(arg));
 end
 
-Reward_SetPlayerColor = {
+b_Reward_SetPlayerColor = {
     Data = {
         Name = "Reward_SetPlayerColor",
         Type = Rewards.MapScriptFunction
     },
 };
 
-function Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
+function b_Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.PlayerID = _Parameter;
     elseif _Index == 2 then
@@ -3756,16 +3765,16 @@ function Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
     end
 end
 
-function Reward_SetPlayerColor:GetRewardTable()
+function b_Reward_SetPlayerColor:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
 
-function Reward_SetPlayerColor:CustomFunction(_Quest)
+function b_Reward_SetPlayerColor:CustomFunction(_Quest)
     QuestSystemBehavior.Data.PlayerColorAssigment[self.Data.PlayerID] = _G[self.Data.Color] or self.Data.Color;
     QuestSystemBehavior.UpdatePlayerColorAssigment();
 end
 
-function Reward_SetPlayerColor:Debug(_Quest)
+function b_Reward_SetPlayerColor:Debug(_Quest)
     if self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
         dbg(_Quest, self, "PlayerID is wrong!");
         return true;
@@ -3777,10 +3786,10 @@ function Reward_SetPlayerColor:Debug(_Quest)
     return false;
 end
 
-function Reward_SetPlayerColor:Reset(_Quest)
+function b_Reward_SetPlayerColor:Reset(_Quest)
 end
 
-QuestSystemBehavior:RegisterBehavior(Reward_SetPlayerColor);
+QuestSystemBehavior:RegisterBehavior(b_Reward_SetPlayerColor);
 
 -- -------------------------------------------------------------------------- --
 

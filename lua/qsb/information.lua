@@ -26,6 +26,16 @@ function Information:Install()
 end
 
 ---
+-- Returns the number of the extension.
+-- @return [number] Extension number
+-- @within Information
+-- @local
+--
+function Information:GetExtraNumber()
+    return tonumber(string.sub(Framework.GetProgramVersion(), string.len(Version)));
+end
+
+---
 -- Initalizes the add pages functions for simpler briefing pages.
 -- @within Information
 -- @local
@@ -50,37 +60,44 @@ function Information:CreateAddPageFunctions()
         local AP = function(_page)
             if _page then
                 local eID, ori, zoom, ang;
-    
+
                 if _page.action then
                     _page.actionOrig = _page.action;
                 end
                 _page.action = function()
                     local Position = GetPosition(_page.position);
                     local ZoomDistance = BRIEFING_ZOOMDISTANCE;
-                    if _page.dialogCamera then 
+                    if _page.dialogCamera then
                         ZoomDistance = DIALOG_ZOOMDISTANCE;
                     end
                     local ZoomAngle = BRIEFING_ZOOMANGLE;
-                    if _page.dialogCamera then 
+                    if _page.dialogCamera then
                         ZoomAngle = DIALOG_ZOOMANGLE;
                     end
                     local RotationAngle = -45;
-                    if _page.dialogCamera and _page.entity then 
+                    if _page.dialogCamera and _page.entity then
                         RotationAngle = Logic.GetEntityOrientation(GetID(_page.entity));
                     end
-    
+
+                    if _page.title then
+                        _page.title = "@center " .. _page.title;
+                    end
+                    if _page.mc and _page.mc.title then
+                        _page.mc.title = "@center " .. _page.mc.title;
+                    end
+
                     zoom = (zoom ~= nil and zoom) or (_page.zoom ~= nil and _page.zoom) or ZoomDistance;
                     ang  = (ang ~= nil and ang) or (_page.angle ~= nil and _page.angle) or ZoomAngle;
                     ori  = (ori ~= nil and ori) or (_page.rotation ~= nil and _page.rotation) or RotationAngle;
-    
+
                     Display.SetRenderFogOfWar(0);
-    
+
                     Camera.StopCameraFlight();
-                    Camera.ScrollSetLookAt(_page.position.X,_page.position.Y);
+                    Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
                     Camera.ZoomSetDistance(zoom);
                     Camera.ZoomSetAngle(ang);
                     Camera.RotSetAngle(ori);
-    
+
                     if _page.actionOrig then
                         _page.actionOrig();
                     end
@@ -97,7 +114,7 @@ function Information:CreateAddPageFunctions()
 
     function CreateShortPage(_entity, _title, _text, _dialog, _action)
         local page = {
-            title = "@center " .. _title,
+            title = _title,
             text = _text,
             position = GetPosition(_entity),
             entity = _entity,
@@ -116,7 +133,7 @@ end
 --
 function Information:OverrideEscape()
     GameCallback_Escape_Orig_Information = GameCallback_Escape;
-    GameCallback_Escape = function()        
+    GameCallback_Escape = function()
         -- Briefing no escape
         if IsBriefingActive() then
             if not briefingState.noEscape then
@@ -141,7 +158,7 @@ end
 -- <li>Implements the noEscape swith for briefings</li>
 -- <li>Fixes the buggy game clock</li>
 -- </ul>
--- 
+--
 -- @within Information
 -- @local
 --
@@ -157,7 +174,7 @@ function Information:OverrideCinematic()
         if XGUIEng.IsWidgetShown("GameClock") == 1 then
 			XGUIEng.ShowWidget("GameClock", 0);
 			gvGameClockWasShown = true;
-		end
+        end
 		Game.GameTimeReset();
         GUI.ClearNotes();
         return StartBriefing_Orig_Information(_briefing);
@@ -218,7 +235,7 @@ end
 --
 function Information:OverrideMultipleChoice()
     BriefingMCButtonSelected = function(_index)
-		assert(briefingBook[1][briefingState.page].mc~=nil);
+		assert(briefingBook[1][briefingState.page].mc ~= nil);
 		briefingBook[1][briefingState.page].mc.selectedButton = _index;
 
 		if _index == 1 then
@@ -242,7 +259,7 @@ function Information:OverrideMultipleChoice()
 		briefingState.waitingForMC = false;
 		Mouse.CursorHide();
     end
-    
+
     Briefing_Extra = function(_page,_firstPage)
         -- Button fix
         for i = 1, 2 do
@@ -250,34 +267,35 @@ function Information:OverrideMultipleChoice()
             XGUIEng.DisableButton(theButton, 1);
             XGUIEng.DisableButton(theButton, 0);
         end
-        if _v1.action then
-            assert( type(_v1.action) == "function" );
-            if type(_v1.parameters) == "table" then
-                _v1.action(unpack(_v1.parameters));
+        if _page.action then
+            assert( type(_page.action) == "function" );
+            if type(_page.parameters) == "table" then
+                _page.action(unpack(_page.parameters));
 			else
-                _v1.action(_v1.parameters);
+                _page.action(_page.parameters);
             end
         end
 
         -- change bar design
-        Information:SetBriefingLooks();
+        Information:SetBriefingLooks(false);
 		if _page.mc ~= nil then
 			if _page.mc.text ~= nil then
 				assert(_page.mc.title~=nil);
-				PrintMCHeadline(_page.mc.title);
-				PrintMCText(_page.mc.text);
+				PrintBriefingHeadline(_page.mc.title);
+				PrintBriefingText(_page.mc.text);
 
 				assert(_page.mc.firstText~=nil);
 				assert(_page.mc.secondText~=nil);
 				PrintMCButton1Text(_page.mc.firstText);
 				PrintMCButton2Text(_page.mc.secondText);
 
-				XGUIEng.ShowWidget("Cinematic_Text",0);
-				XGUIEng.ShowWidget("Cinematic_Headline",0);
 				XGUIEng.ShowWidget("CinematicMC_Container",1);
+				XGUIEng.ShowWidget("CinematicMC_Text",0);
+				XGUIEng.ShowWidget("CinematicMC_Headline",0);
 				XGUIEng.ShowWidget("CinematicBar01",1);
 				Mouse.CursorShow();
-				briefingState.waitingForMC = true;
+                briefingState.waitingForMC = true;
+                Information:SetBriefingLooks(true);
 				return;
 			end
 		end
@@ -300,25 +318,21 @@ end
 function Information:SetBriefingLooks(_IsCutscene)
     local size = {GUI.GetScreenSize()};
     local choicePosY = (size[2]*(768/size[2]))-240;
-    -- local button1Y = (size[2]-46)*(768/size[2]);
-    -- local button2Y = (size[2]-46)*(768/size[2]);
-    local button1Y = ((size[2]/2)-48)*(768/size[2]);
-    local button2Y = ((size[2]/2)+48)*(768/size[2]);
+    local button1Y = ((size[2]*0.76)-46)*(768/size[2]);
+    local button2Y = ((size[2]*0.76)+10)*(768/size[2]);
     local titlePosY = 45;
     local textPosY = ((size[2]*(768/size[2])))-100;
-    -- local button1SizeX = (((size[1]*(1024/size[1])))-660);
-    -- local button2SizeX = (((size[1]*(1024/size[1])))-660);
-    local button1SizeX = (((size[1]*(1024/size[1])))-660);
-    local button2SizeX = (((size[1]*(1024/size[1])))-660);
+    local button1SizeX = (((size[1]*(1024/size[1])))-500);
+    local button2SizeX = (((size[1]*(1024/size[1])))-500);
     local titleSize = (size[1]-200);
     local bottomBarX = (size[2]*(768/size[2]))-85;
     local bottomBarY = (size[2]*(768/size[2]))-85;
 
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Container",0,0,size[1],size[2]);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1",135,button1Y,button1SizeX,46);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2",518,button2Y,button2SizeX,46);
-    XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(150),textPosY,(730),100);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(150),textPosY,(730),100);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1",10,button1Y,button1SizeX,46);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2",10,button2Y,button2SizeX,46);
+    XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(200),textPosY,(680),100);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(200),textPosY,(680),100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
     XGUIEng.SetWidgetPositionAndSize("Cinematic_Headline",100,titlePosY,titleSize,15);
     XGUIEng.SetWidgetPositionAndSize("CinematicBar01",0,size[2],size[1],185);
@@ -339,7 +353,7 @@ end
 -- Starts a visible or invisible countdown.
 --
 -- <b>Note:</b> There can only be one visible but infinit invisible countdonws.
--- 
+--
 -- @param _Limit [number] Time to count down
 -- @param _Callback [function] Countdown callback
 -- @param _Show [boolean] Countdown visible
