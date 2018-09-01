@@ -213,19 +213,6 @@ function QuestSystem:InitalizeQuestEventTrigger()
 
     -- ---------------------------------------------------------------------- --
 
-    function QuestSystem_OnPlayerDestroyedTrigger()
-        QuestSystem:QuestPlayerDestroyed(Event.GetPlayerID());
-    end
-
-    Trigger.RequestTrigger(
-        Events.LOGIC_EVENT_PLAYER_DIED,
-        "",
-        "QuestSystem_OnPlayerDestroyedTrigger",
-        1
-    );
-
-    -- ---------------------------------------------------------------------- --
-
     function QuestSystem_QuestControllerJob(_QuestID)
         local Quest = QuestSystem.Quests[_QuestID];
 
@@ -608,9 +595,6 @@ function QuestTemplate:IsConditionFulfilled(_Index)
         end
 
     elseif Behavior[1] == Conditions.Payday then
-        return Behavior[2] == true;
-
-    elseif Behavior[1] == Conditions.PlayerDestroyed then
         return Behavior[2] == true;
 
     elseif Behavior[1] == Conditions.EntityDestroyed then
@@ -1209,28 +1193,6 @@ function QuestSystem:QuestTributePayed(_TributeID)
 end
 
 ---
--- Handels the event when a player died.
---
--- @param _PlayerID [number] ID of Player
--- @within QuestTemplate
--- @local
---
-function QuestSystem:QuestPlayerDestroyed(_PlayerID)
-    for i= 1, table.getn(self.Quests), 1 do
-        local Quest = self.Quests[i];
-        if Quest.m_State == QuestStates.Inactive then
-            for j= 1, table.getn(Quest.m_Conditions), 1 do
-                if Quest.m_Conditions[j][1] == Conditions.PlayerDestroyed then
-                    if _PlayerID == Quest.m_Conditions[j][1] then
-                        Quest.m_Conditions[j][2] = true;
-                    end
-                end
-            end
-        end
-    end
-end
-
----
 -- Handles the payday event for all quests.
 --
 -- @param _PlayerID [number] ID of player
@@ -1536,10 +1498,6 @@ QuestResults = {
 -- Starts the quest on the next payday
 -- <pre>{Conditions.Payday}</pre>
 --
--- @field PlayerDestroyed
--- Starts the quest when a player died
--- <pre>{Conditions.PlayerDestroyed, _PlayerID}</pre>
---
 -- @field EntityDestroyed
 -- Starts the quest when a entity does not exist.
 -- <pre>{Conditions.EntityDestroyed, _ScriptName}</pre>
@@ -1574,7 +1532,6 @@ Conditions = {
     QuestOver = 10,
     QuestNotTriggered = 11,
     Payday = 12,
-    PlayerDestroyed = 13,
     EntityDestroyed = 14,
     WeatherState = 15,
     QuestAndQuest = 16,
