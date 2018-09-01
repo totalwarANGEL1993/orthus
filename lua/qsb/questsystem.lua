@@ -11,7 +11,7 @@
 --
 -- Quests can be either successfully finished or failed. If a quest is finished
 -- successfully the rewards will be executed. If the quest fails the reprisals
--- will be executed instead. Quests are controlled by behaviors. Behind a 
+-- will be executed instead. Quests are controlled by behaviors. Behind a
 -- behavior is predefined code that is executed with certain parameters. It is
 -- also possible to create a custom behavior for each type.
 --
@@ -55,11 +55,11 @@ QuestSystem = {
 -- @local
 --
 function QuestSystem:InstallQuestSystem()
-    if self.SystemInstalled ~= true then 
+    if self.SystemInstalled ~= true then
         self.SystemInstalled = true;
 
         self:InitalizeQuestEventTrigger();
-        
+
         -- Optional briefing expansion
         if ActivateBriefingExpansion then
             ActivateBriefingExpansion();
@@ -91,7 +91,7 @@ function QuestSystem:InstallQuestSystem()
                 gvCutscene.BriefingID = gvUniqueBriefingID;
             end
         end
-    
+
         -- Briefing ID
         if CutsceneDone then
             CutsceneDone_Orig_QuestSystem = CutsceneDone;
@@ -113,9 +113,9 @@ function QuestSystem:InitalizeQuestEventTrigger()
         local Attacker  = Event.GetEntityID1();
         local Defenders = {Event.GetEntityID2()};
 
-        for i= 1, table.getn(Defenders), 1 do 
+        for i= 1, table.getn(Defenders), 1 do
             local Soldiers;
-            if Logic.IsLeader(Defenders[i]) == 1 then 
+            if Logic.IsLeader(Defenders[i]) == 1 then
                 Soldiers = {Logic.GetSoldiersAttachedToLeader(leaderID)};
                 table.remove(Soldiers, 1);
             end
@@ -134,7 +134,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
 
     function QuestSystem_DestroyedEntities_RegisterDestroyed()
         local Destroyed = {Event.GetEntityID()};
-        for i= 1, table.getn(Destroyed), 1 do 
+        for i= 1, table.getn(Destroyed), 1 do
             if QuestSystem.HurtEntities[Destroyed[i]] then
                 local AttackerID = QuestSystem.HurtEntities[Destroyed[i]][1];
                 local AttackingPlayer = Logic.EntityGetPlayer(AttackerID);
@@ -154,7 +154,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
     -- ---------------------------------------------------------------------- --
 
     function QuestSystem_DestroyedEntities_ClearTagged()
-        for k, v in pairs(QuestSystem.HurtEntities) do 
+        for k, v in pairs(QuestSystem.HurtEntities) do
             if v and v[2]+3 < Logic.GetTime() then
                 QuestSystem.HurtEntities[k] = nil;
             end
@@ -184,9 +184,9 @@ function QuestSystem:InitalizeQuestEventTrigger()
     -- ---------------------------------------------------------------------- --
 
     function QuestSystem_OnPaydayTrigger()
-        PaydayTimeoutFlag = PaydayTimeoutFlag or {};
-        PaydayOverFlag = PaydayOverFlag or {};
-        
+        local PaydayTimeoutFlag = PaydayTimeoutFlag or {};
+        local PaydayOverFlag = PaydayOverFlag or {};
+
         for i= 1, 8, 1 do
             PaydayTimeoutFlag[i] = PaydayTimeoutFlag[i] or false;
             PaydayOverFlag[i] = PaydayOverFlag[i] or false;
@@ -208,19 +208,6 @@ function QuestSystem:InitalizeQuestEventTrigger()
         Events.LOGIC_EVENT_EVERY_TURN,
         "",
         "QuestSystem_OnPaydayTrigger",
-        1
-    );
-
-    -- ---------------------------------------------------------------------- --
-
-    function QuestSystem_OnPlayerDestroyedTrigger()
-        QuestSystem:QuestPlayerDestroyed(Event.GetPlayerID());
-    end
-
-    Trigger.RequestTrigger(
-        Events.LOGIC_EVENT_PLAYER_DIED,
-        "",
-        "QuestSystem_OnPlayerDestroyedTrigger",
         1
     );
 
@@ -303,7 +290,7 @@ QuestTemplate = {};
 --
 function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Conditions, _Rewards, _Reprisals, _Description)
     QuestSystem:InstallQuestSystem();
-    
+
     self.m_QuestName   = _QuestName;
     self.m_Objectives  = (_Objectives and copy(_Objectives)) or {};
     self.m_Conditions  = (_Conditions and copy(_Conditions)) or {};
@@ -358,41 +345,41 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         return Behavior.Completed;
     end
 
-    if Behavior[1] == Objectives.NoChange then 
+    if Behavior[1] == Objectives.NoChange then
 
-    elseif Behavior[1] == Objectives.InstantSuccess then 
+    elseif Behavior[1] == Objectives.InstantSuccess then
         Behavior.Completed = true;
 
     elseif Behavior[1] == Objectives.InstantFailure then
         Behavior.Completed = false;
 
-    elseif Behavior[1] == Objectives.MapScriptFunction then 
+    elseif Behavior[1] == Objectives.MapScriptFunction then
         Behavior.Completed = Behavior[2][1](Behavior[2][2], self);
 
-    elseif Behavior[1] == Objectives.Destroy then 
-        
-        if type(Behavior[2]) == "table" then 
-            if IsDeadWrapper(Behavior[2]) then 
+    elseif Behavior[1] == Objectives.Destroy then
+
+        if type(Behavior[2]) == "table" then
+            if IsDeadWrapper(Behavior[2]) then
                 Behavior.Completed = true;
             end
         else
             local EntityID = GetID(Behavior[2]);
-            if not IsExisting(EntityID) then 
+            if not IsExisting(EntityID) then
                 Behavior.Completed = true;
             else
-                if Logic.IsHero(EntityID) == 1 and Logic.GetEntityHealth(EntityID) == 0 then 
+                if Logic.IsHero(EntityID) == 1 and Logic.GetEntityHealth(EntityID) == 0 then
                     Behavior.Completed = true;
                 end
             end
         end
 
-    elseif Behavior[1] == Objectives.DestroyAllPlayerUnits then 
+    elseif Behavior[1] == Objectives.DestroyAllPlayerUnits then
         local PlayerEntities = {Logic.GetAllPlayerEntities(Behavior[2], 16)};
         if PlayerEntities[1] == 0 then
             Behavior.Completed = true;
         else
             local LegalEntitiesCount = 0;
-            for i= 2, table.getn(PlayerEntities), 1 do                 
+            for i= 2, table.getn(PlayerEntities), 1 do
                 local Type = Logic.GetEntityType(PlayerEntities[i]);
                 if  Type ~= Entities.XD_ScriptEntity and Type ~= Entities.XD_BuildBlockScriptEntity and Type ~= Entities.XS_Ambient and Type ~= Entities.XD_Explore10
                 and Type ~= Entities.XD_CoordinateEntity and Type ~= Entities.XD_Camp_Internal and Type ~= Entities.XD_StandartePlayerColor
@@ -405,9 +392,9 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
             end
         end
 
-    elseif Behavior[1] == Objectives.Create then 
+    elseif Behavior[1] == Objectives.Create then
         local Position = (type(Behavior[3]) == "table" and Behavior[3]) or GetPosition(Behavior[3]);
-        if AreEntitiesInArea(self.m_Receiver, Behavior[2], Position, Behavior[4], Behavior[5]) then 
+        if AreEntitiesInArea(self.m_Receiver, Behavior[2], Position, Behavior[4], Behavior[5]) then
             if Behavior[7] then
                 local CreatedEntities = {Logic.GetPlayerEntitiesInArea(self.m_Receiver, Behavior[2], Position.X, Position.Y, Behavior[4], Behavior[5])};
                 for i= 2, table.getn(CreatedEntities), 1 do
@@ -417,42 +404,42 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
             Behavior.Completed = true;
         end
 
-    elseif Behavior[1] == Objectives.Produce then 
+    elseif Behavior[1] == Objectives.Produce then
         local Amount = Logic.GetPlayersGlobalResource(self.m_Receiver, Behavior[2]);
         if not Behavior[4] then
             Amount = Amount + Logic.GetPlayersGlobalResource(self.m_Receiver, Behavior[2]+1);
         end
-        if Amount >= Behavior[3] then 
+        if Amount >= Behavior[3] then
             Behavior.Completed = true;
         end
 
-    elseif Behavior[1] == Objectives.Protect then 
+    elseif Behavior[1] == Objectives.Protect then
         local EntityID = GetID(Behavior[2]);
-        if not IsExisting(EntityID) then 
+        if not IsExisting(EntityID) then
             Behavior.Completed = false;
         else
-            if Logic.IsHero(EntityID) == 1 and Logic.GetEntityHealth(EntityID) == 0 then 
+            if Logic.IsHero(EntityID) == 1 and Logic.GetEntityHealth(EntityID) == 0 then
                 Behavior.Completed = false;
             end
         end
 
-    elseif Behavior[1] == Objectives.Diplomacy then 
-        if Logic.GetDiplomacyState(self.m_Receiver, Behavior[2]) == Behavior[3] then 
+    elseif Behavior[1] == Objectives.Diplomacy then
+        if Logic.GetDiplomacyState(self.m_Receiver, Behavior[2]) == Behavior[3] then
             Behavior.Completed = true;
         end
 
-    elseif Behavior[1] == Objectives.EntityDistance then 
+    elseif Behavior[1] == Objectives.EntityDistance then
         if Behavior[5] then
-            if GetDistance(Behavior[2], Behavior[3]) < (Behavior[4] or 2000) then 
+            if GetDistance(Behavior[2], Behavior[3]) < (Behavior[4] or 2000) then
                 Behavior.Completed = true;
             end
         else
-            if GetDistance(Behavior[2], Behavior[3]) >= (Behavior[4] or 2000) then 
+            if GetDistance(Behavior[2], Behavior[3]) >= (Behavior[4] or 2000) then
                 Behavior.Completed = true;
             end
         end
 
-    elseif Behavior[1] == Objectives.Settlers or Behavior[1] == Objectives.Workers or Behavior[1] == Objectives.Soldiers or Behavior[1] == Objectives.Motivation then 
+    elseif Behavior[1] == Objectives.Settlers or Behavior[1] == Objectives.Workers or Behavior[1] == Objectives.Soldiers or Behavior[1] == Objectives.Motivation then
         local Amount = 0;
         if Behavior[1] == Objectives.Workers then
             Amount = Logic.GetNumberOfAttractedWorker(Behavior[4] or self.m_Receiver);
@@ -463,35 +450,35 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         else
             Amount = Logic.GetNumberOfAttractedSettlers(Behavior[4] or self.m_Receiver);
         end
-        
+
         if Behavior[3] then
-            if Amount < Behavior[2] then 
+            if Amount < Behavior[2] then
                 Behavior.Completed = true;
             end
         else
-            if Amount >= Behavior[2] then 
+            if Amount >= Behavior[2] then
                 Behavior.Completed = true;
             end
         end
 
-    elseif Behavior[1] == Objectives.Units then 
-        if Logic.GetNumberOfEntitiesOfTypeOfPlayer(self.m_Receiver, Behavior[2]) >= Behavior[3] then 
+    elseif Behavior[1] == Objectives.Units then
+        if Logic.GetNumberOfEntitiesOfTypeOfPlayer(self.m_Receiver, Behavior[2]) >= Behavior[3] then
             Behavior.Completed = true;
         end
 
-    elseif Behavior[1] == Objectives.Technology then 
-        if Logic.IsTechnologyResearched(self.m_Receiver, Behavior[2]) == 1 then 
+    elseif Behavior[1] == Objectives.Technology then
+        if Logic.IsTechnologyResearched(self.m_Receiver, Behavior[2]) == 1 then
             Behavior.Completed = true;
         end
 
-    elseif Behavior[1] == Objectives.Headquarters then 
-        if Logic.GetPlayerEntities(self.m_Receiver, Entities.PB_Headquarters1 + Behavior[2], 1) > 0 then 
+    elseif Behavior[1] == Objectives.Headquarters then
+        if Logic.GetPlayerEntities(self.m_Receiver, Entities.PB_Headquarters1 + Behavior[2], 1) > 0 then
             Behavior.Completed = true;
         end
 
     elseif Behavior[1] == Objectives.DestroyType or Behavior[1] == Objectives.DestroyCategory then
         Behavior[5] = Behavior[5] or 0;
-        if Behavior[4] <= Behavior[5] then 
+        if Behavior[4] <= Behavior[5] then
             Behavior.Completed = true;
         end
 
@@ -501,12 +488,12 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
             Logic.AddTribute(self.m_Receiver, g_UniqueTributeCounter, 0, 0, Behavior[3], unpack(Behavior[2]));
             Behavior[4] = g_UniqueTributeCounter;
         end
-        if Behavior[5] then 
+        if Behavior[5] then
             Behavior.Completed = true;
         end
 
     elseif Behavior[1] == Objectives.WeatherState then
-        if Logic.GetWeatherState() == Behavior[2] then 
+        if Logic.GetWeatherState() == Behavior[2] then
             Behavior.Completed = true;
         end
     end
@@ -524,93 +511,90 @@ end
 function QuestTemplate:IsConditionFulfilled(_Index)
     local Behavior = self.m_Conditions[_Index];
 
-    if Behavior[1] == Conditions.NeverTriggered then 
+    if Behavior[1] == Conditions.NeverTriggered then
 
     elseif Behavior[1] == Conditions.Time then
         return Logic.GetTime() >= Behavior[2];
 
-    elseif Behavior[1] == Conditions.Quest then 
+    elseif Behavior[1] == Conditions.Quest then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return false;
         end
-        if  (Behavior[3] == nil or Behavior[3] == QuestSystem.Quests[QuestID].m_State) 
+        if  (Behavior[3] == nil or Behavior[3] == QuestSystem.Quests[QuestID].m_State)
         and (Behavior[4] == nil or Behavior[4] == QuestSystem.Quests[QuestID].m_Result) then
             return true;
         end
 
-    elseif Behavior[1] == Conditions.MapScriptFunction then 
+    elseif Behavior[1] == Conditions.MapScriptFunction then
         return Behavior[2][1](Behavior[2][2], self);
 
-    elseif Behavior[1] == Conditions.Briefing then 
+    elseif Behavior[1] == Conditions.Briefing then
         local Quest = QuestSystem.Quests[GetQuestID(Behavior[2])];
-        if Quest and Quest.m_Briefing then 
+        if Quest and Quest.m_Briefing then
             return QuestSystem.Briefings[Quest.m_Briefing] == true;
         end
 
-    elseif Behavior[1] == Conditions.Diplomacy then 
-        if Logic.GetDiplomacyState(self.m_Receiver, Behavior[2]) == Behavior[3] then 
+    elseif Behavior[1] == Conditions.Diplomacy then
+        if Logic.GetDiplomacyState(self.m_Receiver, Behavior[2]) == Behavior[3] then
             return true;
         end
 
-    elseif Behavior[1] == Conditions.QuestSuccess then 
+    elseif Behavior[1] == Conditions.QuestSuccess then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return false;
         end
-        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then 
+        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then
             return true;
         end
 
-    elseif Behavior[1] == Conditions.QuestFailure then 
+    elseif Behavior[1] == Conditions.QuestFailure then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return false;
         end
-        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Failure then 
+        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Failure then
             return true;
         end
 
-    elseif Behavior[1] == Conditions.QuestInterrupt then 
+    elseif Behavior[1] == Conditions.QuestInterrupt then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return false;
         end
-        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then 
+        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
             return true;
         end
 
-    elseif Behavior[1] == Conditions.QuestActive then 
+    elseif Behavior[1] == Conditions.QuestActive then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return false;
         end
-        if QuestSystem.Quests[QuestID].m_State == QuestStates.Active then 
+        if QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
             return true;
         end
 
-    elseif Behavior[1] == Conditions.QuestOver then 
+    elseif Behavior[1] == Conditions.QuestOver then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return false;
         end
-        if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then 
+        if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
             return true;
         end
 
-    elseif Behavior[1] == Conditions.QuestNotTriggered then 
+    elseif Behavior[1] == Conditions.QuestNotTriggered then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return false;
         end
-        if QuestSystem.Quests[QuestID].m_State == QuestStates.Inactive then 
+        if QuestSystem.Quests[QuestID].m_State == QuestStates.Inactive then
             return true;
         end
 
-    elseif Behavior[1] == Conditions.Payday then 
-        return Behavior[2] == true;
-
-    elseif Behavior[1] == Conditions.PlayerDestroyed then
+    elseif Behavior[1] == Conditions.Payday then
         return Behavior[2] == true;
 
     elseif Behavior[1] == Conditions.EntityDestroyed then
@@ -622,7 +606,7 @@ function QuestTemplate:IsConditionFulfilled(_Index)
     elseif Behavior[1] == Conditions.QuestOrQuest then
         local QuestID1 = GetQuestID(Behavior[2]);
         local QuestID2 = GetQuestID(Behavior[3]);
-        if QuestID1 == 0 or QuestID2 == 0 then 
+        if QuestID1 == 0 or QuestID2 == 0 then
             return false;
         end
         local ResultQuest1 = QuestSystem.Quests[QuestID1].m_Result;
@@ -632,7 +616,7 @@ function QuestTemplate:IsConditionFulfilled(_Index)
     elseif Behavior[1] == Conditions.QuestAndQuest then
         local QuestID1 = GetQuestID(Behavior[2]);
         local QuestID2 = GetQuestID(Behavior[3]);
-        if QuestID1 == 0 or QuestID2 == 0 then 
+        if QuestID1 == 0 or QuestID2 == 0 then
             return false;
         end
         local ResultQuest1 = QuestSystem.Quests[QuestID1].m_Result;
@@ -642,7 +626,7 @@ function QuestTemplate:IsConditionFulfilled(_Index)
     elseif Behavior[1] == Conditions.QuestXorQuest then
         local QuestID1 = GetQuestID(Behavior[2]);
         local QuestID2 = GetQuestID(Behavior[3]);
-        if QuestID1 == 0 or QuestID2 == 0 then 
+        if QuestID1 == 0 or QuestID2 == 0 then
             return false;
         end
         local ResultQuest1 = QuestSystem.Quests[QuestID1].m_Result == Behavior[4];
@@ -663,24 +647,24 @@ end
 function QuestTemplate:ApplyReward(_Index)
     local Behavior = self.m_Rewards[_Index];
 
-    if Behavior[1] == Rewards.Defeat then 
+    if Behavior[1] == Rewards.Defeat then
         Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
         Defeat();
 
-    elseif Behavior[1] == Rewards.Victory then 
+    elseif Behavior[1] == Rewards.Victory then
         Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
         Victory();
 
-    elseif Behavior[1] == Rewards.MapScriptFunction then 
+    elseif Behavior[1] == Rewards.MapScriptFunction then
         Behavior[2][1](Behavior[2][2], self);
 
-    elseif Behavior[1] == Rewards.Briefing then 
+    elseif Behavior[1] == Rewards.Briefing then
         self.m_Briefing = Behavior[2][1](Behavior[2][2], self);
 
-    elseif Behavior[1] == Rewards.ChangePlayer then 
+    elseif Behavior[1] == Rewards.ChangePlayer then
         ChangePlayer(Behavior[2], Behavior[3]);
 
-    elseif Behavior[1] == Rewards.Message then 
+    elseif Behavior[1] == Rewards.Message then
         Message(Behavior[2]);
 
     elseif Behavior[1] == Rewards.DestroyEntity then
@@ -697,7 +681,7 @@ function QuestTemplate:ApplyReward(_Index)
         if QuestSystem.NamedEffects[Behavior[2]] then
             Logic.DestroyEffect(QuestSystem.NamedEffects[Behavior[2]]);
         end
-    
+
     elseif Behavior[1] == Rewards.CreateEntity then
         ReplaceEntity(Behavior[2], Behavior[3]);
 
@@ -716,7 +700,7 @@ function QuestTemplate:ApplyReward(_Index)
     elseif Behavior[1] == Rewards.Diplomacy then
         local Exploration = (Behavior[4] == Diplomacy.Friendly and 1) or 0;
         Logic.SetShareExplorationWithPlayerFlag(Behavior[2], Behavior[3], Exploration);
-		Logic.SetShareExplorationWithPlayerFlag(Behavior[3], Behavior[2], Exploration);	
+		Logic.SetShareExplorationWithPlayerFlag(Behavior[3], Behavior[2], Exploration);
         Logic.SetDiplomacyState(Behavior[2], Behavior[3], Behavior[4]);
 
     elseif Behavior[1] == Rewards.Resource then
@@ -738,7 +722,7 @@ function QuestTemplate:ApplyReward(_Index)
 
     elseif Behavior[1] == Rewards.QuestSucceed then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return;
         end
         if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided and QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
@@ -747,7 +731,7 @@ function QuestTemplate:ApplyReward(_Index)
 
     elseif Behavior[1] == Rewards.QuestFail then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return;
         end
         if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided and QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
@@ -756,21 +740,21 @@ function QuestTemplate:ApplyReward(_Index)
 
     elseif Behavior[1] == Rewards.QuestInterrupt then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 or QuestSystem.Quests[QuestID].m_Result == QuestResults.Over then 
+        if QuestID == 0 or QuestSystem.Quests[QuestID].m_Result == QuestResults.Over then
             return;
         end
         QuestSystem.Quests[QuestID]:Interrupt();
 
     elseif Behavior[1] == Rewards.QuestActivate then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 or QuestSystem.Quests[QuestID].m_State ~= QuestStates.Inactive then 
+        if QuestID == 0 or QuestSystem.Quests[QuestID].m_State ~= QuestStates.Inactive then
             return;
         end
         QuestSystem.Quests[QuestID]:Trigger();
 
     elseif Behavior[1] == Rewards.QuestRestart or Behavior[1] == Rewards.QuestRestartForceActive then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return;
         end
         if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
@@ -787,15 +771,15 @@ function QuestTemplate:ApplyReward(_Index)
         Logic.SetTechnologyState(self.m_Receiver, Behavior[2], Behavior[3]);
 
     elseif Behavior[1] == Rewards.CreateMarker then
-        if Behavior[2] == MarkerTypes.StaticFriendly then 
+        if Behavior[2] == MarkerTypes.StaticFriendly then
             GUI.CreateMinimapMarker(Behavior[3].X, Behavior[3].Y, 0);
-        elseif Behavior[2] == MarkerTypes.StaticNeutral then 
+        elseif Behavior[2] == MarkerTypes.StaticNeutral then
             GUI.CreateMinimapMarker(Behavior[3].X, Behavior[3].Y, 2);
-        elseif Behavior[2] == MarkerTypes.StaticEnemy then 
+        elseif Behavior[2] == MarkerTypes.StaticEnemy then
             GUI.CreateMinimapMarker(Behavior[3].X, Behavior[3].Y, 6);
-        elseif Behavior[2] == MarkerTypes.PulseFriendly then 
+        elseif Behavior[2] == MarkerTypes.PulseFriendly then
             GUI.CreateMinimapPulse(Behavior[3].X, Behavior[3].Y, 0);
-        elseif Behavior[2] == MarkerTypes.PulseNeutral then 
+        elseif Behavior[2] == MarkerTypes.PulseNeutral then
             GUI.CreateMinimapPulse(Behavior[3].X, Behavior[3].Y, 2);
         else
             GUI.CreateMinimapPulse(Behavior[3].X, Behavior[3].Y, 6);
@@ -815,12 +799,12 @@ function QuestTemplate:ApplyReward(_Index)
         Logic.SetEntityExplorationRange(ViewCenter, Behavior[3]);
         QuestSystem.NamedExplorations[Behavior[2]] = ViewCenter;
 
-    elseif Behavior[1] == Rewards.ConcealArea then 
+    elseif Behavior[1] == Rewards.ConcealArea then
         if QuestSystem.NamedExplorations[Behavior[2]] then
             DestroyEntity(QuestSystem.NamedExplorations[Behavior[2]]);
         end
 
-    elseif Behavior[1] == Rewards.Move then 
+    elseif Behavior[1] == Rewards.Move then
         Move(Behavior[2], Behavior[3]);
     end
 end
@@ -835,24 +819,24 @@ end
 function QuestTemplate:ApplyReprisal(_Index)
     local Behavior = self.m_Reprisals[_Index];
 
-    if Behavior[1] == Reprisals.Defeat then 
+    if Behavior[1] == Reprisals.Defeat then
         Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
         Defeat();
 
-    elseif Behavior[1] == Reprisals.Victory then 
+    elseif Behavior[1] == Reprisals.Victory then
         Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
         Victory();
 
-    elseif Behavior[1] == Reprisals.MapScriptFunction then 
+    elseif Behavior[1] == Reprisals.MapScriptFunction then
         Behavior[2][1](Behavior[2][2], self);
 
-    elseif Behavior[1] == Reprisals.Briefing then 
+    elseif Behavior[1] == Reprisals.Briefing then
         self.m_Briefing = Behavior[2][1](Behavior[2][2], self);
 
-    elseif Behavior[1] == Reprisals.ChangePlayer then 
+    elseif Behavior[1] == Reprisals.ChangePlayer then
         ChangePlayer(Behavior[2], Behavior[3]);
 
-    elseif Behavior[1] == Reprisals.Message then 
+    elseif Behavior[1] == Reprisals.Message then
         Message(Behavior[2]);
 
     elseif Behavior[1] == Reprisals.DestroyEntity then
@@ -868,12 +852,12 @@ function QuestTemplate:ApplyReprisal(_Index)
     elseif Behavior[1] == Reprisals.DestroyEffect then
         if QuestSystem.NamedEffects[Behavior[2]] then
             Logic.DestroyEffect(QuestSystem.NamedEffects[Behavior[2]]);
-        end 
+        end
 
     elseif Behavior[1] == Reprisals.Diplomacy then
         local Exploration = (Behavior[4] == Diplomacy.Friendly and 1) or 0;
         Logic.SetShareExplorationWithPlayerFlag(Behavior[2], Behavior[3], Exploration);
-		Logic.SetShareExplorationWithPlayerFlag(Behavior[3], Behavior[2], Exploration);	
+		Logic.SetShareExplorationWithPlayerFlag(Behavior[3], Behavior[2], Exploration);
         Logic.SetDiplomacyState(Behavior[2], Behavior[3], Behavior[4]);
 
     elseif Behavior[1] == Reprisals.AddJornal then
@@ -888,7 +872,7 @@ function QuestTemplate:ApplyReprisal(_Index)
 
     elseif Behavior[1] == Reprisals.QuestSucceed then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return;
         end
         if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided and QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
@@ -897,7 +881,7 @@ function QuestTemplate:ApplyReprisal(_Index)
 
     elseif Behavior[1] == Reprisals.QuestFail then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return;
         end
         if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided and QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
@@ -906,21 +890,21 @@ function QuestTemplate:ApplyReprisal(_Index)
 
     elseif Behavior[1] == Reprisals.QuestInterrupt then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 or QuestSystem.Quests[QuestID].m_Result == QuestResults.Over then 
+        if QuestID == 0 or QuestSystem.Quests[QuestID].m_Result == QuestResults.Over then
             return;
         end
         QuestSystem.Quests[QuestID]:Interrupt();
 
     elseif Behavior[1] == Reprisals.QuestActivate then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 or QuestSystem.Quests[QuestID].m_State ~= QuestStates.Inactive then 
+        if QuestID == 0 or QuestSystem.Quests[QuestID].m_State ~= QuestStates.Inactive then
             return;
         end
         QuestSystem.Quests[QuestID]:Trigger();
 
     elseif Behavior[1] == Reprisals.QuestRestart or Behavior[1] == Reprisals.QuestRestartForceActive then
         local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then 
+        if QuestID == 0 then
             return;
         end
         if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
@@ -936,12 +920,12 @@ function QuestTemplate:ApplyReprisal(_Index)
     elseif Behavior[1] == Reprisals.Technology then
         Logic.SetTechnologyState(self.m_Receiver, Behavior[2], Behavior[3]);
 
-    elseif Behavior[1] == Reprisals.ConcealArea then 
+    elseif Behavior[1] == Reprisals.ConcealArea then
         if QuestSystem.NamedExplorations[Behavior[2]] then
             DestroyEntity(QuestSystem.NamedExplorations[Behavior[2]]);
         end
 
-    elseif Behavior[1] == Reprisals.Move then 
+    elseif Behavior[1] == Reprisals.Move then
         Move(Behavior[2], Behavior[3]);
     end
 end
@@ -1027,7 +1011,7 @@ end
 -- @within QuestTemplate
 -- @local
 --
-function QuestTemplate:Interrupt()    
+function QuestTemplate:Interrupt()
     self:verbose("DEBUG: Interrupt quest '" ..self.m_QuestName.. "'");
     self:Reset();
 
@@ -1057,17 +1041,17 @@ function QuestTemplate:Reset()
     self.m_Briefing = nil;
 
     -- Reset objectives
-    for i= 1, table.getn(self.m_Objectives), 1 do 
-        if self.m_Objectives[i][1] == Objectives.MapScriptFunction then 
+    for i= 1, table.getn(self.m_Objectives), 1 do
+        if self.m_Objectives[i][1] == Objectives.MapScriptFunction then
             if self.m_Objectives[i][2][2].Reset then
                 self.m_Objectives[i][2][2]:Reset(self);
             end
 
-        elseif self.m_Objectives[i][1] == Objectives.DestroyType or self.m_Objectives[i][1] == Objectives.DestroyCategory then 
+        elseif self.m_Objectives[i][1] == Objectives.DestroyType or self.m_Objectives[i][1] == Objectives.DestroyCategory then
             self.m_Objectives[i][5] = 0;
 
-        elseif self.m_Objectives[i][1] == Objectives.Tribute then 
-            if self.m_Objectives[i][4] then 
+        elseif self.m_Objectives[i][1] == Objectives.Tribute then
+            if self.m_Objectives[i][4] then
                 Logic.RemoveTribute(self.m_Receiver, self.m_Objectives[i][4]);
             end
             self.m_Objectives[i][5] = nil;
@@ -1075,8 +1059,8 @@ function QuestTemplate:Reset()
     end
 
     -- Reset conditions
-    for i= 1, table.getn(self.m_Conditions), 1 do 
-        if self.m_Conditions[i][1] == Conditions.MapScriptFunction then 
+    for i= 1, table.getn(self.m_Conditions), 1 do
+        if self.m_Conditions[i][1] == Conditions.MapScriptFunction then
             if self.m_Conditions[i][2][2].Reset then
                 self.m_Conditions[i][2][2]:Reset(self);
             end
@@ -1087,8 +1071,8 @@ function QuestTemplate:Reset()
     end
 
     -- Reset rewards
-    for i= 1, table.getn(self.m_Rewards), 1 do 
-        if self.m_Rewards[i][1] == Rewards.MapScriptFunction then 
+    for i= 1, table.getn(self.m_Rewards), 1 do
+        if self.m_Rewards[i][1] == Rewards.MapScriptFunction then
             if self.m_Rewards[i][2][2].Reset then
                 self.m_Rewards[i][2][2]:Reset(self);
             end
@@ -1096,8 +1080,8 @@ function QuestTemplate:Reset()
     end
 
     -- Reset reprisals
-    for i= 1, table.getn(self.m_Reprisals), 1 do 
-        if self.m_Reprisals[i][1] == Reprisals.MapScriptFunction then 
+    for i= 1, table.getn(self.m_Reprisals), 1 do
+        if self.m_Reprisals[i][1] == Reprisals.MapScriptFunction then
             if self.m_Reprisals[i][2][2].Reset then
                 self.m_Reprisals[i][2][2]:Reset(self);
             end
@@ -1119,7 +1103,7 @@ function QuestTemplate:ShowQuestMarkers()
     for i= 1, table.getn(self.m_Objectives), 1 do
         if self.m_State == QuestStates.Active then
             if self.m_Objectives[i][1] == Objectives.Create then
-                if self.m_Objectives[i][6] then 
+                if self.m_Objectives[i][6] then
                     local Position = (type(self.m_Objectives[i][3]) == "table" and self.m_Objectives[i][3]) or GetPosition(self.m_Objectives[i][3]);
                     self.m_Objectives[i][8] = Logic.CreateEffect(GGL_Effects.FXTerrainPointer, Position.X, Position.Y, 1);
                 end
@@ -1135,11 +1119,11 @@ end
 --
 function QuestTemplate:RemoveQuestMarkers()
     self:verbose("DEBUG: Hide Markers of quest '" ..self.m_QuestName.. "'");
-    
+
     for i= 1, table.getn(self.m_Objectives), 1 do
         if self.m_State == QuestStates.Over then
             if self.m_Objectives[i][1] == Objectives.Create then
-                if self.m_Objectives[i][8] then 
+                if self.m_Objectives[i][8] then
                     Logic.DestroyEffect(self.m_Objectives[i][8]);
                 end
             end
@@ -1162,12 +1146,12 @@ end
 function QuestSystem:ObjectiveDestroyedEntitiesHandler(_AttackingPlayer, _AttackingID, _DefendingPlayer, _DefendingID)
     for i= 1, table.getn(self.Quests), 1 do
         local Quest = self.Quests[i];
-        if Quest.m_State == QuestStates.Active and Quest.m_Result == QuestResults.Undecided then 
+        if Quest.m_State == QuestStates.Active and Quest.m_Result == QuestResults.Undecided then
             for j= 1, table.getn(Quest.m_Objectives), 1 do
                 -- Destroy type
                 if Quest.m_Objectives[j][1] == Objectives.DestroyType then
                     Quest.m_Objectives[j][5] = Quest.m_Objectives[j][5] or 0;
-                    if Quest.m_Receiver == _AttackingPlayer and (Quest.m_Objectives[j][2] == -1 or _DefendingPlayer == Quest.m_Objectives[j][2]) then 
+                    if Quest.m_Receiver == _AttackingPlayer and (Quest.m_Objectives[j][2] == -1 or _DefendingPlayer == Quest.m_Objectives[j][2]) then
                         if Logic.GetEntityType(_DefendingID) == Quest.m_Objectives[j][3] then
                             Quest.m_Objectives[j][5] = Quest.m_Objectives[j][5] + 1;
                         end
@@ -1175,7 +1159,7 @@ function QuestSystem:ObjectiveDestroyedEntitiesHandler(_AttackingPlayer, _Attack
                 -- Destroy category
                 elseif Quest.m_Objectives[j][1] == Objectives.DestroyCategory then
                     Quest.m_Objectives[j][5] = Quest.m_Objectives[j][5] or 0;
-                    if Quest.m_Receiver == _AttackingPlayer and (Quest.m_Objectives[j][2] == -1 or _DefendingPlayer == Quest.m_Objectives[j][2]) then 
+                    if Quest.m_Receiver == _AttackingPlayer and (Quest.m_Objectives[j][2] == -1 or _DefendingPlayer == Quest.m_Objectives[j][2]) then
                         if Logic.IsEntityInCategory(_DefendingID, Quest.m_Objectives[j][3]) == 1 then
                             Quest.m_Objectives[j][5] = Quest.m_Objectives[j][5] + 1;
                         end
@@ -1196,33 +1180,11 @@ end
 function QuestSystem:QuestTributePayed(_TributeID)
     for i= 1, table.getn(self.Quests), 1 do
         local Quest = self.Quests[i];
-        if Quest.m_State == QuestStates.Active and Quest.m_Result == QuestResults.Undecided then 
+        if Quest.m_State == QuestStates.Active and Quest.m_Result == QuestResults.Undecided then
             for j= 1, table.getn(Quest.m_Objectives), 1 do
                 if Quest.m_Objectives[j][1] == Objectives.Tribute then
-                    if _TributeID == Quest.m_Objectives[j][4] then 
+                    if _TributeID == Quest.m_Objectives[j][4] then
                         Quest.m_Objectives[j][5] = true;
-                    end
-                end
-            end
-        end
-    end
-end
-
----
--- Handels the event when a player died.
---
--- @param _PlayerID [number] ID of Player
--- @within QuestTemplate
--- @local
---
-function QuestSystem:QuestPlayerDestroyed(_PlayerID)
-    for i= 1, table.getn(self.Quests), 1 do
-        local Quest = self.Quests[i];
-        if Quest.m_State == QuestStates.Inactive then 
-            for j= 1, table.getn(Quest.m_Conditions), 1 do
-                if Quest.m_Conditions[j][1] == Conditions.PlayerDestroyed then
-                    if _PlayerID == Quest.m_Conditions[j][1] then 
-                        Quest.m_Conditions[j][2] = true;
                     end
                 end
             end
@@ -1240,7 +1202,7 @@ end
 function QuestSystem:QuestPaydayEvent(_PlayerID)
     for i= 1, table.getn(self.Quests), 1 do
         local Quest = self.Quests[i];
-        if Quest.m_Receiver == _PlayerID and Quest.m_State == QuestStates.Inactive then 
+        if Quest.m_Receiver == _PlayerID and Quest.m_State == QuestStates.Inactive then
             for j= 1, table.getn(Quest.m_Conditions), 1 do
                 if Quest.m_Conditions[j][1] == Conditions.Payday then
                     Quest.m_Conditions[j][2] = true;
@@ -1323,8 +1285,8 @@ end
 -- @within Helper
 --
 function GetQuestID(_QuestName)
-    for i= 1, table.getn(QuestSystem.Quests), 1 do 
-        if QuestSystem.Quests[i].m_QuestName == _QuestName or QuestSystem.Quests[i].m_QuestID == _QuestName then 
+    for i= 1, table.getn(QuestSystem.Quests), 1 do
+        if QuestSystem.Quests[i].m_QuestName == _QuestName or QuestSystem.Quests[i].m_QuestID == _QuestName then
             return i;
         end
     end
@@ -1536,10 +1498,6 @@ QuestResults = {
 -- Starts the quest on the next payday
 -- <pre>{Conditions.Payday}</pre>
 --
--- @field PlayerDestroyed
--- Starts the quest when a player died
--- <pre>{Conditions.PlayerDestroyed, _PlayerID}</pre>
---
 -- @field EntityDestroyed
 -- Starts the quest when a entity does not exist.
 -- <pre>{Conditions.EntityDestroyed, _ScriptName}</pre>
@@ -1557,7 +1515,7 @@ QuestResults = {
 -- <pre>{Conditions.QuestOrQuest, _Quest1, _Quest2, _Result}</pre>
 --
 -- @field QuestXorQuest
--- Starts the quest when one or the other quest but NOT both have the 
+-- Starts the quest when one or the other quest but NOT both have the
 -- same result.
 -- <pre>{Conditions.QuestXorQuest, _Quest1, _Quest2, _Result}</pre>
 --
@@ -1574,7 +1532,6 @@ Conditions = {
     QuestOver = 10,
     QuestNotTriggered = 11,
     Payday = 12,
-    PlayerDestroyed = 13,
     EntityDestroyed = 14,
     WeatherState = 15,
     QuestAndQuest = 16,
@@ -1949,4 +1906,3 @@ Reprisals = {
     ConcealArea = 20,
     Move = 21,
 }
-

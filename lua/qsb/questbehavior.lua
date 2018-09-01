@@ -3114,36 +3114,6 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_Payday);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Starts the quest after a player has been killed.
--- @param _PlayerID [number] PlayerID
--- @within Triggers
---
-function Trigger_PlayerDestroyed(...)
-    return b_Trigger_PlayerDestroyed:New(unpack(arg));
-end
-
-b_Trigger_PlayerDestroyed = {
-    Data = {
-        Name = "Trigger_PlayerDestroyed",
-        Type = Conditions.PlayerDestroyed
-    },
-};
-
-function b_Trigger_PlayerDestroyed:AddParameter(_Index, _Parameter)
-    if _Index == 1 then
-        self.Data.PlayerID = _Parameter;
-    end
-end
-
-function b_Trigger_PlayerDestroyed:GetTriggerTable()
-    return {self.Data.Type, self.Data.PlayerID};
-end
-
-QuestSystemBehavior:RegisterBehavior(b_Trigger_PlayerDestroyed);
-
--- -------------------------------------------------------------------------- --
-
----
 -- Starts the quest after an entity has been destroyed. The quest is triggered
 -- when the entity is destroyed either by script or by another player.
 -- @param _ScriptName [string] Script name of entiry
@@ -3750,14 +3720,14 @@ function Reward_SetPlayerColor(...)
     return b_Reward_SetPlayerColor:New(unpack(arg));
 end
 
-Reward_SetPlayerColor = {
+b_Reward_SetPlayerColor = {
     Data = {
         Name = "Reward_SetPlayerColor",
         Type = Rewards.MapScriptFunction
     },
 };
 
-function Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
+function b_Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.PlayerID = _Parameter;
     elseif _Index == 2 then
@@ -3765,16 +3735,16 @@ function Reward_SetPlayerColor:AddParameter(_Index, _Parameter)
     end
 end
 
-function Reward_SetPlayerColor:GetRewardTable()
+function b_Reward_SetPlayerColor:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
 
-function Reward_SetPlayerColor:CustomFunction(_Quest)
+function b_Reward_SetPlayerColor:CustomFunction(_Quest)
     QuestSystemBehavior.Data.PlayerColorAssigment[self.Data.PlayerID] = _G[self.Data.Color] or self.Data.Color;
     QuestSystemBehavior.UpdatePlayerColorAssigment();
 end
 
-function Reward_SetPlayerColor:Debug(_Quest)
+function b_Reward_SetPlayerColor:Debug(_Quest)
     if self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
         dbg(_Quest, self, "PlayerID is wrong!");
         return true;
@@ -3786,10 +3756,10 @@ function Reward_SetPlayerColor:Debug(_Quest)
     return false;
 end
 
-function Reward_SetPlayerColor:Reset(_Quest)
+function b_Reward_SetPlayerColor:Reset(_Quest)
 end
 
-QuestSystemBehavior:RegisterBehavior(Reward_SetPlayerColor);
+QuestSystemBehavior:RegisterBehavior(b_Reward_SetPlayerColor);
 
 -- -------------------------------------------------------------------------- --
 

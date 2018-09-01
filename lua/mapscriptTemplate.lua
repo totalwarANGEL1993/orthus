@@ -93,6 +93,10 @@ function InitPlayerColorMapping()
 end
 
 function FirstMapAction()
+    Score.Player[0] = {};
+	Score.Player[0]["buildings"] = 0;
+	Score.Player[0]["all"] = 0;
+    
     QuestSystemBehavior:PrepareQuestSystem();
     if UseQuestTrace or UseDebugCheats or UseDebugShell then
         QuestSystemDebug:Activate(UseQuestTrace, UseDebugCheats, UseDebugShell);

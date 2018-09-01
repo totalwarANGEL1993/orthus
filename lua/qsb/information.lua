@@ -26,6 +26,16 @@ function Information:Install()
 end
 
 ---
+-- Returns the number of the extension.
+-- @return [number] Extension number
+-- @within Information
+-- @local
+--
+function Information:GetExtraNumber()
+    return tonumber(string.sub(Framework.GetProgramVersion(), string.len(Version)));
+end
+
+---
 -- Initalizes the add pages functions for simpler briefing pages.
 -- @within Information
 -- @local
@@ -48,49 +58,107 @@ function Information:CreateAddPageFunctions()
     --
     function AddPages(_briefing)
         local AP = function(_page)
-            if _page then
-                local eID, ori, zoom, ang;
-    
+            if _page then                
+                -- Set position before page is add
+                if type(_page.position) ~= "table" then 
+                    _page.entity   = _page.position;
+                    _page.position = GetPosition(_page.position);
+                end
+                -- Set title before page is add
+                if _page.title then
+                    _page.title = "@center " .. _page.title;
+                end
+                -- Set text before page is add
+                if _page.mc and _page.mc.title then
+                    _page.mc.title = "@center " .. _page.mc.title;
+                end
+
                 if _page.action then
                     _page.actionOrig = _page.action;
                 end
                 _page.action = function()
-                    local Position = GetPosition(_page.position);
+                    local ori, zoom, ang;
+
+                    -- Get zoom distance
                     local ZoomDistance = BRIEFING_ZOOMDISTANCE;
-                    if _page.dialogCamera then 
+                    if _page.dialogCamera then
                         ZoomDistance = DIALOG_ZOOMDISTANCE;
                     end
+                    ZoomDistance = (_page.zoom ~= nil and _page.zoom) or ZoomDistance;
+                    _page.zoom = ZoomDistance;
+
+                    -- Get zoom angle
                     local ZoomAngle = BRIEFING_ZOOMANGLE;
-                    if _page.dialogCamera then 
+                    if _page.dialogCamera then
                         ZoomAngle = DIALOG_ZOOMANGLE;
                     end
+                    ZoomAngle = (_page.angle ~= nil and _page.angle) or ZoomAngle;
+                    _page.angle = ZoomAngle;
+
+                    -- Get rotation angle
                     local RotationAngle = -45;
-                    if _page.dialogCamera and _page.entity then 
+                    if _page.lookAt and _page.entity then
                         RotationAngle = Logic.GetEntityOrientation(GetID(_page.entity));
+                        if Logic.IsSettler(GetID(_page.entity)) == 1 then
+                            RotationAngle = RotationAngle + 90;
+                        end
+                    end
+                    RotationAngle = (_page.rotation ~= nil and _page.rotation) or RotationAngle;
+                    _page.rotation = RotationAngle;
+
+                    -- Disable fog
+                    Display.SetRenderFogOfWar(1);
+                    if _page.disableFog then
+                        Display.SetRenderFogOfWar(0);
                     end
 
-                    if _page.title then
-                        _page.title = "@center " .. _page.title;
+                    -- Display sky
+                    Display.SetRenderSky(0);
+                    if _page.showSky then
+                        Display.SetRenderSky(1);
                     end
-    
-                    zoom = (zoom ~= nil and zoom) or (_page.zoom ~= nil and _page.zoom) or ZoomDistance;
-                    ang  = (ang ~= nil and ang) or (_page.angle ~= nil and _page.angle) or ZoomAngle;
-                    ori  = (ori ~= nil and ori) or (_page.rotation ~= nil and _page.rotation) or RotationAngle;
-    
-                    Display.SetRenderFogOfWar(0);
-    
+
+                    -- Override camera flight
                     Camera.StopCameraFlight();
-                    Camera.ScrollSetLookAt(_page.position.X,_page.position.Y);
-                    Camera.ZoomSetDistance(zoom);
-                    Camera.ZoomSetAngle(ang);
-                    Camera.RotSetAngle(ori);
-    
+                    if not _page.flyTime then
+                        Camera.ZoomSetDistance(ZoomDistance);
+                        Camera.ZoomSetAngle(ZoomAngle);
+                        Camera.RotSetAngle(RotationAngle);
+                        Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
+                    else
+                        briefingState.nextPageDelayTime = (_page.flyTime * 10) +1;
+                        briefingState.timer = (_page.flyTime * 10) +1;
+
+                        if briefingState.page > 0 then
+                            local LastPage = briefingBook[1][briefingState.page];
+
+                            Camera.ZoomSetDistance(LastPage.zoom or BRIEFING_ZOOMDISTANCE);
+                            Camera.ZoomSetAngle(LastPage.angle or BRIEFING_ZOOMANGLE);
+                            Camera.RotSetAngle(LastPage.rotation or -45);
+                            Camera.ScrollSetLookAt(LastPage.position.X, LastPage.position.Y);
+
+                            Camera.ScrollUpdateZMode(0);
+                            Camera.InitCameraFlight();
+                            Camera.ZoomSetDistanceFlight(ZoomDistance, _page.flyTime);
+                            Camera.ZoomSetAngleFlight(ZoomAngle, _page.flyTime);
+                            Camera.RotFlight(RotationAngle, _page.flyTime);
+                            Camera.FlyToLookAt(_page.position.X, _page.position.Y, _page.flyTime);
+                        else
+                            Camera.ZoomSetDistance(_page.zoom);
+                            Camera.ZoomSetAngle(_page.angle);
+                            Camera.RotSetAngle(_page.rotation);
+                            Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
+                        end
+                    end
+
+                    -- Call original action
                     if _page.actionOrig then
                         _page.actionOrig();
                     end
                 end
             end
             table.insert(_briefing, _page);
+            _page.id = table.getn(_briefing);
             return _page;
         end
         local ASP = function(_entity, _title, _text, _dialog, _action)
@@ -103,11 +171,10 @@ function Information:CreateAddPageFunctions()
         local page = {
             title = _title,
             text = _text,
-            position = GetPosition(_entity),
-            entity = _entity,
+            position = _entity,
             dialogCamera = (_dialog or false),
             action = _action,
-            rotation = Logic.GetEntityOrientation(GetID(_entity)) + 90;
+            lookAt = true;
         };
         return page;
     end
@@ -120,10 +187,10 @@ end
 --
 function Information:OverrideEscape()
     GameCallback_Escape_Orig_Information = GameCallback_Escape;
-    GameCallback_Escape = function()        
+    GameCallback_Escape = function()
         -- Briefing no escape
         if IsBriefingActive() then
-            if not briefingState.noEscape then
+            if briefingState.noEscape then
                 return;
             end
         end
@@ -145,7 +212,7 @@ end
 -- <li>Implements the noEscape swith for briefings</li>
 -- <li>Fixes the buggy game clock</li>
 -- </ul>
--- 
+--
 -- @within Information
 -- @local
 --
@@ -175,7 +242,9 @@ function Information:OverrideCinematic()
         if gvGameClockWasShown then
 			XGUIEng.ShowWidget("GameClock", 1);
 			gvGameClockWasShown = false;
-		end
+        end
+        Display.SetRenderFogOfWar(1);
+        Display.SetRenderSky(0);
         return EndBriefing_Orig_Information();
     end
 
@@ -222,7 +291,7 @@ end
 --
 function Information:OverrideMultipleChoice()
     BriefingMCButtonSelected = function(_index)
-		assert(briefingBook[1][briefingState.page].mc~=nil);
+		assert(briefingBook[1][briefingState.page].mc ~= nil);
 		briefingBook[1][briefingState.page].mc.selectedButton = _index;
 
 		if _index == 1 then
@@ -246,7 +315,7 @@ function Information:OverrideMultipleChoice()
 		briefingState.waitingForMC = false;
 		Mouse.CursorHide();
     end
-    
+
     Briefing_Extra = function(_page,_firstPage)
         -- Button fix
         for i = 1, 2 do
@@ -254,35 +323,37 @@ function Information:OverrideMultipleChoice()
             XGUIEng.DisableButton(theButton, 1);
             XGUIEng.DisableButton(theButton, 0);
         end
+
+        -- Action
         if _page.action then
             assert( type(_page.action) == "function" );
-            if type(_page.parameters) == "table" then
-                _page.action(unpack(_page.parameters));
-			else
-                _page.action(_page.parameters);
-            end
+            _page.action(_page);
         end
 
         -- change bar design
-        Information:SetBriefingLooks(false);
+        Information:SetBriefingLooks(true);
+        if _page.minimap == true then
+            Information:SetBriefingLooks(false);
+        end
+
+        -- Display multiple choice
 		if _page.mc ~= nil then
 			if _page.mc.text ~= nil then
 				assert(_page.mc.title~=nil);
-				PrintMCHeadline(_page.mc.title);
-				PrintMCText(_page.mc.text);
+				PrintBriefingHeadline(_page.mc.title);
+				PrintBriefingText(_page.mc.text);
 
 				assert(_page.mc.firstText~=nil);
 				assert(_page.mc.secondText~=nil);
 				PrintMCButton1Text(_page.mc.firstText);
 				PrintMCButton2Text(_page.mc.secondText);
 
-				XGUIEng.ShowWidget("Cinematic_Text",0);
-				XGUIEng.ShowWidget("Cinematic_Headline",0);
 				XGUIEng.ShowWidget("CinematicMC_Container",1);
+				XGUIEng.ShowWidget("CinematicMC_Text",0);
+				XGUIEng.ShowWidget("CinematicMC_Headline",0);
 				XGUIEng.ShowWidget("CinematicBar01",1);
 				Mouse.CursorShow();
                 briefingState.waitingForMC = true;
-                Information:SetBriefingLooks(true);
 				return;
 			end
 		end
@@ -298,26 +369,26 @@ end
 
 ---
 -- Sets the apperance of the cinematic mode.
--- @param _IsCutscene [boolean] Set cutscene mode
+-- @param _DisableMap [boolean] Hide the minimap
 -- @within Information
 -- @local
 --
-function Information:SetBriefingLooks(_IsCutscene)
+function Information:SetBriefingLooks(_DisableMap)
     local size = {GUI.GetScreenSize()};
     local choicePosY = (size[2]*(768/size[2]))-240;
-    local button1Y = ((size[2]*0.76)-46)*(768/size[2]);
-    local button2Y = ((size[2]*0.76)+10)*(768/size[2]);
+    local button1Y = (size[2]*(768/size[2]))-10;
+    local button2Y = (size[2]*(768/size[2]))-10;
     local titlePosY = 45;
     local textPosY = ((size[2]*(768/size[2])))-100;
-    local button1SizeX = (((size[1]*(1024/size[1])))-500);
-    local button2SizeX = (((size[1]*(1024/size[1])))-500);
+    local button1SizeX = (((size[1]*(1024/size[1])))-660);
+    local button2SizeX = (((size[1]*(1024/size[1])))-660);
     local titleSize = (size[1]-200);
     local bottomBarX = (size[2]*(768/size[2]))-85;
     local bottomBarY = (size[2]*(768/size[2]))-85;
 
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Container",0,0,size[1],size[2]);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1",10,button1Y,button1SizeX,46);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2",10,button2Y,button2SizeX,46);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1",200,button1Y,button1SizeX,46);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2",570,button2Y,button2SizeX,46);
     XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(200),textPosY,(680),100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(200),textPosY,(680),100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
@@ -328,10 +399,10 @@ function Information:SetBriefingLooks(_IsCutscene)
     XGUIEng.ShowWidget("CinematicBar01",1);
     XGUIEng.ShowWidget("CinematicBar00",1);
 
-    XGUIEng.ShowWidget("CinematicMiniMapOverlay", (_IsCutscene and 0) or 1);
-    XGUIEng.ShowWidget("CinematicMiniMap", (_IsCutscene and 0) or 1);
-    XGUIEng.ShowWidget("CinematicFrameBG", (_IsCutscene and 0) or 1);
-    XGUIEng.ShowWidget("CinematicFrame", (_IsCutscene and 0) or 1);
+    XGUIEng.ShowWidget("CinematicMiniMapOverlay", (_DisableMap and 0) or 1);
+    XGUIEng.ShowWidget("CinematicMiniMap", (_DisableMap and 0) or 1);
+    XGUIEng.ShowWidget("CinematicFrameBG", (_DisableMap and 0) or 1);
+    XGUIEng.ShowWidget("CinematicFrame", (_DisableMap and 0) or 1);
 end
 
 -- Countdown code --------------------------------------------------------------
@@ -340,7 +411,7 @@ end
 -- Starts a visible or invisible countdown.
 --
 -- <b>Note:</b> There can only be one visible but infinit invisible countdonws.
--- 
+--
 -- @param _Limit [number] Time to count down
 -- @param _Callback [function] Countdown callback
 -- @param _Show [boolean] Countdown visible
