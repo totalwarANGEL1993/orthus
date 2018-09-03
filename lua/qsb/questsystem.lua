@@ -22,6 +22,7 @@
 -- <li>Reward: Rewards for successfully finishing a quest.</li>
 -- <li>Reprisal: Pubishments after the quest faild.</li>
 -- </ul>
+-- But reprisals and rewards are both callbacks!
 --
 -- A quest is generated like this:<br>
 -- <pre>local QuestID = new(QuestTemplate, "SomeName", SomeObjectives, SomeConditions, 1, -1, SomeRewards, SomeReprisals)</pre>
@@ -259,11 +260,11 @@ function QuestSystem:InitalizeQuestEventTrigger()
         if Quest.m_State == QuestStates.Over then
             if Quest.m_Result == QuestResults.Success then
                 for i = 1, table.getn(Quest.m_Rewards) do
-                    Quest:ApplyReward(i);
+                    Quest:ApplyCallbacks(i);
                 end
             elseif Quest.m_Result == QuestResults.Failure then
                 for i = 1, table.getn(Quest.m_Reprisals) do
-                    Quest:ApplyReprisal(i);
+                    Quest:ApplyCallbacks(i);
                 end
             end
             return true;
@@ -332,7 +333,7 @@ end
 -- -------------------------------------------------------------------------- --
 
 ---
--- Checks, if the objective of the quest is fullfilled or not.
+-- Checks, if the objective of the quest is fullfilled, failed or undecided.
 --
 -- @param _Index [number] Index of behavior
 -- @within QuestTemplate
@@ -638,36 +639,36 @@ function QuestTemplate:IsConditionFulfilled(_Index)
 end
 
 ---
--- Calls the reward behavior for the quest.
+-- Calls the callback behavior for the quest.
 --
 -- @param _Index [number] Index of behavior
 -- @within QuestTemplate
 -- @local
 --
-function QuestTemplate:ApplyReward(_Index)
+function QuestTemplate:ApplyCallbacks(_Index)
     local Behavior = self.m_Rewards[_Index];
 
-    if Behavior[1] == Rewards.Defeat then
+    if Behavior[1] == Callbacks.Defeat then
         Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
         Defeat();
 
-    elseif Behavior[1] == Rewards.Victory then
+    elseif Behavior[1] == Callbacks.Victory then
         Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
         Victory();
 
-    elseif Behavior[1] == Rewards.MapScriptFunction then
+    elseif Behavior[1] == Callbacks.MapScriptFunction then
         Behavior[2][1](Behavior[2][2], self);
 
-    elseif Behavior[1] == Rewards.Briefing then
+    elseif Behavior[1] == Callbacks.Briefing then
         self.m_Briefing = Behavior[2][1](Behavior[2][2], self);
 
-    elseif Behavior[1] == Rewards.ChangePlayer then
+    elseif Behavior[1] == Callbacks.ChangePlayer then
         ChangePlayer(Behavior[2], Behavior[3]);
 
-    elseif Behavior[1] == Rewards.Message then
+    elseif Behavior[1] == Callbacks.Message then
         Message(Behavior[2]);
 
-    elseif Behavior[1] == Rewards.DestroyEntity then
+    elseif Behavior[1] == Callbacks.DestroyEntity then
         if IsExisting(Behavior[2]) then
             local Position = GetPosition(Behavior[2]);
             local PlayerID = GetPlayer(Behavior[2]);
@@ -677,50 +678,46 @@ function QuestTemplate:ApplyReward(_Index)
             Logic.SetEntityName(EntityID, Behavior[2]);
         end
 
-    elseif Behavior[1] == Rewards.DestroyEffect then
+    elseif Behavior[1] == Callbacks.DestroyEffect then
         if QuestSystem.NamedEffects[Behavior[2]] then
             Logic.DestroyEffect(QuestSystem.NamedEffects[Behavior[2]]);
         end
 
-    elseif Behavior[1] == Rewards.CreateEntity then
+    elseif Behavior[1] == Callbacks.CreateEntity then
         ReplaceEntity(Behavior[2], Behavior[3]);
 
-    elseif Behavior[1] == Rewards.CreateGroup then
+    elseif Behavior[1] == Callbacks.CreateGroup then
         local Position = GetPosition(Behavior[2]);
         local PlayerID = GetPlayer(Behavior[2]);
         local Orientation = Logic.GetEntityOrientation(GetID(Behavior[2]));
         DestroyEntity(Behavior[2]);
         CreateMilitaryGroup(PlayerID, Behavior[3], Behavior[4], Position, Behavior[2]);
 
-    elseif Behavior[1] == Rewards.CreateEffect then
+    elseif Behavior[1] == Callbacks.CreateEffect then
         local Position = GetPosition(Behavior[4]);
         local EffectID = Logic.CreateEffect(Behavior[3], Position.X, Position.Y, 0);
         QuestSystem.NamedEffects[Behavior[2]] = EffectID;
 
-    elseif Behavior[1] == Rewards.Diplomacy then
+    elseif Behavior[1] == Callbacks.Diplomacy then
         local Exploration = (Behavior[4] == Diplomacy.Friendly and 1) or 0;
         Logic.SetShareExplorationWithPlayerFlag(Behavior[2], Behavior[3], Exploration);
 		Logic.SetShareExplorationWithPlayerFlag(Behavior[3], Behavior[2], Exploration);
         Logic.SetDiplomacyState(Behavior[2], Behavior[3], Behavior[4]);
 
-    elseif Behavior[1] == Rewards.Resource then
+    elseif Behavior[1] == Callbacks.Resource then
         if Behavior[3] > 0 then
             Logic.AddToPlayersGlobalResource(self.m_Receiver, Behavior[2], Behavior[3]);
         elseif Behavior[3] < 0 then
             Logic.SubFromPlayersGlobalResource(self.m_Receiver, Behavior[2], math.abs(Behavior[3]));
         end
 
-    elseif Behavior[1] == Rewards.AddJornal then
-
-    elseif Behavior[1] == Rewards.ChangeJornal then
-
-    elseif Behavior[1] == Rewards.RemoveQuest then
+    elseif Behavior[1] == Callbacks.RemoveQuest then
         local QuestID = GetQuestID(Behavior[2]);
         if QuestID > 0 then
             Logic.RemoveQuest(self.m_Receiver, QuestID);
         end
 
-    elseif Behavior[1] == Rewards.QuestSucceed then
+    elseif Behavior[1] == Callbacks.QuestSucceed then
         local QuestID = GetQuestID(Behavior[2]);
         if QuestID == 0 then
             return;
@@ -729,7 +726,7 @@ function QuestTemplate:ApplyReward(_Index)
             QuestSystem.Quests[QuestID]:Success();
         end
 
-    elseif Behavior[1] == Rewards.QuestFail then
+    elseif Behavior[1] == Callbacks.QuestFail then
         local QuestID = GetQuestID(Behavior[2]);
         if QuestID == 0 then
             return;
@@ -738,21 +735,21 @@ function QuestTemplate:ApplyReward(_Index)
             QuestSystem.Quests[QuestID]:Fail();
         end
 
-    elseif Behavior[1] == Rewards.QuestInterrupt then
+    elseif Behavior[1] == Callbacks.QuestInterrupt then
         local QuestID = GetQuestID(Behavior[2]);
         if QuestID == 0 or QuestSystem.Quests[QuestID].m_Result == QuestResults.Over then
             return;
         end
         QuestSystem.Quests[QuestID]:Interrupt();
 
-    elseif Behavior[1] == Rewards.QuestActivate then
+    elseif Behavior[1] == Callbacks.QuestActivate then
         local QuestID = GetQuestID(Behavior[2]);
         if QuestID == 0 or QuestSystem.Quests[QuestID].m_State ~= QuestStates.Inactive then
             return;
         end
         QuestSystem.Quests[QuestID]:Trigger();
 
-    elseif Behavior[1] == Rewards.QuestRestart or Behavior[1] == Rewards.QuestRestartForceActive then
+    elseif Behavior[1] == Callbacks.QuestRestart then
         local QuestID = GetQuestID(Behavior[2]);
         if QuestID == 0 then
             return;
@@ -762,15 +759,12 @@ function QuestTemplate:ApplyReward(_Index)
             QuestSystem.Quests[QuestID].m_Result = QuestResults.Undecided;
             QuestSystem.Quests[QuestID]:Reset();
             Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", QuestSystem.QuestLoop, 1, {}, {QuestSystem.Quests[QuestID].m_QuestID});
-            if Behavior[1] == Rewards.QuestRestartForceActive then
-                QuestSystem.Quests[QuestID]:Trigger();
-            end
         end
 
-    elseif Behavior[1] == Rewards.Technology then
+    elseif Behavior[1] == Callbacks.Technology then
         Logic.SetTechnologyState(self.m_Receiver, Behavior[2], Behavior[3]);
 
-    elseif Behavior[1] == Rewards.CreateMarker then
+    elseif Behavior[1] == Callbacks.CreateMarker then
         if Behavior[2] == MarkerTypes.StaticFriendly then
             GUI.CreateMinimapMarker(Behavior[3].X, Behavior[3].Y, 0);
         elseif Behavior[2] == MarkerTypes.StaticNeutral then
@@ -785,12 +779,12 @@ function QuestTemplate:ApplyReward(_Index)
             GUI.CreateMinimapPulse(Behavior[3].X, Behavior[3].Y, 6);
         end
 
-    elseif Behavior[1] == Rewards.DestroyMarker then
+    elseif Behavior[1] == Callbacks.DestroyMarker then
         if Behavior[2] then
             GUI.DestroyMinimapPulse(Behavior[2].X, Behavior[2].Y);
         end
 
-    elseif Behavior[1] == Rewards.RevealArea then
+    elseif Behavior[1] == Callbacks.RevealArea then
         if QuestSystem.NamedExplorations[Behavior[2]] then
             DestroyEntity(QuestSystem.NamedExplorations[Behavior[2]]);
         end
@@ -799,140 +793,18 @@ function QuestTemplate:ApplyReward(_Index)
         Logic.SetEntityExplorationRange(ViewCenter, Behavior[3]);
         QuestSystem.NamedExplorations[Behavior[2]] = ViewCenter;
 
-    elseif Behavior[1] == Rewards.ConcealArea then
+    elseif Behavior[1] == Callbacks.ConcealArea then
         if QuestSystem.NamedExplorations[Behavior[2]] then
             DestroyEntity(QuestSystem.NamedExplorations[Behavior[2]]);
         end
 
-    elseif Behavior[1] == Rewards.Move then
+    elseif Behavior[1] == Callbacks.Move then
         Move(Behavior[2], Behavior[3]);
     end
 end
 
 ---
--- Calls the reprisal behavior for the quest.
---
--- @param _Index [number] Index of behavior
--- @within QuestTemplate
--- @local
---
-function QuestTemplate:ApplyReprisal(_Index)
-    local Behavior = self.m_Reprisals[_Index];
-
-    if Behavior[1] == Reprisals.Defeat then
-        Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
-        Defeat();
-
-    elseif Behavior[1] == Reprisals.Victory then
-        Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
-        Victory();
-
-    elseif Behavior[1] == Reprisals.MapScriptFunction then
-        Behavior[2][1](Behavior[2][2], self);
-
-    elseif Behavior[1] == Reprisals.Briefing then
-        self.m_Briefing = Behavior[2][1](Behavior[2][2], self);
-
-    elseif Behavior[1] == Reprisals.ChangePlayer then
-        ChangePlayer(Behavior[2], Behavior[3]);
-
-    elseif Behavior[1] == Reprisals.Message then
-        Message(Behavior[2]);
-
-    elseif Behavior[1] == Reprisals.DestroyEntity then
-        if IsExisting(Behavior[2]) then
-            local Position = GetPosition(Behavior[2]);
-            local PlayerID = GetPlayer(Behavior[2]);
-            local Orientation = Logic.GetEntityOrientation(GetID(Behavior[2]));
-            DestroyEntity(Behavior[2]);
-            local EntityID = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, Orientation, PlayerID);
-            Logic.SetEntityName(EntityID, Behavior[2]);
-        end
-
-    elseif Behavior[1] == Reprisals.DestroyEffect then
-        if QuestSystem.NamedEffects[Behavior[2]] then
-            Logic.DestroyEffect(QuestSystem.NamedEffects[Behavior[2]]);
-        end
-
-    elseif Behavior[1] == Reprisals.Diplomacy then
-        local Exploration = (Behavior[4] == Diplomacy.Friendly and 1) or 0;
-        Logic.SetShareExplorationWithPlayerFlag(Behavior[2], Behavior[3], Exploration);
-		Logic.SetShareExplorationWithPlayerFlag(Behavior[3], Behavior[2], Exploration);
-        Logic.SetDiplomacyState(Behavior[2], Behavior[3], Behavior[4]);
-
-    elseif Behavior[1] == Reprisals.AddJornal then
-
-    elseif Behavior[1] == Reprisals.ChangeJornal then
-
-    elseif Behavior[1] == Reprisals.RemoveQuest then
-        local QuestID = GetQuestID(Behavior[2]);
-        if QuestID > 0 then
-            Logic.RemoveQuest(self.m_Receiver, QuestID);
-        end
-
-    elseif Behavior[1] == Reprisals.QuestSucceed then
-        local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then
-            return;
-        end
-        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided and QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
-            QuestSystem.Quests[QuestID]:Success();
-        end
-
-    elseif Behavior[1] == Reprisals.QuestFail then
-        local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then
-            return;
-        end
-        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided and QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
-            QuestSystem.Quests[QuestID]:Fail();
-        end
-
-    elseif Behavior[1] == Reprisals.QuestInterrupt then
-        local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 or QuestSystem.Quests[QuestID].m_Result == QuestResults.Over then
-            return;
-        end
-        QuestSystem.Quests[QuestID]:Interrupt();
-
-    elseif Behavior[1] == Reprisals.QuestActivate then
-        local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 or QuestSystem.Quests[QuestID].m_State ~= QuestStates.Inactive then
-            return;
-        end
-        QuestSystem.Quests[QuestID]:Trigger();
-
-    elseif Behavior[1] == Reprisals.QuestRestart or Behavior[1] == Reprisals.QuestRestartForceActive then
-        local QuestID = GetQuestID(Behavior[2]);
-        if QuestID == 0 then
-            return;
-        end
-        if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
-            QuestSystem.Quests[QuestID].m_State = QuestStates.Inactive;
-            QuestSystem.Quests[QuestID].m_Result = QuestResults.Undecided;
-            QuestSystem.Quests[QuestID]:Reset();
-            Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", QuestSystem.QuestLoop, 1, {}, {QuestSystem.Quests[QuestID].m_QuestID});
-            if Behavior[1] == Reprisals.QuestRestartForceActive then
-                QuestSystem.Quests[QuestID]:Trigger();
-            end
-        end
-
-    elseif Behavior[1] == Reprisals.Technology then
-        Logic.SetTechnologyState(self.m_Receiver, Behavior[2], Behavior[3]);
-
-    elseif Behavior[1] == Reprisals.ConcealArea then
-        if QuestSystem.NamedExplorations[Behavior[2]] then
-            DestroyEntity(QuestSystem.NamedExplorations[Behavior[2]]);
-        end
-
-    elseif Behavior[1] == Reprisals.Move then
-        Move(Behavior[2], Behavior[3]);
-    end
-end
-
----
--- Triggers the quest. Custom behavior can have a method Debug that will
--- prevent the quest from starting if it returns false.
+-- Calls :Reset first and then triggers the quest.
 -- @within QuestTemplate
 -- @local
 --
@@ -1070,20 +942,18 @@ function QuestTemplate:Reset()
         end
     end
 
-    -- Reset rewards
+    -- Reset callbacks
     for i= 1, table.getn(self.m_Rewards), 1 do
-        if self.m_Rewards[i][1] == Rewards.MapScriptFunction then
+        if self.m_Rewards[i][1] == Callbacks.MapScriptFunction then
             if self.m_Rewards[i][2][2].Reset then
                 self.m_Rewards[i][2][2]:Reset(self);
             end
         end
     end
-
-    -- Reset reprisals
-    for i= 1, table.getn(self.m_Reprisals), 1 do
-        if self.m_Reprisals[i][1] == Reprisals.MapScriptFunction then
-            if self.m_Reprisals[i][2][2].Reset then
-                self.m_Reprisals[i][2][2]:Reset(self);
+    for i= 1, table.getn(self.m_Reprislas), 1 do
+        if self.m_Reprislas[i][1] == Callbacks.MapScriptFunction then
+            if self.m_Reprislas[i][2][2].Reset then
+                self.m_Reprislas[i][2][2]:Reset(self);
             end
         end
     end
@@ -1097,7 +967,6 @@ end
 -- @local
 --
 function QuestTemplate:ShowQuestMarkers()
-    -- TBA
     self:verbose("DEBUG: Show Markers of quest '" ..self.m_QuestName.. "'");
 
     for i= 1, table.getn(self.m_Objectives), 1 do
@@ -1656,90 +1525,86 @@ Objectives = {
 }
 
 ---
--- Actions that are performed when a quest is finished successfully.
+-- Actions that are performed when a quest is finished.
 --
 -- @field MapScriptFunction
 -- Calls a user function as reward.
--- <pre>{Rewards.MapScriptFunction, _Function, _ArgumentList...}</pre>
+-- <pre>{Callbacks.MapScriptFunction, _Function, _ArgumentList...}</pre>
 --
 -- @field Defeat
 -- Player looses the game.
--- <pre>{Rewards.Defeat}</pre>
+-- <pre>{Callbacks.Defeat}</pre>
 --
 -- @field Victory
 -- Player wins the game.
--- <pre>{Rewards.Victory}</pre>
+-- <pre>{Callbacks.Victory}</pre>
 --
 -- @field Briefing
 -- Calls a function with a briefing. The function is expected to return
 -- the briefing id! Attach only one briefing to one quest!
--- <pre>{Rewards.Briefing, _Briefing}</pre>
+-- <pre>{Callbacks.Briefing, _Briefing}</pre>
 --
 -- @field ChangePlayer
 -- Changes the owner of the entity
--- <pre>{Rewards.ChangePlayer, _Entity, _Owner}</pre>
+-- <pre>{Callbacks.ChangePlayer, _Entity, _Owner}</pre>
 --
 -- @field Message
 -- Displays a simple message on screen.
--- <pre>{Rewards.Message, _Message}</pre>
+-- <pre>{Callbacks.Message, _Message}</pre>
 --
 -- @field DestroyEntity
 -- Replace a named entity or millitary group with a script entity.
--- <pre>{Rewards.Message, _ScriptName}</pre>
+-- <pre>{Callbacks.Message, _ScriptName}</pre>
 --
 -- @field DestroyEffect
 -- Destroy a named graphic effect.
--- <pre>{Rewards.Message, _EffectName}</pre>
+-- <pre>{Callbacks.Message, _EffectName}</pre>
 --
 -- @field CreateEntity
 -- Replaces a script entity with a new entity. The new entity will have the
 -- same owner and orientation as the script entity.
--- <pre>{Rewards.CreateEntity, _ScriptName, _Type}</pre>
+-- <pre>{Callbacks.CreateEntity, _ScriptName, _Type}</pre>
 --
 -- @field CreateGroup
 -- Replaces a script entity with a military group. The group will have the
 -- same owner and orientation as the script entity.
--- <pre>{Rewards.CreateGroup, _ScriptName, _Type, _Soldiers}</pre>
+-- <pre>{Callbacks.CreateGroup, _ScriptName, _Type, _Soldiers}</pre>
 --
 -- @field CreateEffect
 -- Creates an effect at the position.
--- <pre>{Rewards.DestroyEffect, _EffectName, _EffectType, _Position}</pre>
+-- <pre>{Callbacks.DestroyEffect, _EffectName, _EffectType, _Position}</pre>
 --
 -- @field Diplomacy
 -- Changes the diplomacy state between two players.
--- <pre>{Rewards.Diplomacy, _PlayerID1, _PlayerID2, _State}</pre>
+-- <pre>{Callbacks.Diplomacy, _PlayerID1, _PlayerID2, _State}</pre>
 --
 -- @field Resource
 -- Give or remove resources from the player.
--- <pre>{Rewards.Resource, _ResourceType, _Amount}</pre>
+-- <pre>{Callbacks.Resource, _ResourceType, _Amount}</pre>
 --
 -- @field RemoveQuest
 -- Removes a quest from the quest book.
--- <pre>{Rewards.RemoveQuest, _QuestName}</pre>
+-- <pre>{Callbacks.RemoveQuest, _QuestName}</pre>
 --
 -- @field QuestSucceed
 -- Let a active quest succeed.
--- <pre>{Rewards.QuestSucceed, _QuestName}</pre>
+-- <pre>{Callbacks.QuestSucceed, _QuestName}</pre>
 --
 -- @field QuestFail
 -- Let a active quest fail.
--- <pre>{Rewards.QuestFail, _QuestName}</pre>
+-- <pre>{Callbacks.QuestFail, _QuestName}</pre>
 --
 -- @field QuestInterrupt
 -- Interrupts a quest even when it was not startet.
--- <pre>{Rewards.QuestInterrupt, _QuestName}</pre>
+-- <pre>{Callbacks.QuestInterrupt, _QuestName}</pre>
 --
 -- @field QuestActivate
 -- Activates a quest when it was not triggered
--- <pre>{Rewards.QuestActivate, _QuestName}</pre>
+-- <pre>{Callbacks.QuestActivate, _QuestName}</pre>
 --
 -- @field QuestRestart
 -- Restarts a quest so that it can be triggered again.
--- <pre>{Rewards.QuestRestart, _QuestName}</pre>
---
--- @field QuestRestartForceActive
--- Restarts a quest and triggers it immedaitly despite the conditions.
--- <pre>{Rewards.QuestRestartForceActive, _QuestName}</pre>
+-- <pre>{Callbacks.QuestRestart, _QuestName}</pre>
 --
 -- @field Technology
 -- Change the state of a technology.
@@ -1749,143 +1614,29 @@ Objectives = {
 -- <li>Research: A technology is set as research</li>
 -- <li>Forbid: A technology is unaccessable</li>
 -- </ul>
--- <pre>{Rewards.Technology, _Tech, _State}</pre>
+-- <pre>{Callbacks.Technology, _Tech, _State}</pre>
 --
 -- @field CreateMarker
 -- Creates an minimap marker or minimap pulsar at the position.
--- <pre>{Rewards.CreateMarker, _Type, _PositionTable}</pre>
+-- <pre>{Callbacks.CreateMarker, _Type, _PositionTable}</pre>
 --
 -- @field DestroyMarker
 -- Removes a minimap marker or pulsar at the position.
--- <pre>{Rewards.DestroyMarker, _PositionTable}</pre>
+-- <pre>{Callbacks.DestroyMarker, _PositionTable}</pre>
 --
 -- @field RevealArea
 -- Explores an area around a script entity.
--- <pre>{Rewards.RevealArea, _AreaCenter, _Explore}</pre>
+-- <pre>{Callbacks.RevealArea, _AreaCenter, _Explore}</pre>
 --
 -- @field ConcealArea
 -- Removes the exploration of an area.
--- <pre>{Rewards.ConcealArea, _AreaCenter}</pre>
+-- <pre>{Callbacks.ConcealArea, _AreaCenter}</pre>
 --
 -- @field Move
 -- Removes the exploration of an area.
--- <pre>{Rewards.Move, _Entity, _Destination}</pre>
+-- <pre>{Callbacks.Move, _Entity, _Destination}</pre>
 --
-Rewards = {
-    MapScriptFunction = 1,
-    Defeat = 2,
-    Victory = 3,
-    Briefing = 4,
-    ChangePlayer = 5,
-    Message = 6,
-    DestroyEntity = 7,
-    DestroyEffect = 8,
-    CreateEntity = 9,
-    CreateGroup = 10,
-    CreateEffect = 11,
-    Diplomacy = 12,
-    Resource = 13,
-    RemoveQuest = 16,
-    QuestSucceed = 17,
-    QuestFail = 18,
-    QuestInterrupt = 19,
-    QuestActivate = 20,
-    QuestRestart = 21,
-    QuestRestartForceActive = 22,
-    Technology = 23,
-    CreateMarker = 25,
-    DestroyMarker = 26,
-    RevealArea = 29,
-    ConcealArea = 30,
-    Move = 31,
-}
-
----
--- Actions that are performed when a quest failed.
---
--- @field MapScriptFunction
--- Calls a user function as reprisal.
--- <pre>{Reprisals.MapScriptFunction, _Function, _ArgumentList...}</pre>
---
--- @field Defeat
--- Player looses the game.
--- <pre>{Reprisals.Defeat}</pre>
---
--- @field Victory
--- Player wins the game.
--- <pre>{Reprisals.Victory}</pre>
---
--- @field Briefing
--- Calls a function with a briefing. The function is expected to return
--- the briefing id! Attach only one briefing to one quest!
--- <pre>{Reprisals.Briefing, _Briefing}</pre>
---
--- @field ChangePlayer
--- Changes the owner of the entity
--- <pre>{Reprisals.ChangePlayer, _Entity, _Owner}</pre>
---
--- @field Message
--- Displays a simple message on screen.
--- <pre>{Reprisals.Message, _Message}</pre>
---
--- @field DestroyEntity
--- Replace a named entity or millitary group with a script entity.
--- <pre>{Reprisals.DestroyEntity, _ScriptName}</pre>
---
--- @field DestroyEffect
--- Destroy a named graphic effect.
--- <pre>{Reprisals.DestroyEffect, _EffectName}</pre>
---
--- @field Diplomacy
--- Changes the diplomacy state between two players.
--- <pre>{Reprisals.Diplomacy, _PlayerID1, _PlayerID2, _State}</pre>
---
--- @field RemoveQuest
--- Removes a quest from the quest book.
--- <pre>{Reprisals.RemoveQuest, _QuestName}</pre>
---
--- @field QuestSucceed
--- Let a active quest succeed.
--- <pre>{Reprisals.QuestSucceed, _QuestName}</pre>
---
--- @field QuestFail
--- Let a active quest fail.
--- <pre>{Reprisals.QuestFail, _QuestName}</pre>
---
--- @field QuestInterrupt
--- Interrupts a quest even when it was not startet.
--- <pre>{Reprisals.QuestInterrupt, _QuestName}</pre>
---
--- @field QuestActivate
--- Activates a quest when it was not triggered
--- <pre>{Reprisals.QuestActivate, _QuestName}</pre>
---
--- @field QuestRestart
--- Restarts a quest so that it can be triggered again.
--- <pre>{Reprisals.QuestRestart, _QuestName}</pre>
---
--- @field QuestRestartForceActive
--- Restarts a quest and triggers it immedaitly despite the conditions.
--- <pre>{Reprisals.QuestRestartForceActive, _QuestName}</pre>
---
--- @field Technology
--- Change the state of a technology.
--- Possible technology states:
--- <ul>
--- <li>Allow: A technology will be allowed</li>
--- <li>Research: A technology is set as research</li>
--- <li>Forbid: A technology is unaccessable</li>
--- <pre>{Reprisals.Technology, _Tech, _State}</pre>
---
--- @field ConcealArea
--- Removes the exploration of an area.
--- <pre>{Reprisals.ConcealArea, _AreaCenter}</pre>
---
--- @field Move
--- Removes the exploration of an area.
--- <pre>{Reprisals.Move, _Entity, _Destination}</pre>
---
-Reprisals = {
+Callbacks = {
     MapScriptFunction = 1,
     Defeat = 2,
     Victory = 3,
@@ -1895,14 +1646,21 @@ Reprisals = {
     DestroyEntity = 7,
     DestroyEffect = 8,
     Diplomacy = 9,
-    RemoveQuest = 12,
-    QuestSucceed = 13,
-    QuestFail = 14,
-    QuestInterrupt = 15,
-    QuestActivate = 16,
-    QuestRestart = 17,
-    QuestRestartForceActive = 18,
-    Technology = 19,
-    ConcealArea = 20,
-    Move = 21,
+    RemoveQuest = 10,
+    QuestSucceed = 11,
+    QuestFail = 12,
+    QuestInterrupt = 13,
+    QuestActivate = 14,
+    QuestRestart = 15,
+    Technology = 16,
+    ConcealArea = 17,
+    Move = 18,
+
+    CreateGroup = 100,
+    CreateEffect = 101,
+    CreateEntity = 102,
+    Resource = 103,
+    CreateMarker = 104,
+    DestroyMarker = 105,
+    RevealArea = 106,
 }
