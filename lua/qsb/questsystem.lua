@@ -260,11 +260,11 @@ function QuestSystem:InitalizeQuestEventTrigger()
         if Quest.m_State == QuestStates.Over then
             if Quest.m_Result == QuestResults.Success then
                 for i = 1, table.getn(Quest.m_Rewards) do
-                    Quest:ApplyCallbacks(i);
+                    Quest:ApplyCallbacks(Quest.m_Rewards[i]);
                 end
             elseif Quest.m_Result == QuestResults.Failure then
                 for i = 1, table.getn(Quest.m_Reprisals) do
-                    Quest:ApplyCallbacks(i);
+                    Quest:ApplyCallbacks(Quest.m_Reprisals[i]);
                 end
             end
             return true;
@@ -641,84 +641,82 @@ end
 ---
 -- Calls the callback behavior for the quest.
 --
--- @param _Index [number] Index of behavior
+-- @param _Behavior [table] Table of behavior
 -- @within QuestTemplate
 -- @local
 --
-function QuestTemplate:ApplyCallbacks(_Index)
-    local Behavior = self.m_Rewards[_Index];
-
-    if Behavior[1] == Callbacks.Defeat then
+function QuestTemplate:ApplyCallbacks(_Behavior)
+    if _Behavior[1] == Callbacks.Defeat then
         Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
         Defeat();
 
-    elseif Behavior[1] == Callbacks.Victory then
+    elseif _Behavior[1] == Callbacks.Victory then
         Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
         Victory();
 
-    elseif Behavior[1] == Callbacks.MapScriptFunction then
-        Behavior[2][1](Behavior[2][2], self);
+    elseif _Behavior[1] == Callbacks.MapScriptFunction then
+        _Behavior[2][1](_Behavior[2][2], self);
 
-    elseif Behavior[1] == Callbacks.Briefing then
-        self.m_Briefing = Behavior[2][1](Behavior[2][2], self);
+    elseif _Behavior[1] == Callbacks.Briefing then
+        self.m_Briefing = _Behavior[2][1](_Behavior[2][2], self);
 
-    elseif Behavior[1] == Callbacks.ChangePlayer then
-        ChangePlayer(Behavior[2], Behavior[3]);
+    elseif _Behavior[1] == Callbacks.ChangePlayer then
+        ChangePlayer(_Behavior[2], _Behavior[3]);
 
-    elseif Behavior[1] == Callbacks.Message then
-        Message(Behavior[2]);
+    elseif _Behavior[1] == Callbacks.Message then
+        Message(_Behavior[2]);
 
-    elseif Behavior[1] == Callbacks.DestroyEntity then
-        if IsExisting(Behavior[2]) then
-            local Position = GetPosition(Behavior[2]);
-            local PlayerID = GetPlayer(Behavior[2]);
-            local Orientation = Logic.GetEntityOrientation(GetID(Behavior[2]));
-            DestroyEntity(Behavior[2]);
+    elseif _Behavior[1] == Callbacks.DestroyEntity then
+        if IsExisting(_Behavior[2]) then
+            local Position = GetPosition(_Behavior[2]);
+            local PlayerID = GetPlayer(_Behavior[2]);
+            local Orientation = Logic.GetEntityOrientation(GetID(_Behavior[2]));
+            DestroyEntity(_Behavior[2]);
             local EntityID = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, Orientation, PlayerID);
-            Logic.SetEntityName(EntityID, Behavior[2]);
+            Logic.SetEntityName(EntityID, _Behavior[2]);
         end
 
-    elseif Behavior[1] == Callbacks.DestroyEffect then
-        if QuestSystem.NamedEffects[Behavior[2]] then
-            Logic.DestroyEffect(QuestSystem.NamedEffects[Behavior[2]]);
+    elseif _Behavior[1] == Callbacks.DestroyEffect then
+        if QuestSystem.NamedEffects[_Behavior[2]] then
+            Logic.DestroyEffect(QuestSystem.NamedEffects[_Behavior[2]]);
         end
 
-    elseif Behavior[1] == Callbacks.CreateEntity then
-        ReplaceEntity(Behavior[2], Behavior[3]);
+    elseif _Behavior[1] == Callbacks.CreateEntity then
+        ReplaceEntity(_Behavior[2], _Behavior[3]);
 
-    elseif Behavior[1] == Callbacks.CreateGroup then
-        local Position = GetPosition(Behavior[2]);
-        local PlayerID = GetPlayer(Behavior[2]);
-        local Orientation = Logic.GetEntityOrientation(GetID(Behavior[2]));
-        DestroyEntity(Behavior[2]);
-        CreateMilitaryGroup(PlayerID, Behavior[3], Behavior[4], Position, Behavior[2]);
+    elseif _Behavior[1] == Callbacks.CreateGroup then
+        local Position = GetPosition(_Behavior[2]);
+        local PlayerID = GetPlayer(_Behavior[2]);
+        local Orientation = Logic.GetEntityOrientation(GetID(_Behavior[2]));
+        DestroyEntity(_Behavior[2]);
+        CreateMilitaryGroup(PlayerID, _Behavior[3], _Behavior[4], Position, _Behavior[2]);
 
-    elseif Behavior[1] == Callbacks.CreateEffect then
-        local Position = GetPosition(Behavior[4]);
-        local EffectID = Logic.CreateEffect(Behavior[3], Position.X, Position.Y, 0);
-        QuestSystem.NamedEffects[Behavior[2]] = EffectID;
+    elseif _Behavior[1] == Callbacks.CreateEffect then
+        local Position = GetPosition(_Behavior[4]);
+        local EffectID = Logic.CreateEffect(_Behavior[3], Position.X, Position.Y, 0);
+        QuestSystem.NamedEffects[_Behavior[2]] = EffectID;
 
-    elseif Behavior[1] == Callbacks.Diplomacy then
-        local Exploration = (Behavior[4] == Diplomacy.Friendly and 1) or 0;
-        Logic.SetShareExplorationWithPlayerFlag(Behavior[2], Behavior[3], Exploration);
-		Logic.SetShareExplorationWithPlayerFlag(Behavior[3], Behavior[2], Exploration);
-        Logic.SetDiplomacyState(Behavior[2], Behavior[3], Behavior[4]);
+    elseif _Behavior[1] == Callbacks.Diplomacy then
+        local Exploration = (_Behavior[4] == Diplomacy.Friendly and 1) or 0;
+        Logic.SetShareExplorationWithPlayerFlag(_Behavior[2], _Behavior[3], Exploration);
+		Logic.SetShareExplorationWithPlayerFlag(_Behavior[3], _Behavior[2], Exploration);
+        Logic.SetDiplomacyState(_Behavior[2], _Behavior[3], _Behavior[4]);
 
-    elseif Behavior[1] == Callbacks.Resource then
-        if Behavior[3] > 0 then
-            Logic.AddToPlayersGlobalResource(self.m_Receiver, Behavior[2], Behavior[3]);
-        elseif Behavior[3] < 0 then
-            Logic.SubFromPlayersGlobalResource(self.m_Receiver, Behavior[2], math.abs(Behavior[3]));
+    elseif _Behavior[1] == Callbacks.Resource then
+        if _Behavior[3] > 0 then
+            Logic.AddToPlayersGlobalResource(self.m_Receiver, _Behavior[2], _Behavior[3]);
+        elseif _Behavior[3] < 0 then
+            Logic.SubFromPlayersGlobalResource(self.m_Receiver, _Behavior[2], math.abs(_Behavior[3]));
         end
 
-    elseif Behavior[1] == Callbacks.RemoveQuest then
-        local QuestID = GetQuestID(Behavior[2]);
+    elseif _Behavior[1] == Callbacks.RemoveQuest then
+        local QuestID = GetQuestID(_Behavior[2]);
         if QuestID > 0 then
             Logic.RemoveQuest(self.m_Receiver, QuestID);
         end
 
-    elseif Behavior[1] == Callbacks.QuestSucceed then
-        local QuestID = GetQuestID(Behavior[2]);
+    elseif _Behavior[1] == Callbacks.QuestSucceed then
+        local QuestID = GetQuestID(_Behavior[2]);
         if QuestID == 0 then
             return;
         end
@@ -726,8 +724,8 @@ function QuestTemplate:ApplyCallbacks(_Index)
             QuestSystem.Quests[QuestID]:Success();
         end
 
-    elseif Behavior[1] == Callbacks.QuestFail then
-        local QuestID = GetQuestID(Behavior[2]);
+    elseif _Behavior[1] == Callbacks.QuestFail then
+        local QuestID = GetQuestID(_Behavior[2]);
         if QuestID == 0 then
             return;
         end
@@ -735,22 +733,22 @@ function QuestTemplate:ApplyCallbacks(_Index)
             QuestSystem.Quests[QuestID]:Fail();
         end
 
-    elseif Behavior[1] == Callbacks.QuestInterrupt then
-        local QuestID = GetQuestID(Behavior[2]);
+    elseif _Behavior[1] == Callbacks.QuestInterrupt then
+        local QuestID = GetQuestID(_Behavior[2]);
         if QuestID == 0 or QuestSystem.Quests[QuestID].m_Result == QuestResults.Over then
             return;
         end
         QuestSystem.Quests[QuestID]:Interrupt();
 
-    elseif Behavior[1] == Callbacks.QuestActivate then
-        local QuestID = GetQuestID(Behavior[2]);
+    elseif _Behavior[1] == Callbacks.QuestActivate then
+        local QuestID = GetQuestID(_Behavior[2]);
         if QuestID == 0 or QuestSystem.Quests[QuestID].m_State ~= QuestStates.Inactive then
             return;
         end
         QuestSystem.Quests[QuestID]:Trigger();
 
-    elseif Behavior[1] == Callbacks.QuestRestart then
-        local QuestID = GetQuestID(Behavior[2]);
+    elseif _Behavior[1] == Callbacks.QuestRestart then
+        local QuestID = GetQuestID(_Behavior[2]);
         if QuestID == 0 then
             return;
         end
@@ -761,45 +759,45 @@ function QuestTemplate:ApplyCallbacks(_Index)
             Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", QuestSystem.QuestLoop, 1, {}, {QuestSystem.Quests[QuestID].m_QuestID});
         end
 
-    elseif Behavior[1] == Callbacks.Technology then
-        Logic.SetTechnologyState(self.m_Receiver, Behavior[2], Behavior[3]);
+    elseif _Behavior[1] == Callbacks.Technology then
+        Logic.SetTechnologyState(self.m_Receiver, _Behavior[2], _Behavior[3]);
 
-    elseif Behavior[1] == Callbacks.CreateMarker then
-        if Behavior[2] == MarkerTypes.StaticFriendly then
-            GUI.CreateMinimapMarker(Behavior[3].X, Behavior[3].Y, 0);
-        elseif Behavior[2] == MarkerTypes.StaticNeutral then
-            GUI.CreateMinimapMarker(Behavior[3].X, Behavior[3].Y, 2);
-        elseif Behavior[2] == MarkerTypes.StaticEnemy then
-            GUI.CreateMinimapMarker(Behavior[3].X, Behavior[3].Y, 6);
-        elseif Behavior[2] == MarkerTypes.PulseFriendly then
-            GUI.CreateMinimapPulse(Behavior[3].X, Behavior[3].Y, 0);
-        elseif Behavior[2] == MarkerTypes.PulseNeutral then
-            GUI.CreateMinimapPulse(Behavior[3].X, Behavior[3].Y, 2);
+    elseif _Behavior[1] == Callbacks.CreateMarker then
+        if _Behavior[2] == MarkerTypes.StaticFriendly then
+            GUI.CreateMinimapMarker(_Behavior[3].X, _Behavior[3].Y, 0);
+        elseif _Behavior[2] == MarkerTypes.StaticNeutral then
+            GUI.CreateMinimapMarker(_Behavior[3].X, _Behavior[3].Y, 2);
+        elseif _Behavior[2] == MarkerTypes.StaticEnemy then
+            GUI.CreateMinimapMarker(_Behavior[3].X, _Behavior[3].Y, 6);
+        elseif _Behavior[2] == MarkerTypes.PulseFriendly then
+            GUI.CreateMinimapPulse(_Behavior[3].X, _Behavior[3].Y, 0);
+        elseif _Behavior[2] == MarkerTypes.PulseNeutral then
+            GUI.CreateMinimapPulse(_Behavior[3].X, _Behavior[3].Y, 2);
         else
-            GUI.CreateMinimapPulse(Behavior[3].X, Behavior[3].Y, 6);
+            GUI.CreateMinimapPulse(_Behavior[3].X, _Behavior[3].Y, 6);
         end
 
-    elseif Behavior[1] == Callbacks.DestroyMarker then
-        if Behavior[2] then
-            GUI.DestroyMinimapPulse(Behavior[2].X, Behavior[2].Y);
+    elseif _Behavior[1] == Callbacks.DestroyMarker then
+        if _Behavior[2] then
+            GUI.DestroyMinimapPulse(_Behavior[2].X, _Behavior[2].Y);
         end
 
-    elseif Behavior[1] == Callbacks.RevealArea then
-        if QuestSystem.NamedExplorations[Behavior[2]] then
-            DestroyEntity(QuestSystem.NamedExplorations[Behavior[2]]);
+    elseif _Behavior[1] == Callbacks.RevealArea then
+        if QuestSystem.NamedExplorations[_Behavior[2]] then
+            DestroyEntity(QuestSystem.NamedExplorations[_Behavior[2]]);
         end
-        local Position = GetPosition(Behavior[2]);
+        local Position = GetPosition(_Behavior[2]);
         local ViewCenter = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, 0, self.m_Receiver);
-        Logic.SetEntityExplorationRange(ViewCenter, Behavior[3]);
-        QuestSystem.NamedExplorations[Behavior[2]] = ViewCenter;
+        Logic.SetEntityExplorationRange(ViewCenter, _Behavior[3]);
+        QuestSystem.NamedExplorations[_Behavior[2]] = ViewCenter;
 
-    elseif Behavior[1] == Callbacks.ConcealArea then
-        if QuestSystem.NamedExplorations[Behavior[2]] then
-            DestroyEntity(QuestSystem.NamedExplorations[Behavior[2]]);
+    elseif _Behavior[1] == Callbacks.ConcealArea then
+        if QuestSystem.NamedExplorations[_Behavior[2]] then
+            DestroyEntity(QuestSystem.NamedExplorations[_Behavior[2]]);
         end
 
-    elseif Behavior[1] == Callbacks.Move then
-        Move(Behavior[2], Behavior[3]);
+    elseif _Behavior[1] == Callbacks.Move then
+        Move(_Behavior[2], _Behavior[3]);
     end
 end
 
@@ -950,10 +948,10 @@ function QuestTemplate:Reset()
             end
         end
     end
-    for i= 1, table.getn(self.m_Reprislas), 1 do
-        if self.m_Reprislas[i][1] == Callbacks.MapScriptFunction then
-            if self.m_Reprislas[i][2][2].Reset then
-                self.m_Reprislas[i][2][2]:Reset(self);
+    for i= 1, table.getn(self.m_Reprisals), 1 do
+        if self.m_Reprisals[i][1] == Callbacks.MapScriptFunction then
+            if self.m_Reprisals[i][2][2].Reset then
+                self.m_Reprisals[i][2][2]:Reset(self);
             end
         end
     end
