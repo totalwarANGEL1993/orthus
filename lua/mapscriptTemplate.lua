@@ -22,6 +22,7 @@ Script.Load("data/maps/externalMap/qsb/questdebug.lua");
 UseQuestTrace = false;
 UseDebugCheats = true;
 UseDebugShell = true;
+UseCheckQuests = true;
 
 -- Start resources for the human player
 local GoldAmount   = 0;
@@ -98,8 +99,8 @@ function FirstMapAction()
 	Score.Player[0]["all"] = 0;
     
     QuestSystemBehavior:PrepareQuestSystem();
-    if UseQuestTrace or UseDebugCheats or UseDebugShell then
-        QuestSystemDebug:Activate(UseQuestTrace, UseDebugCheats, UseDebugShell);
+    if UseQuestTrace or UseDebugCheats or UseDebugShell or UseCheckQuests then
+        QuestSystemDebug:Activate(UseCheckQuests, UseDebugCheats, UseDebugShell, UseQuestTrace);
     end
     CreateQuests();
 end

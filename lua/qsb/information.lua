@@ -161,20 +161,22 @@ function Information:CreateAddPageFunctions()
             _page.id = table.getn(_briefing);
             return _page;
         end
-        local ASP = function(_entity, _title, _text, _dialog, _action)
-            return AP(CreateShortPage(_entity, _title, _text, _dialog, _action));
+        local ASP = function(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
+            return AP(CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog));
         end
         return AP, ASP;
     end
 
-    function CreateShortPage(_entity, _title, _text, _dialog, _action)
+    function CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
         local page = {
             title = _title,
             text = _text,
             position = _entity,
-            dialogCamera = (_dialog or false),
             action = _action,
-            lookAt = true;
+            lookAt = true,
+            dialogCamera = (_dialog ~= nil and _dialog) or false,
+            showSky = (_showSky ~= nil and _showSky) or true, 
+            disableFog = (_disableFog ~= nil and _disableFog) or true
         };
         return page;
     end
