@@ -2250,7 +2250,7 @@ b_Reward_Briefing.Data.Type = Callbacks.MapScriptFunction;
 b_Reward_Briefing.GetReprisalTable = nil;
 
 function b_Reward_Briefing:GetRewardTable()
-    return {self.Data.Type, {self.Data.CustomFunction, self}};
+    return {self.Data.Type, {self.CustomFunction, self}};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_Briefing);
