@@ -25,7 +25,7 @@
 -- But reprisals and rewards are both callbacks!
 --
 -- A quest is generated like this:<br>
--- <pre>local QuestID = new(QuestTemplate, "SomeName", SomeObjectives, SomeConditions, 1, -1, SomeRewards, SomeReprisals)</pre>
+-- <pre>local QuestID = new(QuestTemplate, "SomeName", SomeObjectives, SomeConditions, 1, 0, SomeRewards, SomeReprisals)</pre>
 --
 -- <b>Required modules:</b>
 -- <ul>
@@ -236,7 +236,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
 
                 for i = 1, table.getn(Quest.m_Objectives) do
                     local ObjectiveCompleted = Quest:IsObjectiveCompleted(i);
-                    if Quest.m_Time > -1 and Quest.m_StartTime + Quest.m_Time < Logic.GetTime() then
+                    if Quest.m_Time > 0 and Quest.m_StartTime + Quest.m_Time < Logic.GetTime() then
                         if ObjectiveCompleted == nil then
                             if Quest.m_Objectives[i][1] == Objectives.Protect or Quest.m_Objectives[i][1] == Objectives.NoChange then
                                 ObjectiveCompleted = true;
@@ -298,7 +298,7 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     self.m_Rewards     = (_Rewards and copy(_Rewards)) or {};
     self.m_Reprisals   = (_Reprisals and copy(_Reprisals)) or {};
     self.m_Description = _Description;
-    self.m_Time        = _Time or -1;
+    self.m_Time        = _Time or 0;
 
     self.m_State       = QuestStates.Inactive;
     self.m_Result      = QuestResults.Undecided;
