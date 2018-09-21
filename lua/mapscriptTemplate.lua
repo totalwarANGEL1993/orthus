@@ -9,12 +9,14 @@
 Script.Load("data/script/maptools/main.lua");
 Script.Load("data/script/maptools/mapeditortools.lua");
 
--- Load library
+-- Load base
 Script.Load("data/maps/externalMap/qsb/oop.lua");
-Script.Load("data/maps/externalMap/qsb/interaction.lua");
 Script.Load("data/maps/externalMap/qsb/questsystem.lua");
-Script.Load("data/maps/externalMap/qsb/questbehavior.lua");
 Script.Load("data/maps/externalMap/qsb/questdebug.lua");
+-- load library
+Script.Load("data/maps/externalMap/qsb/interaction.lua");
+Script.Load("data/maps/externalMap/qsb/information.lua");
+Script.Load("data/maps/externalMap/qsb/questbehavior.lua");
 
 -- Settings ----------------------------------------------------------------- --
 
