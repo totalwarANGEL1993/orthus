@@ -11,7 +11,8 @@
 -- @set sort=true
 --
 
-gvExtensionNumber = tonumber(string.sub(Framework.GetProgramVersion(), string.len(Version)));
+local Version = Framework.GetProgramVersion();
+gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
 if gvExtensionNumber > 2 then
     -- FIXME Not implemented
     Script.Load("data/maps/externalMap/qsb/information_ex3.lua");
