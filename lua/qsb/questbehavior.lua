@@ -1592,7 +1592,7 @@ end
 b_Reprisal_MapScriptFunction = {
     Data = {
         Name = "Reprisal_MapScriptFunction",
-        Type = Reprisals.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -1633,7 +1633,7 @@ end
 b_Reprisal_Defeat = {
     Data = {
         Name = "Reprisal_Defeat",
-        Type = Reprisals.Defeat
+        Type = Callbacks.Defeat
     },
 };
 
@@ -1659,7 +1659,7 @@ end
 b_Reprisal_Victory = {
     Data = {
         Name = "Reprisal_Victory",
-        Type = Reprisals.Victory
+        Type = Callbacks.Victory
     },
 };
 
@@ -1686,7 +1686,7 @@ end
 b_Reprisal_Briefing = {
     Data = {
         Name = "Reprisal_Briefing",
-        Type = Reprisals.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -1729,7 +1729,7 @@ end
 b_Reprisal_ChangePlayer = {
     Data = {
         Name = "Reprisal_ChangePlayer",
-        Type = Reprisals.ChangePlayer
+        Type = Callbacks.ChangePlayer
     },
 };
 
@@ -1761,7 +1761,7 @@ end
 b_Reprisal_Message = {
     Data = {
         Name = "Reprisal_Message",
-        Type = Reprisals.Message
+        Type = Callbacks.Message
     },
 };
 
@@ -1791,7 +1791,7 @@ end
 b_Reprisal_DestroyEntity = {
     Data = {
         Name = "Reprisal_DestroyEntity",
-        Type = Reprisals.DestroyEntity
+        Type = Callbacks.DestroyEntity
     },
 };
 
@@ -1821,7 +1821,7 @@ end
 b_Reprisal_DestroyEffect = {
     Data = {
         Name = "Reprisal_DestroyEffect",
-        Type = Reprisals.DestroyEffect
+        Type = Callbacks.DestroyEffect
     },
 };
 
@@ -1853,7 +1853,7 @@ end
 b_Reprisal_Diplomacy = {
     Data = {
         Name = "Reprisal_Diplomacy",
-        Type = Reprisals.Diplomacy
+        Type = Callbacks.Diplomacy
     },
 };
 
@@ -1887,7 +1887,7 @@ end
 b_Reprisal_RemoveQuest = {
     Data = {
         Name = "Reprisal_RemoveQuest",
-        Type = Reprisals.RemoveQuest
+        Type = Callbacks.RemoveQuest
     },
 };
 
@@ -1917,7 +1917,7 @@ end
 b_Reprisal_QuestSucceed = {
     Data = {
         Name = "Reprisal_QuestSucceed",
-        Type = Reprisals.QuestSucceed
+        Type = Callbacks.QuestSucceed
     },
 };
 
@@ -1947,7 +1947,7 @@ end
 b_Reprisal_QuestFail = {
     Data = {
         Name = "Reprisal_QuestFail",
-        Type = Reprisals.QuestFail
+        Type = Callbacks.QuestFail
     },
 };
 
@@ -1977,7 +1977,7 @@ end
 b_Reprisal_QuestInterrupt = {
     Data = {
         Name = "Reprisal_QuestInterrupt",
-        Type = Reprisals.QuestInterrupt
+        Type = Callbacks.QuestInterrupt
     },
 };
 
@@ -2007,7 +2007,7 @@ end
 b_Reprisal_QuestActivate = {
     Data = {
         Name = "Reprisal_QuestActivate",
-        Type = Reprisals.QuestActivate
+        Type = Callbacks.QuestActivate
     },
 };
 
@@ -2037,7 +2037,7 @@ end
 b_Reprisal_QuestRestart = {
     Data = {
         Name = "Reprisal_QuestRestart",
-        Type = Reprisals.QuestRestart
+        Type = Callbacks.QuestRestart
     },
 };
 
@@ -2056,36 +2056,6 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestRestart);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Restarts the quest and activates it immediately.
--- @param _QuestName [string] Quest name
--- @within Reprisals
---
-function Reprisal_QuestRestartForceActive(...)
-    return b_Reprisal_QuestRestartForceActive:New(unpack(arg));
-end
-
-b_Reprisal_QuestRestartForceActive = {
-    Data = {
-        Name = "Reprisal_QuestRestartForceActive",
-        Type = Reprisals.QuestRestartForceActive
-    },
-};
-
-function b_Reprisal_QuestRestartForceActive:AddParameter(_Index, _Parameter)
-    if _Index == 1 then
-        self.Data.QuestName = _Parameter;
-    end
-end
-
-function b_Reprisal_QuestRestartForceActive:GetReprisalTable()
-    return {self.Data.Type, self.Data.QuestName};
-end
-
-QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestRestartForceActive);
-
--- -------------------------------------------------------------------------- --
-
----
 -- Changes the state of a technology.
 -- @param _Technology [string] Technology name
 -- @param _State [string] Technology state name
@@ -2098,7 +2068,7 @@ end
 b_Reprisal_Technology = {
     Data = {
         Name = "Reprisal_Technology",
-        Type = Reprisals.Technology
+        Type = Callbacks.Technology
     },
 };
 
@@ -2130,7 +2100,7 @@ end
 b_Reprisal_ConcealArea = {
     Data = {
         Name = "Reprisal_ConcealArea",
-        Type = Reprisals.ConcealArea
+        Type = Callbacks.ConcealArea
     },
 };
 
@@ -2161,7 +2131,7 @@ end
 b_Reprisal_Move = {
     Data = {
         Name = "Reprisal_Move",
-        Type = Reprisals.Move
+        Type = Callbacks.Move
     },
 };
 
@@ -2193,7 +2163,7 @@ end
 b_Reward_MapScriptFunction = {
     Data = {
         Name = "Reward_MapScriptFunction",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -2233,7 +2203,7 @@ end
 
 b_Reward_Defeat = copy(b_Reprisal_Defeat);
 b_Reward_Defeat.Data.Name = "Reward_Defeat";
-b_Reward_Defeat.Data.Type = Rewards.Defeat;
+b_Reward_Defeat.Data.Type = Callbacks.Defeat;
 b_Reward_Defeat.GetReprisalTable = nil;
 
 function b_Reward_Defeat:GetRewardTable()
@@ -2254,7 +2224,7 @@ end
 
 b_Reward_Victory = copy(b_Reprisal_Victory);
 b_Reward_Victory.Data.Name = "Reward_Victory";
-b_Reward_Victory.Data.Type = Rewards.Victory;
+b_Reward_Victory.Data.Type = Callbacks.Victory;
 b_Reward_Victory.GetReprisalTable = nil;
 
 function b_Reward_Victory:GetRewardTable()
@@ -2276,11 +2246,11 @@ end
 
 b_Reward_Briefing = copy(b_Reprisal_Briefing);
 b_Reward_Briefing.Data.Name = "Reward_Briefing";
-b_Reward_Briefing.Data.Type = Rewards.MapScriptFunction;
+b_Reward_Briefing.Data.Type = Callbacks.MapScriptFunction;
 b_Reward_Briefing.GetReprisalTable = nil;
 
 function b_Reward_Briefing:GetRewardTable()
-    return {self.Data.Type, {self.Data.CustomFunction, self}};
+    return {self.Data.Type, {self.CustomFunction, self}};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_Briefing);
@@ -2299,7 +2269,7 @@ end
 
 b_Reward_ChangePlayer = copy(b_Reprisal_ChangePlayer);
 b_Reward_ChangePlayer.Data.Name = "Reward_ChangePlayer";
-b_Reward_ChangePlayer.Data.Type = Rewards.ChangePlayer;
+b_Reward_ChangePlayer.Data.Type = Callbacks.ChangePlayer;
 b_Reward_ChangePlayer.GetReprisalTable = nil;
 
 function b_Reward_ChangePlayer:GetRewardTable()
@@ -2321,7 +2291,7 @@ end
 
 b_Reward_Message = copy(b_Reprisal_Message);
 b_Reward_Message.Data.Name = "Reward_Message";
-b_Reward_Message.Data.Type = Rewards.Message;
+b_Reward_Message.Data.Type = Callbacks.Message;
 b_Reward_Message.GetReprisalTable = nil;
 
 function b_Reward_Message:GetRewardTable()
@@ -2343,7 +2313,7 @@ end
 
 b_Reward_DestroyEntity = copy(b_Reprisal_DestroyEntity);
 b_Reward_DestroyEntity.Data.Name = "Reward_DestroyEntity";
-b_Reward_DestroyEntity.Data.Type = Rewards.DestroyEntity;
+b_Reward_DestroyEntity.Data.Type = Callbacks.DestroyEntity;
 b_Reward_DestroyEntity.GetReprisalTable = nil;
 
 function b_Reward_DestroyEntity:GetRewardTable()
@@ -2365,7 +2335,7 @@ end
 
 b_Reward_DestroyEffect = copy(b_Reprisal_DestroyEffect);
 b_Reward_DestroyEffect.Data.Name = "Reward_DestroyEffect";
-b_Reward_DestroyEffect.Data.Type = Rewards.DestroyEffect;
+b_Reward_DestroyEffect.Data.Type = Callbacks.DestroyEffect;
 b_Reward_DestroyEffect.GetReprisalTable = nil;
 
 function b_Reward_DestroyEffect:GetRewardTable()
@@ -2389,7 +2359,7 @@ end
 
 b_Reward_Diplomacy = copy(b_Reprisal_Diplomacy);
 b_Reward_Diplomacy.Data.Name = "Reward_Diplomacy";
-b_Reward_Diplomacy.Data.Type = Rewards.Diplomacy;
+b_Reward_Diplomacy.Data.Type = Callbacks.Diplomacy;
 b_Reward_Diplomacy.GetReprisalTable = nil;
 
 function b_Reward_Diplomacy:GetRewardTable()
@@ -2411,7 +2381,7 @@ end
 
 b_Reward_RemoveQuest = copy(b_Reprisal_RemoveQuest);
 b_Reward_RemoveQuest.Data.Name = "Reward_RemoveQuest";
-b_Reward_RemoveQuest.Data.Type = Rewards.RemoveQuest;
+b_Reward_RemoveQuest.Data.Type = Callbacks.RemoveQuest;
 b_Reward_RemoveQuest.GetReprisalTable = nil;
 
 function b_Reward_RemoveQuest:GetRewardTable()
@@ -2433,7 +2403,7 @@ end
 
 b_Reward_QuestSucceed = copy(b_Reprisal_QuestSucceed);
 b_Reward_QuestSucceed.Data.Name = "Reward_QuestSucceed";
-b_Reward_QuestSucceed.Data.Type = Rewards.QuestSucceed;
+b_Reward_QuestSucceed.Data.Type = Callbacks.QuestSucceed;
 b_Reward_QuestSucceed.GetReprisalTable = nil;
 
 function b_Reward_QuestSucceed:GetRewardTable()
@@ -2455,7 +2425,7 @@ end
 
 b_Reward_QuestFail = copy(b_Reprisal_QuestFail);
 b_Reward_QuestFail.Data.Name = "Reward_QuestFail";
-b_Reward_QuestFail.Data.Type = Rewards.QuestFail;
+b_Reward_QuestFail.Data.Type = Callbacks.QuestFail;
 b_Reward_QuestFail.GetReprisalTable = nil;
 
 function b_Reward_QuestFail:GetRewardTable()
@@ -2477,7 +2447,7 @@ end
 
 b_Reward_QuestInterrupt = copy(b_Reprisal_QuestInterrupt);
 b_Reward_QuestInterrupt.Data.Name = "Reward_QuestInterrupt";
-b_Reward_QuestInterrupt.Data.Type = Rewards.QuestInterrupt;
+b_Reward_QuestInterrupt.Data.Type = Callbacks.QuestInterrupt;
 b_Reward_QuestInterrupt.GetReprisalTable = nil;
 
 function b_Reward_QuestInterrupt:GetRewardTable()
@@ -2499,7 +2469,7 @@ end
 
 b_Reward_QuestActivate = copy(b_Reprisal_QuestActivate);
 b_Reward_QuestActivate.Data.Name = "Reward_QuestActivate";
-b_Reward_QuestActivate.Data.Type = Rewards.QuestActivate;
+b_Reward_QuestActivate.Data.Type = Callbacks.QuestActivate;
 b_Reward_QuestActivate.GetReprisalTable = nil;
 
 function b_Reward_QuestActivate:GetRewardTable()
@@ -2511,24 +2481,24 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestActivate);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Restarts the quest and activates it immediately.
+-- Restarts the quest.
 -- @param _QuestName [string] Quest name
 -- @within Rewards
 --
-function Reward_QuestRestartForceActive(...)
-    return b_Reward_QuestRestartForceActive:New(unpack(arg));
+function Reward_QuestRestart(...)
+    return b_Reward_QuestRestart:New(unpack(arg));
 end
 
-b_Reward_QuestRestartForceActive = copy(b_Reprisal_QuestRestartForceActive);
-b_Reward_QuestRestartForceActive.Data.Name = "Reward_QuestRestartForceActive";
-b_Reward_QuestRestartForceActive.Data.Type = Rewards.QuestRestartForceActive;
-b_Reward_QuestRestartForceActive.GetReprisalTable = nil;
+b_Reward_QuestRestart = copy(b_Reprisal_QuestRestart);
+b_Reward_QuestRestart.Data.Name = "Reward_QuestRestart";
+b_Reward_QuestRestart.Data.Type = Callbacks.QuestRestart;
+b_Reward_QuestRestart.GetReprisalTable = nil;
 
-function b_Reward_QuestRestartForceActive:GetRewardTable()
+function b_Reward_QuestRestart:GetRewardTable()
     return {self.Data.Type, self.Data.QuestName};
 end
 
-QuestSystemBehavior:RegisterBehavior(b_Reward_QuestRestartForceActive);
+QuestSystemBehavior:RegisterBehavior(b_Reward_QuestRestart);
 
 -- -------------------------------------------------------------------------- --
 
@@ -2544,7 +2514,7 @@ end
 
 b_Reward_Technology = copy(b_Reprisal_Technology);
 b_Reward_Technology.Data.Name = "Reward_Technology";
-b_Reward_Technology.Data.Type = Rewards.Technology;
+b_Reward_Technology.Data.Type = Callbacks.Technology;
 b_Reward_Technology.GetReprisalTable = nil;
 
 function b_Reward_Technology:GetRewardTable()
@@ -2566,7 +2536,7 @@ end
 
 b_Reward_ConcealArea = copy(b_Reprisal_ConcealArea);
 b_Reward_ConcealArea.Data.Name = "Reward_ConcealArea";
-b_Reward_ConcealArea.Data.Type = Rewards.ConcealArea;
+b_Reward_ConcealArea.Data.Type = Callbacks.ConcealArea;
 b_Reward_ConcealArea.GetReprisalTable = nil;
 
 function b_Reward_ConcealArea:GetRewardTable()
@@ -2589,7 +2559,7 @@ end
 
 b_Reward_Move = copy(b_Reprisal_Move);
 b_Reward_Move.Data.Name = "Reward_Move";
-b_Reward_Move.Data.Type = Rewards.Move;
+b_Reward_Move.Data.Type = Callbacks.Move;
 b_Reward_Move.GetReprisalTable = nil;
 
 function b_Reward_Move:GetRewardTable()
@@ -2613,7 +2583,7 @@ end
 b_Reward_CreateEntity = {
     Data = {
         Name = "Reward_CreateEntity",
-        Type = Rewards.CreateEntity
+        Type = Callbacks.CreateEntity
     },
 };
 
@@ -2647,7 +2617,7 @@ end
 b_Reward_CreateGroup = {
     Data = {
         Name = "Reward_CreateGroup",
-        Type = Rewards.CreateGroup
+        Type = Callbacks.CreateGroup
     },
 };
 
@@ -2683,7 +2653,7 @@ end
 b_Reward_CreateEffect = {
     Data = {
         Name = "Reward_CreateEffect",
-        Type = Rewards.CreateEffect
+        Type = Callbacks.CreateEffect
     },
 };
 
@@ -2718,7 +2688,7 @@ end
 b_Reward_Resource = {
     Data = {
         Name = "Reward_Resource",
-        Type = Rewards.Resource
+        Type = Callbacks.Resource
     },
 };
 
@@ -2751,7 +2721,7 @@ end
 b_Reward_CreateMarker = {
     Data = {
         Name = "Reward_CreateMarker",
-        Type = Rewards.CreateMarker
+        Type = Callbacks.CreateMarker
     },
 };
 
@@ -2783,7 +2753,7 @@ end
 b_Reward_DestroyMarker = {
     Data = {
         Name = "Reward_DestroyMarker",
-        Type = Rewards.DestroyMarker
+        Type = Callbacks.DestroyMarker
     },
 };
 
@@ -2814,7 +2784,7 @@ end
 b_Reward_RevealArea = {
     Data = {
         Name = "Reward_RevealArea",
-        Type = Rewards.RevealArea
+        Type = Callbacks.RevealArea
     },
 };
 
@@ -2848,7 +2818,7 @@ end
 b_Reward_MoveAndVanish = {
     Data = {
         Name = "Reward_MoveAndVanish",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -3286,6 +3256,79 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestXorQuest);
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Restarts the quest and force it to be active immedaitly.
+-- @param _QuestName [string] Quest name
+-- @within Reprisals
+--
+function Reprisal_QuestRestartForceActive(...)
+    return b_Reprisal_QuestRestartForceActive:New(unpack(arg));
+end
+
+b_Reprisal_QuestRestartForceActive = {
+    Data = {
+        Name = "Reprisal_QuestRestartForceActive",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reprisal_QuestRestartForceActive:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.QuestName = _Parameter;
+    end
+end
+
+function b_Reprisal_QuestRestartForceActive:GetReprisalTable()
+    return {self.Data.Type, {self.Data.CustomFunction, self}};
+end
+
+function b_Reprisal_QuestRestartForceActive:CustomFunction(_Quest)
+    local QuestID = GetQuestID(self.Data.QuestName);
+    if QuestID == 0 then
+        return;
+    end
+    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
+        QuestSystem.Quests[QuestID].m_State = QuestStates.Inactive;
+        QuestSystem.Quests[QuestID].m_Result = QuestResults.Undecided;
+        QuestSystem.Quests[QuestID]:Reset();
+        Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", QuestSystem.QuestLoop, 1, {}, {QuestSystem.Quests[QuestID].m_QuestID});
+        QuestSystem.Quests[QuestID]:Trigger();
+    end
+end
+
+function b_Reprisal_QuestRestartForceActive:Debug(_Quest)
+    return false;
+end
+
+function b_Reprisal_QuestRestartForceActive:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestRestart);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Restarts the quest and force it to be active immedaitly.
+-- @param _QuestName [string] Quest name
+-- @within Rewards
+--
+function Reward_QuestRestartForceActive(...)
+    return b_Reward_QuestRestartForceActive:New(unpack(arg));
+end
+
+b_Reward_QuestRestartForceActive = copy(b_Reprisal_QuestRestartForceActive);
+b_Reward_QuestRestartForceActive.Data.Name = "Reward_QuestRestartForceActive";
+b_Reward_QuestRestartForceActive.Data.Type = Callbacks.QuestRestartForceActive;
+b_Reward_QuestRestartForceActive.GetReprisalTable = nil;
+
+function b_Reward_QuestRestartForceActive:GetRewardTable()
+    return {self.Data.Type, self.Data.QuestName};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_QuestRestartForceActive);
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- Creates an merchant with up to 4 offers. Each offer purchases a fixed
 -- amount of a resource for 1000 units of gold. Default inflation will be used.
 -- @param _Merchant [string] Merchant name
@@ -3306,7 +3349,7 @@ end
 b_Reward_OpenResourceSale = {
     Data = {
         Name = "Reward_OpenResourceSale",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -3403,7 +3446,7 @@ end
 b_Reward_OpenResourcePurchase = {
     Data = {
         Name = "Reward_OpenResourcePurchase",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -3504,7 +3547,7 @@ end
 b_Reward_OpenMercenaryMerchant = {
     Data = {
         Name = "Reward_OpenMercenaryMerchant",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -3579,7 +3622,7 @@ end
 b_Reward_CloseMerchant = {
     Data = {
         Name = "Reward_CloseMerchant",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -3620,7 +3663,7 @@ end
 b_Reward_CreateAI = {
     Data = {
         Name = "Reward_CreateAI",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -3672,7 +3715,7 @@ end
 b_Reward_CreateAIArmy = {
     Data = {
         Name = "Reward_CreateAIArmy",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -3723,7 +3766,7 @@ end
 b_Reward_SetPlayerColor = {
     Data = {
         Name = "Reward_SetPlayerColor",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -3778,7 +3821,7 @@ end
 b_Reward_DEBUG = {
     Data = {
         Name = "Reward_DEBUG",
-        Type = Rewards.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 

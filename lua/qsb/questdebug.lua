@@ -53,36 +53,36 @@ function QuestSystemDebug:OverrideQuestSystemTriggerQuest()
     QuestTemplate.Trigger = function(self)
         if QuestSystemDebug.m_CheckQuests then
             for i= 1, table.getn(self.m_Objectives), 1 do
-                if self.m_Objectives[i][2][2].Debug then
-                    if self.m_Objectives[i][2][2].Debug(self) then
+                if self.m_Objectives[i][1] == Objectives.MapScriptFunction and self.m_Objectives[i][2][2].Debug then
+                    if self.m_Objectives[i][2][2]:Debug(self) then
                         return;
                     end
                 end
             end
             for i= 1, table.getn(self.m_Conditions), 1 do
-                if self.m_Conditions[i][2][2].Debug then
-                    if self.m_Conditions[i][2][2].Debug(self) then
+                if self.m_Conditions[i][1] == Conditions.MapScriptFunction and self.m_Conditions[i][2][2].Debug then
+                    if self.m_Conditions[i][2][2]:Debug(self) then
                         return;
                     end
                 end
             end
             for i= 1, table.getn(self.m_Rewards), 1 do
-                if self.m_Rewards[i][2][2].Debug then
-                    if self.m_Rewards[i][2][2].Debug(self) then
+                if self.m_Rewards[i][1] == Callbacks.MapScriptFunction and self.m_Rewards[i][2][2].Debug then
+                    if self.m_Rewards[i][2][2]:Debug(self) then
                         return;
                     end
                 end
             end
             for i= 1, table.getn(self.m_Reprisals), 1 do
-                if self.m_Reprisals[i][2][2].Debug then
-                    if self.m_Reprisals[i][2][2].Debug(self) then
+                if self.m_Reprisals[i][1] == Callbacks.MapScriptFunction and self.m_Reprisals[i][2][2].Debug then
+                    if self.m_Reprisals[i][2][2]:Debug(self) then
                         return;
                     end
                 end
             end
         end
         
-        QuestTemplate.Trigger(self);
+        QuestTemplate.TriggerOriginal(self);
     end
 end
 
