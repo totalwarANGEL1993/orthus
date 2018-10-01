@@ -11,7 +11,13 @@
 -- @set sort=true
 --
 
-Information = {}
+Information = {
+    Fader = {
+        IsFadeIn = false,
+        StartTime = 0,
+        Duration = 0,
+    }
+}
 
 ---
 -- Installs the information mod.
@@ -58,9 +64,9 @@ function Information:CreateAddPageFunctions()
     --
     function AddPages(_briefing)
         local AP = function(_page)
-            if _page then                
+            if _page then
                 -- Set position before page is add
-                if type(_page.position) ~= "table" then 
+                if type(_page.position) ~= "table" then
                     _page.entity   = _page.position;
                     _page.position = GetPosition(_page.position);
                 end
@@ -403,6 +409,68 @@ function Information:SetBriefingLooks(_DisableMap)
     XGUIEng.ShowWidget("CinematicMiniMap", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicFrameBG", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicFrame", (_DisableMap and 0) or 1);
+end
+
+---
+-- Starts a fading process. If it is already fading than the old process will
+-- be aborted.
+-- @param _Duration [number] Duration of fading in seconds
+-- @param _FadeIn [boolean] Fade in from black
+-- @within Information
+-- @local
+function Information:StartFader(_Duration, _FadeIn)
+    self.Fader.Duration = _Duration * 100;
+    self.Fader.StartTime = Logic.GetTimeMs();
+    self.Fader.IsFadeIn = _FadeIn == true;
+    Information:SetFaderAlpha(0);
+    if _FadeIn then
+        Information:SetFaderAlpha(1);
+    end
+    if self.Fader.JobID and JobIsRunning(self.Fader.JobID) then
+        EndJob(self.Fader.JobID);
+    end
+    self.Fader.JobID = StartSimpleHiResJob("Information_FadingController");
+end
+
+---
+-- Sets the alpha value of the fader mask.
+-- @param _AlphaFactor [number] Alpha factor
+-- @within Information
+-- @local
+function Information:SetFaderAlpha(_AlphaFactor)
+    local sX, sY = GUI.GetScreenSize();
+    local WidgetID = XGUIEng.GetWidgetID("CinematicBar02");
+    XGUIEng.SetWidtetPositionAndSize(WidgetID, 0, 0, sX, sY);
+    XGUIEng.SetMaterialTexture(WidgetID, 0, "");
+    XGUIEng.SetMaterialColor(WidgetID, 0, 0, 0, 0, math.floor(255 * _AlphaFactor));
+end
+
+---
+-- Returns the factor for the alpha value of the fader mask.
+-- @return [number] Alpha factor
+-- @within Information
+-- @local
+function Information:GetFadingFactor()
+    local CurrentTime = Logic.GetTimeMs() - self.Fader.StartTime;
+    local FadingFactor = CurrentTime / (self.Fader.StartTime + self.Fader.Duration);
+    if self.Fader.IsFadeIn then
+        FadingFactor = 1 - FadingFactor;
+    end
+    return FadingFactor;
+end
+
+---
+-- Controlls the fading process.
+-- @within Information
+-- @loca
+function Information_FadingController()
+    local CurrentTime = Logic.GetTimeMs() - self.Fader.StartTime;
+    if Logic.GetTimeMs() > self.Fader.StartTime + self.Fader.Duration then
+        return true;
+    end
+    Information:SetFaderAlpha(Information:GetFadingFactor());
+    PrintBriefingHeadline("");
+    PrintBriefingText("");
 end
 
 -- Countdown code --------------------------------------------------------------
