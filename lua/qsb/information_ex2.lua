@@ -11,7 +11,14 @@
 -- @set sort=true
 --
 
-Information = {}
+Information = {
+    Fader = {
+        IsFading = false,
+        IsFadeIn = false,
+        StartTime = 0,
+        Duration = 0,
+    }
+}
 
 ---
 -- Installs the information mod.
@@ -23,6 +30,16 @@ function Information:Install()
     self:OverrideCinematic();
     self:OverrideEscape();
     self:CreateAddPageFunctions();
+end
+
+---
+-- Returns the number of the extension.
+-- @return [number] Extension number
+-- @within Information
+-- @local
+--
+function Information:GetExtraNumber()
+    return tonumber(string.sub(Framework.GetProgramVersion(), string.len(Version)));
 end
 
 ---
@@ -48,9 +65,9 @@ function Information:CreateAddPageFunctions()
     --
     function AddPages(_briefing)
         local AP = function(_page)
-            if _page then                
+            if _page then
                 -- Set position before page is add
-                if type(_page.position) ~= "table" then 
+                if type(_page.position) ~= "table" then
                     _page.entity   = _page.position;
                     _page.position = GetPosition(_page.position);
                 end
@@ -151,22 +168,20 @@ function Information:CreateAddPageFunctions()
             _page.id = table.getn(_briefing);
             return _page;
         end
-        local ASP = function(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
-            return AP(CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog));
+        local ASP = function(_entity, _title, _text, _dialog, _action)
+            return AP(CreateShortPage(_entity, _title, _text, _dialog, _action));
         end
         return AP, ASP;
     end
 
-    function CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
+    function CreateShortPage(_entity, _title, _text, _dialog, _action)
         local page = {
             title = _title,
             text = _text,
             position = _entity,
+            dialogCamera = (_dialog or false),
             action = _action,
-            lookAt = true,
-            dialogCamera = (_dialog ~= nil and _dialog) or false,
-            showSky = (_showSky ~= nil and _showSky) or true, 
-            disableFog = (_disableFog ~= nil and _disableFog) or true
+            lookAt = true;
         };
         return page;
     end
@@ -237,6 +252,10 @@ function Information:OverrideCinematic()
         end
         Display.SetRenderFogOfWar(1);
         Display.SetRenderSky(0);
+
+        Information:SetFaderAlpha(0);
+        Information:StopFader();
+
         return EndBriefing_Orig_Information();
     end
 
@@ -378,6 +397,7 @@ function Information:SetBriefingLooks(_DisableMap)
     local bottomBarX = (size[2]*(768/size[2]))-85;
     local bottomBarY = (size[2]*(768/size[2]))-85;
 
+    -- Set widget apperance
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Container",0,0,size[1],size[2]);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1",200,button1Y,button1SizeX,46);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2",570,button2Y,button2SizeX,46);
@@ -386,15 +406,159 @@ function Information:SetBriefingLooks(_DisableMap)
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
     XGUIEng.SetWidgetPositionAndSize("Cinematic_Headline",100,titlePosY,titleSize,15);
     XGUIEng.SetWidgetPositionAndSize("CinematicBar01",0,size[2],size[1],185);
-    XGUIEng.SetWidgetSize("CinematicBar00",size[1],180);
-    XGUIEng.ShowWidget("CinematicBar02",0);
-    XGUIEng.ShowWidget("CinematicBar01",1);
-    XGUIEng.ShowWidget("CinematicBar00",1);
+    XGUIEng.SetMaterialTexture("CinematicBar02", 0, "data/graphics/textures/gui/cutscene_top.dds");
+    XGUIEng.SetMaterialColor("CinematicBar02", 0, 255, 255, 255, 255);
+    XGUIEng.SetWidgetPositionAndSize("CinematicBar02", 0, 0, size[1], 180);
 
+    -- Display or hide widgets
+    if not Information.Fader.IsFading then
+        XGUIEng.ShowWidget("CinematicBar00",0);
+    end
     XGUIEng.ShowWidget("CinematicMiniMapOverlay", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicMiniMap", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicFrameBG", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicFrame", (_DisableMap and 0) or 1);
+    XGUIEng.ShowWidget("CinematicBar02",1);
+    XGUIEng.ShowWidget("CinematicBar01",1);
+end
+
+function Information:InitalizeFaderForBriefingPage(_Page)
+    if _Page then
+        if _Page.flyTime then
+            if _Page.faderAlpha then
+                Information:StopFader();
+                self:SetFaderAlpha(_Page.faderAlpha);
+            else
+                if not _Page.fadeIn and _Page.fadeOut then
+                    Information:StopFader();
+                    self:SetFaderAlpha(0);
+                end
+                if _Page.fadeIn then
+                    Information:StartFaderDelayed(0, _Page.fadeIn, true);
+                end
+                if _Page.fadeOut then
+                    local Waittime = (Logic.GetTime() + _Page.flyTime) - _Page.fadeOut;
+                    Information:StartFaderDelayed(Waittime, _Page.fadeIn, true);
+                end
+            end
+        end
+    end
+end
+
+---
+-- 
+-- @within Information
+-- @local
+function Information:StartFaderDelayed(_StartTime, _Duration, _FadeIn)
+    self:StopFader();
+    local JobID = Trigger.RequestTrigger(
+        Events.LOGIC_EVENT_EVERY_TURN,
+        "",
+        "Information_FaderDelayController",
+        1,
+        {},
+        {_StartTime, _Duration, _FadeIn}
+    );
+    self.Fader.FaderDelayJobID = JobID;
+end
+
+---
+-- Starts a fading process. If it is already fading than the old process will
+-- be aborted.
+-- @param _Duration [number] Duration of fading in seconds
+-- @param _FadeIn [boolean] Fade in from black
+-- @within Information
+-- @local
+function Information:StartFader(_Duration, _FadeIn)
+    self.Fader.Duration = _Duration * 1000;
+    self.Fader.StartTime = Logic.GetTimeMs();
+    self.Fader.IsFadeIn = _FadeIn == true;
+    self:SetFaderAlpha(0);
+    if _FadeIn then
+        self:SetFaderAlpha(1);
+    end
+    self:StopFader();
+    self.Fader.FaderControllerJobID = StartSimpleHiResJob("Information_FaderVisibilityController");
+    self.Fader.IsFading = true;
+    self:SetFaderAlpha(self:GetFadingFactor());
+end
+
+---
+-- Stops a fading process.
+-- @within Information
+-- @local
+function Information:StopFader()
+    local size = {GUI.GetScreenSize()};
+    if self.Fader.FaderControllerJobID and JobIsRunning(self.Fader.FaderControllerJobID) then
+        EndJob(self.Fader.FaderControllerJobID);
+        self.Fader.FaderControllerJobID = nil;
+        self.Fader.IsFading = false;
+    end
+    if self.Fader.FaderDelayJobID and JobIsRunning(self.Fader.FaderDelayJobID) then
+        EndJob(self.Fader.FaderDelayJobID);
+        self.Fader.FaderDelayJobID = nil;
+    end
+end
+
+---
+-- Sets the alpha value of the fader mask.
+-- @param _AlphaFactor [number] Alpha factor
+-- @within Information
+-- @local
+function Information:SetFaderAlpha(_AlphaFactor)
+    local sX, sY = GUI.GetScreenSize();
+    XGUIEng.SetWidgetPositionAndSize("CinematicBar00", 0, 0, sX, sY);
+    XGUIEng.SetMaterialTexture("CinematicBar00", 0, "");
+    XGUIEng.ShowWidget("CinematicBar00", 1);
+    XGUIEng.SetMaterialColor("CinematicBar00", 0, 0, 0, 0, math.floor(255 * _AlphaFactor));
+end
+
+---
+-- Returns the factor for the alpha value of the fader mask.
+-- @return [number] Alpha factor
+-- @within Information
+-- @local
+function Information:GetFadingFactor()
+    local CurrentTime = Logic.GetTimeMs();
+    local FadingFactor = (CurrentTime - self.Fader.StartTime) / self.Fader.Duration;
+    FadingFactor = (FadingFactor > 1 and 1) or FadingFactor;
+    FadingFactor = (FadingFactor < 0 and 0) or FadingFactor;
+    if self.Fader.IsFadeIn then
+        FadingFactor = 1 - FadingFactor;
+    end
+    return FadingFactor;
+end
+
+---
+-- Starts a fading process after the waittime.
+-- @within Information
+-- @local
+function Information_FaderDelayController(a, _StartTime, _Duration, _FadeIn)
+    if IsBriefingActive() == false then
+        return true;
+    end
+    if Logic.GetTimeMs() > _StartTime * 1000 then
+        Information:StartFader(_Duration, _FadeIn)
+        return true;
+    end
+end
+
+---
+-- Controlls the fading process.
+-- @within Information
+-- @local
+function Information_FaderVisibilityController()
+    if IsBriefingActive() == false then
+        return true;
+    end
+    if Logic.GetTimeMs() > Information.Fader.StartTime + Information.Fader.Duration then
+        Information.Fader.IsFading = false;
+        return true;
+    end
+    Information:SetFaderAlpha(Information:GetFadingFactor());
+    -- For now texts are visible while fading
+    -- PrintBriefingHeadline("");
+    -- PrintBriefingText("");
 end
 
 -- Countdown code --------------------------------------------------------------

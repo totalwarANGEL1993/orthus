@@ -10,7 +10,6 @@
 --
 -- @set sort=true
 --
-
 local Version = Framework.GetProgramVersion();
 gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
 if gvExtensionNumber > 2 then
