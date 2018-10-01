@@ -451,7 +451,7 @@ end
 -- @within Information
 -- @local
 function Information:GetFadingFactor()
-    local CurrentTime = Logic.GetTimeMs() - self.Fader.StartTime;
+    local CurrentTime = Logic.GetTimeMs();
     local FadingFactor = CurrentTime / (self.Fader.StartTime + self.Fader.Duration);
     if self.Fader.IsFadeIn then
         FadingFactor = 1 - FadingFactor;
@@ -464,7 +464,6 @@ end
 -- @within Information
 -- @loca
 function Information_FadingController()
-    local CurrentTime = Logic.GetTimeMs() - self.Fader.StartTime;
     if Logic.GetTimeMs() > self.Fader.StartTime + self.Fader.Duration then
         return true;
     end
