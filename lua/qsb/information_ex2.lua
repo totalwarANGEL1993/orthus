@@ -423,16 +423,14 @@ function Information:SetBriefingLooks(_DisableMap)
     XGUIEng.SetMaterialColor("CinematicBar02", 0, 255, 255, 255, 255);
     XGUIEng.SetWidgetPositionAndSize("CinematicBar02", 0, 0, size[1], 180);
 
-    -- Display or hide widgets
-    if not Information.Fader.IsFading then
-        XGUIEng.ShowWidget("CinematicBar00",0);
-    end
+    -- Set widget isability
     XGUIEng.ShowWidget("CinematicMiniMapOverlay", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicMiniMap", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicFrameBG", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicFrame", (_DisableMap and 0) or 1);
-    XGUIEng.ShowWidget("CinematicBar02",1);
-    XGUIEng.ShowWidget("CinematicBar01",1);
+    XGUIEng.ShowWidget("CinematicBar02", 1);
+    XGUIEng.ShowWidget("CinematicBar01", 1);
+    XGUIEng.ShowWidget("CinematicBar00", 1);
 end
 
 ---
@@ -440,11 +438,12 @@ end
 -- @param _Page [table] Briefing page
 -- @within Information
 -- @local
+--
 function Information:InitalizeFaderForBriefingPage(_Page)
     if _Page then
         -- Page duration
         if _Page.duration then
-            briefingState.timer = _Page.duration;
+            briefingState.timer = _Page.duration * 10;
         else
             _Page.duration = briefingState.timer;
         end
@@ -459,35 +458,14 @@ function Information:InitalizeFaderForBriefingPage(_Page)
                 self:SetFaderAlpha(0);
             end
             if _Page.fadeIn then
-                self:StartFaderDelayed(0, _Page.fadeIn, true);
+                self:StartFader(_Page.fadeIn, true);
             end
             if _Page.fadeOut then
-                local Waittime = (Logic.GetTime() + _Page.duration) - _Page.fadeOut;
-                self:StartFaderDelayed(Waittime, _Page.fadeOut, true);
+                local Waittime = (Logic.GetTime() + (_Page.duration)) - _Page.fadeOut;
+                self:StartFaderDelayed(Waittime, _Page.fadeOut, false);
             end
         end
     end
-end
-
----
--- Starts a fading process delayed by some seconds. If it is already fading 
--- than the old process will be aborted.
--- @param _StartTime [number] Waittime offset
--- @param _Duration [number] Duration of fading in seconds
--- @param _FadeIn [boolean] Fade in from black
--- @within Information
--- @local
-function Information:StartFaderDelayed(_StartTime, _Duration, _FadeIn)
-    self:StopFader();
-    local JobID = Trigger.RequestTrigger(
-        Events.LOGIC_EVENT_EVERY_TURN,
-        nil,
-        "Information_FaderDelayController",
-        1,
-        nil,
-        {_StartTime, _Duration, _FadeIn}
-    );
-    self.Fader.FaderDelayJobID = JobID;
 end
 
 ---
@@ -497,14 +475,11 @@ end
 -- @param _FadeIn [boolean] Fade in from black
 -- @within Information
 -- @local
+--
 function Information:StartFader(_Duration, _FadeIn)
     self.Fader.Duration = _Duration * 1000;
     self.Fader.StartTime = Logic.GetTimeMs();
     self.Fader.IsFadeIn = _FadeIn == true;
-    self:SetFaderAlpha(0);
-    if _FadeIn then
-        self:SetFaderAlpha(1);
-    end
     self:StopFader();
     self.Fader.FaderControllerJobID = StartSimpleHiResJob("Information_FaderVisibilityController");
     self.Fader.IsFading = true;
@@ -512,9 +487,26 @@ function Information:StartFader(_Duration, _FadeIn)
 end
 
 ---
+-- 
+-- @param _Duration [number] Duration of fading in seconds
+-- @param _FadeIn [boolean] Fade in from black
+-- @within Information
+-- @local
+--
+function Information:StartFaderDelayed(_Waittime, _Duration, _FadeIn)
+    self.Fader.Duration = _Duration;
+    self.Fader.StartTime = _Waittime * 1000;
+    self.Fader.IsFadeIn = _FadeIn == true;
+    self:SetFaderAlpha((_FadeIn and 1) or 0);
+    self:StopFader();
+    self.Fader.FaderDelayJobID = StartSimpleHiResJob("Information_FaderDelayController");
+end
+
+---
 -- Stops a fading process.
 -- @within Information
 -- @local
+--
 function Information:StopFader()
     if self.Fader.FaderControllerJobID and JobIsRunning(self.Fader.FaderControllerJobID) then
         EndJob(self.Fader.FaderControllerJobID);
@@ -532,6 +524,7 @@ end
 -- @param _AlphaFactor [number] Alpha factor
 -- @within Information
 -- @local
+--
 function Information:SetFaderAlpha(_AlphaFactor)
     if XGUIEng.IsWidgetShown("Cinematic") == 1 then
         _AlphaFactor = (_AlphaFactor > 1 and 1) or _AlphaFactor;
@@ -550,6 +543,7 @@ end
 -- @return [number] Alpha factor
 -- @within Information
 -- @local
+--
 function Information:GetFadingFactor()
     local CurrentTime = Logic.GetTimeMs();
     local FadingFactor = (CurrentTime - self.Fader.StartTime) / self.Fader.Duration;
@@ -562,28 +556,10 @@ function Information:GetFadingFactor()
 end
 
 ---
--- Starts a fading process after the waittime.
--- @within Information
--- @local
-function Information_FaderDelayController(_StartTime, _Duration, _FadeIn)
-    -- Fix for mysterious table in arg list
-    if _StartTime == nil or type(_StartTime) == "table" then
-        return;
-    end
-    
-    if IsBriefingActive() == false then
-        return true;
-    end
-    if Logic.GetTimeMs() > _StartTime * 1000 then
-        Information:StartFader(_Duration, _FadeIn)
-        return true;
-    end
-end
-
----
 -- Controlls the fading process.
 -- @within Information
 -- @local
+--
 function Information_FaderVisibilityController()
     if IsBriefingActive() == false then
         return true;
@@ -593,9 +569,21 @@ function Information_FaderVisibilityController()
         return true;
     end
     Information:SetFaderAlpha(Information:GetFadingFactor());
-    -- For now texts are visible while fading
-    -- PrintBriefingHeadline("");
-    -- PrintBriefingText("");
+end
+
+---
+-- Controlls the delay for a delayed fading.
+-- @within Information
+-- @local
+--
+function Information_FaderDelayController()
+    if IsBriefingActive() == false then
+        return true;
+    end
+    if Logic.GetTimeMs() > Information.Fader.StartTime then
+        Information:StartFader(Information.Fader.Duration, Information.Fader.IsFadeIn);
+        return true;
+    end
 end
 
 -- Countdown code --------------------------------------------------------------

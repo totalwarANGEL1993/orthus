@@ -2661,14 +2661,14 @@ function b_Reward_CreateEffect:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.EffectName = _Parameter;
     elseif _Index == 2 then
-        self.Data.EntityType = Effects[_Parameter];
+        self.Data.EffectType = GGL_Effects[_Parameter];
     elseif _Index == 3 then
         self.Data.Position = _Parameter;
     end
 end
 
 function b_Reward_CreateEffect:GetRewardTable()
-    return {self.Data.Type, self.Data.EffectName, self.Data.EntityType, self.Data.Position};
+    return {self.Data.Type, self.Data.EffectName, self.Data.EffectType, self.Data.Position};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_CreateEffect);
@@ -2727,7 +2727,7 @@ b_Reward_CreateMarker = {
 
 function b_Reward_CreateMarker:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.MarkerType = MakerTypes[_Parameter];
+        self.Data.MarkerType = MarkerTypes[_Parameter];
     elseif _Index == 2 then
         self.Data.Position = _Parameter;
     end
@@ -3253,6 +3253,57 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestXorQuest);
 
 -- -------------------------------------------------------------------------- --
 -- Custom Behavior                                                            --
+-- -------------------------------------------------------------------------- --
+
+---
+-- The player must win a quest. If the quest fails this behavior will fail.
+-- @param _QuestName [string] Quest name
+-- @within Goals
+--
+function Goal_WinQuest(...)
+    return b_Goal_WinQuest:New(unpack(arg));
+end
+
+b_Goal_WinQuest = {
+    Data = {
+        Name = "Goal_WinQuest",
+        Type = Objectives.MapScriptFunction
+    },
+};
+
+function b_Goal_WinQuest:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.QuestName = _Parameter;
+    end
+end
+
+function b_Goal_WinQuest:GetGoalTable()
+    return {self.Data.Type, {self.Data.CustomFunction, self}};
+end
+
+function b_Goal_WinQuest:CustomFunction(_Quest)
+    local QuestID = GetQuestID(self.Data.QuestName);
+    if QuestID == 0 then
+        return;
+    end
+    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
+        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then
+            return true;
+        elseif QuestSystem.Quests[QuestID].m_Result == QuestResults.Failure then
+            return false;
+        end
+    end
+end
+
+function b_Goal_WinQuest:Debug(_Quest)
+    return false;
+end
+
+function b_Goal_WinQuest:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuest);
+
 -- -------------------------------------------------------------------------- --
 
 ---
