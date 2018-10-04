@@ -17,8 +17,14 @@ Information = {
         IsFadeIn = false,
         StartTime = 0,
         Duration = 0,
+    },
+    Constants = {
+        BriefingZoomDistance = 4000,
+        BriefingZoomAngle    = 48,
+        DialogZoomDistance   = 1200,
+        DialogZoomAngle      = 25,
     }
-}
+};
 
 ---
 -- Installs the information mod.
@@ -84,34 +90,9 @@ function Information:CreateAddPageFunctions()
                     _page.actionOrig = _page.action;
                 end
                 _page.action = function()
-                    local ori, zoom, ang;
-
-                    -- Get zoom distance
-                    local ZoomDistance = BRIEFING_ZOOMDISTANCE;
-                    if _page.dialogCamera then
-                        ZoomDistance = DIALOG_ZOOMDISTANCE;
-                    end
-                    ZoomDistance = (_page.zoom ~= nil and _page.zoom) or ZoomDistance;
-                    _page.zoom = ZoomDistance;
-
-                    -- Get zoom angle
-                    local ZoomAngle = BRIEFING_ZOOMANGLE;
-                    if _page.dialogCamera then
-                        ZoomAngle = DIALOG_ZOOMANGLE;
-                    end
-                    ZoomAngle = (_page.angle ~= nil and _page.angle) or ZoomAngle;
-                    _page.angle = ZoomAngle;
-
-                    -- Get rotation angle
-                    local RotationAngle = -45;
-                    if _page.lookAt and _page.entity then
-                        RotationAngle = Logic.GetEntityOrientation(GetID(_page.entity));
-                        if Logic.IsSettler(GetID(_page.entity)) == 1 then
-                            RotationAngle = RotationAngle + 90;
-                        end
-                    end
-                    RotationAngle = (_page.rotation ~= nil and _page.rotation) or RotationAngle;
-                    _page.rotation = RotationAngle;
+                    local ZoomDistance = Information:AdjustBriefingPageZoom(_page);
+                    local ZoomAngle = Information:AdjustBriefingPageAngle(_page);
+                    local RotationAngle = Information:AdjustBriefingPageRotation(_page);
 
                     -- Disable fog
                     Display.SetRenderFogOfWar(1);
@@ -126,37 +107,13 @@ function Information:CreateAddPageFunctions()
                     end
 
                     -- Override camera flight
-                    Camera.StopCameraFlight();
-                    if not _page.flyTime then
-                        Camera.ZoomSetDistance(ZoomDistance);
-                        Camera.ZoomSetAngle(ZoomAngle);
-                        Camera.RotSetAngle(RotationAngle);
-                        Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
-                    else
-                        briefingState.nextPageDelayTime = (_page.flyTime * 10) +1;
-                        briefingState.timer = (_page.flyTime * 10) +1;
+                    Camera.ZoomSetDistance(ZoomDistance);
+                    Camera.ZoomSetAngle(ZoomAngle);
+                    Camera.RotSetAngle(RotationAngle);
+                    Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
 
-                        if briefingState.page > 0 then
-                            local LastPage = briefingBook[1][briefingState.page];
-
-                            Camera.ZoomSetDistance(LastPage.zoom or BRIEFING_ZOOMDISTANCE);
-                            Camera.ZoomSetAngle(LastPage.angle or BRIEFING_ZOOMANGLE);
-                            Camera.RotSetAngle(LastPage.rotation or -45);
-                            Camera.ScrollSetLookAt(LastPage.position.X, LastPage.position.Y);
-
-                            Camera.ScrollUpdateZMode(0);
-                            Camera.InitCameraFlight();
-                            Camera.ZoomSetDistanceFlight(ZoomDistance, _page.flyTime);
-                            Camera.ZoomSetAngleFlight(ZoomAngle, _page.flyTime);
-                            Camera.RotFlight(RotationAngle, _page.flyTime);
-                            Camera.FlyToLookAt(_page.position.X, _page.position.Y, _page.flyTime);
-                        else
-                            Camera.ZoomSetDistance(_page.zoom);
-                            Camera.ZoomSetAngle(_page.angle);
-                            Camera.RotSetAngle(_page.rotation);
-                            Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
-                        end
-                    end
+                    -- Fader
+                    Information:InitalizeFaderForBriefingPage(_page);
 
                     -- Call original action
                     if _page.actionOrig then
@@ -168,20 +125,22 @@ function Information:CreateAddPageFunctions()
             _page.id = table.getn(_briefing);
             return _page;
         end
-        local ASP = function(_entity, _title, _text, _dialog, _action)
-            return AP(CreateShortPage(_entity, _title, _text, _dialog, _action));
+        local ASP = function(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
+            return AP(CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog));
         end
         return AP, ASP;
     end
 
-    function CreateShortPage(_entity, _title, _text, _dialog, _action)
+    function CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
         local page = {
             title = _title,
             text = _text,
             position = _entity,
-            dialogCamera = (_dialog or false),
+            dialogCamera = _dialog == true,
             action = _action,
             lookAt = true;
+            disableFog = _disableFog,
+            showSky = _showSky,
         };
         return page;
     end
@@ -250,11 +209,11 @@ function Information:OverrideCinematic()
 			XGUIEng.ShowWidget("GameClock", 1);
 			gvGameClockWasShown = false;
         end
-        Display.SetRenderFogOfWar(1);
-        Display.SetRenderSky(0);
-
         Information:SetFaderAlpha(0);
         Information:StopFader();
+
+        Display.SetRenderFogOfWar(1);
+        Display.SetRenderSky(0);
 
         return EndBriefing_Orig_Information();
     end
@@ -379,6 +338,60 @@ function Information:OverrideMultipleChoice()
 end
 
 ---
+-- Sets the zoom distance of the current briefing page.
+-- @param _Page [table] Briefing page
+-- @within Information
+-- @local
+--
+function Information:AdjustBriefingPageZoom(_Page)
+    local ZoomDistance = Information.Constants.BriefingZoomDistance;
+    if _Page.dialogCamera then
+        ZoomDistance = Information.Constants.DialogZoomDistance;
+    end
+    ZoomDistance = (_Page.zoom ~= nil and _Page.zoom) or ZoomDistance;
+    _Page.zoom = ZoomDistance;
+    return ZoomDistance;
+end
+
+---
+-- Sets the zoom angle of the current briefing page.
+-- @param _Page [table] Briefing page
+-- @within Information
+-- @local
+--
+function Information:AdjustBriefingPageAngle(_Page)
+    local ZoomAngle = Information.Constants.BriefingZoomAngle;
+    if _Page.dialogCamera then
+        ZoomAngle = Information.Constants.DialogZoomAngle;
+    end
+    ZoomAngle = (_Page.angle ~= nil and _Page.angle) or ZoomAngle;
+    _Page.angle = ZoomAngle;
+    return ZoomAngle;
+end
+
+---
+-- Sets the rotation angle of the current briefing page.
+-- @param _Page [table] Briefing page
+-- @within Information
+-- @local
+--
+function Information:AdjustBriefingPageRotation(_Page)
+    local RotationAngle = -45;
+    if _Page.lookAt and _Page.entity then
+        RotationAngle = Logic.GetEntityOrientation(GetID(_Page.entity));
+        if Logic.IsBuilding(GetID(_Page.entity)) == 1 then
+            RotationAngle = RotationAngle - 90;
+        end
+        if Logic.IsSettler(GetID(_Page.entity)) == 1 then
+            RotationAngle = RotationAngle + 90;
+        end
+    end
+    RotationAngle = (_Page.rotation ~= nil and _Page.rotation) or RotationAngle;
+    _Page.rotation = RotationAngle;
+    return RotationAngle;
+end
+
+---
 -- Sets the apperance of the cinematic mode.
 -- @param _DisableMap [boolean] Hide the minimap
 -- @within Information
@@ -422,41 +435,56 @@ function Information:SetBriefingLooks(_DisableMap)
     XGUIEng.ShowWidget("CinematicBar01",1);
 end
 
+---
+-- Initalizes the fader for the briefing page.
+-- @param _Page [table] Briefing page
+-- @within Information
+-- @local
 function Information:InitalizeFaderForBriefingPage(_Page)
     if _Page then
-        if _Page.flyTime then
-            if _Page.faderAlpha then
-                Information:StopFader();
-                self:SetFaderAlpha(_Page.faderAlpha);
-            else
-                if not _Page.fadeIn and _Page.fadeOut then
-                    Information:StopFader();
-                    self:SetFaderAlpha(0);
-                end
-                if _Page.fadeIn then
-                    Information:StartFaderDelayed(0, _Page.fadeIn, true);
-                end
-                if _Page.fadeOut then
-                    local Waittime = (Logic.GetTime() + _Page.flyTime) - _Page.fadeOut;
-                    Information:StartFaderDelayed(Waittime, _Page.fadeIn, true);
-                end
+        -- Page duration
+        if _Page.duration then
+            briefingState.timer = _Page.duration;
+        else
+            _Page.duration = briefingState.timer;
+        end
+
+        -- Fading process
+        if _Page.faderAlpha then
+            self:StopFader();
+            self:SetFaderAlpha(_Page.faderAlpha);
+        else
+            if not _Page.fadeIn and not _Page.fadeOut then
+                self:StopFader();
+                self:SetFaderAlpha(0);
+            end
+            if _Page.fadeIn then
+                self:StartFaderDelayed(0, _Page.fadeIn, true);
+            end
+            if _Page.fadeOut then
+                local Waittime = (Logic.GetTime() + _Page.duration) - _Page.fadeOut;
+                self:StartFaderDelayed(Waittime, _Page.fadeOut, true);
             end
         end
     end
 end
 
 ---
--- 
+-- Starts a fading process delayed by some seconds. If it is already fading 
+-- than the old process will be aborted.
+-- @param _StartTime [number] Waittime offset
+-- @param _Duration [number] Duration of fading in seconds
+-- @param _FadeIn [boolean] Fade in from black
 -- @within Information
 -- @local
 function Information:StartFaderDelayed(_StartTime, _Duration, _FadeIn)
     self:StopFader();
     local JobID = Trigger.RequestTrigger(
         Events.LOGIC_EVENT_EVERY_TURN,
-        "",
+        nil,
         "Information_FaderDelayController",
         1,
-        {},
+        nil,
         {_StartTime, _Duration, _FadeIn}
     );
     self.Fader.FaderDelayJobID = JobID;
@@ -488,7 +516,6 @@ end
 -- @within Information
 -- @local
 function Information:StopFader()
-    local size = {GUI.GetScreenSize()};
     if self.Fader.FaderControllerJobID and JobIsRunning(self.Fader.FaderControllerJobID) then
         EndJob(self.Fader.FaderControllerJobID);
         self.Fader.FaderControllerJobID = nil;
@@ -506,11 +533,16 @@ end
 -- @within Information
 -- @local
 function Information:SetFaderAlpha(_AlphaFactor)
-    local sX, sY = GUI.GetScreenSize();
-    XGUIEng.SetWidgetPositionAndSize("CinematicBar00", 0, 0, sX, sY);
-    XGUIEng.SetMaterialTexture("CinematicBar00", 0, "");
-    XGUIEng.ShowWidget("CinematicBar00", 1);
-    XGUIEng.SetMaterialColor("CinematicBar00", 0, 0, 0, 0, math.floor(255 * _AlphaFactor));
+    if XGUIEng.IsWidgetShown("Cinematic") == 1 then
+        _AlphaFactor = (_AlphaFactor > 1 and 1) or _AlphaFactor;
+        _AlphaFactor = (_AlphaFactor < 0 and 0) or _AlphaFactor;
+
+        local sX, sY = GUI.GetScreenSize();
+        XGUIEng.SetWidgetPositionAndSize("CinematicBar00", 0, 0, sX, sY);
+        XGUIEng.SetMaterialTexture("CinematicBar00", 0, "");
+        XGUIEng.ShowWidget("CinematicBar00", 1);
+        XGUIEng.SetMaterialColor("CinematicBar00", 0, 0, 0, 0, math.floor(255 * _AlphaFactor));
+    end
 end
 
 ---
@@ -533,7 +565,12 @@ end
 -- Starts a fading process after the waittime.
 -- @within Information
 -- @local
-function Information_FaderDelayController(a, _StartTime, _Duration, _FadeIn)
+function Information_FaderDelayController(_StartTime, _Duration, _FadeIn)
+    -- Fix for mysterious table in arg list
+    if _StartTime == nil or type(_StartTime) == "table" then
+        return;
+    end
+    
     if IsBriefingActive() == false then
         return true;
     end
