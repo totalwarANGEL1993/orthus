@@ -107,6 +107,7 @@ function Information:CreateAddPageFunctions()
                     end
 
                     -- Override camera flight
+                    Camera.StopCameraFlight();
                     Camera.ZoomSetDistance(ZoomDistance);
                     Camera.ZoomSetAngle(ZoomAngle);
                     Camera.RotSetAngle(RotationAngle);
@@ -188,6 +189,7 @@ function Information:OverrideCinematic()
     StartBriefing_Orig_Information = StartBriefing;
     StartBriefing = function(_briefing)
         assert(type(_briefing) == "table");
+        local ID = StartBriefing_Orig_Information(_briefing);
         if _briefing.noEscape then
             briefingState.noEscape = true;
         end
@@ -197,11 +199,12 @@ function Information:OverrideCinematic()
         end
 		Game.GameTimeReset();
         GUI.ClearNotes();
-        return StartBriefing_Orig_Information(_briefing);
+        return ID;
     end
 
     EndBriefing_Orig_Information = EndBriefing;
     EndBriefing = function()
+        EndBriefing_Orig_Information();
         if briefingState.noEscape then
             briefingState.noEscape = nil;
         end
@@ -214,8 +217,6 @@ function Information:OverrideCinematic()
 
         Display.SetRenderFogOfWar(1);
         Display.SetRenderSky(0);
-
-        return EndBriefing_Orig_Information();
     end
 
     -- Cutscenes --

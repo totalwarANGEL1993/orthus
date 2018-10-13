@@ -788,7 +788,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         end
         local Position = GetPosition(_Behavior[2]);
         local ViewCenter = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, 0, self.m_Receiver);
-        Logic.SetEntityExplorationRange(ViewCenter, _Behavior[3]);
+        Logic.SetEntityExplorationRange(ViewCenter, _Behavior[3]/100);
         QuestSystem.NamedExplorations[_Behavior[2]] = ViewCenter;
 
     elseif _Behavior[1] == Callbacks.ConcealArea then
