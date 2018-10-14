@@ -229,8 +229,8 @@ function Information:OverrideCinematic()
             GUI.ClearNotes();
 
             if XGUIEng.IsWidgetShown("GameClock") == 1 then
-				XGUIEng.ShowWidget("GameClock",0)
-				gvGameClockWasShown = true
+				XGUIEng.ShowWidget("GameClock",0);
+				gvGameClockWasShown = true;
 			end
             return StartCutscene_Orig_Information(_Cutscene,_SkipCutscene);
         end
@@ -240,8 +240,8 @@ function Information:OverrideCinematic()
         CutsceneDone_Orig_Information = CutsceneDone;
         CutsceneDone = function()
             if gvGameClockWasShown then
-				XGUIEng.ShowWidget("GameClock",1)
-				gvGameClockWasShown = false
+				XGUIEng.ShowWidget("GameClock",1);
+				gvGameClockWasShown = false;
 			end
 			return CutsceneDone_Orig_Information();
 		end

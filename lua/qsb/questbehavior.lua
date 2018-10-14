@@ -2709,8 +2709,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateGroup);
 ---
 -- Creates an effect at the position.
 -- @param _EffectName [string] Name for the effect
--- @param _EffectType [string] Effect type name
 -- @param _Position [number] Position of effect
+-- @param _EffectType [string] Effect type name
 -- @within Rewards
 --
 function Reward_CreateEffect(...)
@@ -2728,9 +2728,9 @@ function b_Reward_CreateEffect:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.EffectName = _Parameter;
     elseif _Index == 2 then
-        self.Data.EffectType = GGL_Effects[_Parameter];
+        self.Data.Position = GGL_Effects[_Parameter];
     elseif _Index == 3 then
-        self.Data.Position = _Parameter;
+        self.Data.EffectType = _Parameter;
     end
 end
 
@@ -3345,7 +3345,7 @@ function b_Goal_WinQuest:AddParameter(_Index, _Parameter)
 end
 
 function b_Goal_WinQuest:GetGoalTable()
-    return {self.Data.Type, {self.Data.CustomFunction, self}};
+    return {self.Data.Type, {self.CustomFunction, self}};
 end
 
 function b_Goal_WinQuest:CustomFunction(_Quest)
@@ -3363,6 +3363,11 @@ function b_Goal_WinQuest:CustomFunction(_Quest)
 end
 
 function b_Goal_WinQuest:Debug(_Quest)
+    local QuestID = GetQuestID(self.Data.QuestName);
+    if QuestID == 0 then
+        dbg(_Quest, self, "Quest '" ..self.Data.QuestName.. "' does not exist!");
+        return true;
+    end
     return false;
 end
 
@@ -3396,7 +3401,7 @@ function b_Reprisal_QuestRestartForceActive:AddParameter(_Index, _Parameter)
 end
 
 function b_Reprisal_QuestRestartForceActive:GetReprisalTable()
-    return {self.Data.Type, {self.Data.CustomFunction, self}};
+    return {self.Data.Type, {self.CustomFunction, self}};
 end
 
 function b_Reprisal_QuestRestartForceActive:CustomFunction(_Quest)
@@ -3414,6 +3419,11 @@ function b_Reprisal_QuestRestartForceActive:CustomFunction(_Quest)
 end
 
 function b_Reprisal_QuestRestartForceActive:Debug(_Quest)
+    local QuestID = GetQuestID(self.Data.QuestName);
+    if QuestID == 0 then
+        dbg(_Quest, self, "Quest '" ..self.Data.QuestName.. "' does not exist!");
+        return true;
+    end
     return false;
 end
 
@@ -3862,6 +3872,12 @@ function b_Reward_OpenMercenaryMerchant:CustomFunction(_Quest)
 end
 
 function b_Reward_OpenMercenaryMerchant:Debug(_Quest)
+    for i = 1, 4, 1 do
+        if self.Data["OfferType" ..i] and (not self.Data["OfferCost" ..i] or not self.Data["OfferAmount" ..i]) then
+            dbg(_Quest, self, "Offer " ..i.. " is not correctly configured!");
+            return true;
+        end
+    end
     return false;
 end
 
@@ -4357,7 +4373,7 @@ end
 function b_Trigger_QuestSuccess:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then
+    if QuestSystem.Quests[QuestID] and QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -4412,7 +4428,7 @@ end
 function b_Trigger_QuestFailure:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_Result == QuestResults.Failure then
+    if QuestSystem.Quests[QuestID] and QuestSystem.Quests[QuestID].m_Result == QuestResults.Failure then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -4467,7 +4483,7 @@ end
 function b_Trigger_QuestOver:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
+    if QuestSystem.Quests[QuestID] and QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -4522,7 +4538,7 @@ end
 function b_Trigger_QuestInterrupted:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over and QuestSystem.Quests[QuestID].m_Result == QuestStates.Interrupted then
+    if QuestSystem.Quests[QuestID] and QuestSystem.Quests[QuestID].m_State == QuestStates.Over and QuestSystem.Quests[QuestID].m_Result == QuestStates.Interrupted then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -4577,7 +4593,7 @@ end
 function b_Trigger_QuestActive:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
+    if QuestSystem.Quests[QuestID] and QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
@@ -4632,7 +4648,7 @@ end
 function b_Trigger_QuestNotTriggered:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Inactive then
+    if QuestSystem.Quests[QuestID] and QuestSystem.Quests[QuestID].m_State == QuestStates.Inactive then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;
