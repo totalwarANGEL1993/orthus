@@ -2728,9 +2728,9 @@ function b_Reward_CreateEffect:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.EffectName = _Parameter;
     elseif _Index == 2 then
-        self.Data.Position = GGL_Effects[_Parameter];
+        self.Data.Position = _Parameter;
     elseif _Index == 3 then
-        self.Data.EffectType = _Parameter;
+        self.Data.EffectType = GGL_Effects[_Parameter];
     end
 end
 
@@ -3351,7 +3351,7 @@ end
 function b_Goal_WinQuest:CustomFunction(_Quest)
     local QuestID = GetQuestID(self.Data.QuestName);
     if QuestID == 0 then
-        return;
+        return false;
     end
     if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
         if QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then
