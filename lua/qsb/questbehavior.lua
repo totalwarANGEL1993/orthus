@@ -4383,7 +4383,7 @@ end
 
 function b_Trigger_QuestSuccess:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..elf.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
     end
     return false;
 end
@@ -4438,7 +4438,7 @@ end
 
 function b_Trigger_QuestFailure:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..elf.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
     end
     return false;
 end
@@ -4493,7 +4493,7 @@ end
 
 function b_Trigger_QuestOver:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..elf.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
     end
     return false;
 end
@@ -4548,7 +4548,7 @@ end
 
 function b_Trigger_QuestInterrupted:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..elf.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
     end
     return false;
 end
@@ -4603,7 +4603,7 @@ end
 
 function b_Trigger_QuestActive:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..elf.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
     end
     return false;
 end
@@ -4658,7 +4658,7 @@ end
 
 function b_Trigger_QuestNotTriggered:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..elf.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
     end
     return false;
 end
