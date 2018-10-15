@@ -94,27 +94,58 @@ function Information:CreateAddPageFunctions()
                     local ZoomAngle = Information:AdjustBriefingPageAngle(_page);
                     local RotationAngle = Information:AdjustBriefingPageRotation(_page);
 
-                    -- Disable fog
-                    Display.SetRenderFogOfWar(1);
+                    -- Fader
+                    Information:InitalizeFaderForBriefingPage(_page);
+
+                    -- Disable fog only on this page
+                    -- (does not overwrite global settings)
                     if _page.disableFog then
                         Display.SetRenderFogOfWar(0);
                     end
 
-                    -- Display sky
-                    Display.SetRenderSky(0);
+                    -- Display sky only on this page
+                    -- (does not overwrite global settings)
                     if _page.showSky then
                         Display.SetRenderSky(1);
                     end
 
                     -- Override camera flight
                     Camera.StopCameraFlight();
-                    Camera.ZoomSetDistance(ZoomDistance);
-                    Camera.ZoomSetAngle(ZoomAngle);
-                    Camera.RotSetAngle(RotationAngle);
-                    Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
+                    if not _page.flight then
+                        Camera.ZoomSetDistance(ZoomDistance);
+                        Camera.ZoomSetAngle(ZoomAngle);
+                        Camera.RotSetAngle(RotationAngle);
+                        Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
+                    else
+                        briefingState.nextPageDelayTime = (_page.duration * 10) +1;
+                        briefingState.timer = (_page.duration * 10) +1;
 
-                    -- Fader
-                    Information:InitalizeFaderForBriefingPage(_page);
+                        -- A flight can only be started from page 2 and forward because it needs the position of
+                        -- the last page as startin point for the camera movement. Flights areen't a replacement
+                        -- for cutscenes so keep your animations short!
+                        -- Keep in mind that there is no access to the z achsis with camera animations!
+
+                        if briefingState.page > 0 then
+                            local LastPage = briefingBook[1][briefingState.page];
+
+                            Camera.InitCameraFlight();
+                            
+                            Camera.ZoomSetDistance(LastPage.zoom or BRIEFING_ZOOMDISTANCE);
+                            Camera.ZoomSetAngle(LastPage.angle or BRIEFING_ZOOMANGLE);
+                            Camera.RotSetAngle(LastPage.rotation or -45);
+                            Camera.ScrollSetLookAt(LastPage.position.X, LastPage.position.Y);
+
+                            Camera.ZoomSetDistanceFlight(ZoomDistance, _page.duration);
+                            Camera.ZoomSetAngleFlight(ZoomAngle, _page.duration);
+                            Camera.RotFlight(RotationAngle, _page.duration);
+                            Camera.FlyToLookAt(_page.position.X, _page.position.Y, _page.duration);
+                        else
+                            Camera.ZoomSetDistance(_page.zoom);
+                            Camera.ZoomSetAngle(_page.angle);
+                            Camera.RotSetAngle(_page.rotation);
+                            Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
+                        end
+                    end
 
                     -- Call original action
                     if _page.actionOrig then
@@ -190,9 +221,20 @@ function Information:OverrideCinematic()
     StartBriefing = function(_briefing)
         assert(type(_briefing) == "table");
         local ID = StartBriefing_Orig_Information(_briefing);
+        
+        -- Disable escape skipping
         if _briefing.noEscape then
             briefingState.noEscape = true;
         end
+        -- Don't render fog
+        if _briefing.disableFog then
+            Display.SetRenderFogOfWar(0);
+        end
+        -- Render sky
+        if _briefing.showSky then
+            Display.SetRenderSky(1);
+        end
+
         if XGUIEng.IsWidgetShown("GameClock") == 1 then
 			XGUIEng.ShowWidget("GameClock", 0);
 			gvGameClockWasShown = true;
