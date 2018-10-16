@@ -108,6 +108,21 @@ function ArmyDisableAttackAbility(_PlayerID, _ArmyID, _Flag)
 end
 
 ---
+-- Disables or enables the ability to patrol between positions. This
+-- function can be used to forbid an army to attack even if there are
+-- valid targets.
+--
+-- @param _PlayerID [number] ID of player
+-- @param _ArmyID [number] ID of army
+-- @param _Flag [boolean] Ability to attack
+-- 
+-- @usage ArmyDisablePatrolAbility(2, 1, true)
+--
+function ArmyDisablePatrolAbility(_PlayerID, _ArmyID, _Flag)
+    QuestSystemBehavior:ArmyDisablePatrolAbility(_PlayerID, _ArmyID, _Flag);
+end
+
+---
 -- Initalizes an army that is recruited by the AI player.
 -- Armies can also be created with the behavior interface. This is a simple
 -- type of army that can be configured by placing and naming script entities.
@@ -456,6 +471,26 @@ function QuestSystemBehavior:ArmyDisableAttackAbility(_PlayerID, _ArmyID, _Flag)
 end
 
 ---
+-- Disables or enables the ability to patrol between positions. This
+-- function can be used to forbid an army to attack even if there are
+-- valid targets.
+-- @param _PlayerID [number] ID of player
+-- @param _ArmyID [number] ID of army
+-- @param _Flag [boolean] Ability to attack
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:ArmyDisablePatrolAbility(_PlayerID, _ArmyID, _Flag)
+    if QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID] then
+        local army = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID][_ArmyID];
+        if army and army.Advanced then
+            army.Advanced.PatrolDisabled = _Flag == true;
+            army.Advanced.AnchorChanged = false;
+        end
+    end
+end
+
+---
 -- Creates an army for the AI that is recruited from the barracks of the player.
 -- The cannon type is automatically set by the technology level of the AI.
 -- @param _PlayerID [number] ID of player
@@ -715,7 +750,13 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
 
                 -- Set anchor position
                 if not army.Advanced.AnchorChanged then
-                    Redeploy(army, GetPosition(army.Advanced.patrolPoints[army.Advanced.Waypoint]));
+                    if army.Advanced.PatrolDisabled then
+                        -- Army walkes back to base position
+                        Redeploy(army, GetPosition(army.position));
+                    else
+                        -- Army walks to waypoint
+                        Redeploy(army, GetPosition(army.Advanced.patrolPoints[army.Advanced.Waypoint]));
+                    end
                     army.Advanced.AnchorChanged = true;
                 end
 
@@ -4173,6 +4214,61 @@ function b_Reward_AI_CreateSpawnArmy:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateSpawnArmy);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Disables or enables the patrol behavior for armies.
+--
+-- @param _PlayerID [number] ID of player
+-- @param _ArmyName [string] Army identifier
+-- @param _Flag [boolean] Patrol disabled
+-- @within Rewards
+--
+function Reward_AI_EnableArmyPatrol(...)
+    return b_Reward_AI_EnableArmyPatrol:New(unpack(arg));
+end
+
+b_Reward_AI_EnableArmyPatrol = {
+    Data = {
+        Name = "Reward_AI_EnableArmyPatrol",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_AI_EnableArmyPatrol:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    elseif _Index == 2 then
+        self.Data.ArmyName = _Parameter;
+    elseif _Index == 3 then
+        self.Data.Flag = _Parameter;
+    end
+end
+
+function b_Reward_AI_EnableArmyPatrol:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_AI_EnableArmyPatrol:CustomFunction(_Quest)
+    if QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
+        local ID = QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName];
+        QuestSystemBehavior:ArmyDisablePatrolAbility(self.Data.PlayerID, ID, not self.Data.Flag);
+    end
+end
+
+function b_Reward_AI_EnableArmyPatrol:Debug(_Quest)
+    if not QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
+        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' does not exist!");
+        return true;
+    end
+    return false;
+end
+
+function b_Reward_AI_EnableArmyPatrol:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_AI_EnableArmyPatrol);
 
 -- -------------------------------------------------------------------------- --
 
