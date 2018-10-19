@@ -4933,6 +4933,8 @@ function b_Reprisal_CustomVariable:CustomFunction(_Quest)
             OldValue = OldValue / NewValue;
         elseif self.Data.Operator == "%" then
             OldValue = math.mod(OldValue, NewValue);
+        elseif self.Data.Operator == "^" then
+            OldValue = OldValue ^ NewValue;
         end
         QuestSystemBehavior.Data.CustomVariables[self.Data.Operator] = OldValue;
     end
