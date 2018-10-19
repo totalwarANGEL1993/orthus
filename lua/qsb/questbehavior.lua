@@ -212,10 +212,16 @@ end
 
 -- Helper --
 
+-- Has no use while mapping, so it's not documented.
 function dbg(_Quest, _Behavior, _Message)
     GUI.AddStaticNote(string.format("DEBUG: %s:%s: %s", _Quest.m_QuestName, _Behavior.Data.Name, tostring(_Message)));
 end
 
+---
+-- Finds all entities numbered from 1 to n with a common prefix.
+-- @param _Prefix [string] Prefix of scriptnames
+-- @return [table] List of entities
+--
 function GetEntitiesByPrefix(_Prefix)
     local list = {};
     local i = 1;
@@ -232,19 +238,55 @@ function GetEntitiesByPrefix(_Prefix)
     return list;
 end
 
+---
+-- Finds all entities of the player that have the type.
+-- @param _PlayerID [number] ID of player
+-- @param _EntityType [number] Type to search
+-- @return [table] List of entities
+--
+function GetPlayerEntities(_PlayerID, _EntityType)
+    local PlayerEntities = {}
+    if _EntityType ~= 0 then
+        local n,eID = Logic.GetPlayerEntities(_PlayerID, _EntityType, 1);
+        if (n > 0) then
+            local firstEntity = eID;
+            repeat
+                table.insert(PlayerEntities,eID)
+                eID = Logic.GetNextEntityOfPlayerOfType(eID);
+            until (firstEntity == eID);
+        end
+    elseif _EntityType == 0 then
+        for k,v in pairs(Entities) do
+            if string.find(k, "PU_") or string.find(k, "PB_") or string.find(k, "CU_") or string.find(k, "CB_")
+            or string.find(k, "XD_DarkWall") or string.find(k, "XD_Wall") or string.find(k, "PV_") then
+                local n,eID = Logic.GetPlayerEntities(_PlayerID, v, 1);
+                if (n > 0) then
+                local firstEntity = eID;
+                repeat
+                    table.insert(PlayerEntities,eID)
+                    eID = Logic.GetNextEntityOfPlayerOfType(eID);
+                until (firstEntity == eID);
+                end
+            end
+        end
+    end
+    return PlayerEntities
+end
+
 -- Behavior --
 
 QuestSystemBehavior = {
     Data = {
         RegisteredQuestBehaviors = {},
         SystemInitalized = false;
-        Version = "ALPHA",
+        Version = "1.0.0",
 
         SaveLoadedActions = {},
         PlayerColorAssigment = {},
         CreatedAiPlayers = {},
         CreatedAiArmies = {},
         AiArmyNameToId = {},
+        CustomVariables = {},
     }
 }
 
@@ -3420,6 +3462,64 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuest);
 -- -------------------------------------------------------------------------- --
 
 ---
+-- This goal succeeds if the headquarter entity of the player is destroyed.
+-- In addition, all buildings and settlers of this player get killed.
+-- @param _PlayerID [number] id of player
+-- @within Goals
+--
+function Goal_DestroyPlayer(...)
+    return b_Goal_DestroyPlayer:New(unpack(arg));
+end
+
+b_Goal_DestroyPlayer = {
+    Data = {
+        Name = "Goal_DestroyPlayer",
+        Type = Objectives.MapScriptFunction
+    },
+};
+
+function b_Goal_DestroyPlayer:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Headquarter = _Parameter;
+    end
+end
+
+function b_Goal_DestroyPlayer:GetGoalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_DestroyPlayer:CustomFunction(_Quest)
+    if not IsExisting(self.Data.Headquarter) then
+        local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
+        for i= 1, table.getn(PlayerEntities), 1 do 
+            if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
+                if Logic.GetEntityHealth(PlayerEntities[i]) > 0 then
+                    Logic.HurtEntity(PlayerEntities[i], Logic.GetEntityHealth(PlayerEntities[i]));
+                end
+            end
+        end
+        return true;
+    end
+end
+
+function b_Goal_DestroyPlayer:Debug(_Quest)
+    if not IsExisting(self.Data.Headquarter) then
+        dbg(_Quest, self, "Headquarter of player " ..self.Data.PlayerID.. " is already destroyed!");
+        return true;
+    end
+    return false;
+end
+
+function b_Goal_DestroyPlayer:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyPlayer);
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- Restarts the quest and force it to be active immedaitly.
 -- @param _QuestName [string] Quest name
 -- @within Reprisals
@@ -3476,7 +3576,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestRestart);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Changes the vulnerablty of a settler or building vulnerable.
+-- Changes the vulnerablty of a settler or building.
 -- @param _ScriptName [string] Entity to affect
 -- @param _Flag [boolean] State of vulnerablty
 -- @within Reprisals
@@ -3533,64 +3633,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_SetVulnerablity);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Changes the vulnerablty of a settler or building vulnerable.
--- @param _ScriptName [string] Entity to affect
--- @param _Flag [boolean] State of vulnerablty
--- @within Reprisals
---
-function Reprisal_SetVulnerablity(...)
-    return b_Reprisal_SetVulnerablity:New(unpack(arg));
-end
-
-b_Reprisal_SetVulnerablity = {
-    Data = {
-        Name = "Reprisal_SetVulnerablity",
-        Type = Callbacks.MapScriptFunction
-    },
-};
-
-function b_Reprisal_SetVulnerablity:AddParameter(_Index, _Parameter)
-    if _Index == 1 then
-        self.Data.Entity = _Parameter;
-    elseif _Index == 2 then
-        self.Data.Flag = _Parameter;
-    end
-end
-
-function b_Reprisal_SetVulnerablity:GetReprisalTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
-end
-
-function b_Reprisal_SetVulnerablity:CustomFunction(_Quest)
-    if not IsExisting(self.Data.Entity) then
-        return;
-    end
-    if self.Data.Flag then
-        MakeVulnerable(GetID(self.Data.Entity));
-    else
-        MakeInvulnerable(GetID(self.Data.Entity));
-    end
-end
-
-function b_Reprisal_SetVulnerablity:Debug(_Quest)
-    local EntityID = GetID(self.Data.Entity);
-    if not IsExisting(EntityID) then
-        dbg(_Quest, self, "Target entity is destroyed!");
-        return true;
-    end
-    if Logic.IsSettler(EntityID) == 0 and Logic.IsBuilding(EntityID) == 0 then
-        dbg(_Quest, self, "Only settlers and buildings allowed!");
-        return true;
-    end
-    return false;
-end
-
-QuestSystemBehavior:RegisterBehavior(b_Reprisal_SetVulnerablity);
-
--- -------------------------------------------------------------------------- --
-
----
--- Changes the vulnerablty of a settler or building vulnerable.
+-- Changes the vulnerablty of a settler or building.
 -- @param _ScriptName [string] Entity to affect
 -- @param _Flag [boolean] State of vulnerablty
 -- @within Rewards
@@ -4764,3 +4807,238 @@ function b_Trigger_QuestNotTriggered:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestNotTriggered);
+
+-- -------------------------------------------------------------------------- --
+-- Custom Variable Behavior                                                   --
+-- -------------------------------------------------------------------------- --
+
+---
+-- Compares a numeric custom value with number or another custom value.
+-- If the values match the condition then the goal is reached.
+-- @param _Name [string] Variable identifier
+-- @param _Comparison [string] Comparsion operator
+-- @param _Value [number] Integer value
+-- @within Goals
+--
+function Goal_CustomVariable(...)
+    return b_Goal_CustomVariable:New(unpack(arg));
+end
+
+b_Goal_CustomVariable = {
+    Data = {
+        Name = "Goal_CustomVariable",
+        Type = Objectives.MapScriptFunction
+    },
+};
+
+function b_Goal_CustomVariable:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.VariableName = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Operator = _Parameter;
+    elseif _Index == 3 then
+        self.Data.Value = _Parameter;
+    end
+end
+
+function b_Goal_CustomVariable:GetGoalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_CustomVariable:CustomFunction(_Quest)
+    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Operator];
+    local ComparsionValue = self.Data.Value;
+    if type(ComparsionValue) == "string" then
+        ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
+    end
+
+    if CustomValue and ComparsionValue then
+        if self.Data.Operator == "==" and CustomValue == ComparsionValue then
+            return true;
+        elseif self.Data.Operator == "~=" and CustomValue ~= ComparsionValue then
+            return true;
+        elseif self.Data.Operator == "<" and CustomValue < ComparsionValue then
+            return true;
+        elseif self.Data.Operator == "<=" and CustomValue <= ComparsionValue then
+            return true;
+        elseif self.Data.Operator == ">=" and CustomValue >= ComparsionValue then
+            return true;
+        elseif self.Data.Operator == ">" and CustomValue > ComparsionValue then
+            return true;
+        end
+    end
+end
+
+function b_Goal_CustomVariable:Debug(_Quest)
+    return false;
+end
+
+function b_Goal_CustomVariable:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_CustomVariable);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Alters a numeric custom value by the given value or value of the given
+-- custom variable using the mathematical operation.
+-- @param _Name [string] Variable identifier
+-- @param _Operator [string] Operator
+-- @param _Value [number] Integer value
+-- @within Triggers
+--
+function Reprisal_CustomVariable(...)
+    return b_Reprisal_CustomVariable:New(unpack(arg));
+end
+
+b_Reprisal_CustomVariable = {
+    Data = {
+        Name = "Reprisal_CustomVariable",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reprisal_CustomVariable:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.VariableName = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Operator = _Parameter;
+    elseif _Index == 3 then
+        self.Data.Value = _Parameter;
+    end
+end
+
+function b_Reprisal_CustomVariable:GetReprisalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reprisal_CustomVariable:CustomFunction(_Quest)
+    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Operator];
+    local NewValue = self.Data.Value;
+    if type(NewValue) == "string" then
+        NewValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
+    end
+
+    if OldValue and NewValue then
+        if self.Data.Operator == "=" then
+            OldValue = NewValue;
+        elseif self.Data.Operator == "+" then
+            OldValue = OldValue + NewValue;
+        elseif self.Data.Operator == "-" then
+            OldValue = OldValue - NewValue;
+        elseif self.Data.Operator == "*" then
+            OldValue = OldValue * NewValue;
+        elseif self.Data.Operator == "/" then
+            OldValue = OldValue / NewValue;
+        elseif self.Data.Operator == "%" then
+            OldValue = math.mod(OldValue, NewValue);
+        elseif self.Data.Operator == "^" then
+            OldValue = OldValue ^ NewValue;
+        end
+        QuestSystemBehavior.Data.CustomVariables[self.Data.Operator] = OldValue;
+    end
+end
+
+function b_Reprisal_CustomVariable:Debug(_Quest)
+    return false;
+end
+
+function b_Reprisal_CustomVariable:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reprisal_CustomVariable);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Alters a numeric custom value by the given value or value of the given
+-- custom variable using the mathematical operation.
+-- @param _Name [string] Variable identifier
+-- @param _Operator [string] Operator
+-- @param _Value [number] Integer value
+-- @within Triggers
+--
+function Reprisal_CustomVariable(...)
+    return b_Reprisal_CustomVariable:New(unpack(arg));
+end
+
+b_Reprisal_CustomVariable = copy(b_Reprisal_CustomVariable);
+b_Reprisal_CustomVariable.Data.Name = "Reprisal_CustomVariable";
+b_Reprisal_CustomVariable.Data.Type = Callbacks.MapScriptFunction;
+b_Reprisal_CustomVariable.GetReprisalTable = nil;
+
+function b_Reprisal_CustomVariable:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reprisal_CustomVariable);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Compares a numeric custom value with number or another custom value.
+-- If the values match the condition then the trigger returns true.
+-- @param _Name [string] Variable identifier
+-- @param _Comparison [string] Comparsion operator
+-- @param _Value [number] Integer value
+-- @within Triggers
+--
+function Trigger_CustomVariable(...)
+    return b_Trigger_CustomVariable:New(unpack(arg));
+end
+
+b_Trigger_CustomVariable = {
+    Data = {
+        Name = "Trigger_CustomVariable",
+        Type = Conditions.MapScriptFunction
+    },
+};
+
+function b_Trigger_CustomVariable:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.VariableName = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Operator = _Parameter;
+    elseif _Index == 3 then
+        self.Data.Value = _Parameter;
+    end
+end
+
+function b_Trigger_CustomVariable:GetTriggerTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Trigger_CustomVariable:CustomFunction(_Quest)
+    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Operator];
+    local ComparsionValue = self.Data.Value;
+    if type(ComparsionValue) == "string" then
+        ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
+    end
+
+    if CustomValue and ComparsionValue then
+        if self.Data.Operator == "==" and CustomValue == ComparsionValue then
+            return true;
+        elseif self.Data.Operator == "~=" and CustomValue ~= ComparsionValue then
+            return true;
+        elseif self.Data.Operator == "<" and CustomValue < ComparsionValue then
+            return true;
+        elseif self.Data.Operator == "<=" and CustomValue <= ComparsionValue then
+            return true;
+        elseif self.Data.Operator == ">=" and CustomValue >= ComparsionValue then
+            return true;
+        elseif self.Data.Operator == ">" and CustomValue > ComparsionValue then
+            return true;
+        end
+    end
+    return false;
+end
+
+function b_Trigger_CustomVariable:Debug(_Quest)
+    return false;
+end
+
+function b_Trigger_CustomVariable:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Trigger_CustomVariable);
