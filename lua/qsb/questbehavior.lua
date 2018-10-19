@@ -255,7 +255,6 @@ function GetPlayerEntities(_PlayerID, _EntityType)
                 eID = Logic.GetNextEntityOfPlayerOfType(eID);
             until (firstEntity == eID);
         end
-        return PlayerEntities
     elseif _EntityType == 0 then
         for k,v in pairs(Entities) do
             if string.find(k, "PU_") or string.find(k, "PB_") or string.find(k, "CU_") or string.find(k, "CB_")
@@ -270,8 +269,8 @@ function GetPlayerEntities(_PlayerID, _EntityType)
                 end
             end
         end
-        return PlayerEntities
     end
+    return PlayerEntities
 end
 
 -- Behavior --
@@ -3475,7 +3474,7 @@ end
 b_Goal_DestroyPlayer = {
     Data = {
         Name = "Goal_DestroyPlayer",
-        Type = Objectives.DestroyAllPlayerUnits
+        Type = Objectives.MapScriptFunction
     },
 };
 
@@ -3492,7 +3491,7 @@ function b_Goal_DestroyPlayer:GetGoalTable()
 end
 
 function b_Goal_DestroyPlayer:CustomFunction(_Quest)
-    if IsExisting(self.Data.Headquarter) then
+    if not IsExisting(self.Data.Headquarter) then
         local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
         for i= 1, table.getn(PlayerEntities), 1 do 
             if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
@@ -4896,7 +4895,7 @@ end
 b_Reprisal_CustomVariable = {
     Data = {
         Name = "Reprisal_CustomVariable",
-        Type = Objectives.MapScriptFunction
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -4990,7 +4989,7 @@ end
 b_Trigger_CustomVariable = {
     Data = {
         Name = "Trigger_CustomVariable",
-        Type = Objectives.MapScriptFunction
+        Type = Conditions.MapScriptFunction
     },
 };
 
