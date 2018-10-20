@@ -81,7 +81,6 @@ function Information:CreateAddPageFunctions()
                 if _page.title then
                     _page.title = "@center " .. _page.title;
                 end
-                -- Set text before page is add
                 if _page.mc and _page.mc.title then
                     _page.mc.title = "@center " .. _page.mc.title;
                 end
@@ -344,9 +343,13 @@ function Information:OverrideMultipleChoice()
         end
 
         -- change bar design
-        Information:SetBriefingLooks(true);
-        if _page.minimap == true then
-            Information:SetBriefingLooks(false);
+        local MinimapFlag = _page.minimap ~= true;
+        Information:SetBriefingLooks(MinimapFlag);
+        if _page.centeredText == true then
+            Information:SetTextCentered(MinimapFlag);
+        end
+        if _page.creditsText == true then
+            Information:SetTextCenteredCredits(MinimapFlag);
         end
 
         -- Display multiple choice
@@ -474,6 +477,49 @@ function Information:SetBriefingLooks(_DisableMap)
     XGUIEng.ShowWidget("CinematicBar02", 1);
     XGUIEng.ShowWidget("CinematicBar01", 1);
     XGUIEng.ShowWidget("CinematicBar00", 1);
+end
+
+---
+-- Moves the text and the title of the cinmatic widget to the screen center.
+-- @param _DisableMap [boolean] Hide the minimap
+-- @within Information
+-- @local
+--
+function Information:SetTextCentered(_DisableMap)
+    self:SetBriefingLooks(_DisableMap);
+
+    local size      = {GUI.GetScreenSize()};
+    local titleSize = (size[1]-200);
+    local titlePosY = (size[2]/2) -95;
+    local textPosY  = (size[2]/2) -60;
+
+    -- Set widget apperance
+    XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(100),textPosY,titleSize,100);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(100),textPosY,titleSize,100);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
+    XGUIEng.SetWidgetPositionAndSize("Cinematic_Headline",100,titlePosY,titleSize,15);
+end
+
+---
+-- Moves the text and the title of the cinmatic widget to the screen center in
+-- reversed order. Can be used for movie like map credits.
+-- @param _DisableMap [boolean] Hide the minimap
+-- @within Information
+-- @local
+--
+function Information:SetTextCenteredCredits(_DisableMap)
+    self:SetBriefingLooks(_DisableMap);
+
+    local size      = {GUI.GetScreenSize()};
+    local titleSize = (size[1]-200);
+    local titlePosY = (size[2]/2) -70;
+    local textPosY  = (size[2]/2) -95;
+
+    -- Set widget apperance
+    XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(100),textPosY,titleSize,100);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(100),textPosY,titleSize,100);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
+    XGUIEng.SetWidgetPositionAndSize("Cinematic_Headline",100,titlePosY,titleSize,15);
 end
 
 ---

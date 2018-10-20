@@ -784,8 +784,9 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
                 Redeploy(army, army.position);
             else
                 -- Initial patrol station
+                -- First waypoint ever is selected by random
                 if army.Advanced.Waypoint == nil then
-                    army.Advanced.Waypoint = 1;
+                    army.Advanced.Waypoint = math.random(1, table.gent(army.Advanced.patrolPoints));
                     army.Advanced.AnchorChanged = nil;
                     army.Advanced.StartTime = Logic.GetTime();
                 end
