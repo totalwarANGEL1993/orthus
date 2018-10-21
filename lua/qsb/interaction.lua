@@ -558,6 +558,7 @@ end
 function NonPlayerCharacter:HeroesLookAtNpc()
     local HeroesTable = {};
     Logic.GetHeroes(GUI.GetPlayerID(), HeroesTable);
+    LookAt(self.m_ScriptName, self.m_TalkedTo);
 
     for k, v in pairs(HeroesTable) do
         if v and IsExisting(v) and IsNear(v, self.m_ScriptName, NPC_LOOK_AT_HERO_DISTANCE) then

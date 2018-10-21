@@ -9,12 +9,14 @@
 Script.Load("data/script/maptools/main.lua");
 Script.Load("data/script/maptools/mapeditortools.lua");
 
--- Load library
+-- Load base
 Script.Load("data/maps/externalMap/qsb/oop.lua");
-Script.Load("data/maps/externalMap/qsb/interaction.lua");
 Script.Load("data/maps/externalMap/qsb/questsystem.lua");
-Script.Load("data/maps/externalMap/qsb/questbehavior.lua");
 Script.Load("data/maps/externalMap/qsb/questdebug.lua");
+-- load library
+Script.Load("data/maps/externalMap/qsb/interaction.lua");
+Script.Load("data/maps/externalMap/qsb/information.lua");
+Script.Load("data/maps/externalMap/qsb/questbehavior.lua");
 
 -- Settings ----------------------------------------------------------------- --
 
@@ -22,6 +24,7 @@ Script.Load("data/maps/externalMap/qsb/questdebug.lua");
 UseQuestTrace = false;
 UseDebugCheats = true;
 UseDebugShell = true;
+UseCheckQuests = true;
 
 -- Start resources for the human player
 local GoldAmount   = 0;
@@ -98,8 +101,8 @@ function FirstMapAction()
 	Score.Player[0]["all"] = 0;
     
     QuestSystemBehavior:PrepareQuestSystem();
-    if UseQuestTrace or UseDebugCheats or UseDebugShell then
-        QuestSystemDebug:Activate(UseQuestTrace, UseDebugCheats, UseDebugShell);
+    if UseQuestTrace or UseDebugCheats or UseDebugShell or UseCheckQuests then
+        QuestSystemDebug:Activate(UseCheckQuests, UseDebugCheats, UseDebugShell, UseQuestTrace);
     end
     CreateQuests();
 end

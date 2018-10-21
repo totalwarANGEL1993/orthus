@@ -53,36 +53,40 @@ function QuestSystemDebug:OverrideQuestSystemTriggerQuest()
     QuestTemplate.Trigger = function(self)
         if QuestSystemDebug.m_CheckQuests then
             for i= 1, table.getn(self.m_Objectives), 1 do
-                if self.m_Objectives[i][2][2].Debug then
-                    if self.m_Objectives[i][2][2].Debug(self) then
+                if self.m_Objectives[i][1] == Objectives.MapScriptFunction and self.m_Objectives[i][2][2].Debug then
+                    if self.m_Objectives[i][2][2]:Debug(self) then
+                        self:Interrupt();
                         return;
                     end
                 end
             end
             for i= 1, table.getn(self.m_Conditions), 1 do
-                if self.m_Conditions[i][2][2].Debug then
-                    if self.m_Conditions[i][2][2].Debug(self) then
+                if self.m_Conditions[i][1] == Conditions.MapScriptFunction and self.m_Conditions[i][2][2].Debug then
+                    if self.m_Conditions[i][2][2]:Debug(self) then
+                        self:Interrupt();
                         return;
                     end
                 end
             end
             for i= 1, table.getn(self.m_Rewards), 1 do
-                if self.m_Rewards[i][2][2].Debug then
-                    if self.m_Rewards[i][2][2].Debug(self) then
+                if self.m_Rewards[i][1] == Callbacks.MapScriptFunction and self.m_Rewards[i][2][2].Debug then
+                    if self.m_Rewards[i][2][2]:Debug(self) then
+                        self:Interrupt();
                         return;
                     end
                 end
             end
             for i= 1, table.getn(self.m_Reprisals), 1 do
-                if self.m_Reprisals[i][2][2].Debug then
-                    if self.m_Reprisals[i][2][2].Debug(self) then
+                if self.m_Reprisals[i][1] == Callbacks.MapScriptFunction and self.m_Reprisals[i][2][2].Debug then
+                    if self.m_Reprisals[i][2][2]:Debug(self) then
+                        self:Interrupt();
                         return;
                     end
                 end
             end
         end
         
-        QuestTemplate.Trigger(self);
+        QuestTemplate.TriggerOriginal(self);
     end
 end
 
@@ -567,36 +571,6 @@ function IsValidPosition(_pos)
 	return false;
 end
 
-SoldierTypes = {
-	[Entities.CU_BanditSoldierBow1] = Entities.CU_BanditLeaderBow1,
-	[Entities.CU_BanditSoldierSword1] = Entities.CU_BanditLeaderSword1,
-	[Entities.CU_BanditSoldierSword2] = Entities.CU_BanditLeaderSword2,
-	[Entities.CU_Barbarian_SoldierClub1] = Entities.CU_Barbarian_LeaderClub1,
-	[Entities.CU_Barbarian_SoldierClub2] = Entities.CU_Barbarian_LeaderClub2,
-	[Entities.CU_BlackKnight_SoldierMace1] = Entities.CU_BlackKnight_LeaderMace1,
-	[Entities.CU_BlackKnight_SoldierMace2] = Entities.CU_BlackKnight_LeaderMace2,
-	[Entities.CU_Evil_SoldierBearman1] = Entities.CU_Evil_LeaderBearman1,
-	[Entities.CU_Evil_SoldierSkirmisher1] = Entities.CU_Evil_LeaderSkirmisher1,
-	[Entities.PU_SoldierBow1] = Entities.PU_LeaderBow1,
-	[Entities.PU_SoldierBow2] = Entities.PU_LeaderBow2,
-	[Entities.PU_SoldierBow3] = Entities.PU_LeaderBow3,
-	[Entities.PU_SoldierBow4] = Entities.PU_LeaderBow4,
-	[Entities.PU_SoldierCavalry1] = Entities.PU_LeaderCavalry1,
-	[Entities.PU_SoldierCavalry2] = Entities.PU_LeaderCavalry2,
-	[Entities.PU_SoldierHeavyCavalry1] = Entities.PU_LeaderHeavyCavalry1,
-	[Entities.PU_SoldierHeavyCavalry2] = Entities.PU_LeaderHeavyCavalry2,
-	[Entities.PU_SoldierPoleArm1] = Entities.PU_LeaderPoleArm1,
-	[Entities.PU_SoldierPoleArm2] = Entities.PU_LeaderPoleArm2,
-	[Entities.PU_SoldierPoleArm3] = Entities.PU_LeaderPoleArm3,
-	[Entities.PU_SoldierPoleArm4] = Entities.PU_LeaderPoleArm4,
-	[Entities.PU_SoldierRifle1] = Entities.PU_LeaderRifle1,
-	[Entities.PU_SoldierRifle2] = Entities.PU_LeaderRifle2,
-	[Entities.PU_SoldierSword1] = Entities.PU_LeaderSword1,
-	[Entities.PU_SoldierSword2] = Entities.PU_LeaderSword2,
-	[Entities.PU_SoldierSword3] = Entities.PU_LeaderSword3,
-	[Entities.PU_SoldierSword4] = Entities.PU_LeaderSword4,
-};
-
 ---
 -- Returns the leader entity ID of the soldier.
 --
@@ -604,25 +578,9 @@ SoldierTypes = {
 -- @return [number] Entity ID of leader
 --
 function SoldierGetLeaderEntityID(_eID)
-	local leadType = SoldierTypes[Logic.GetEntityType(_eID)]
-	if leadType then
-		local pID = GetPlayer(_eID);
-		local n,leaderID = Logic.GetPlayerEntities(pID, leadType, 1);
-		local firstLeaderID = leaderID;
-		if n > 0 then
-			repeat
-				local soldiers = {Logic.GetSoldiersAttachedToLeader(leaderID)};
-				if soldiers[1] then
-					for i = 2,soldiers[1]+1 do
-						if soldiers[i] == _eID then
-							return leaderID,soldiers[2];
-						end
-					end
-				end
-				leaderID = Logic.GetNextEntityOfPlayerOfType(leaderID);
-			until leaderID == firstLeaderID;
-		end
-	end
-	return _eID;
+    if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
+        return Logic.GetEntityScriptingValue(_eID, 69) or _eID;
+    end
+    return _eID;
 end
 
