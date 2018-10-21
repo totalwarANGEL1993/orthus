@@ -6,7 +6,10 @@
 
 ---
 -- This module adds some briefing improvements. Some are just for cosmetics,
--- some are fixing pittful bugs, some offer helpful new features.
+-- some are fixing pittful bugs, some offer helpful new features. This is the
+-- version for the vanilla game.
+-- For Extra3 we will using mcbBrief by mcb. This will offer at least equal
+-- features or maybe even more advanced.
 --
 -- @set sort=true
 --
@@ -60,7 +63,8 @@ function Information:CreateAddPageFunctions()
     -- Functions created:
     -- <ul>
     -- <li>AP: Creates normal pages and multiple choice pages. You have full
-    -- control over all settings.</li>
+    -- control over all settings. It is also possible to do cutscene like
+    -- camera animations.</li>
     -- <li>ASP: Creates a simplyfied page. A short notation good for dialogs.
     -- can be used in talkative missions.</li>
     -- </ul>
@@ -92,6 +96,7 @@ function Information:CreateAddPageFunctions()
                     local ZoomDistance = Information:AdjustBriefingPageZoom(_page);
                     local ZoomAngle = Information:AdjustBriefingPageAngle(_page);
                     local RotationAngle = Information:AdjustBriefingPageRotation(_page);
+                    local PagePosition = Information:AdjustBriefingPageCamHeight(_page);
 
                     -- Fader
                     Information:InitalizeFaderForBriefingPage(_page);
@@ -120,7 +125,7 @@ function Information:CreateAddPageFunctions()
                         briefingState.timer = (_page.duration * 10) +1;
 
                         -- A flight can only be started from page 2 and forward because it needs the position of
-                        -- the last page as startin point for the camera movement. Flights areen't a replacement
+                        -- the last page as starting point for the camera movement. Flights areen't a replacement
                         -- for cutscenes so keep your animations short!
                         -- Keep in mind that there is no access to the z achsis with camera animations!
 
@@ -201,8 +206,7 @@ function Information:OverrideEscape()
 end
 
 ---
--- Overrides the briefing and cutscene functions that enter or leave the
--- cinematic mode.
+-- Overrides the briefing functions that enter or leave the cinematic mode.
 --
 -- Issues:
 -- <ul>
@@ -214,8 +218,6 @@ end
 -- @local
 --
 function Information:OverrideCinematic()
-    -- Briefings --
-
     StartBriefing_Orig_Information = StartBriefing;
     StartBriefing = function(_briefing)
         assert(type(_briefing) == "table");
@@ -258,34 +260,6 @@ function Information:OverrideCinematic()
 
         Display.SetRenderFogOfWar(1);
         Display.SetRenderSky(0);
-    end
-
-    -- Cutscenes --
-
-    if StartCutscene then
-        StartCutscene_Orig_Information = StartCutscene;
-        StartCutscene = function(_Cutscene,_SkipCutscene)
-            Information:SetBriefingLooks(true);
-            Game.GameTimeReset();
-            GUI.ClearNotes();
-
-            if XGUIEng.IsWidgetShown("GameClock") == 1 then
-				XGUIEng.ShowWidget("GameClock",0);
-				gvGameClockWasShown = true;
-			end
-            return StartCutscene_Orig_Information(_Cutscene,_SkipCutscene);
-        end
-    end
-
-    if CutsceneDone then
-        CutsceneDone_Orig_Information = CutsceneDone;
-        CutsceneDone = function()
-            if gvGameClockWasShown then
-				XGUIEng.ShowWidget("GameClock",1);
-				gvGameClockWasShown = false;
-			end
-			return CutsceneDone_Orig_Information();
-		end
     end
 end
 
@@ -379,6 +353,34 @@ function Information:OverrideMultipleChoice()
 			XGUIEng.ShowWidget("CinematicBar02",0);
             XGUIEng.ShowWidget("CinematicBar01",0);
             XGUIEng.ShowWidget("CinematicBar00",0);
+		end
+	end
+end
+
+---
+-- Fakes camera hight on the unusable Z-achis. This function must be called
+-- after all camera calculations are done.
+-- @param _Page [table] Briefing page
+-- @within Information
+-- @local
+--
+function Information:AdjustBriefingPageCamHeight(_Page)
+    _Page.height = _Page.height or 90;
+    if _Page.angle >= 90 then
+        _Page.height = 0;
+    end
+	if _Page.height > 0 and _Page.angle > 0 and _Page.angle < 90 then
+		local AngleTangens = _Page.height / math.tan(math.rad(_Page.angle))
+		local RotationRadiant = math.rad(_Page.rotation)
+        -- New position
+        local NewPosition = {
+            X = _Page.position.X - math.sin(RotationRadiant) * AngleTangens,
+            Y = _Page.position.Y + math.cos(RotationRadiant) * AngleTangens
+        };
+        -- Update if valid position
+		if NewPosition.X > 0 and NewPosition.Y > 0 and NewPosition.X < Logic.WorldGetSize() and NewPosition.Y < Logic.WorldGetSize() then
+			_Page.zoom = _Page.zoom + math.sqrt(_Page.height^2) + (AngleTangens^2);
+			_Page.position = NewPosition;
 		end
 	end
 end

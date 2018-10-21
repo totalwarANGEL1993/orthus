@@ -786,7 +786,7 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
                 -- Initial patrol station
                 -- First waypoint ever is selected by random
                 if army.Advanced.Waypoint == nil then
-                    army.Advanced.Waypoint = math.random(1, table.gent(army.Advanced.patrolPoints));
+                    army.Advanced.Waypoint = math.random(1, table.getn(army.Advanced.patrolPoints));
                     army.Advanced.AnchorChanged = nil;
                     army.Advanced.StartTime = Logic.GetTime();
                 end
@@ -3319,7 +3319,7 @@ function b_Trigger_QuestAndQuest:AddParameter(_Index, _Parameter)
     elseif _Index == 2 then
         self.Data.QuestB = _Parameter;
     elseif _Index == 3 then
-        self.Data.Result = _Parameter;
+        self.Data.Result = QuestResults[_Parameter];
     end
 end
 
@@ -3355,7 +3355,7 @@ function b_Trigger_QuestOrQuest:AddParameter(_Index, _Parameter)
     elseif _Index == 2 then
         self.Data.QuestB = _Parameter;
     elseif _Index == 3 then
-        self.Data.Result = _Parameter;
+        self.Data.Result = QuestResults[_Parameter];
     end
 end
 
@@ -3392,7 +3392,7 @@ function b_Trigger_QuestXorQuest:AddParameter(_Index, _Parameter)
     elseif _Index == 2 then
         self.Data.QuestB = _Parameter;
     elseif _Index == 3 then
-        self.Data.Result = _Parameter;
+        self.Data.Result = QuestResults[_Parameter];
     end
 end
 
