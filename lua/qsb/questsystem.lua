@@ -712,7 +712,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
     elseif _Behavior[1] == Callbacks.RemoveQuest then
         local QuestID = GetQuestID(_Behavior[2]);
         if QuestID > 0 then
-            Logic.RemoveQuest(self.m_Receiver, QuestID);
+            self:RemoveQuest();
         end
 
     elseif _Behavior[1] == Callbacks.QuestSucceed then
@@ -812,11 +812,10 @@ function QuestTemplate:Trigger()
 
     -- Add quest
     if self.m_Description then
-        local Desc = self.m_Description;
-        if not Desc.Position then
-            Logic.AddQuest(self.m_Receiver, self.m_QuestID, Desc.Type, Desc.Title, Desc.Text, Desc.Info or 1);
+        if not self.m_Description.Position then
+            self:CreateQuest();
         else
-            Logic.AddQuestEx(self.m_Receiver, self.m_QuestID, Desc.Type, Desc.Title, Desc.Text, Desc.Position.X, Desc.Position.Y, Desc.Info or 1);
+            self:CreateQuestEx();
         end
     end
 
@@ -838,7 +837,7 @@ end
 function QuestTemplate:Success()
     -- Remove quest
     if self.m_Description then
-        Logic.SetQuestType(self.m_Receiver, self.m_QuestID, self.m_Description.Type +1, self.m_Description.Info or 1);
+        self:QuestSetSucceed();
     end
 
     self:verbose("DEBUG: Succeed quest '" ..self.m_QuestName.. "'");
@@ -861,7 +860,7 @@ end
 function QuestTemplate:Fail()
     -- Remove quest
     if self.m_Description then
-        Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
+        self:QuestSetFailed();
     end
 
     self:verbose("DEBUG: Fail quest '" ..self.m_QuestName.. "'");
@@ -904,7 +903,7 @@ end
 function QuestTemplate:Reset()
     -- Remove quest
     if self.m_Description then
-        Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
+        self:RemoveQuest();
     end
 
     -- Reset quest briefing
@@ -953,6 +952,115 @@ function QuestTemplate:Reset()
             if self.m_Reprisals[i][2][2].Reset then
                 self.m_Reprisals[i][2][2]:Reset(self);
             end
+        end
+    end
+end
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Creates a normal quest in the quest book.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:CreateQuest()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if self.m_Description then
+        if gvExtensionNumber > 2 then
+            -- FIXME
+        else
+            Logic.AddQuest(
+                self.m_Receiver, 
+                self.m_QuestID, 
+                self.m_Description.Type, 
+                self.m_Description.Title, 
+                self.m_Description.Text, 
+                self.m_Description.Info or 1
+            );
+        end
+    end
+end
+
+---
+-- Creates a quest with an attached position in the quest book.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:CreateQuestEx()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if self.m_Description and self.m_Description.Position then
+        if gvExtensionNumber > 2 then
+            -- FIXME
+        else
+            Logic.AddQuestEx(
+                self.m_Receiver, 
+                self.m_QuestID, 
+                self.m_Description.Type, 
+                self.m_Description.Title, 
+                self.m_Description.Text, 
+                self.m_Description.X, 
+                self.m_Description.Y, 
+                self.m_Description.Info or 1
+            );
+        end
+    end
+end
+
+---
+-- Marks the quest as failed in the quest book. In vanilla game the quest
+-- is just removed.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:QuestSetFailed()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if self.m_Description then
+        if gvExtensionNumber > 2 then
+            -- FIXME
+        else
+            Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
+        end
+    end
+end
+
+---
+-- Marks the quest as successfull in the quest book.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:QuestSetSucceed()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if self.m_Description then
+        if gvExtensionNumber > 2 then
+            -- FIXME
+        else
+            Logic.SetQuestType(
+                self.m_Receiver, 
+                self.m_QuestID, 
+                self.m_Description.Type, 
+                self.m_Description.Info or 1
+            );
+        end
+    end
+end
+
+---
+-- Removes a Quest from the quest book.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:RemoveQuest()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if self.m_Description then
+        if gvExtensionNumber > 2 then
+            -- FIXME
+        else
+            Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
         end
     end
 end
