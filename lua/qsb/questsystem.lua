@@ -837,7 +837,7 @@ end
 function QuestTemplate:Success()
     -- Remove quest
     if self.m_Description then
-        self:QuestSetSucceed();
+        self:QuestSetSuccessful();
     end
 
     self:verbose("DEBUG: Succeed quest '" ..self.m_QuestName.. "'");
@@ -968,7 +968,14 @@ function QuestTemplate:CreateQuest()
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
         if gvExtensionNumber > 2 then
-            -- FIXME
+            mcbQuestGUI.simpleQuest.logicAddQuest(
+                self.m_Receiver, 
+                self.m_QuestID, 
+                self.m_Description.Type, 
+                self.m_Description.Title, 
+                self.m_Description.Text, 
+                self.m_Description.Info or 1
+            );
         else
             Logic.AddQuest(
                 self.m_Receiver, 
@@ -992,7 +999,16 @@ function QuestTemplate:CreateQuestEx()
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description and self.m_Description.Position then
         if gvExtensionNumber > 2 then
-            -- FIXME
+            mcbQuestGUI.simpleQuest.logicAddQuestEx(
+                self.m_Receiver, 
+                self.m_QuestID, 
+                self.m_Description.Type, 
+                self.m_Description.Title, 
+                self.m_Description.Text, 
+                self.m_Description.X, 
+                self.m_Description.Y, 
+                self.m_Description.Info or 1
+            );
         else
             Logic.AddQuestEx(
                 self.m_Receiver, 
@@ -1019,7 +1035,12 @@ function QuestTemplate:QuestSetFailed()
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
         if gvExtensionNumber > 2 then
-            -- FIXME
+            mcbQuestGUI.simpleQuest.logicSetQuestType(
+                self.m_Receiver, 
+                self.m_QuestID, 
+                self.m_Description.Type +2, 
+                self.m_Description.Info or 1
+            );
         else
             Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
         end
@@ -1031,17 +1052,23 @@ end
 -- @within QuestTemplate
 -- @local
 --
-function QuestTemplate:QuestSetSucceed()
+function QuestTemplate:QuestSetSuccessful()
     local Version = Framework.GetProgramVersion();
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
         if gvExtensionNumber > 2 then
-            -- FIXME
+            local Type = self.m_Description.Type +1;
+            mcbQuestGUI.simpleQuest.logicSetQuestType(
+                self.m_Receiver, 
+                self.m_QuestID, 
+                self.m_Description.Type +1, 
+                self.m_Description.Info or 1
+            );
         else
             Logic.SetQuestType(
                 self.m_Receiver, 
                 self.m_QuestID, 
-                self.m_Description.Type, 
+                self.m_Description.Type +1, 
                 self.m_Description.Info or 1
             );
         end
@@ -1058,7 +1085,7 @@ function QuestTemplate:RemoveQuest()
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
         if gvExtensionNumber > 2 then
-            -- FIXME
+            mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, self.m_QuestID);
         else
             Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
         end
