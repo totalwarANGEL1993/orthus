@@ -109,8 +109,7 @@ end
 
 ---
 -- Disables or enables the ability to patrol between positions. This
--- function can be used to forbid an army to attack even if there are
--- valid targets.
+-- function can be force an army to stay on its spawnpoint.
 --
 -- @param _PlayerID [number] ID of player
 -- @param _ArmyID [number] ID of army
@@ -149,7 +148,7 @@ end
 -- @param _TroopTypes [table] Upgrade categories to recruit
 -- @return [number] Army ID
 --
--- @usage CreateAIPlayer("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
+-- @usage CreateAIPlayerArmy("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
 --
 function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
     if QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] then
@@ -188,7 +187,7 @@ end
 -- @param _LifeThread [string] Name of generator
 -- @param _RodeLength [number] Action range of the army
 -- @param _RespawnTime [number] Time till troops are refreshed
--- @param ... [number] List of types to spawn
+-- @param ... [number..] List of types to spawn
 --
 -- @usage CreateAIPlayerSpawnArmy(
 --     "Bar", 2, 8, "armyPos1", "lifethread", 5000,
@@ -294,6 +293,9 @@ QuestSystemBehavior = {
 -- Installs the questsystem. This function is a substitude for the original
 -- method QuestSystem:InstallQuestSystem and will call the original first.
 -- After that the behavior are initalized.
+--
+-- The modules qsb.interaction and qsb.information are also initalized.
+--
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -318,7 +320,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
 end
 
 ---
--- Calls all loaded actions after a save is loaded.
+-- Calls all load actions after a save is loaded.
 -- @within QuestSystemBehavior
 -- @local
 --

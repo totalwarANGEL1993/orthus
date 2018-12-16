@@ -112,6 +112,12 @@ end
 
 ---
 -- Activates the cheat console if the debug shell flag is set.
+--
+-- Entered commands will be parsed and evaluated. You can seperate multiple
+-- commands with && and multiple inputs for a single command with &.
+--
+-- To use the commands with the LuaDebugger call them with eval(_CmdString).
+--
 -- @within QuestSystemDebug
 -- @local
 --
@@ -131,6 +137,9 @@ function QuestSystemDebug:ActivateConsole()
         end
     end
 end
+function eval(_Input)
+    return QuestSystemDebug:EvaluateCommand(QuestSystemDebug:TokenizeCommand(_Input));
+end
 
 ---
 -- Receives the message from the chat input and split it into tokens.
@@ -139,63 +148,67 @@ end
 -- @local
 --
 function QuestSystemDebug:TokenizeCommand(_Message)
-    local Commands = {_Message};
+    local Commands = {};
+    local DAmberCommands = {_Message};
+    local AmberCommands = {_Message};
     
-    -- parse & delimiter
-    local s, e = string.find(_Message, " & ");
-    if s then 
-        Commands = {};
+    -- parse && delimiter
+    local s, e = string.find(_Message, "%s+&&%s+");
+    if s then
+        DAmberCommands = {};
         while (s) do
-            table.insert(Commands, string.sub(_Message, 1, s-1));
+            local tmp = string.sub(_Message, 1, s-1);
+            table.insert(DAmberCommands, tmp);
             _Message = string.sub(_Message, e+1);
-            s, e = string.find(_Message, " & ");
+            s, e = string.find(_Message, "%s+&&%s+");
         end
         if string.len(_Message) > 0 then 
-            table.insert(Commands, _Message);
+            table.insert(DAmberCommands, _Message);
         end
     end
 
-    -- parse single arguments
-    for i= 1, table.getn(Commands), 1 do 
-        local tmp = Commands[i];
-        local s, e = string.find(tmp, "%s+");
-        if s then 
-            Commands[i] = {};
+    -- parse & delimiter
+    if table.getn(DAmberCommands) > 0 then
+        AmberCommands = {};
+    end
+    for i= 1, table.getn(DAmberCommands), 1 do
+        local s, e = string.find(DAmberCommands[i], "%s+&%s+");
+        if s then
+            local LastCommand = "";
             while (s) do
-                table.insert(Commands[i], string.sub(tmp, 1, s-1));
-                tmp = string.sub(tmp, e+1);
-                s, e = string.find(tmp, "%s+");
+                local tmp = string.sub(DAmberCommands[i], 1, s-1);
+                table.insert(AmberCommands, LastCommand .. tmp);
+                if string.find(tmp, " ") then
+                    LastCommand = string.sub(tmp, 1, string.find(tmp, " ")-1) .. " ";
+                end
+                DAmberCommands[i] = string.sub(DAmberCommands[i], e+1);
+                s, e = string.find(DAmberCommands[i], "%s+&%s+");
             end
-            if string.len(tmp) > 0 then 
-                table.insert(Commands[i], tmp);
+            if string.len(DAmberCommands[i]) > 0 then 
+                table.insert(AmberCommands, LastCommand .. DAmberCommands[i]);
             end
         else
-            Commands[i] = {tmp};
+            table.insert(AmberCommands, DAmberCommands[i]);
         end
     end
 
-    -- parse && repeater
-    local i = 1;
-    while (Commands[i]) do
-        local j = 1;
-        while (Commands[i][j]) do
-            if Commands[i][j] == "&&" and Commands[i][j+1] then
-                table.remove(Commands[i], j);
-
-                local NewCommand = {};
-                while (Commands[i][j] and Commands[i][j] ~= "&&") do
-                    table.insert(NewCommand, Commands[i][j]);
-                    table.remove(Commands[i], j);
-                end
-                table.insert(NewCommand, 1, Commands[i][j-table.getn(NewCommand)-1])
-                table.insert(Commands, i+1, NewCommand);
-            else
-                j = j +1;
+    -- parse spaces
+    for i= 1, table.getn(AmberCommands), 1 do
+        local CommandLine = {};
+        local s, e = string.find(AmberCommands[i], "%s+");
+        if s then
+            while (s) do
+                local tmp = string.sub(AmberCommands[i], 1, s-1);
+                table.insert(CommandLine, tmp);
+                AmberCommands[i] = string.sub(AmberCommands[i], e+1);
+                s, e = string.find(AmberCommands[i], "%s+");
             end
+            table.insert(CommandLine, AmberCommands[i]);
+        else
+            table.insert(CommandLine, AmberCommands[i]);
         end
-        i = i +1;
+        table.insert(Commands, CommandLine);
     end
-
     return Commands;
 end
 
@@ -547,7 +560,11 @@ end
 
 -- Callbacks ---------------------------------------------------------------- --
 
+GameCallback_OnQuestStatusChanged_Orig_QsbQuestDebug = GameCallback_OnQuestStatusChanged;
 function GameCallback_OnQuestStatusChanged(_QuestID, _State, _Result)
+    if GameCallback_OnQuestStatusChanged_Orig_QsbQuestDebug then
+        GameCallback_OnQuestStatusChanged_Orig_QsbQuestDebug(_QuestID, _State, _Result);
+    end
     QuestSystemDebug:PrintQuestStatus(_QuestID, _State, _Result);
 end
 
