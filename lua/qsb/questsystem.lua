@@ -37,6 +37,7 @@
 
 QuestSystem = {
     QuestLoop = "QuestSystem_QuestControllerJob",
+    QuestDescriptions = {},
     Quests = {},
     QuestMarkers = {},
     MinimapMarkers = {},
@@ -977,14 +978,20 @@ function QuestTemplate:CreateQuest()
                 self.m_Description.Info or 1
             );
         else
+            local QuestID = table.getn(QuestSystem.QuestDescriptions)+1;
+            if QuestID > 8 then
+                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                return;
+            end
             Logic.AddQuest(
                 self.m_Receiver, 
-                self.m_QuestID, 
+                QuestID, 
                 self.m_Description.Type, 
                 self.m_Description.Title, 
                 self.m_Description.Text, 
                 self.m_Description.Info or 1
             );
+            QuestSystem.QuestDescriptions[QuestID] = self.m_QuestID;
         end
     end
 end
@@ -1010,6 +1017,11 @@ function QuestTemplate:CreateQuestEx()
                 self.m_Description.Info or 1
             );
         else
+            local QuestID = table.getn(QuestSystem.QuestDescriptions)+1;
+            if QuestID > 8 then
+                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                return;
+            end
             Logic.AddQuestEx(
                 self.m_Receiver, 
                 self.m_QuestID, 
@@ -1020,6 +1032,7 @@ function QuestTemplate:CreateQuestEx()
                 self.m_Description.Y, 
                 self.m_Description.Info or 1
             );
+            QuestSystem.QuestDescriptions[QuestID] = self.m_QuestID;
         end
     end
 end
@@ -1042,7 +1055,12 @@ function QuestTemplate:QuestSetFailed()
                 self.m_Description.Info or 1
             );
         else
-            Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
+            for i= 1, 8, 1 do
+                if QuestSystem.QuestDescriptions[i] == self.m_QuestID then
+                    Logic.RemoveQuest(self.m_Receiver, i);
+                    QuestSystem.QuestDescriptions[i] = nil;
+                end
+            end
         end
     end
 end
@@ -1065,12 +1083,11 @@ function QuestTemplate:QuestSetSuccessful()
                 self.m_Description.Info or 1
             );
         else
-            Logic.SetQuestType(
-                self.m_Receiver, 
-                self.m_QuestID, 
-                self.m_Description.Type +1, 
-                self.m_Description.Info or 1
-            );
+            for i= 1, 8, 1 do
+                if QuestSystem.QuestDescriptions[i] == self.m_QuestID then
+                    Logic.SetQuestType(self.m_Receiver, i, self.m_Description.Type +1, self.m_Description.Info or 1);
+                end
+            end
         end
     end
 end
@@ -1087,7 +1104,11 @@ function QuestTemplate:RemoveQuest()
         if gvExtensionNumber > 2 then
             mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, self.m_QuestID);
         else
-            Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
+            for i= 1, 8, 1 do
+                if QuestSystem.QuestDescriptions[i] == self.m_QuestID then
+                    Logic.RemoveQuest(self.m_Receiver, i);
+                end
+            end
         end
     end
 end
