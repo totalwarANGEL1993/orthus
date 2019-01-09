@@ -578,7 +578,8 @@ function Information:StartFader(_Duration, _FadeIn)
 end
 
 ---
--- 
+-- Starts the fader delayed by a waittime.
+-- @param _Waittime [number] Waittime in seconds
 -- @param _Duration [number] Duration of fading in seconds
 -- @param _FadeIn [boolean] Fade in from black
 -- @within Information

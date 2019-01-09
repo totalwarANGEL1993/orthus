@@ -26,7 +26,7 @@
 
 <div id="navigation">
 <br/>
-<h1>Orthos</h1>
+<h1>ldoc</h1>
 
 <ul>
   <li><a href="../index.html">Index</a></li>
@@ -45,19 +45,19 @@
 
 <h2>Modules</h2>
 <ul class="nowrap">
-  <li><a href="../modules/qsb.information.html">qsb.information</a></li>
-  <li><a href="../modules/qsb.interaction.html">qsb.interaction</a></li>
-  <li><a href="../modules/qsb.oop.html">qsb.oop</a></li>
-  <li><strong>qsb.questbehavior</strong></li>
-  <li><a href="../modules/qsb.questdebug.html">qsb.questdebug</a></li>
-  <li><a href="../modules/qsb.questsystem.html">qsb.questsystem</a></li>
+  <li><a href="../modules/information_ex2.html">information_ex2</a></li>
+  <li><a href="../modules/interaction.html">interaction</a></li>
+  <li><a href="../modules/oop.html">oop</a></li>
+  <li><strong>questbehavior</strong></li>
+  <li><a href="../modules/questdebug.html">questdebug</a></li>
+  <li><a href="../modules/questsystem.html">questsystem</a></li>
 </ul>
 
 </div>
 
 <div id="content">
 
-<h1>Module <code>qsb.questbehavior</code></h1>
+<h1>Module <code>questbehavior</code></h1>
 <p>This is an abstraction layer of the quest system, allowing the user to
  create quests much more simple.</p>
 <p> Also some behavior are recoded and there
@@ -66,6 +66,7 @@
  <ul>
  <li>qsb.oop</li>
  <li>qsb.questsystem</li>
+ <li>qsb.questdebug</li>
  <li>qsb.interaction</li>
  <li>qsb.information</li>
  </ul>
@@ -75,20 +76,45 @@
 <h2><a href="#Functions">Functions</a></h2>
 <table class="function_list">
 	<tr>
+	<td class="name" nowrap><a href="#ActivateDebugMode">ActivateDebugMode (_CheckQuests, _TraceQuests, _Cheats, _Console)</a></td>
+	<td class="summary">Activates the debug mode.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ArmyDisableAttackAbility">ArmyDisableAttackAbility (_PlayerID, _ArmyID, _Flag)</a></td>
+	<td class="summary">Disables or enables the ability to attack for the army.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ArmyDisablePatrolAbility">ArmyDisablePatrolAbility (_PlayerID, _ArmyID, _Flag)</a></td>
+	<td class="summary">Disables or enables the ability to patrol between positions.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#CreateAIPlayer">CreateAIPlayer (_PlayerID, _TechLevel)</a></td>
 	<td class="summary">Creates an AI player and sets the technology level.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerArmy">CreateAIPlayerArmy (_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)</a></td>
+	<td class="name" nowrap><a href="#CreateAIPlayerArmy">CreateAIPlayerArmy (_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)</a></td>
 	<td class="summary">Initalizes an army that is recruited by the AI player.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerSpawnArmy">CreateAIPlayerSpawnArmy (_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)</a></td>
+	<td class="name" nowrap><a href="#CreateAIPlayerSpawnArmy">CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)</a></td>
 	<td class="summary">Initalizes an army that is spawned until a generator entity is destroyed.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#CreateQuest">CreateQuest (_Data)</a></td>
 	<td class="summary">Creates an quest from the given description.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GetEntitiesByPrefix">GetEntitiesByPrefix (_Prefix)</a></td>
+	<td class="summary">Finds all entities numbered from 1 to n with a common prefix.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GetPlayerEntities">GetPlayerEntities (_PlayerID, _EntityType)</a></td>
+	<td class="summary">Finds all entities of the player that have the type.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#LoadQuestSystem">LoadQuestSystem ()</a></td>
+	<td class="summary">This function starts the quest system by loading all components in the
+ right order.</td>
 	</tr>
 </table>
 <h2><a href="#Constants">Constants</a></h2>
@@ -109,6 +135,10 @@
 	<td class="summary">The goal is won after the player creates entities in the area.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#Goal_CustomVariable">Goal_CustomVariable (_Name, _Comparison, _Value)</a></td>
+	<td class="summary">Compares a numeric custom value with number or another custom value.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Goal_Destroy">Goal_Destroy (_Target)</a></td>
 	<td class="summary">The goal is won after the hero is comatose or the entity/army is destroyed.</td>
 	</tr>
@@ -120,6 +150,10 @@
 	<td class="name" nowrap><a href="#Goal_DestroyCategory">Goal_DestroyCategory (_PlayerID, _TypeName, _Amount)</a></td>
 	<td class="summary">This goal is won, after the receiver destroyed some entities of category of
  the player.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Goal_DestroyPlayer">Goal_DestroyPlayer (_PlayerID)</a></td>
+	<td class="summary">This goal succeeds if the headquarter entity of the player is destroyed.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Goal_DestroyType">Goal_DestroyType (_PlayerID, _TypeName, _Amount)</a></td>
@@ -195,6 +229,10 @@
 	<td class="summary">This goal is won, after the receiver changed the weather to the state.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#Goal_WinQuest">Goal_WinQuest (_QuestName)</a></td>
+	<td class="summary">The player must win a quest.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Goal_WorkerCount">Goal_WorkerCount (_Amount, _LowerThan, _OtherPlayer)</a></td>
 	<td class="summary">This goal is won, after the player has an amount of worker.</td>
 	</tr>
@@ -259,7 +297,7 @@
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reprisal_QuestRestartForceActive">Reprisal_QuestRestartForceActive (_QuestName)</a></td>
-	<td class="summary">Restarts the quest and activates it immediately.</td>
+	<td class="summary">Restarts the quest and force it to be active immedaitly.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reprisal_QuestSucceed">Reprisal_QuestSucceed (_QuestName)</a></td>
@@ -268,6 +306,10 @@
 	<tr>
 	<td class="name" nowrap><a href="#Reprisal_RemoveQuest">Reprisal_RemoveQuest (_QuestName)</a></td>
 	<td class="summary">Removes the description of a quest from the quest book.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reprisal_SetVulnerablity">Reprisal_SetVulnerablity (_ScriptName, _Flag)</a></td>
+	<td class="summary">Changes the vulnerablty of a settler or building.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reprisal_Technology">Reprisal_Technology (_Technology, _State)</a></td>
@@ -280,6 +322,27 @@
 </table>
 <h2><a href="#Rewards">Rewards</a></h2>
 <table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#Reward_AI_CreateAIPlayer">Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel)</a></td>
+	<td class="summary">Creates an AI player but don't creates any armies.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_AI_CreateArmy">Reward_AI_CreateArmy (_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopType)</a></td>
+	<td class="summary">Defines an army that must be recruited by the AI.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_AI_CreateSpawnArmy">Reward_AI_CreateSpawnArmy (_ArmyName, _PlayerID, _LifeThread, _Strength, _Position, _RodeLength, _RespawnTime, _TroopType1, _TroopType2, _TroopType3, _TroopType4, _TroopType5, _TroopType6)</a></td>
+	<td class="summary">Defines an army of up to 6 different unit types that is spawned from a
+ generator entiry.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_AI_EnableArmyAttack">Reward_AI_EnableArmyAttack (_PlayerID, _ArmyName, _Flag)</a></td>
+	<td class="summary">Disables or enables the attack behavior for armies.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_AI_EnableArmyPatrol">Reward_AI_EnableArmyPatrol (_PlayerID, _ArmyName, _Flag)</a></td>
+	<td class="summary">Disables or enables the patrol behavior for armies.</td>
+	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reward_Briefing">Reward_Briefing (_FunctionName)</a></td>
 	<td class="summary">Starts the briefing.</td>
@@ -297,15 +360,7 @@
 	<td class="summary">Removes the exploration of an area.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_CreateAI">Reward_CreateAI (_PlayerID, _TechLevel)</a></td>
-	<td class="summary">Creates an AI player but don't creates any armies.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Reward_CreateAIArmy">Reward_CreateAIArmy (_PlayerID, _Strength, _Position, _RodeLength, _TroopType)</a></td>
-	<td class="summary">Defines an army that must be recruited by the AI.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Reward_CreateEffect">Reward_CreateEffect (_EffectName, _EffectType, _Position)</a></td>
+	<td class="name" nowrap><a href="#Reward_CreateEffect">Reward_CreateEffect (_EffectName, _Position, _EffectType)</a></td>
 	<td class="summary">Creates an effect at the position.</td>
 	</tr>
 	<tr>
@@ -386,8 +441,12 @@
 	<td class="summary">Interrupts the quest.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#Reward_QuestRestart">Reward_QuestRestart (_QuestName)</a></td>
+	<td class="summary">Restarts the quest.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Reward_QuestRestartForceActive">Reward_QuestRestartForceActive (_QuestName)</a></td>
-	<td class="summary">Restarts the quest and activates it immediately.</td>
+	<td class="summary">Restarts the quest and force it to be active immedaitly.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reward_QuestSucceed">Reward_QuestSucceed (_QuestName)</a></td>
@@ -410,6 +469,10 @@
 	<td class="summary">Changes the color of a player.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#Reward_SetVulnerablity">Reward_SetVulnerablity (_ScriptName, _Flag)</a></td>
+	<td class="summary">Changes the vulnerablty of a settler or building.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Reward_Technology">Reward_Technology (_Technology, _State)</a></td>
 	<td class="summary">Changes the state of a technology.</td>
 	</tr>
@@ -421,8 +484,22 @@
 <h2><a href="#Triggers">Triggers</a></h2>
 <table class="function_list">
 	<tr>
+	<td class="name" nowrap><a href="#Reprisal_CustomVariable">Reprisal_CustomVariable (_Name, _Operator, _Value)</a></td>
+	<td class="summary">Alters a numeric custom value by the given value or value of the given
+ custom variable using the mathematical operation.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reprisal_CustomVariable">Reprisal_CustomVariable (_Name, _Operator, _Value)</a></td>
+	<td class="summary">Alters a numeric custom value by the given value or value of the given
+ custom variable using the mathematical operation.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Trigger_Briefing">Trigger_Briefing (_QuestName)</a></td>
 	<td class="summary">Starts the quest when the briefing linked to the quest is finished.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Trigger_CustomVariable">Trigger_CustomVariable (_Name, _Comparison, _Value)</a></td>
+	<td class="summary">Compares a numeric custom value with number or another custom value.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Trigger_Diplomacy">Trigger_Diplomacy (_PlayerID, _DiplomacyState)</a></td>
@@ -500,6 +577,105 @@
 
     <dl class="function">
     <dt>
+    <a name = "ActivateDebugMode"></a>
+    <strong>ActivateDebugMode (_CheckQuests, _TraceQuests, _Cheats, _Console)</strong>
+    </dt>
+    <dd>
+    Activates the debug mode.  Use the flags to decide which features you want
+ to use.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_CheckQuests</span>
+         [boolean] Call debug check of behavior
+        </li>
+        <li><span class="parameter">_TraceQuests</span>
+         [boolean] Display quest status changes
+        </li>
+        <li><span class="parameter">_Cheats</span>
+         [boolean] Activate debug cheats
+        </li>
+        <li><span class="parameter">_Console</span>
+         [boolean] Activate debug shell
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">ActivateDebugMode(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">true</span>);</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "ArmyDisableAttackAbility"></a>
+    <strong>ArmyDisableAttackAbility (_PlayerID, _ArmyID, _Flag)</strong>
+    </dt>
+    <dd>
+    Disables or enables the ability to attack for the army.  This function can
+ be used to forbid an army to attack even if there are valid targets.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] ID of player
+        </li>
+        <li><span class="parameter">_ArmyID</span>
+         [number] ID of army
+        </li>
+        <li><span class="parameter">_Flag</span>
+         [boolean] Ability to attack
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">ArmyDisableAttackAbility(<span class="number">2</span>, <span class="number">1</span>, <span class="keyword">true</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "ArmyDisablePatrolAbility"></a>
+    <strong>ArmyDisablePatrolAbility (_PlayerID, _ArmyID, _Flag)</strong>
+    </dt>
+    <dd>
+    Disables or enables the ability to patrol between positions.  This
+ function can be force an army to stay on its spawnpoint.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] ID of player
+        </li>
+        <li><span class="parameter">_ArmyID</span>
+         [number] ID of army
+        </li>
+        <li><span class="parameter">_Flag</span>
+         [boolean] Ability to attack
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">ArmyDisablePatrolAbility(<span class="number">2</span>, <span class="number">1</span>, <span class="keyword">true</span>)</pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "CreateAIPlayer"></a>
     <strong>CreateAIPlayer (_PlayerID, _TechLevel)</strong>
     </dt>
@@ -531,10 +707,13 @@
 </dd>
     <dt>
     <a name = "CreateAIPlayerArmy"></a>
-    <strong>CreateAIPlayerArmy (_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)</strong>
+    <strong>CreateAIPlayerArmy (_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)</strong>
     </dt>
     <dd>
     Initalizes an army that is recruited by the AI player.
+ Armies can also be created with the behavior interface. This is a simple
+ type of army that can be configured by placing and naming script entities.
+ The army name must be unique for the player!
 <p> The AI player must be initalized first!
 <p> For the troop types either define a table of upgrade categories or use the
  constants from the QuestSystemBehavior.ArmyCategories table.
@@ -549,8 +728,11 @@
 
     <h3>Parameters:</h3>
     <ul>
+        <li><span class="parameter">_ArmyName</span>
+         [String] Army identifier
+        </li>
         <li><span class="parameter">_PlayerID</span>
-         [number] Owner of army.
+         [number] Owner of army
         </li>
         <li><span class="parameter">_Strength</span>
          [number] Strength of army [1|8]
@@ -566,21 +748,29 @@
         </li>
     </ul>
 
+    <h3>Returns:</h3>
+    <ol>
+
+        [number] Army ID
+    </ol>
 
 
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">CreateAIPlayer(<span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="number">5000</span>, QuestSystemBehavior.ArmyCategories.City);</pre>
+        <pre class="example">CreateAIPlayerArmy(<span class="string">"Foo"</span>, <span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="number">5000</span>, QuestSystemBehavior.ArmyCategories.City);</pre>
     </ul>
 
 </dd>
     <dt>
     <a name = "CreateAIPlayerSpawnArmy"></a>
-    <strong>CreateAIPlayerSpawnArmy (_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)</strong>
+    <strong>CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)</strong>
     </dt>
     <dd>
     Initalizes an army that is spawned until a generator entity is destroyed.
+ Armies can also be created with the behavior interface. This is a simple
+ type of army that can be configured by placing and naming script entities.
+ The army name must be unique for the player!
 <p> The AI player must be initalized first!
 <p> Define a list of troops that are sparned in this order. Troops will be
  spawrned as long as the generator exists.
@@ -595,6 +785,9 @@
 
     <h3>Parameters:</h3>
     <ul>
+        <li><span class="parameter">_ArmyName</span>
+         [String] Army identifier
+        </li>
         <li><span class="parameter">_PlayerID</span>
          [number] Owner of army.
         </li>
@@ -614,7 +807,7 @@
          [number] Time till troops are refreshed
         </li>
         <li><span class="parameter">...</span>
-         [number] List of types to spawn
+         [number..] List of types to spawn
         </li>
     </ul>
 
@@ -624,7 +817,7 @@
     <h3>Usage:</h3>
     <ul>
         <pre class="example">CreateAIPlayerSpawnArmy(
-    <span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="string">"lifethread"</span>, <span class="number">5000</span>,
+    <span class="string">"Bar"</span>, <span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="string">"lifethread"</span>, <span class="number">5000</span>,
     Entities.PU_LeaderSword2,
     Entities.PU_LeaderBow2,
     Entities.PV_Cannon2
@@ -682,6 +875,75 @@
     Trigger_Time(<span class="number">0</span>)
 }</pre>
     </ul>
+
+</dd>
+    <dt>
+    <a name = "GetEntitiesByPrefix"></a>
+    <strong>GetEntitiesByPrefix (_Prefix)</strong>
+    </dt>
+    <dd>
+    Finds all entities numbered from 1 to n with a common prefix.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Prefix</span>
+         [string] Prefix of scriptnames
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        [table] List of entities
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GetPlayerEntities"></a>
+    <strong>GetPlayerEntities (_PlayerID, _EntityType)</strong>
+    </dt>
+    <dd>
+    Finds all entities of the player that have the type.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] ID of player
+        </li>
+        <li><span class="parameter">_EntityType</span>
+         [number] Type to search
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        [table] List of entities
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "LoadQuestSystem"></a>
+    <strong>LoadQuestSystem ()</strong>
+    </dt>
+    <dd>
+    This function starts the quest system by loading all components in the
+ right order.  Must be called on game start in the FMA.
+
+
+
+
+
+
+
 
 </dd>
 </dl>
@@ -786,6 +1048,33 @@
 
 </dd>
     <dt>
+    <a name = "Goal_CustomVariable"></a>
+    <strong>Goal_CustomVariable (_Name, _Comparison, _Value)</strong>
+    </dt>
+    <dd>
+    Compares a numeric custom value with number or another custom value.
+ If the values match the condition then the goal is reached.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Name</span>
+         [string] Variable identifier
+        </li>
+        <li><span class="parameter">_Comparison</span>
+         [string] Comparsion operator
+        </li>
+        <li><span class="parameter">_Value</span>
+         [number] Integer value
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "Goal_Destroy"></a>
     <strong>Goal_Destroy (_Target)</strong>
     </dt>
@@ -844,6 +1133,27 @@
         </li>
         <li><span class="parameter">_Amount</span>
          [number] Amount to destroy
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Goal_DestroyPlayer"></a>
+    <strong>Goal_DestroyPlayer (_PlayerID)</strong>
+    </dt>
+    <dd>
+    This goal succeeds if the headquarter entity of the player is destroyed.
+ In addition, all buildings and settlers of this player get killed.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] id of player
         </li>
     </ul>
 
@@ -1023,6 +1333,7 @@
     </dt>
     <dd>
     This goal is won, after a hero of the receiver talked to the character.
+ It can be any hero or a special named hero.
 
 
     <h3>Parameters:</h3>
@@ -1263,6 +1574,26 @@
     <ul>
         <li><span class="parameter">_State</span>
          [number] Weather state
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Goal_WinQuest"></a>
+    <strong>Goal_WinQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    The player must win a quest.  If the quest fails this behavior will fail.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+         [string] Quest name
         </li>
     </ul>
 
@@ -1598,7 +1929,7 @@
     <strong>Reprisal_QuestRestartForceActive (_QuestName)</strong>
     </dt>
     <dd>
-    Restarts the quest and activates it immediately.
+    Restarts the quest and force it to be active immedaitly.
 
 
     <h3>Parameters:</h3>
@@ -1654,6 +1985,29 @@
 
 </dd>
     <dt>
+    <a name = "Reprisal_SetVulnerablity"></a>
+    <strong>Reprisal_SetVulnerablity (_ScriptName, _Flag)</strong>
+    </dt>
+    <dd>
+    Changes the vulnerablty of a settler or building.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_ScriptName</span>
+         [string] Entity to affect
+        </li>
+        <li><span class="parameter">_Flag</span>
+         [boolean] State of vulnerablty
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "Reprisal_Technology"></a>
     <strong>Reprisal_Technology (_Technology, _State)</strong>
     </dt>
@@ -1700,6 +2054,184 @@
     <h2 class="section-header "><a name="Rewards"></a>Rewards</h2>
 
     <dl class="function">
+    <dt>
+    <a name = "Reward_AI_CreateAIPlayer"></a>
+    <strong>Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel)</strong>
+    </dt>
+    <dd>
+    Creates an AI player but don't creates any armies.
+<p> Initalising the AI is nessessary for usung the quest system behavior army
+ controller.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] Id of player
+        </li>
+        <li><span class="parameter">_TechLevel</span>
+         [number] Tech level
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reward_AI_CreateArmy"></a>
+    <strong>Reward_AI_CreateArmy (_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopType)</strong>
+    </dt>
+    <dd>
+    Defines an army that must be recruited by the AI.
+<p> Use script entities named with PlayerX_AttackTargetY to define positions
+ that will be attacked by the army. Also you can use entities named with
+ PlayerX_PatrolPointY to define positions were the army will patrol.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_ArmyName</span>
+         [string] Army identifier
+        </li>
+        <li><span class="parameter">_PlayerID</span>
+         [number] Id of player
+        </li>
+        <li><span class="parameter">_Strength</span>
+         [number] Strength of army
+        </li>
+        <li><span class="parameter">_Position</span>
+         [string] Army base position
+        </li>
+        <li><span class="parameter">_RodeLength</span>
+         [number] Average action range
+        </li>
+        <li><span class="parameter">_TroopType</span>
+         [number] Army troop type
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reward_AI_CreateSpawnArmy"></a>
+    <strong>Reward_AI_CreateSpawnArmy (_ArmyName, _PlayerID, _LifeThread, _Strength, _Position, _RodeLength, _RespawnTime, _TroopType1, _TroopType2, _TroopType3, _TroopType4, _TroopType5, _TroopType6)</strong>
+    </dt>
+    <dd>
+    Defines an army of up to 6 different unit types that is spawned from a
+ generator entiry.
+<p> Use script entities named with PlayerX_AttackTargetY to define positions
+ that will be attacked by the army. Also you can use entities named with
+ PlayerX_PatrolPointY to define positions were the army will patrol.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_ArmyName</span>
+         [string] Army identifier
+        </li>
+        <li><span class="parameter">_PlayerID</span>
+         [number] Id of player
+        </li>
+        <li><span class="parameter">_LifeThread</span>
+         [string] Name of generator
+        </li>
+        <li><span class="parameter">_Strength</span>
+         [number] Strength of army
+        </li>
+        <li><span class="parameter">_Position</span>
+         [string] Army base position
+        </li>
+        <li><span class="parameter">_RodeLength</span>
+         [number] Average action range
+        </li>
+        <li><span class="parameter">_RespawnTime</span>
+         [number] Time till reinforcements spawned
+        </li>
+        <li><span class="parameter">_TroopType1</span>
+         [string] Troop type 1
+        </li>
+        <li><span class="parameter">_TroopType2</span>
+         [string] Troop type 2
+        </li>
+        <li><span class="parameter">_TroopType3</span>
+         [string] Troop type 3
+        </li>
+        <li><span class="parameter">_TroopType4</span>
+         [string] Troop type 4
+        </li>
+        <li><span class="parameter">_TroopType5</span>
+         [string] Troop type 5
+        </li>
+        <li><span class="parameter">_TroopType6</span>
+         [string] Troop type 6
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reward_AI_EnableArmyAttack"></a>
+    <strong>Reward_AI_EnableArmyAttack (_PlayerID, _ArmyName, _Flag)</strong>
+    </dt>
+    <dd>
+    Disables or enables the attack behavior for armies.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] ID of player
+        </li>
+        <li><span class="parameter">_ArmyName</span>
+         [string] Army identifier
+        </li>
+        <li><span class="parameter">_Flag</span>
+         [boolean] Attack disabled
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reward_AI_EnableArmyPatrol"></a>
+    <strong>Reward_AI_EnableArmyPatrol (_PlayerID, _ArmyName, _Flag)</strong>
+    </dt>
+    <dd>
+    Disables or enables the patrol behavior for armies.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+         [number] ID of player
+        </li>
+        <li><span class="parameter">_ArmyName</span>
+         [string] Army identifier
+        </li>
+        <li><span class="parameter">_Flag</span>
+         [boolean] Patrol disabled
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
     <dt>
     <a name = "Reward_Briefing"></a>
     <strong>Reward_Briefing (_FunctionName)</strong>
@@ -1784,70 +2316,8 @@
 
 </dd>
     <dt>
-    <a name = "Reward_CreateAI"></a>
-    <strong>Reward_CreateAI (_PlayerID, _TechLevel)</strong>
-    </dt>
-    <dd>
-    Creates an AI player but don't creates any armies.
-<p> Initalising the AI is nessessary for usung the quest system behavior army
- controller.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-         [number] Id of player
-        </li>
-        <li><span class="parameter">_TechLevel</span>
-         [number] Tech level
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
-    <a name = "Reward_CreateAIArmy"></a>
-    <strong>Reward_CreateAIArmy (_PlayerID, _Strength, _Position, _RodeLength, _TroopType)</strong>
-    </dt>
-    <dd>
-    Defines an army that must be recruited by the AI.
-<p> Use script entities named with PlayerX_AttackTargetY to define positions
- that will be attacked by the army. Also you can use entities named with
- PlayerX_PatrolPointY to define positions were the army will patrol.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-         [number] Id of player
-        </li>
-        <li><span class="parameter">_Strength</span>
-         [number] Strength of army
-        </li>
-        <li><span class="parameter">_Position</span>
-         [string] Army base position
-        </li>
-        <li><span class="parameter">_RodeLength</span>
-         [number] Average action range
-        </li>
-        <li><span class="parameter">_TroopType</span>
-         [number] Army troop type
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
     <a name = "Reward_CreateEffect"></a>
-    <strong>Reward_CreateEffect (_EffectName, _EffectType, _Position)</strong>
+    <strong>Reward_CreateEffect (_EffectName, _Position, _EffectType)</strong>
     </dt>
     <dd>
     Creates an effect at the position.
@@ -1858,11 +2328,11 @@
         <li><span class="parameter">_EffectName</span>
          [string] Name for the effect
         </li>
-        <li><span class="parameter">_EffectType</span>
-         [string] Effect type name
-        </li>
         <li><span class="parameter">_Position</span>
          [number] Position of effect
+        </li>
+        <li><span class="parameter">_EffectType</span>
+         [string] Effect type name
         </li>
     </ul>
 
@@ -2373,11 +2843,31 @@
 
 </dd>
     <dt>
+    <a name = "Reward_QuestRestart"></a>
+    <strong>Reward_QuestRestart (_QuestName)</strong>
+    </dt>
+    <dd>
+    Restarts the quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+         [string] Quest name
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "Reward_QuestRestartForceActive"></a>
     <strong>Reward_QuestRestartForceActive (_QuestName)</strong>
     </dt>
     <dd>
-    Restarts the quest and activates it immediately.
+    Restarts the quest and force it to be active immedaitly.
 
 
     <h3>Parameters:</h3>
@@ -2502,6 +2992,29 @@
 
 </dd>
     <dt>
+    <a name = "Reward_SetVulnerablity"></a>
+    <strong>Reward_SetVulnerablity (_ScriptName, _Flag)</strong>
+    </dt>
+    <dd>
+    Changes the vulnerablty of a settler or building.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_ScriptName</span>
+         [string] Entity to affect
+        </li>
+        <li><span class="parameter">_Flag</span>
+         [boolean] State of vulnerablty
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "Reward_Technology"></a>
     <strong>Reward_Technology (_Technology, _State)</strong>
     </dt>
@@ -2549,6 +3062,60 @@
 
     <dl class="function">
     <dt>
+    <a name = "Reprisal_CustomVariable"></a>
+    <strong>Reprisal_CustomVariable (_Name, _Operator, _Value)</strong>
+    </dt>
+    <dd>
+    Alters a numeric custom value by the given value or value of the given
+ custom variable using the mathematical operation.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Name</span>
+         [string] Variable identifier
+        </li>
+        <li><span class="parameter">_Operator</span>
+         [string] Operator
+        </li>
+        <li><span class="parameter">_Value</span>
+         [number] Integer value
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reprisal_CustomVariable"></a>
+    <strong>Reprisal_CustomVariable (_Name, _Operator, _Value)</strong>
+    </dt>
+    <dd>
+    Alters a numeric custom value by the given value or value of the given
+ custom variable using the mathematical operation.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Name</span>
+         [string] Variable identifier
+        </li>
+        <li><span class="parameter">_Operator</span>
+         [string] Operator
+        </li>
+        <li><span class="parameter">_Value</span>
+         [number] Integer value
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "Trigger_Briefing"></a>
     <strong>Trigger_Briefing (_QuestName)</strong>
     </dt>
@@ -2560,6 +3127,33 @@
     <ul>
         <li><span class="parameter">_QuestName</span>
          [string] Linked quest
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Trigger_CustomVariable"></a>
+    <strong>Trigger_CustomVariable (_Name, _Comparison, _Value)</strong>
+    </dt>
+    <dd>
+    Compares a numeric custom value with number or another custom value.
+ If the values match the condition then the trigger returns true.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Name</span>
+         [string] Variable identifier
+        </li>
+        <li><span class="parameter">_Comparison</span>
+         [string] Comparsion operator
+        </li>
+        <li><span class="parameter">_Value</span>
+         [number] Integer value
         </li>
     </ul>
 
@@ -2937,7 +3531,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2018-09-01 14:27:24 </i>
+<i style="float:right;">Last updated 2019-01-09 15:42:54 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

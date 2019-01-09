@@ -26,7 +26,7 @@
 
 <div id="navigation">
 <br/>
-<h1>Orthos</h1>
+<h1>ldoc</h1>
 
 <ul>
   <li><a href="../index.html">Index</a></li>
@@ -43,19 +43,19 @@
 
 <h2>Modules</h2>
 <ul class="nowrap">
-  <li><a href="../modules/qsb.information.html">qsb.information</a></li>
-  <li><a href="../modules/qsb.interaction.html">qsb.interaction</a></li>
-  <li><a href="../modules/qsb.oop.html">qsb.oop</a></li>
-  <li><a href="../modules/qsb.questbehavior.html">qsb.questbehavior</a></li>
-  <li><a href="../modules/qsb.questdebug.html">qsb.questdebug</a></li>
-  <li><strong>qsb.questsystem</strong></li>
+  <li><a href="../modules/information_ex2.html">information_ex2</a></li>
+  <li><a href="../modules/interaction.html">interaction</a></li>
+  <li><a href="../modules/oop.html">oop</a></li>
+  <li><a href="../modules/questbehavior.html">questbehavior</a></li>
+  <li><a href="../modules/questdebug.html">questdebug</a></li>
+  <li><strong>questsystem</strong></li>
 </ul>
 
 </div>
 
 <div id="content">
 
-<h1>Module <code>qsb.questsystem</code></h1>
+<h1>Module <code>questsystem</code></h1>
 <p>This is an approach to create a RoaE like quest system.</p>
 <p> Although we can not
  visualize a failed quest in the quest log, the pure logic of the system is
@@ -72,8 +72,9 @@
  <li>Reward: Rewards for successfully finishing a quest.</li>
  <li>Reprisal: Pubishments after the quest faild.</li>
  </ul>
+ But reprisals and rewards are both callbacks!
 <p> A quest is generated like this:<br>
- <pre>local QuestID = new(QuestTemplate, "SomeName", SomeObjectives, SomeConditions, 1, -1, SomeRewards, SomeReprisals)</pre>
+ <pre>local QuestID = new(QuestTemplate, "SomeName", SomeObjectives, SomeConditions, 1, 0, SomeRewards, SomeReprisals)</pre>
 <p> <b>Required modules:</b>
  <ul>
  <li>qsb.oop</li>
@@ -108,6 +109,10 @@
 <h2><a href="#Tables">Tables</a></h2>
 <table class="function_list">
 	<tr>
+	<td class="name" nowrap><a href="#Callbacks">Callbacks</a></td>
+	<td class="summary">Actions that are performed when a quest is finished.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Conditions">Conditions</a></td>
 	<td class="summary">Condition types that triggers quests.</td>
 	</tr>
@@ -126,14 +131,6 @@
 	<tr>
 	<td class="name" nowrap><a href="#QuestStates">QuestStates</a></td>
 	<td class="summary">Possible states of an quest.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Reprisals">Reprisals</a></td>
-	<td class="summary">Actions that are performed when a quest failed.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Rewards">Rewards</a></td>
-	<td class="summary">Actions that are performed when a quest is finished successfully.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#TechnologyStates">TechnologyStates</a></td>
@@ -338,6 +335,182 @@
     <h2 class="section-header "><a name="Tables"></a>Tables</h2>
 
     <dl class="function">
+    <dt>
+    <a name = "Callbacks"></a>
+    <strong>Callbacks</strong>
+    </dt>
+    <dd>
+    Actions that are performed when a quest is finished.
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">MapScriptFunction</span>
+
+ Calls a user function as reward.
+ <pre>{Callbacks.MapScriptFunction, _Function, _ArgumentList...}</pre>
+
+        </li>
+        <li><span class="parameter">Defeat</span>
+
+ Player looses the game.
+ <pre>{Callbacks.Defeat}</pre>
+
+        </li>
+        <li><span class="parameter">Victory</span>
+
+ Player wins the game.
+ <pre>{Callbacks.Victory}</pre>
+
+        </li>
+        <li><span class="parameter">Briefing</span>
+
+ Calls a function with a briefing. The function is expected to return
+ the briefing id! Attach only one briefing to one quest!
+ <pre>{Callbacks.Briefing, _Briefing}</pre>
+
+        </li>
+        <li><span class="parameter">ChangePlayer</span>
+
+ Changes the owner of the entity
+ <pre>{Callbacks.ChangePlayer, _Entity, _Owner}</pre>
+
+        </li>
+        <li><span class="parameter">Message</span>
+
+ Displays a simple message on screen.
+ <pre>{Callbacks.Message, _Message}</pre>
+
+        </li>
+        <li><span class="parameter">DestroyEntity</span>
+
+ Replace a named entity or millitary group with a script entity.
+ <pre>{Callbacks.Message, _ScriptName}</pre>
+
+        </li>
+        <li><span class="parameter">DestroyEffect</span>
+
+ Destroy a named graphic effect.
+ <pre>{Callbacks.Message, _EffectName}</pre>
+
+        </li>
+        <li><span class="parameter">CreateEntity</span>
+
+ Replaces a script entity with a new entity. The new entity will have the
+ same owner and orientation as the script entity.
+ <pre>{Callbacks.CreateEntity, _ScriptName, _Type}</pre>
+
+        </li>
+        <li><span class="parameter">CreateGroup</span>
+
+ Replaces a script entity with a military group. The group will have the
+ same owner and orientation as the script entity.
+ <pre>{Callbacks.CreateGroup, _ScriptName, _Type, _Soldiers}</pre>
+
+        </li>
+        <li><span class="parameter">CreateEffect</span>
+
+ Creates an effect at the position.
+ <pre>{Callbacks.DestroyEffect, _EffectName, _EffectType, _Position}</pre>
+
+        </li>
+        <li><span class="parameter">Diplomacy</span>
+
+ Changes the diplomacy state between two players.
+ <pre>{Callbacks.Diplomacy, _PlayerID1, _PlayerID2, _State}</pre>
+
+        </li>
+        <li><span class="parameter">Resource</span>
+
+ Give or remove resources from the player.
+ <pre>{Callbacks.Resource, _ResourceType, _Amount}</pre>
+
+        </li>
+        <li><span class="parameter">RemoveQuest</span>
+
+ Removes a quest from the quest book.
+ <pre>{Callbacks.RemoveQuest, _QuestName}</pre>
+
+        </li>
+        <li><span class="parameter">QuestSucceed</span>
+
+ Let a active quest succeed.
+ <pre>{Callbacks.QuestSucceed, _QuestName}</pre>
+
+        </li>
+        <li><span class="parameter">QuestFail</span>
+
+ Let a active quest fail.
+ <pre>{Callbacks.QuestFail, _QuestName}</pre>
+
+        </li>
+        <li><span class="parameter">QuestInterrupt</span>
+
+ Interrupts a quest even when it was not startet.
+ <pre>{Callbacks.QuestInterrupt, _QuestName}</pre>
+
+        </li>
+        <li><span class="parameter">QuestActivate</span>
+
+ Activates a quest when it was not triggered
+ <pre>{Callbacks.QuestActivate, _QuestName}</pre>
+
+        </li>
+        <li><span class="parameter">QuestRestart</span>
+
+ Restarts a quest so that it can be triggered again.
+ <pre>{Callbacks.QuestRestart, _QuestName}</pre>
+
+        </li>
+        <li><span class="parameter">Technology</span>
+
+ Change the state of a technology.
+ Possible technology states:
+ <ul>
+ <li>Allow: A technology will be allowed</li>
+ <li>Research: A technology is set as research</li>
+ <li>Forbid: A technology is unaccessable</li>
+ </ul>
+ <pre>{Callbacks.Technology, _Tech, _State}</pre>
+
+        </li>
+        <li><span class="parameter">CreateMarker</span>
+
+ Creates an minimap marker or minimap pulsar at the position.
+ <pre>{Callbacks.CreateMarker, _Type, _PositionTable}</pre>
+
+        </li>
+        <li><span class="parameter">DestroyMarker</span>
+
+ Removes a minimap marker or pulsar at the position.
+ <pre>{Callbacks.DestroyMarker, _PositionTable}</pre>
+
+        </li>
+        <li><span class="parameter">RevealArea</span>
+
+ Explores an area around a script entity.
+ <pre>{Callbacks.RevealArea, _AreaCenter, _Explore}</pre>
+
+        </li>
+        <li><span class="parameter">ConcealArea</span>
+
+ Removes the exploration of an area.
+ <pre>{Callbacks.ConcealArea, _AreaCenter}</pre>
+
+        </li>
+        <li><span class="parameter">Move</span>
+
+ Removes the exploration of an area.
+ <pre>{Callbacks.Move, _Entity, _Destination}</pre>
+
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
     <dt>
     <a name = "Conditions"></a>
     <strong>Conditions</strong>
@@ -699,325 +872,6 @@
 
 </dd>
     <dt>
-    <a name = "Reprisals"></a>
-    <strong>Reprisals</strong>
-    </dt>
-    <dd>
-    Actions that are performed when a quest failed.
-
-
-    <h3>Fields:</h3>
-    <ul>
-        <li><span class="parameter">MapScriptFunction</span>
-
- Calls a user function as reprisal.
- <pre>{Reprisals.MapScriptFunction, _Function, _ArgumentList...}</pre>
-
-        </li>
-        <li><span class="parameter">Defeat</span>
-
- Player looses the game.
- <pre>{Reprisals.Defeat}</pre>
-
-        </li>
-        <li><span class="parameter">Victory</span>
-
- Player wins the game.
- <pre>{Reprisals.Victory}</pre>
-
-        </li>
-        <li><span class="parameter">Briefing</span>
-
- Calls a function with a briefing. The function is expected to return
- the briefing id! Attach only one briefing to one quest!
- <pre>{Reprisals.Briefing, _Briefing}</pre>
-
-        </li>
-        <li><span class="parameter">ChangePlayer</span>
-
- Changes the owner of the entity
- <pre>{Reprisals.ChangePlayer, _Entity, _Owner}</pre>
-
-        </li>
-        <li><span class="parameter">Message</span>
-
- Displays a simple message on screen.
- <pre>{Reprisals.Message, _Message}</pre>
-
-        </li>
-        <li><span class="parameter">DestroyEntity</span>
-
- Replace a named entity or millitary group with a script entity.
- <pre>{Reprisals.DestroyEntity, _ScriptName}</pre>
-
-        </li>
-        <li><span class="parameter">DestroyEffect</span>
-
- Destroy a named graphic effect.
- <pre>{Reprisals.DestroyEffect, _EffectName}</pre>
-
-        </li>
-        <li><span class="parameter">Diplomacy</span>
-
- Changes the diplomacy state between two players.
- <pre>{Reprisals.Diplomacy, _PlayerID1, _PlayerID2, _State}</pre>
-
-        </li>
-        <li><span class="parameter">RemoveQuest</span>
-
- Removes a quest from the quest book.
- <pre>{Reprisals.RemoveQuest, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestSucceed</span>
-
- Let a active quest succeed.
- <pre>{Reprisals.QuestSucceed, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestFail</span>
-
- Let a active quest fail.
- <pre>{Reprisals.QuestFail, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestInterrupt</span>
-
- Interrupts a quest even when it was not startet.
- <pre>{Reprisals.QuestInterrupt, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestActivate</span>
-
- Activates a quest when it was not triggered
- <pre>{Reprisals.QuestActivate, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestRestart</span>
-
- Restarts a quest so that it can be triggered again.
- <pre>{Reprisals.QuestRestart, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestRestartForceActive</span>
-
- Restarts a quest and triggers it immedaitly despite the conditions.
- <pre>{Reprisals.QuestRestartForceActive, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">Technology</span>
-
- Change the state of a technology.
- Possible technology states:
- <ul>
- <li>Allow: A technology will be allowed</li>
- <li>Research: A technology is set as research</li>
- <li>Forbid: A technology is unaccessable</li>
- <pre>{Reprisals.Technology, _Tech, _State}</pre>
-
-        </li>
-        <li><span class="parameter">ConcealArea</span>
-
- Removes the exploration of an area.
- <pre>{Reprisals.ConcealArea, _AreaCenter}</pre>
-
-        </li>
-        <li><span class="parameter">Move</span>
-
- Removes the exploration of an area.
- <pre>{Reprisals.Move, _Entity, _Destination}</pre>
-
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
-    <a name = "Rewards"></a>
-    <strong>Rewards</strong>
-    </dt>
-    <dd>
-    Actions that are performed when a quest is finished successfully.
-
-
-    <h3>Fields:</h3>
-    <ul>
-        <li><span class="parameter">MapScriptFunction</span>
-
- Calls a user function as reward.
- <pre>{Rewards.MapScriptFunction, _Function, _ArgumentList...}</pre>
-
-        </li>
-        <li><span class="parameter">Defeat</span>
-
- Player looses the game.
- <pre>{Rewards.Defeat}</pre>
-
-        </li>
-        <li><span class="parameter">Victory</span>
-
- Player wins the game.
- <pre>{Rewards.Victory}</pre>
-
-        </li>
-        <li><span class="parameter">Briefing</span>
-
- Calls a function with a briefing. The function is expected to return
- the briefing id! Attach only one briefing to one quest!
- <pre>{Rewards.Briefing, _Briefing}</pre>
-
-        </li>
-        <li><span class="parameter">ChangePlayer</span>
-
- Changes the owner of the entity
- <pre>{Rewards.ChangePlayer, _Entity, _Owner}</pre>
-
-        </li>
-        <li><span class="parameter">Message</span>
-
- Displays a simple message on screen.
- <pre>{Rewards.Message, _Message}</pre>
-
-        </li>
-        <li><span class="parameter">DestroyEntity</span>
-
- Replace a named entity or millitary group with a script entity.
- <pre>{Rewards.Message, _ScriptName}</pre>
-
-        </li>
-        <li><span class="parameter">DestroyEffect</span>
-
- Destroy a named graphic effect.
- <pre>{Rewards.Message, _EffectName}</pre>
-
-        </li>
-        <li><span class="parameter">CreateEntity</span>
-
- Replaces a script entity with a new entity. The new entity will have the
- same owner and orientation as the script entity.
- <pre>{Rewards.CreateEntity, _ScriptName, _Type}</pre>
-
-        </li>
-        <li><span class="parameter">CreateGroup</span>
-
- Replaces a script entity with a military group. The group will have the
- same owner and orientation as the script entity.
- <pre>{Rewards.CreateGroup, _ScriptName, _Type, _Soldiers}</pre>
-
-        </li>
-        <li><span class="parameter">CreateEffect</span>
-
- Creates an effect at the position.
- <pre>{Rewards.DestroyEffect, _EffectName, _EffectType, _Position}</pre>
-
-        </li>
-        <li><span class="parameter">Diplomacy</span>
-
- Changes the diplomacy state between two players.
- <pre>{Rewards.Diplomacy, _PlayerID1, _PlayerID2, _State}</pre>
-
-        </li>
-        <li><span class="parameter">Resource</span>
-
- Give or remove resources from the player.
- <pre>{Rewards.Resource, _ResourceType, _Amount}</pre>
-
-        </li>
-        <li><span class="parameter">RemoveQuest</span>
-
- Removes a quest from the quest book.
- <pre>{Rewards.RemoveQuest, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestSucceed</span>
-
- Let a active quest succeed.
- <pre>{Rewards.QuestSucceed, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestFail</span>
-
- Let a active quest fail.
- <pre>{Rewards.QuestFail, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestInterrupt</span>
-
- Interrupts a quest even when it was not startet.
- <pre>{Rewards.QuestInterrupt, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestActivate</span>
-
- Activates a quest when it was not triggered
- <pre>{Rewards.QuestActivate, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestRestart</span>
-
- Restarts a quest so that it can be triggered again.
- <pre>{Rewards.QuestRestart, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">QuestRestartForceActive</span>
-
- Restarts a quest and triggers it immedaitly despite the conditions.
- <pre>{Rewards.QuestRestartForceActive, _QuestName}</pre>
-
-        </li>
-        <li><span class="parameter">Technology</span>
-
- Change the state of a technology.
- Possible technology states:
- <ul>
- <li>Allow: A technology will be allowed</li>
- <li>Research: A technology is set as research</li>
- <li>Forbid: A technology is unaccessable</li>
- </ul>
- <pre>{Rewards.Technology, _Tech, _State}</pre>
-
-        </li>
-        <li><span class="parameter">CreateMarker</span>
-
- Creates an minimap marker or minimap pulsar at the position.
- <pre>{Rewards.CreateMarker, _Type, _PositionTable}</pre>
-
-        </li>
-        <li><span class="parameter">DestroyMarker</span>
-
- Removes a minimap marker or pulsar at the position.
- <pre>{Rewards.DestroyMarker, _PositionTable}</pre>
-
-        </li>
-        <li><span class="parameter">RevealArea</span>
-
- Explores an area around a script entity.
- <pre>{Rewards.RevealArea, _AreaCenter, _Explore}</pre>
-
-        </li>
-        <li><span class="parameter">ConcealArea</span>
-
- Removes the exploration of an area.
- <pre>{Rewards.ConcealArea, _AreaCenter}</pre>
-
-        </li>
-        <li><span class="parameter">Move</span>
-
- Removes the exploration of an area.
- <pre>{Rewards.Move, _Entity, _Destination}</pre>
-
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
     <a name = "TechnologyStates"></a>
     <strong>TechnologyStates</strong>
     </dt>
@@ -1232,7 +1086,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2018-09-01 14:27:24 </i>
+<i style="float:right;">Last updated 2019-01-09 15:42:54 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

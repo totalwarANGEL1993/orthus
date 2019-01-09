@@ -13,6 +13,7 @@
 -- <ul>
 -- <li>qsb.oop</li>
 -- <li>qsb.questsystem</li>
+-- <li>qsb.questdebug</li>
 -- <li>qsb.interaction</li>
 -- <li>qsb.information</li>
 -- </ul>
@@ -76,6 +77,29 @@ function CreateQuest(_Data)
     end
 
     return new(QuestTemplate, QuestName, Receiver, Time, QuestObjectives, QuestConditions, QuestRewards, QuestReprisals, Description);
+end
+
+---
+-- This function starts the quest system by loading all components in the
+-- right order. Must be called on game start in the FMA.
+--
+function LoadQuestSystem()
+    QuestSystemBehavior:PrepareQuestSystem();
+end
+
+---
+-- Activates the debug mode. Use the flags to decide which features you want
+-- to use.
+--
+-- @param _CheckQuests [boolean] Call debug check of behavior
+-- @param _TraceQuests [boolean] Display quest status changes
+-- @param _Cheats [boolean] Activate debug cheats
+-- @param _Console [boolean] Activate debug shell
+--
+-- @usage ActivateDebugMode(true, false, true, true);
+--
+function ActivateDebugMode(_CheckQuests, _TraceQuests, _Cheats, _Console)
+    QuestSystemDebug:Activate(_CheckQuests, _Cheats, _Console, _TraceQuests);
 end
 
 ---

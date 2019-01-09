@@ -9,14 +9,14 @@
 Script.Load("data/script/maptools/main.lua");
 Script.Load("data/script/maptools/mapeditortools.lua");
 
--- Load base
-Script.Load("data/maps/externalMap/qsb/oop.lua");
-Script.Load("data/maps/externalMap/qsb/questsystem.lua");
-Script.Load("data/maps/externalMap/qsb/questdebug.lua");
--- load library
-Script.Load("data/maps/externalMap/qsb/interaction.lua");
-Script.Load("data/maps/externalMap/qsb/information.lua");
-Script.Load("data/maps/externalMap/qsb/questbehavior.lua");
+-- Load QSB
+local BasePath = "data/maps/externalMap/";
+Script.Load(BasePath.. "qsb/oop.lua");
+Script.Load(BasePath.. "qsb/questsystem.lua");
+Script.Load(BasePath.. "qsb/questdebug.lua");
+Script.Load(BasePath.. "qsb/interaction.lua");
+Script.Load(BasePath.. "qsb/information.lua");
+Script.Load(BasePath.. "qsb/questbehavior.lua");
 
 -- Settings ----------------------------------------------------------------- --
 
@@ -46,8 +46,8 @@ function FirstMapAction()
 	Score.Player[0]["buildings"] = 0;
 	Score.Player[0]["all"] = 0;
     
-    QuestSystemBehavior:PrepareQuestSystem();
-    QuestSystemDebug:Activate(true, true, true, false);
+    LoadQuestSystem();
+    ActivateDebugMode(true, false, true, true);
     
     
 end
