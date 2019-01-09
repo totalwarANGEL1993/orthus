@@ -24,19 +24,31 @@ cp lua/qsb/oop.lua "$1.unpacked/maps/externalmap/qsb/oop.lua" > /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
 	$copyQsbFileFailed=1
 fi
-cp lua/qsb/oop.lua "$1.unpacked/maps/externalmap/qsb/interaction.lua" > /dev/null 2>&1
+cp lua/qsb/interaction.lua "$1.unpacked/maps/externalmap/qsb/interaction.lua" > /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
 	$copyQsbFileFailed=1
 fi
-cp lua/qsb/oop.lua "$1.unpacked/maps/externalmap/qsb/questsystem.lua" > /dev/null 2>&1
+cp lua/qsb/information.lua "$1.unpacked/maps/externalmap/qsb/information.lua" > /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
 	$copyQsbFileFailed=1
 fi
-cp lua/qsb/oop.lua "$1.unpacked/maps/externalmap/qsb/questbehavior.lua" > /dev/null 2>&1
+cp lua/qsb/information_ex2.lua "$1.unpacked/maps/externalmap/qsb/information_ex2.lua" > /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
 	$copyQsbFileFailed=1
 fi
-cp lua/qsb/oop.lua "$1.unpacked/maps/externalmap/qsb/questdebug.lua" > /dev/null 2>&1
+cp lua/qsb/information_ex3.lua "$1.unpacked/maps/externalmap/qsb/information_ex3.lua" > /dev/null 2>&1
+if [ "$?" -ne "0" ]; then
+	$copyQsbFileFailed=1
+fi
+cp lua/qsb/questsystem.lua "$1.unpacked/maps/externalmap/qsb/questsystem.lua" > /dev/null 2>&1
+if [ "$?" -ne "0" ]; then
+	$copyQsbFileFailed=1
+fi
+cp lua/qsb/questbehavior.lua "$1.unpacked/maps/externalmap/qsb/questbehavior.lua" > /dev/null 2>&1
+if [ "$?" -ne "0" ]; then
+	$copyQsbFileFailed=1
+fi
+cp lua/qsb/questdebug.lua "$1.unpacked/maps/externalmap/qsb/questdebug.lua" > /dev/null 2>&1
 if [ "$?" -ne "0" ]; then
 	$copyQsbFileFailed=1
 fi
