@@ -989,7 +989,7 @@ function QuestTemplate:CreateQuest()
                 self.m_Description.Type, 
                 self.m_Description.Title, 
                 self.m_Description.Text, 
-                self.m_Description.Info or 1
+                0
             );
             QuestSystem.QuestDescriptions[QuestID] = self.m_QuestID;
         end
@@ -1030,7 +1030,7 @@ function QuestTemplate:CreateQuestEx()
                 self.m_Description.Text, 
                 self.m_Description.X, 
                 self.m_Description.Y, 
-                self.m_Description.Info or 1
+                0
             );
             QuestSystem.QuestDescriptions[QuestID] = self.m_QuestID;
         end
@@ -1057,6 +1057,9 @@ function QuestTemplate:QuestSetFailed()
         else
             for i= 1, 8, 1 do
                 if QuestSystem.QuestDescriptions[i] == self.m_QuestID then
+                    if self.m_Description.Info == 1 then
+                        self:DisplayQuestResolve();
+                    end
                     Logic.RemoveQuest(self.m_Receiver, i);
                     QuestSystem.QuestDescriptions[i] = nil;
                 end
@@ -1085,7 +1088,10 @@ function QuestTemplate:QuestSetSuccessful()
         else
             for i= 1, 8, 1 do
                 if QuestSystem.QuestDescriptions[i] == self.m_QuestID then
-                    Logic.SetQuestType(self.m_Receiver, i, self.m_Description.Type +1, self.m_Description.Info or 1);
+                    if self.m_Description.Info == 1 then
+                        self:DisplayQuestResolve();
+                    end
+                    Logic.SetQuestType(self.m_Receiver, i, self.m_Description.Type +1, 0);
                 end
             end
         end
@@ -1111,6 +1117,32 @@ function QuestTemplate:RemoveQuest()
             end
         end
     end
+end
+
+---
+-- Displays a message when a quest either fails or is finished successfully.
+-- This is only triggered in vanilla game!
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:DisplayQuestResolve()
+    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+    local MessageText;
+    if self.m_Result == QuestResults.Failure then
+        MessageText = " @color:160,30,30 A quest has failed:";
+        if Language == "de" then
+            MessageText = " @color:160,30,30 Ein Auftrag ist fehlgeschlagen:";
+        end
+    elseif self.m_Result == QuestResults.Success then
+        MessageText = " @color:160,30,30 A quest has failed:";
+        if Language == "de" then
+            MessageText = " @color:160,30,30 Ein Auftrag ist fehlgeschlagen:";
+        end
+    else
+        return;
+    end
+    MessageText = MessageText .. " @cr @color:255,255,255 " ..self.m_Description.Title;
+    Message(MessageText);
 end
 
 -- -------------------------------------------------------------------------- --

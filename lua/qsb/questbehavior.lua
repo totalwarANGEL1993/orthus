@@ -1878,12 +1878,20 @@ function b_Reprisal_Briefing:GetReprisalTable()
 end
 
 function b_Reprisal_Briefing:CustomFunction(_Quest)
-    _Quest.m_Briefing = _G[self.Data.Briefing](self, _Quest);
+    _Quest.m_FailureBriefing = _G[self.Data.Briefing](self, _Quest);
+end
+
+function b_Reprisal_Briefing:Reset(_Quest)
+    _Quest.m_FailureBriefing = nil;
 end
 
 function b_Reprisal_Briefing:Debug(_Quest)
     if type(self.Data.Briefing) ~= "string" or _G[self.Data.Briefing] == nil then
         dbg(_Quest, self, "Briefing functtion ist invalid:" ..tostring(self.Data.Briefing));
+        return true;
+    end
+    if _Quest.m_FailureBriefing ~= nil then 
+        dbg(_Quest, self, "There is already a failure briefing assigned!");
         return true;
     end
     return false;
@@ -2421,10 +2429,38 @@ function Reward_Briefing(...)
     return b_Reward_Briefing:New(unpack(arg));
 end
 
-b_Reward_Briefing = copy(b_Reprisal_Briefing);
-b_Reward_Briefing.Data.Name = "Reward_Briefing";
-b_Reward_Briefing.Data.Type = Callbacks.MapScriptFunction;
-b_Reward_Briefing.GetReprisalTable = nil;
+b_Reward_Briefing = {
+    Data = {
+        Name = "Reward_Briefing",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_Briefing:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Briefing = _Parameter;
+    end
+end
+
+function b_Reward_Briefing:CustomFunction(_Quest)
+    _Quest.m_SuccessBriefing = _G[self.Data.Briefing](self, _Quest);
+end
+
+function b_Reward_Briefing:Reset(_Quest)
+    _Quest.m_SuccessBriefing = nil;
+end
+
+function b_Reward_Briefing:Debug(_Quest)
+    if type(self.Data.Briefing) ~= "string" or _G[self.Data.Briefing] == nil then
+        dbg(_Quest, self, "Briefing functtion ist invalid:" ..tostring(self.Data.Briefing));
+        return true;
+    end
+    if _Quest.m_SuccessBriefing ~= nil then 
+        dbg(_Quest, self, "There is already a success briefing assigned!");
+        return true;
+    end
+    return false;
+end
 
 function b_Reward_Briefing:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
@@ -3205,7 +3241,8 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_Diplomacy);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Starts the quest when the briefing linked to the quest is finished.
+-- Starts the quest when any briefing linked to the quest is finished. Can
+-- either be a success or a failure briefing!
 -- @param _QuestName [string] Linked quest
 -- @within Triggers
 --
@@ -3216,7 +3253,7 @@ end
 b_Trigger_Briefing = {
     Data = {
         Name = "Trigger_Briefing",
-        Type = Conditions.Briefing
+        Type = Conditions.MapScriptFunction
     },
 };
 
@@ -3226,11 +3263,112 @@ function b_Trigger_Briefing:AddParameter(_Index, _Parameter)
     end
 end
 
+function b_Trigger_Briefing:CustomFunction(_Quest)
+    if _Quest.m_SuccessBriefing and QuestSystem.Briefings[_Quest.m_SuccessBriefing] == true then
+        return true;
+    end
+    if _Quest.m_FailureBriefing and QuestSystem.Briefings[_Quest.m_FailureBriefing] == true then
+        return true;
+    end
+    return false;
+end
+
 function b_Trigger_Briefing:GetTriggerTable()
-    return {self.Data.Type, self.Data.Briefing};
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Trigger_Briefing:Debug(_Quest)
+    if not _Quest.m_SuccessBriefing and not _Quest.m_FailureBriefing then
+        dbg(_Quest, self, "Quest does not have any briefing attached!");
+    end
+    return false;
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Trigger_Briefing);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Starts the quest when the success briefing linked to the quest is finished.
+-- A quest must succeed in order to start a success briefing!
+-- @param _QuestName [string] Linked quest
+-- @within Triggers
+--
+function Trigger_BriefingSuccess(...)
+    return b_Trigger_BriefingSuccess:New(unpack(arg));
+end
+
+b_Trigger_BriefingSuccess = {
+    Data = {
+        Name = "Trigger_BriefingSuccess",
+        Type = Conditions.MapScriptFunction
+    },
+};
+
+function b_Trigger_BriefingSuccess:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Briefing = _Parameter;
+    end
+end
+
+function b_Trigger_BriefingSuccess:CustomFunction(_Quest)
+    return _Quest.m_SuccessBriefing and QuestSystem.Briefings[_Quest.m_SuccessBriefing] == true;
+end
+
+function b_Trigger_BriefingSuccess:GetTriggerTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Trigger_BriefingSuccess:Debug(_Quest)
+    if not _Quest.m_SuccessBriefing then
+        dbg(_Quest, self, "Quest does not have a success briefing attached!");
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Trigger_BriefingSuccess);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Starts the quest when the failure briefing linked to the quest is finished.
+-- A quest must fail in order to start a failure briefing!
+-- @param _QuestName [string] Linked quest
+-- @within Triggers
+--
+function Trigger_BriefingFailure(...)
+    return b_Trigger_BriefingFailure:New(unpack(arg));
+end
+
+b_Trigger_BriefingFailure = {
+    Data = {
+        Name = "Trigger_BriefingFailure",
+        Type = Conditions.MapScriptFunction
+    },
+};
+
+function b_Trigger_BriefingFailure:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Briefing = _Parameter;
+    end
+end
+
+function b_Trigger_BriefingFailure:CustomFunction(_Quest)
+    return _Quest.m_FailureBriefing and QuestSystem.Briefings[_Quest.m_FailureBriefing] == true;
+end
+
+function b_Trigger_BriefingFailure:GetTriggerTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Trigger_BriefingFailure:Debug(_Quest)
+    if not _Quest.m_FailureBriefing then
+        dbg(_Quest, self, "Quest does not have a failure briefing attached!");
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Trigger_BriefingFailure);
 
 -- -------------------------------------------------------------------------- --
 
