@@ -837,17 +837,16 @@ end
 -- @local
 --
 function QuestTemplate:Success()
-    -- Remove quest
-    if self.m_Description then
-        self:QuestSetSuccessful();
-    end
-
     self:verbose("DEBUG: Succeed quest '" ..self.m_QuestName.. "'");
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Success;
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
+
+    if self.m_Description then
+        self:QuestSetSuccessfull();
+    end
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -860,17 +859,16 @@ end
 -- @local
 --
 function QuestTemplate:Fail()
-    -- Remove quest
-    if self.m_Description then
-        self:QuestSetFailed();
-    end
-
     self:verbose("DEBUG: Fail quest '" ..self.m_QuestName.. "'");
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Failure;
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
+
+    if self.m_Description then
+        self:QuestSetFailed();
+    end
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -990,9 +988,9 @@ function QuestTemplate:CreateQuest()
                 self.m_Description.Type, 
                 self.m_Description.Title, 
                 self.m_Description.Text, 
-                0
+                self.m_Description.Info or 1
             );
-            QuestSystem.QuestDescriptions[QuestID] = self.m_QuestID;
+            table.insert(QuestSystem.QuestDescriptions, self.m_QuestID);
         end
     end
 end
@@ -1031,9 +1029,9 @@ function QuestTemplate:CreateQuestEx()
                 self.m_Description.Text, 
                 self.m_Description.X, 
                 self.m_Description.Y, 
-                0
+                self.m_Description.Info or 1
             );
-            QuestSystem.QuestDescriptions[QuestID] = self.m_QuestID;
+            table.insert(QuestSystem.QuestDescriptions, self.m_QuestID);
         end
     end
 end
@@ -1056,13 +1054,11 @@ function QuestTemplate:QuestSetFailed()
                 self.m_Description.Info or 1
             );
         else
-            for i= 1, 8, 1 do
-                if QuestSystem.QuestDescriptions[i] == self.m_QuestID then
-                    if self.m_Description.Info == 1 then
-                        self:DisplayQuestResolve();
-                    end
-                    Logic.RemoveQuest(self.m_Receiver, i);
-                    QuestSystem.QuestDescriptions[i] = nil;
+            for k, v in pairs(QuestSystem.QuestDescriptions) do
+                if v == self.m_QuestID then
+                    Logic.RemoveQuest(self.m_Receiver, k);
+                    self:DisplayQuestResolve();
+                    QuestSystem.QuestDescriptions[k] = nil;
                 end
             end
         end
@@ -1074,7 +1070,7 @@ end
 -- @within QuestTemplate
 -- @local
 --
-function QuestTemplate:QuestSetSuccessful()
+function QuestTemplate:QuestSetSuccessfull()
     local Version = Framework.GetProgramVersion();
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
@@ -1087,12 +1083,13 @@ function QuestTemplate:QuestSetSuccessful()
                 self.m_Description.Info or 1
             );
         else
-            for i= 1, 8, 1 do
-                if QuestSystem.QuestDescriptions[i] == self.m_QuestID then
-                    if self.m_Description.Info == 1 then
-                        self:DisplayQuestResolve();
-                    end
-                    Logic.SetQuestType(self.m_Receiver, i, self.m_Description.Type +1, 0);
+            for k, v in pairs(QuestSystem.QuestDescriptions) do
+                if v == self.m_QuestID then
+                    -- Logic.SetQuestType(self.m_Receiver, k, self.m_Description.Type +1, 0);
+                    Logic.RemoveQuest(self.m_Receiver, k);
+                    self:DisplayQuestResolve();
+                    QuestSystem.QuestDescriptions[k] = nil;
+                    break;
                 end
             end
         end
@@ -1128,22 +1125,21 @@ end
 --
 function QuestTemplate:DisplayQuestResolve()
     local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-    local MessageText;
     if self.m_Result == QuestResults.Failure then
-        MessageText = " @color:160,30,30 A quest has failed:";
+        local MessageText = " @color:160,30,30 A quest has failed: ";
         if Language == "de" then
-            MessageText = " @color:160,30,30 Ein Auftrag ist fehlgeschlagen:";
+            MessageText = " @color:160,30,30 Ein Auftrag ist fehlgeschlagen: ";
         end
+        Sound.PlayFeedbackSound(Sounds.OnKlick_Select_kerberos);
+        Message(MessageText .. self.m_Description.Title);
     elseif self.m_Result == QuestResults.Success then
-        MessageText = " @color:160,30,30 A quest has failed:";
+        local MessageText = " @color:30,160,0 A quest was finished: ";
         if Language == "de" then
-            MessageText = " @color:160,30,30 Ein Auftrag ist fehlgeschlagen:";
+            MessageText = " @color:30,160,0 Ein Auftrag wurde abgeschlossen: ";
         end
-    else
-        return;
+        Sound.PlayFeedbackSound(Sounds.OnKlick_Select_erec);
+        Message(MessageText .. self.m_Description.Title);
     end
-    MessageText = MessageText .. " @cr @color:255,255,255 " ..self.m_Description.Title;
-    Message(MessageText);
 end
 
 -- -------------------------------------------------------------------------- --
