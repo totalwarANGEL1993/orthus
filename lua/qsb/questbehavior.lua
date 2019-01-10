@@ -24,31 +24,37 @@
 -- Quests and tools --
 
 ---
--- Creates an quest from the given description.
+-- Creates an quest from the given table. If the table contains a description,
+-- the quest will insert itself into the questbook when it is triggered and
+-- erase it, after it is finished or interrupted.
 --
--- Description contains of the following entries:
+-- Keep in mind that there can be only 8 entries in the quest book unless you
+-- use extra 3 or the standalone version of mcb's quest!
+--
+-- Table contains of the following entries:
 -- <ul>
 -- <li><b>Name:</b> Name of quest</li>
 -- <li><b>Receiver:</b> Player that receives the quest</li>
 -- <li><b>Time:</b> Time, until the quest is automatically over</li>
--- <li><b>Description:</b> Quest information displayed in the quest book</li>
+-- <li><b>Description:</b> Quest information displayed in the quest book.
+-- (Mostly identical to Logic.CreateQuest or Logic.CreateQuestEx)</li>
 -- </ul>
 -- After the fields the behavior constructors are called.
 --
--- @param _Data [table] Quest description
+-- @param _Data [table] Quest table
 -- @return [number] Quest id
 -- @return [table] Quest instance
 --
 -- @usage CreateQuest {
---     Name = "SomeQuestName",
+--     Name = "VictoryCondition",
 --     Description = {
---         Title = "Name of quest",
---         Text  = "Description of quest",
+--         Title = "Justice!",
+--         Text  = "Time for paybeck. Destroy your enemy!",
 --         Type  = MAINQUEST_OPEN,
 --         Info  = 1
 --     },
 --
---     Goal_DestroyAllPlayerUnits(2),
+--     Goal_DestroyPlayer(2),
 --     Reward_Victory(),
 --     Trigger_Time(0)
 -- }

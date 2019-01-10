@@ -5,9 +5,7 @@
 -- ########################################################################## --
 
 ---
--- This is an approach to create a RoaE like quest system. Although we can not
--- visualize a failed quest in the quest log, the pure logic of the system is
--- portable to Settlers 5. This little system implements the RoaE system.
+-- This is an approach to create a RoaE like quest system.
 --
 -- Quests can be either successfully finished or failed. If a quest is finished
 -- successfully the rewards will be executed. If the quest fails the reprisals
@@ -20,12 +18,15 @@
 -- <li>Condition: Triggering the quest if conditions are true</li>
 -- <li>Objective: What the player has to do to win (or to fail)</li>
 -- <li>Reward: Rewards for successfully finishing a quest.</li>
--- <li>Reprisal: Pubishments after the quest faild.</li>
+-- <li>Reprisal: Pubishments after the quest failed.</li>
 -- </ul>
 -- But reprisals and rewards are both callbacks!
 --
 -- A quest is generated like this:<br>
 -- <pre>local QuestID = new(QuestTemplate, "SomeName", SomeObjectives, SomeConditions, 1, 0, SomeRewards, SomeReprisals)</pre>
+--
+-- Some of the behavior might be redefined in the qsb.questbehavior abstraction
+-- layer.
 --
 -- <b>Required modules:</b>
 -- <ul>

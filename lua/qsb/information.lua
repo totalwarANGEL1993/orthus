@@ -4,6 +4,7 @@
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
 
+-- Decides which briefing system to load.
 local Version = Framework.GetProgramVersion();
 gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
 if gvExtensionNumber > 2 then

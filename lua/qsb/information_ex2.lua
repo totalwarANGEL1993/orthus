@@ -8,7 +8,7 @@
 -- This module adds some briefing improvements. Some are just for cosmetics,
 -- some are fixing pittful bugs, some offer helpful new features. This is the
 -- version for the vanilla game.
--- For Extra3 we will using mcbBrief by mcb. This will offer at least equal
+-- For Extra 3 we will using mcbBrief by mcb. This will offer at least equal
 -- features or maybe even more advanced.
 --
 -- @set sort=true
@@ -125,9 +125,9 @@ function Information:CreateAddPageFunctions()
                         briefingState.timer = (_page.duration * 10) +1;
 
                         -- A flight can only be started from page 2 and forward because it needs the position of
-                        -- the last page as starting point for the camera movement. Flights areen't a replacement
+                        -- the last page as starting point for the camera movement. Flights aren't a replacement
                         -- for cutscenes so keep your animations short!
-                        -- Keep in mind that there is no access to the z achsis with camera animations!
+                        -- Keep in mind that there is no z achsis with camera animations!
 
                         if briefingState.page > 0 then
                             local LastPage = briefingBook[1][briefingState.page];
@@ -471,7 +471,7 @@ function Information:SetBriefingLooks(_DisableMap)
     XGUIEng.SetMaterialColor("CinematicBar02", 0, 255, 255, 255, 255);
     XGUIEng.SetWidgetPositionAndSize("CinematicBar02", 0, 0, size[1], 180);
 
-    -- Set widget isability
+    -- Set widget visability
     XGUIEng.ShowWidget("CinematicMiniMapOverlay", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicMiniMap", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicFrameBG", (_DisableMap and 0) or 1);
@@ -483,6 +483,7 @@ end
 
 ---
 -- Moves the text and the title of the cinmatic widget to the screen center.
+-- Position is not ajusted by text length!
 -- @param _DisableMap [boolean] Hide the minimap
 -- @within Information
 -- @local
@@ -505,6 +506,7 @@ end
 ---
 -- Moves the text and the title of the cinmatic widget to the screen center in
 -- reversed order. Can be used for movie like map credits.
+-- Position is not ajusted by text length!
 -- @param _DisableMap [boolean] Hide the minimap
 -- @within Information
 -- @local
