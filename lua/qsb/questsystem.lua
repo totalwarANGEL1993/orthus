@@ -1045,21 +1045,18 @@ end
 function QuestTemplate:QuestSetFailed()
     local Version = Framework.GetProgramVersion();
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
-    if self.m_Description then
-        if gvExtensionNumber > 2 then
-            mcbQuestGUI.simpleQuest.logicSetQuestType(
-                self.m_Receiver, 
-                self.m_QuestID, 
-                self.m_Description.Type +2, 
-                self.m_Description.Info or 1
-            );
-        else
-            for k, v in pairs(QuestSystem.QuestDescriptions) do
-                if v == self.m_QuestID then
-                    Logic.RemoveQuest(self.m_Receiver, k);
-                    self:DisplayQuestResolve();
-                    QuestSystem.QuestDescriptions[k] = nil;
-                end
+    if gvExtensionNumber > 2 then
+        mcbQuestGUI.simpleQuest.logicSetQuestType(
+            self.m_Receiver, 
+            self.m_QuestID, 
+            self.m_Description.Type +2, 
+            self.m_Description.Info or 1
+        );
+    else
+        for k, v in pairs(QuestSystem.QuestDescriptions) do
+            if v == self.m_QuestID then
+                Logic.RemoveQuest(self.m_Receiver, k);
+                QuestSystem.QuestDescriptions[k] = nil;
             end
         end
     end
@@ -1073,24 +1070,21 @@ end
 function QuestTemplate:QuestSetSuccessfull()
     local Version = Framework.GetProgramVersion();
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
-    if self.m_Description then
-        if gvExtensionNumber > 2 then
-            local Type = self.m_Description.Type +1;
-            mcbQuestGUI.simpleQuest.logicSetQuestType(
-                self.m_Receiver, 
-                self.m_QuestID, 
-                self.m_Description.Type +1, 
-                self.m_Description.Info or 1
-            );
-        else
-            for k, v in pairs(QuestSystem.QuestDescriptions) do
-                if v == self.m_QuestID then
-                    -- Logic.SetQuestType(self.m_Receiver, k, self.m_Description.Type +1, 0);
-                    Logic.RemoveQuest(self.m_Receiver, k);
-                    self:DisplayQuestResolve();
-                    QuestSystem.QuestDescriptions[k] = nil;
-                    break;
-                end
+    if gvExtensionNumber > 2 then
+        local Type = self.m_Description.Type +1;
+        mcbQuestGUI.simpleQuest.logicSetQuestType(
+            self.m_Receiver, 
+            self.m_QuestID, 
+            self.m_Description.Type +1, 
+            self.m_Description.Info or 1
+        );
+    else
+        for k, v in pairs(QuestSystem.QuestDescriptions) do
+            if v == self.m_QuestID then
+                -- Logic.SetQuestType(self.m_Receiver, k, self.m_Description.Type +1, 0);
+                Logic.RemoveQuest(self.m_Receiver, k);
+                QuestSystem.QuestDescriptions[k] = nil;
+                break;
             end
         end
     end
@@ -1111,34 +1105,10 @@ function QuestTemplate:RemoveQuest()
             for i= 1, 8, 1 do
                 if QuestSystem.QuestDescriptions[i] == self.m_QuestID then
                     Logic.RemoveQuest(self.m_Receiver, i);
+                    QuestSystem.QuestDescriptions[i] = nil;
                 end
             end
         end
-    end
-end
-
----
--- Displays a message when a quest either fails or is finished successfully.
--- This is only triggered in vanilla game!
--- @within QuestTemplate
--- @local
---
-function QuestTemplate:DisplayQuestResolve()
-    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-    if self.m_Result == QuestResults.Failure then
-        local MessageText = " @color:160,30,30 A quest has failed: ";
-        if Language == "de" then
-            MessageText = " @color:160,30,30 Ein Auftrag ist fehlgeschlagen: ";
-        end
-        Sound.PlayFeedbackSound(Sounds.OnKlick_Select_kerberos);
-        Message(MessageText .. self.m_Description.Title);
-    elseif self.m_Result == QuestResults.Success then
-        local MessageText = " @color:30,160,0 A quest was finished: ";
-        if Language == "de" then
-            MessageText = " @color:30,160,0 Ein Auftrag wurde abgeschlossen: ";
-        end
-        Sound.PlayFeedbackSound(Sounds.OnKlick_Select_erec);
-        Message(MessageText .. self.m_Description.Title);
     end
 end
 

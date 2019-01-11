@@ -10,13 +10,13 @@ Script.Load("data/script/maptools/main.lua");
 Script.Load("data/script/maptools/mapeditortools.lua");
 
 -- Load QSB
-local BasePath = "data/maps/externalMap/";
-Script.Load(BasePath.. "qsb/oop.lua");
-Script.Load(BasePath.. "qsb/questsystem.lua");
-Script.Load(BasePath.. "qsb/questdebug.lua");
-Script.Load(BasePath.. "qsb/interaction.lua");
-Script.Load(BasePath.. "qsb/information.lua");
-Script.Load(BasePath.. "qsb/questbehavior.lua");
+gvBasePath = "data/maps/externalMap/";
+Script.Load(gvBasePath.. "qsb/oop.lua");
+Script.Load(gvBasePath.. "qsb/questsystem.lua");
+Script.Load(gvBasePath.. "qsb/questdebug.lua");
+Script.Load(gvBasePath.. "qsb/interaction.lua");
+Script.Load(gvBasePath.. "qsb/information.lua");
+Script.Load(gvBasePath.. "qsb/questbehavior.lua");
 
 -- Settings ----------------------------------------------------------------- --
 

@@ -3265,15 +3265,16 @@ b_Trigger_Briefing = {
 
 function b_Trigger_Briefing:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.Briefing = _Parameter;
+        self.Data.BriefingQuest = _Parameter;
     end
 end
 
 function b_Trigger_Briefing:CustomFunction(_Quest)
-    if _Quest.m_SuccessBriefing and QuestSystem.Briefings[_Quest.m_SuccessBriefing] == true then
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if Quest and Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true then
         return true;
     end
-    if _Quest.m_FailureBriefing and QuestSystem.Briefings[_Quest.m_FailureBriefing] == true then
+    if Quest and Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true then
         return true;
     end
     return false;
@@ -3284,7 +3285,8 @@ function b_Trigger_Briefing:GetTriggerTable()
 end
 
 function b_Trigger_Briefing:Debug(_Quest)
-    if not _Quest.m_SuccessBriefing and not _Quest.m_FailureBriefing then
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if not Quest or (not Quest.m_SuccessBriefing and not Quest.m_FailureBriefing) then
         dbg(_Quest, self, "Quest does not have any briefing attached!");
     end
     return false;
@@ -3313,12 +3315,18 @@ b_Trigger_BriefingSuccess = {
 
 function b_Trigger_BriefingSuccess:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.Briefing = _Parameter;
+        self.Data.BriefingQuest = _Parameter;
     end
 end
 
 function b_Trigger_BriefingSuccess:CustomFunction(_Quest)
-    return _Quest.m_SuccessBriefing and QuestSystem.Briefings[_Quest.m_SuccessBriefing] == true;
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if Quest then
+        if Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true then
+            return true;
+        end
+    end
+    return false
 end
 
 function b_Trigger_BriefingSuccess:GetTriggerTable()
@@ -3326,7 +3334,8 @@ function b_Trigger_BriefingSuccess:GetTriggerTable()
 end
 
 function b_Trigger_BriefingSuccess:Debug(_Quest)
-    if not _Quest.m_SuccessBriefing then
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if not Quest or not Quest.m_SuccessBriefing then
         dbg(_Quest, self, "Quest does not have a success briefing attached!");
     end
     return false;
@@ -3355,12 +3364,18 @@ b_Trigger_BriefingFailure = {
 
 function b_Trigger_BriefingFailure:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.Briefing = _Parameter;
+        self.Data.BriefingQuest = _Parameter;
     end
 end
 
 function b_Trigger_BriefingFailure:CustomFunction(_Quest)
-    return _Quest.m_FailureBriefing and QuestSystem.Briefings[_Quest.m_FailureBriefing] == true;
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if Quest then
+        if Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true then
+            return true;
+        end
+    end
+    return false;
 end
 
 function b_Trigger_BriefingFailure:GetTriggerTable()
@@ -3368,7 +3383,8 @@ function b_Trigger_BriefingFailure:GetTriggerTable()
 end
 
 function b_Trigger_BriefingFailure:Debug(_Quest)
-    if not _Quest.m_FailureBriefing then
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if not Quest or not Quest.m_FailureBriefing then
         dbg(_Quest, self, "Quest does not have a failure briefing attached!");
     end
     return false;
