@@ -968,13 +968,10 @@ function QuestTemplate:CreateQuest()
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
         if gvExtensionNumber > 2 then
+            local desc = self.m_Description;
             mcbQuestGUI.simpleQuest.logicAddQuest(
-                self.m_Receiver, 
-                self.m_QuestID, 
-                self.m_Description.Type, 
-                self.m_Description.Title, 
-                self.m_Description.Text, 
-                self.m_Description.Info or 1
+                self.m_Receiver, self.m_QuestID, desc.Type, desc.Title, 
+                desc.Text, desc.Info or 1
             );
         else
             local QuestID = table.getn(QuestSystem.QuestDescriptions)+1;
@@ -982,13 +979,10 @@ function QuestTemplate:CreateQuest()
                 GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
                 return;
             end
+            local desc = self.m_Description;
             Logic.AddQuest(
-                self.m_Receiver, 
-                QuestID, 
-                self.m_Description.Type, 
-                self.m_Description.Title, 
-                self.m_Description.Text, 
-                self.m_Description.Info or 1
+                self.m_Receiver, QuestID, desc.Type, desc.Title, 
+                desc.Text, desc.Info or 1
             );
             table.insert(QuestSystem.QuestDescriptions, self.m_QuestID);
         end
@@ -1005,15 +999,10 @@ function QuestTemplate:CreateQuestEx()
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description and self.m_Description.Position then
         if gvExtensionNumber > 2 then
+            local desc = self.m_Description;
             mcbQuestGUI.simpleQuest.logicAddQuestEx(
-                self.m_Receiver, 
-                self.m_QuestID, 
-                self.m_Description.Type, 
-                self.m_Description.Title, 
-                self.m_Description.Text, 
-                self.m_Description.X, 
-                self.m_Description.Y, 
-                self.m_Description.Info or 1
+                self.m_Receiver, self.m_QuestID, desc.Type, desc.Title, 
+                desc.Text, desc.X, desc.Y, desc.Info or 1
             );
         else
             local QuestID = table.getn(QuestSystem.QuestDescriptions)+1;
@@ -1022,14 +1011,8 @@ function QuestTemplate:CreateQuestEx()
                 return;
             end
             Logic.AddQuestEx(
-                self.m_Receiver, 
-                self.m_QuestID, 
-                self.m_Description.Type, 
-                self.m_Description.Title, 
-                self.m_Description.Text, 
-                self.m_Description.X, 
-                self.m_Description.Y, 
-                self.m_Description.Info or 1
+                self.m_Receiver, QuestID, desc.Type, desc.Title, 
+                desc.Text, desc.X, desc.Y, desc.Info or 1
             );
             table.insert(QuestSystem.QuestDescriptions, self.m_QuestID);
         end
@@ -1047,16 +1030,14 @@ function QuestTemplate:QuestSetFailed()
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if gvExtensionNumber > 2 then
         mcbQuestGUI.simpleQuest.logicSetQuestType(
-            self.m_Receiver, 
-            self.m_QuestID, 
-            self.m_Description.Type +2, 
-            self.m_Description.Info or 1
+            self.m_Receiver, self.m_QuestID, self.m_Description.Type +2, self.m_Description.Info or 1
         );
     else
         for k, v in pairs(QuestSystem.QuestDescriptions) do
             if v == self.m_QuestID then
                 Logic.RemoveQuest(self.m_Receiver, k);
-                QuestSystem.QuestDescriptions[k] = nil;
+                table.remove(QuestSystem.QuestDescriptions, k);
+                break;
             end
         end
     end
@@ -1073,17 +1054,13 @@ function QuestTemplate:QuestSetSuccessfull()
     if gvExtensionNumber > 2 then
         local Type = self.m_Description.Type +1;
         mcbQuestGUI.simpleQuest.logicSetQuestType(
-            self.m_Receiver, 
-            self.m_QuestID, 
-            self.m_Description.Type +1, 
-            self.m_Description.Info or 1
+            self.m_Receiver, self.m_QuestID, self.m_Description.Type +1, self.m_Description.Info or 1
         );
     else
         for k, v in pairs(QuestSystem.QuestDescriptions) do
             if v == self.m_QuestID then
-                -- Logic.SetQuestType(self.m_Receiver, k, self.m_Description.Type +1, 0);
                 Logic.RemoveQuest(self.m_Receiver, k);
-                QuestSystem.QuestDescriptions[k] = nil;
+                table.remove(QuestSystem.QuestDescriptions, k);
                 break;
             end
         end
@@ -1102,10 +1079,11 @@ function QuestTemplate:RemoveQuest()
         if gvExtensionNumber > 2 then
             mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, self.m_QuestID);
         else
-            for i= 1, 8, 1 do
-                if QuestSystem.QuestDescriptions[i] == self.m_QuestID then
+            for k, v in pairs(QuestSystem.QuestDescriptions) do
+                if v == self.m_QuestID then
                     Logic.RemoveQuest(self.m_Receiver, i);
-                    QuestSystem.QuestDescriptions[i] = nil;
+                    table.remove(QuestSystem.QuestDescriptions, k);
+                    break;
                 end
             end
         end
