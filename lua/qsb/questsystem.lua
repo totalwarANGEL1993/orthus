@@ -274,6 +274,41 @@ function QuestSystem:InitalizeQuestEventTrigger()
     end
 end
 
+---
+-- Returns the next free slot in the quest book.
+-- @return [number] Journal ID
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:GetNextFreeJornalID()
+    for i= 1, 8, 1 do
+        if self.QuestDescriptions[i] == nil then
+            return i;
+        end
+    end
+end
+
+---
+-- Registers a quest from the quest system for the quest book slot.
+-- @return [number] Jornal ID
+-- @return [number] Quest ID
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:RegisterQuestAtJornalID(_JornalID, _QuestID)
+    self.QuestDescriptions[_JornalID] = _QuestID;
+end
+
+---
+-- Removes the registered entry for the quest book slot.
+-- @return [number] Jornal ID
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:InvalidateQuestAtJornalID(_JornalID)
+    self.QuestDescriptions[_JornalID] = nil;
+end
+
 -- -------------------------------------------------------------------------- --
 
 QuestTemplate = {};
@@ -968,23 +1003,21 @@ function QuestTemplate:CreateQuest()
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
         if gvExtensionNumber > 2 then
-            local desc = self.m_Description;
             mcbQuestGUI.simpleQuest.logicAddQuest(
-                self.m_Receiver, self.m_QuestID, desc.Type, desc.Title, 
-                desc.Text, desc.Info or 1
+                self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
+                self.m_Description.Text, self.m_Description.Info or 1
             );
         else
-            local QuestID = table.getn(QuestSystem.QuestDescriptions)+1;
-            if QuestID > 8 then
+            local QuestID = QuestSystem:GetNextFreeJornalID();
+            if QuestID == nil then
                 GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
                 return;
             end
-            local desc = self.m_Description;
             Logic.AddQuest(
-                self.m_Receiver, QuestID, desc.Type, desc.Title, 
-                desc.Text, desc.Info or 1
+                self.m_Receiver, QuestID, self.m_Description.Type, self.m_Description.Title, 
+                self.m_Description.Text, self.m_Description.Info or 1
             );
-            table.insert(QuestSystem.QuestDescriptions, self.m_QuestID);
+            QuestSystem:RegisterQuestAtJornalID(QuestID, self.m_QuestID);
         end
     end
 end
@@ -999,22 +1032,23 @@ function QuestTemplate:CreateQuestEx()
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description and self.m_Description.Position then
         if gvExtensionNumber > 2 then
-            local desc = self.m_Description;
             mcbQuestGUI.simpleQuest.logicAddQuestEx(
-                self.m_Receiver, self.m_QuestID, desc.Type, desc.Title, 
-                desc.Text, desc.X, desc.Y, desc.Info or 1
+                self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
+                self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
+                self.m_Description.Info or 1
             );
         else
-            local QuestID = table.getn(QuestSystem.QuestDescriptions)+1;
-            if QuestID > 8 then
+            local QuestID = QuestSystem:GetNextFreeJornalID();
+            if QuestID == nil then
                 GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
                 return;
             end
             Logic.AddQuestEx(
-                self.m_Receiver, QuestID, desc.Type, desc.Title, 
-                desc.Text, desc.X, desc.Y, desc.Info or 1
+                self.m_Receiver, QuestID, self.m_Description.Type, self.m_Description.Title, 
+                self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
+                self.m_Description.Info or 1
             );
-            table.insert(QuestSystem.QuestDescriptions, self.m_QuestID);
+            QuestSystem:RegisterQuestAtJornalID(QuestID, self.m_QuestID);
         end
     end
 end
@@ -1036,7 +1070,7 @@ function QuestTemplate:QuestSetFailed()
         for k, v in pairs(QuestSystem.QuestDescriptions) do
             if v == self.m_QuestID then
                 Logic.RemoveQuest(self.m_Receiver, k);
-                table.remove(QuestSystem.QuestDescriptions, k);
+                QuestSystem:InvalidateQuestAtJornalID(k);
                 break;
             end
         end
@@ -1060,7 +1094,7 @@ function QuestTemplate:QuestSetSuccessfull()
         for k, v in pairs(QuestSystem.QuestDescriptions) do
             if v == self.m_QuestID then
                 Logic.RemoveQuest(self.m_Receiver, k);
-                table.remove(QuestSystem.QuestDescriptions, k);
+                QuestSystem:InvalidateQuestAtJornalID(k);
                 break;
             end
         end
@@ -1082,7 +1116,7 @@ function QuestTemplate:RemoveQuest()
             for k, v in pairs(QuestSystem.QuestDescriptions) do
                 if v == self.m_QuestID then
                     Logic.RemoveQuest(self.m_Receiver, i);
-                    table.remove(QuestSystem.QuestDescriptions, k);
+                    QuestSystem:InvalidateQuestAtJornalID(k);
                     break;
                 end
             end
