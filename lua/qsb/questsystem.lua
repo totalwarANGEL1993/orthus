@@ -276,7 +276,7 @@ end
 
 ---
 -- Returns the next free slot in the quest book.
--- @return [number] Journal ID
+-- @return[type=number] Journal ID
 -- @within QuestSystem
 -- @local
 --
@@ -290,8 +290,8 @@ end
 
 ---
 -- Registers a quest from the quest system for the quest book slot.
--- @return [number] Jornal ID
--- @return [number] Quest ID
+-- @return[type=number] Jornal ID
+-- @return[type=number] Quest ID
 -- @within QuestSystem
 -- @local
 --
@@ -301,7 +301,7 @@ end
 
 ---
 -- Removes the registered entry for the quest book slot.
--- @return [number] Jornal ID
+-- @return[type=number] Jornal ID
 -- @within QuestSystem
 -- @local
 --
@@ -316,14 +316,14 @@ QuestTemplate = {};
 ---
 -- Creates a quest.
 --
--- @param _QuestName [string] Quest name
--- @param _Receiver [number] Receiving player
--- @param _Time [number] Completion time
--- @param _Objectives [table] List of objectives
--- @param _Conditions [table] List of conditions
--- @param _Rewards [table] List of rewards
--- @param _Reprisals [table] List of reprisals
--- @param _Description [table] Quest description
+-- @param[type=string] _QuestName   Quest name
+-- @param[type=number] _Receiver    Receiving player
+-- @param[type=number] _Time        Completion time
+-- @param[type=table]  _Objectives  List of objectives
+-- @param[type=table]  _Conditions  List of conditions
+-- @param[type=table]  _Rewards     List of rewards
+-- @param[type=table]  _Reprisals   List of reprisals
+-- @param[type=table]  _Description Quest description
 -- @within Constructor
 --
 function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Conditions, _Rewards, _Reprisals, _Description)
@@ -357,7 +357,7 @@ class(QuestTemplate);
 
 ---
 -- Displays a debug message if the verbose flag is set.
--- @param _Text [string] Displayed message
+-- @param[type=string] _Text Displayed message
 -- @within QuestTemplate
 -- @local
 --
@@ -372,7 +372,7 @@ end
 ---
 -- Checks, if the objective of the quest is fullfilled, failed or undecided.
 --
--- @param _Index [number] Index of behavior
+-- @param[type=number] _Index Index of behavior
 -- @within QuestTemplate
 -- @local
 --
@@ -542,7 +542,7 @@ end
 ---
 -- Checks the trigger condition for the quest.
 --
--- @param _Index [number] Index of behavior
+-- @param[type=number] _Index Index of behavior
 -- @within QuestTemplate
 -- @local
 --
@@ -678,7 +678,7 @@ end
 ---
 -- Calls the callback behavior for the quest.
 --
--- @param _Behavior [table] Table of behavior
+-- @param[type=table] _Behavior Table of behavior
 -- @within QuestTemplate
 -- @local
 --
@@ -1170,10 +1170,10 @@ end
 ---
 -- Handels the event when a player is destroying an entity.
 --
--- @param _AttackingPlayer [number] Player id of attacker
--- @param _AttackingID [number] Entity id of attacker
--- @param _DefendingPlayer [number] Player id of defender
--- @param _DefendingID [number] Entity of defender
+-- @param[type=number] _AttackingPlayer Player id of attacker
+-- @param[type=number] _AttackingID     Entity id of attacker
+-- @param[type=number] _DefendingPlayer Player id of defender
+-- @param[type=number] _DefendingID     Entity of defender
 -- @within QuestTemplate
 -- @local
 --
@@ -1207,7 +1207,7 @@ end
 ---
 -- Handels the event when a player has paid a tribute.
 --
--- @param _TributeID [number] ID of Tribute
+-- @param[type=number] _TributeID ID of Tribute
 -- @within QuestTemplate
 -- @local
 --
@@ -1229,7 +1229,7 @@ end
 ---
 -- Handles the payday event for all quests.
 --
--- @param _PlayerID [number] ID of player
+-- @param[type=number] _PlayerID ID of player
 -- @within QuestTemplate
 -- @local
 --
@@ -1251,8 +1251,8 @@ end
 ---
 -- Checks if a value is inside a table.
 --
--- @param _Value [mixed] Value to find
--- @param _Table [table] Table to search
+-- @param             _Value Value to find
+-- @param[type=table] _Table Table to search
 -- @return [boolean] Value found
 --
 function FindValue(_Value, _Table)
@@ -1268,9 +1268,9 @@ IstDrin = FindValue;
 ---
 -- Checks the area for entities of an enemy player.
 --
--- @param _player [number] Player ID
--- @param _position [table] Area center
--- @param _range [number] Area size
+-- @param[type=number] _player   Player ID
+-- @param[type=table]  _position Area center
+-- @param[type=number] _range    Area size
 -- @return [boolean] Enemies near
 --
 function AreEnemiesInArea( _player, _position, _range)
@@ -1280,9 +1280,9 @@ end
 ---
 -- Checks the area for entities of an allied player.
 --
--- @param _player [number] Player ID
--- @param _position [table] Area center
--- @param _range [number] Area size
+-- @param[type=number] _player   Player ID
+-- @param[type=table]  _position Area center
+-- @param[type=number] _range    Area size
 -- @return [boolean] Allies near
 --
 function AreAlliesInArea( _player, _position, _range)
@@ -1293,10 +1293,10 @@ end
 -- Checks the area for entities of other parties with a diplomatic state to
 -- the player.
 --
--- @param _player [number] Player ID
--- @param _position [table] Area center
--- @param _range [number] Area size
--- @param _state [number] Diplomatic state
+-- @param[type=number] _player   Player ID
+-- @param[type=table]  _position Area center
+-- @param[type=number] _range    Area size
+-- @param[type=number] _state    Diplomatic state
 -- @return [boolean] Entities near
 --
 function AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state )
@@ -1314,8 +1314,8 @@ end
 -- Returns the quest ID of the quest with the name.
 -- If the quest is not found, 0 is returned.
 --
--- @param _QuestName [string] Quest name
--- @return [number] Quest ID
+-- @param[type=string] _QuestName Quest name
+-- @return[type=number] Quest ID
 -- @within Helper
 --
 function GetQuestID(_QuestName)
@@ -1329,8 +1329,8 @@ end
 
 ---
 -- Returns true, if the quest is a valid (existing) quest.
--- @param _QuestName [string] Name of quest
--- @return [boolean] Valid quest
+-- @param[type=string] _QuestName Name of quest
+-- @return[type=boolean] Valid quest
 -- @within Helper
 --
 function IsValidQuest(_QuestName)
@@ -1340,9 +1340,9 @@ end
 ---
 -- Returns the distance between two positions or entities.
 --
--- @param _pos1 [string|number|table] Position 1
--- @param _pos2 [string|number|table] Position 2
--- @return [number] Distance between positions
+-- @param _pos1 Position 1 (string, number oder table)
+-- @param _pos2 Position 2 (string, number oder table)
+-- @return[type=number] Distance between positions
 -- @within Helper
 --
 function GetDistance(_pos1, _pos2)
@@ -1363,8 +1363,8 @@ end
 -- Checks if an army or entity is dead. If an army has not been created yet
 -- then it will not falsely assumed to be dead.
 --
--- @param _input [table|string|number] Army or entity
--- @return [boolean] Army or entity is dead
+-- @param _input Army or entity (string, number oder table)
+-- @return[type=boolean] Army or entity is dead
 -- @within Helper
 --
 function IsDeadWrapper(_input)
@@ -1380,10 +1380,10 @@ IsDead = IsDeadWrapper;
 ---
 -- Checks if an army is near the position.
 --
--- @param _Army [table] Army to check
--- @param _Target [string|number|table] Target position
--- @param _Distance [number] Area size
--- @return [boolean] Army is near
+-- @param[type=table]  _Army     Army to check
+-- @param              _Target   Target position
+-- @param[type=number] _Distance Area size
+-- @return[type=boolean] Army is near
 --
 function IsArmyNear(_Army, _Target, _Distance)
     local LeaderID = 0;

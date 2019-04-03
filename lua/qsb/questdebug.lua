@@ -23,10 +23,10 @@ QuestSystemDebug = {};
 -- Activates the debug mode. Use the flags to decide which features you want
 -- to use.
 --
--- @param _CheckQuests [boolean] Call debug check of behavior
--- @param _DebugKeys [boolean] Activate debug cheats
--- @param _DebugShell [boolean] Activate debug shell
--- @param _QuestTrace [boolean] Display quest status changes
+-- @param[type=boolean] _CheckQuests Call debug check of behavior
+-- @param[type=boolean] _DebugKeys   Activate debug cheats
+-- @param[type=boolean] _DebugShell  Activate debug shell
+-- @param[type=boolean] _QuestTrace  Display quest status changes
 -- @within QuestSystemDebug
 --
 function QuestSystemDebug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)
@@ -95,9 +95,9 @@ end
 --
 -- This function is called by GameCallback_OnQuestStatusChanged.
 --
--- @param _QuestID [number] ID of quest
--- @param _State [number] Quest state
--- @param _Result [number] Result state
+-- @param[type=number] _QuestID ID of quest
+-- @param[type=number] _State   Quest state
+-- @param[type=number] _Result  Result state
 -- @within QuestSystemDebug
 -- @local
 --
@@ -143,7 +143,7 @@ end
 
 ---
 -- Receives the message from the chat input and split it into tokens.
--- @param _Message [string] Message to tokenize
+-- @param[type=string] _Message Message to tokenize
 -- @within QuestSystemDebug
 -- @local
 --
@@ -214,7 +214,7 @@ end
 
 ---
 -- Takes a table with command tokens and executes the commands if possible.
--- @param _Tokens [table] List of tokens
+-- @param[type=table] _Tokens List of tokens
 -- @within QuestSystemDebug
 -- @local
 --
@@ -545,9 +545,9 @@ end
 -- A helper for finding a key to a value in a table.
 -- @local
 --
--- @param _Table [table] Questioned table
--- @param _Value [mixed] Value to find
--- @return [string] Key of value
+-- @param[type=table] _Table Questioned table
+-- @param             _Value Value to find
+-- @return[type=string] Key of value
 -- @within QuestSystemDebug
 --
 function QuestSystemDebug:GetKeyByValue(_Table, _Value)
@@ -573,8 +573,8 @@ end
 ---
 -- Checks if the position table contains a valid position on the map.
 --
--- @param _pos [table] Position to check
--- @return [boolean] Position valid
+-- @param[type=table] _pos Position to check
+-- @return[type=boolean] Position valid
 --
 function IsValidPosition(_pos)
 	if type(_pos) == "table" then
@@ -591,8 +591,10 @@ end
 ---
 -- Returns the leader entity ID of the soldier.
 --
--- @param _eID [number] Entity ID of soldier
--- @return [number] Entity ID of leader
+-- FIXME: Not compatible to the History Edition!
+--
+-- @param[type=number] _eID Entity ID of soldier
+-- @return[type=number] Entity ID of leader
 --
 function SoldierGetLeaderEntityID(_eID)
     if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then

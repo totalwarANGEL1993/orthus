@@ -32,9 +32,9 @@
 -- The destinated table can be nil. In this case just a copy of the source
 -- table will be returned.
 --
--- @param _Source [table] Source table
--- @param _Dest [table]   Destinated table
--- @return [table] Copy of table
+-- @param[type=table] _Source Source table
+-- @param[type=table] _Dest   Destinated table
+-- @return[type=table] Copy of table
 --
 function copy(_Source, _Dest)
     _Dest = _Dest or {};
@@ -68,8 +68,8 @@ end
 -- <li>equals - compare one object with another</li>
 -- </ul>
 --
--- @param _Table [table] Table to transmute
--- @return [table] Class table
+-- @param[type=table] _Table Table to transmute
+-- @return[type=table] Class table
 --
 function class(_Table)
     for k, v in pairs(_G) do 
@@ -119,9 +119,9 @@ end
 ---
 -- Does the same as class() but also inherits content from the parent class.
 --
--- @param _Table [table] Table to transmute
--- @param _Parent [table] Parent class
--- @return [table] Class table
+-- @param[type=table] _Table  Table to transmute
+-- @param[type=table] _Parent Parent class
+-- @return[type=table] Class table
 --
 function inherit(_Table, _Parent)
     local c = copy(_Parent, _Table);
@@ -137,9 +137,9 @@ end
 -- "parent". Methods for the parent object can be called seperatly and the
 -- object will have it's own members.
 --
--- @param _Class [table] Class table
--- @param ... [mixed] Constructor arguments
--- @return [table] Instance of class
+-- @param[type=table] _Class Class table
+-- @param ...         Constructor arguments
+-- @return[type=table] Instance of class
 --
 function new(_Class, ...)
     local instance = copy(_Class);

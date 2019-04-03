@@ -180,8 +180,8 @@ end
 
 ---
 -- Function called when a hero speaks to a normal npc.
--- @param _Hero [number] Entity id of hero
--- @param _NpcInstance [table] Instance of npc
+-- @param[type=number] _Hero Entity id of hero
+-- @param[type=table] _NpcInstanceInstance of npc
 -- @within Interaction
 -- @local
 --
@@ -194,9 +194,9 @@ end
 
 ---
 -- Function called when a hero speaks to a merchant npc.
--- @param _Hero [number] Entity id of hero
--- @param _NpcInstance [table] Instance of npc
--- @param _MerchantID [number] EntityID of merchant
+-- @param[type=number] _Hero Entity id of hero
+-- @param[type=table] _NpcInstance Instance of npc
+-- @param[type=number] _MerchantID EntityID of merchant
 -- @within Interaction
 -- @local
 --
@@ -211,7 +211,7 @@ end
 
 ---
 -- Calls the controller method of the npc instance.
--- @param _ScriptName [string] Script name of NPC
+-- @param[type=string] _ScriptName Script name of NPC
 -- @local
 --
 function Interaction_Npc_Controller(_ScriptName)
@@ -262,7 +262,7 @@ class(NonPlayerCharacter);
 ---
 -- Sets the hero this npc is following. To let him follow anybody set hero
 -- as true.
--- @param _Hero [string|boolean] Hero to follow
+-- @param _Hero Hero to follow
 -- @return self
 -- @within NonPlayerCharacter
 --
@@ -275,7 +275,7 @@ end
 -- Adds a waypoint to the npc. The npc will move over every waypoint to the
 -- destination. The last waypoint is used as destination.
 -- Waypoints must be reachable!
--- @param _Waypoint [string] Waypoint to pass
+-- @param[type=string] _Waypoint Waypoint to pass
 -- @return self
 -- @within NonPlayerCharacter
 --
@@ -288,7 +288,7 @@ end
 -- Adds a stray position to the npc. The npc will walk to a random waypoint
 -- from the stray list.
 -- Waypoints must be reachable!
--- @param _Waypoint [string] Waypoint to pass
+-- @param[type=string] _Waypoint Waypoint to pass
 -- @return self
 -- @within NonPlayerCharacter
 --
@@ -299,7 +299,7 @@ end
 
 ---
 -- Overwrites the default waittime between two waypoints.
--- @param _Waittime [number] time to wait
+-- @param[type=number] _Waittime time to wait
 -- @return self
 -- @within NonPlayerCharacter
 --
@@ -310,7 +310,7 @@ end
 
 ---
 -- Sets a talking callback for the npc.
--- @param _Callback [function] Function to call
+-- @param[type=function] _Callback Function to call
 -- @return self
 -- @within NonPlayerCharacter
 --
@@ -322,7 +322,7 @@ end
 ---
 -- Sets a target destination until the npc is following the hero.
 -- Must be reachable!
--- @param _Target [string] Destination of npc
+-- @param[type=string] _Target Destination of npc
 -- @return self
 -- @within NonPlayerCharacter
 --
@@ -334,7 +334,7 @@ end
 ---
 -- Sets an alternate callback that will be triggered when the npc is on his
 -- way to a destination.
--- @param _Callback [function] Function to call
+-- @param[type=function] _Callback Function to call
 -- @return self
 -- @within NonPlayerCharacter
 --
@@ -378,7 +378,7 @@ end
 
 ---
 -- Checks, if some hero talked to this npc.
--- @return [boolean] Talked to
+-- @return[type=boolean] Talked to
 -- @within NonPlayerCharacter
 --
 function NonPlayerCharacter:TalkedTo()
@@ -387,7 +387,7 @@ end
 
 ---
 -- Sets the hero that can speak to the npc.
--- @param _Hero [string] Scriptname of hero
+-- @param[type=string] _Hero Scriptname of hero
 -- @return self
 -- @within NonPlayerCharacter
 --
@@ -398,7 +398,7 @@ end
 
 ---
 -- Sets the information text, if the wrong hero talked to the npc
--- @param _Info [string] Info message
+-- @param[type=string] _Info Info message
 -- @return self
 -- @within NonPlayerCharacter
 --
@@ -493,7 +493,7 @@ end
 
 ---
 -- Controlls how the NPC interacts with the hero if spoken to.
--- @param _HeroID [number] ID of hero
+-- @param[type=number] _HeroID ID of hero
 -- @within NonPlayerCharacter
 -- @local
 --
@@ -569,7 +569,7 @@ end
 
 ---
 -- Returns the nearest hero to the npc.
--- @return [number] Hero ID
+-- @return[type=number] Hero ID
 -- @within NonPlayerCharacter
 -- @local
 --
@@ -605,7 +605,7 @@ MerchantOfferTypes = {
 
 ---
 -- Base class for NPCs that implements the vanilla functionality of an npc.
--- @param _ScriptName [string] Script name of merchant
+-- @param[type=string] _ScriptName Script name of merchant
 -- @within Classes
 --
 NonPlayerMerchant = {}
@@ -631,7 +631,7 @@ class(NonPlayerMerchant);
 
 ---
 -- Sets a different spawnpoint for units bought at the merchant.
--- @param _Spawnpoint [string] Script name of spawnpoint.
+-- @param[type=string] _Spawnpoint Script name of spawnpoint.
 -- @return self
 -- @within NonPlayerMerchant
 --
@@ -671,8 +671,8 @@ end
 
 ---
 -- Calls the merchant menu of the merchant if a hero talks to him.
--- @param _HeroID [number] ID of hero
--- @param _TraderID [number] ID of merchant
+-- @param[type=number] _HeroID   ID of hero
+-- @param[type=number] _TraderID ID of merchant
 -- @within NonPlayerMerchant
 -- @local
 --
@@ -720,8 +720,8 @@ end
 
 ---
 -- Returns how often the offer at the index was accepted by the player.
--- @param _SlotIndex [number] Index of offer
--- @return [number] Trading volume
+-- @param[type=number] _SlotIndex Index of offer
+-- @return[type=number] Trading volume
 -- @within NonPlayerMerchant
 --
 function NonPlayerMerchant:GetTradingVolume(_SlotIndex)
@@ -733,14 +733,14 @@ end
 
 ---
 -- DONT EVER CALL THIS MANUALLY! Adds a offer to the merchant.
--- @param _Type [number] Type of offer
--- @param _Costs [table] Costs table
--- @param _Amount [number] Amount buyed units
--- @param _Good [number] Entity or leader type
--- @param _Load [number] Amount of wagon loads
--- @param _Icon [string] Button icon
--- @param _Refresh [number] Refresh rate
--- @param _Description [table] Button description
+-- @param[type=number] _Type       Type of offer
+-- @param[type=table] _Costs       Costs table
+-- @param[type=number] _Amount     Amount buyed units
+-- @param[type=number] _Good       Entity or leader type
+-- @param[type=number] _Load       Amount of wagon loads
+-- @param[type=string] _Icon       Button icon
+-- @param[type=number] _Refresh    Refresh rate
+-- @param[type=table] _Description Button description
 -- @return self
 -- @within NonPlayerMerchant
 -- @local
@@ -777,10 +777,10 @@ end
 
 ---
 -- Adds a troop offer to the merchant.
--- @param _Good [number] Entity or leader type
--- @param _Costs [table] Costs table
--- @param _Amount [number] Amount of offers
--- @param _Refresh [number] Refresh rate
+-- @param[type=number] _Good    Entity or leader type
+-- @param[type=table] _Costs    Costs table
+-- @param[type=number] _Amount  Amount of offers
+-- @param[type=number] _Refresh Refresh rate
 -- @return self
 -- @within NonPlayerMerchant
 --
@@ -818,11 +818,11 @@ end
 
 ---
 -- Adds a resource offer to the merchant. Raw resources are not supported!
--- @param _Good [number] Resource type
--- @param _Amount [number] Amount of resource
--- @param _Costs [table] Costs table
--- @param _Load [number] Amount of offers
--- @param _Refresh [number] Refresh rate
+-- @param[type=number] _Good     Resource type
+-- @param[type=number] _Amount   Amount of resource
+-- @param[type=table]  _Costs    Costs table
+-- @param[type=number] _Load     Amount of offers
+-- @param[type=number] _Refresh  Refresh rate
 -- @return self
 -- @within NonPlayerMerchant
 --
@@ -846,8 +846,8 @@ end
 
 ---
 -- Adds a technology offer to the merchant. Technology offers do not respawn.
--- @param _Good [number] Technology type
--- @param _Costs [table] Costs table
+-- @param[type=number] _Good  Technology type
+-- @param[type=table]  _Costs Costs table
 -- @return self
 -- @within NonPlayerMerchant
 --
@@ -874,12 +874,12 @@ end
 ---
 -- Adds an offer with a custom function. The function receives the data of
 -- the offer and the data of the whole npc.
--- @param _Action [function] Custom function
--- @param _Amount [number] Amount of offers
--- @param _Costs [table] Costs table
--- @param _Icon [string] Icon texture
--- @param _Description [table] Tooltip content
--- @param _Refresh [number] Refresh rate
+-- @param[type=function] _Action      Custom function
+-- @param[type=number]   _Amount      Amount of offers
+-- @param[type=table]    _Costs       Costs table
+-- @param[type=string]   _Icon        Icon texture
+-- @param[type=table]    _Description Tooltip content
+-- @param[type=number]   _Refresh     Refresh rate
 -- @return self
 -- @within NonPlayerMerchant
 -- @usage Merchant:AddCustomOffer(SomeFunction, 5, {Gold = 340}, {Title = "Titel", Text = "Das ist die Beschreibung."});
@@ -890,7 +890,7 @@ end
 
 ---
 -- Updates all merchant offer widgets.
--- @param _WidgetTable [table] Offer widget table
+-- @param[type=table] _WidgetTable Offer widget table
 -- @within NonPlayerMerchant
 -- @local
 --
@@ -905,7 +905,7 @@ end
 
 ---
 -- Updates the merchant offer at the index.
--- @param _SlotIndex [number] Index of offer
+-- @param[type=number] _SlotIndex Index of offer
 -- @within NonPlayerMerchant
 -- @local
 --
@@ -946,7 +946,7 @@ end
 
 ---
 -- Executes the purchase of the player if there are enough resources.
--- @param _SlotIndex [number] Index of offer
+-- @param[type=number] _SlotIndex Index of offer
 -- @within NonPlayerMerchant
 -- @local
 --
@@ -1014,7 +1014,7 @@ end
 
 ---
 -- Prints the tooltip text for a merchant offer.
--- @param _SlotIndex [number] Index of offer
+-- @param[type=number] _SlotIndex Index of offer
 -- @within NonPlayerMerchant
 -- @local
 --
