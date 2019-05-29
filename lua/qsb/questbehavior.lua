@@ -1852,7 +1852,11 @@ function b_Reprisal_Briefing:GetReprisalTable()
 end
 
 function b_Reprisal_Briefing:CustomFunction(_Quest)
-    _Quest.m_Briefing = _G[self.Data.Briefing](self, _Quest);
+    _Quest.m_FailureBriefing = _G[self.Data.Briefing](self, _Quest);
+end
+
+function b_Reprisal_Briefing:Reset(_Quest)
+    _Quest.m_FailureBriefing = nil;
 end
 
 function b_Reprisal_Briefing:Debug(_Quest)
@@ -2399,6 +2403,14 @@ b_Reward_Briefing = copy(b_Reprisal_Briefing);
 b_Reward_Briefing.Data.Name = "Reward_Briefing";
 b_Reward_Briefing.Data.Type = Callbacks.MapScriptFunction;
 b_Reward_Briefing.GetReprisalTable = nil;
+
+function b_Reward_Briefing:CustomFunction(_Quest)
+    _Quest.m_SuccessBriefing = _G[self.Data.Briefing](self, _Quest);
+end
+
+function b_Reward_Briefing:Reset(_Quest)
+    _Quest.m_SuccessBriefing = nil;
+end
 
 function b_Reward_Briefing:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
@@ -3197,11 +3209,24 @@ b_Trigger_Briefing = {
 function b_Trigger_Briefing:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.Briefing = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Kind = _Parameter;
     end
 end
 
 function b_Trigger_Briefing:GetTriggerTable()
-    return {self.Data.Type, self.Data.Briefing};
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Trigger_Briefing:CustomFunction(_Quest)
+    if self.Data.Kind == nil or self.Data.Kind == "Any" then
+        return QuestSystem.Briefings[Quest.m_SuccessBriefing] == true or QuestSystem.Briefings[Quest.m_FailureBriefing] == true;
+    elseif self.Data.Kind == "Success" then
+        return QuestSystem.Briefings[Quest.m_SuccessBriefing] == true;
+    elseif self.Data.Kind == "Failure" then
+        return QuestSystem.Briefings[Quest.m_FailureBriefing] == true;
+    end
+    return false;
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Trigger_Briefing);
