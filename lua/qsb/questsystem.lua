@@ -912,6 +912,7 @@ function QuestTemplate:Reset()
 
     -- Reset objectives
     for i= 1, table.getn(self.m_Objectives), 1 do
+        self.m_Objectives[i].Completed = nil;
         if self.m_Objectives[i][1] == Objectives.MapScriptFunction then
             if self.m_Objectives[i][2][2].Reset then
                 self.m_Objectives[i][2][2]:Reset(self);
