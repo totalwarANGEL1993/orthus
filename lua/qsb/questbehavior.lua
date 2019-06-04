@@ -13,6 +13,7 @@
 -- <ul>
 -- <li>qsb.oop</li>
 -- <li>qsb.questsystem</li>
+-- <li>qsb.questdebug</li>
 -- <li>qsb.interaction</li>
 -- <li>qsb.information</li>
 -- </ul>
@@ -23,31 +24,37 @@
 -- Quests and tools --
 
 ---
--- Creates an quest from the given description.
+-- Creates an quest from the given table. If the table contains a description,
+-- the quest will insert itself into the questbook when it is triggered and
+-- erase it, after it is finished or interrupted.
 --
--- Description contains of the following entries:
+-- Keep in mind that there can be only 8 entries in the quest book unless you
+-- use extra 3 or the standalone version of mcb's quest!
+--
+-- Table contains of the following entries:
 -- <ul>
 -- <li><b>Name:</b> Name of quest</li>
 -- <li><b>Receiver:</b> Player that receives the quest</li>
 -- <li><b>Time:</b> Time, until the quest is automatically over</li>
--- <li><b>Description:</b> Quest information displayed in the quest book</li>
+-- <li><b>Description:</b> Quest information displayed in the quest book.
+-- (Mostly identical to Logic.CreateQuest or Logic.CreateQuestEx)</li>
 -- </ul>
 -- After the fields the behavior constructors are called.
 --
--- @param _Data [table] Quest description
--- @return [number] Quest id
--- @return [table] Quest instance
+-- @param[type=table] _Data Quest table
+-- @return[type=number] Quest id
+-- @return[type=table]  Quest instance
 --
 -- @usage CreateQuest {
---     Name = "SomeQuestName",
+--     Name = "VictoryCondition",
 --     Description = {
---         Title = "Name of quest",
---         Text  = "Description of quest",
+--         Title = "Justice!",
+--         Text  = "Time for paybeck. Destroy your enemy!",
 --         Type  = MAINQUEST_OPEN,
 --         Info  = 1
 --     },
 --
---     Goal_DestroyAllPlayerUnits(2),
+--     Goal_DestroyPlayer(2),
 --     Reward_Victory(),
 --     Trigger_Time(0)
 -- }
@@ -79,13 +86,36 @@ function CreateQuest(_Data)
 end
 
 ---
+-- This function starts the quest system by loading all components in the
+-- right order. Must be called on game start in the FMA.
+--
+function LoadQuestSystem()
+    QuestSystemBehavior:PrepareQuestSystem();
+end
+
+---
+-- Activates the debug mode. Use the flags to decide which features you want
+-- to use.
+--
+-- @param[type=boolean] _CheckQuests Call debug check of behavior
+-- @param[type=boolean] _TraceQuests Display quest status changes
+-- @param[type=boolean] _Cheats      Activate debug cheats
+-- @param[type=boolean] _Console     Activate debug shell
+--
+-- @usage ActivateDebugMode(true, false, true, true);
+--
+function ActivateDebugMode(_CheckQuests, _TraceQuests, _Cheats, _Console)
+    QuestSystemDebug:Activate(_CheckQuests, _Cheats, _Console, _TraceQuests);
+end
+
+---
 -- Creates an AI player and sets the technology level.
 --
 -- Use this function or the behavior to initalize the AI. An AI must first be
 -- initalized before an army can be created.
 --
--- @param _PlayerID [number] PlayerID
--- @param _TechLevel [number] Technology level [1|4]
+-- @param[type=number] _PlayerID  PlayerID
+-- @param[type=number] _TechLevel Technology level [1|4]
 --
 -- @usage CreateAIPlayer(2, 4);
 --
@@ -97,9 +127,9 @@ end
 -- Disables or enables the ability to attack for the army. This function can
 -- be used to forbid an army to attack even if there are valid targets.
 --
--- @param _PlayerID [number] ID of player
--- @param _ArmyID [number] ID of army
--- @param _Flag [boolean] Ability to attack
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _ArmyID   ID of army
+-- @param[type=boolean] _Flag    Ability to attack
 -- 
 -- @usage ArmyDisableAttackAbility(2, 1, true)
 --
@@ -109,12 +139,11 @@ end
 
 ---
 -- Disables or enables the ability to patrol between positions. This
--- function can be used to forbid an army to attack even if there are
--- valid targets.
+-- function can be force an army to stay on its spawnpoint.
 --
--- @param _PlayerID [number] ID of player
--- @param _ArmyID [number] ID of army
--- @param _Flag [boolean] Ability to attack
+-- @param[type=number]  _PlayerID ID of player
+-- @param[type=number]  _ArmyID   ID of army
+-- @param[type=boolean] _Flag     Ability to attack
 -- 
 -- @usage ArmyDisablePatrolAbility(2, 1, true)
 --
@@ -141,15 +170,15 @@ end
 -- positions were the army will patrol. Also replace X with the player ID and
 -- Y with a unique number starting by 1.
 --
--- @param _ArmyName [String] Army identifier
--- @param _PlayerID [number] Owner of army
--- @param _Strength [number] Strength of army [1|8]
--- @param _Position [string] Home Position of army
--- @param _RodeLength [number] Action range of the army
--- @param _TroopTypes [table] Upgrade categories to recruit
--- @return [number] Army ID
+-- @param[type=string] _ArmyName   Army identifier
+-- @param[type=number] _PlayerID   Owner of army
+-- @param[type=number] _Strength   Strength of army [1|8]
+-- @param[type=string] _Position   Home Position of army
+-- @param[type=number] _RodeLength Action range of the army
+-- @param[type=table] _TroopTypes  Upgrade categories to recruit
+-- @return[type=number] Army ID
 --
--- @usage CreateAIPlayer("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
+-- @usage CreateAIPlayerArmy("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
 --
 function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
     if QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] then
@@ -181,14 +210,14 @@ end
 -- positions were the army will patrol. Also replace X with the player ID and
 -- Y with a unique number starting by 1.
 --
--- @param _ArmyName [String] Army identifier
--- @param _PlayerID [number] Owner of army.
--- @param _Strength [number] Strength of army [1|8]
--- @param _Position [string] Home Position of army
--- @param _LifeThread [string] Name of generator
--- @param _RodeLength [number] Action range of the army
--- @param _RespawnTime [number] Time till troops are refreshed
--- @param ... [number] List of types to spawn
+-- @param[type=string] _ArmyName    Army identifier
+-- @param[type=number] _PlayerID    Owner of army.
+-- @param[type=number] _Strength    Strength of army [1|8]
+-- @param[type=string] _Position    Home Position of army
+-- @param[type=string] _LifeThread  Name of generator
+-- @param[type=number] _RodeLength  Action range of the army
+-- @param[type=number] _RespawnTime Time till troops are refreshed
+-- @param              ...          List of types to spawn
 --
 -- @usage CreateAIPlayerSpawnArmy(
 --     "Bar", 2, 8, "armyPos1", "lifethread", 5000,
@@ -219,8 +248,8 @@ end
 
 ---
 -- Finds all entities numbered from 1 to n with a common prefix.
--- @param _Prefix [string] Prefix of scriptnames
--- @return [table] List of entities
+-- @param[type=string] _Prefix Prefix of scriptnames
+-- @return[type=table] List of entities
 --
 function GetEntitiesByPrefix(_Prefix)
     local list = {};
@@ -240,9 +269,9 @@ end
 
 ---
 -- Finds all entities of the player that have the type.
--- @param _PlayerID [number] ID of player
--- @param _EntityType [number] Type to search
--- @return [table] List of entities
+-- @param[type=number] _PlayerID   ID of player
+-- @param[type=number] _EntityType Type to search
+-- @return[type=table] List of entities
 --
 function GetPlayerEntities(_PlayerID, _EntityType)
     local PlayerEntities = {}
@@ -294,6 +323,9 @@ QuestSystemBehavior = {
 -- Installs the questsystem. This function is a substitude for the original
 -- method QuestSystem:InstallQuestSystem and will call the original first.
 -- After that the behavior are initalized.
+--
+-- The modules qsb.interaction and qsb.information are also initalized.
+--
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -318,7 +350,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
 end
 
 ---
--- Calls all loaded actions after a save is loaded.
+-- Calls all load actions after a save is loaded.
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -330,8 +362,8 @@ end
 
 ---
 -- Adds an action that is performed after a save is loaded.
--- @param _Function [function] Action
--- @param ... [mixed] Data
+-- @param[type=function] _Function Action
+-- @param                ...       Data
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -341,7 +373,7 @@ end
 
 ---
 -- Registers a behavior.
--- @param _Behavior [table] Behavior pseudo class
+-- @param[type=table] _Behavior Behavior pseudo class
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -373,8 +405,8 @@ end
 ---
 -- Creates a AI player and upgrades the troops according to the technology
 -- level.
--- @param _PlayerID [number] ID of player
--- @param _TechLevel [number] Technology level
+-- @param[type=number] _PlayerID  ID of player
+-- @param[type=number] _TechLevel Technology level
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -418,8 +450,8 @@ end
 
 ---
 -- Upgrades an existing AI player with a higher technology level.
--- @param _PlayerID [number] ID of player
--- @param _NewTechLevel [number] Technology level
+-- @param[type=number] _PlayerID     ID of player
+-- @param[type=number] _NewTechLevel Technology level
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -496,9 +528,9 @@ QuestSystemBehavior.ArmyCategories = {
 ---
 -- Disables or enables the ability to attack for the army. This function can
 -- be used to forbid an army to attack even if there are valid targets.
--- @param _PlayerID [number] ID of player
--- @param _ArmyID [number] ID of army
--- @param _Flag [boolean] Ability to attack
+-- @param[type=number]  _PlayerID ID of player
+-- @param[type=number]  _ArmyID   ID of army
+-- @param[type=boolean] _Flag     Ability to attack
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -516,9 +548,9 @@ end
 -- Disables or enables the ability to patrol between positions. This
 -- function can be used to forbid an army to attack even if there are
 -- valid targets.
--- @param _PlayerID [number] ID of player
--- @param _ArmyID [number] ID of army
--- @param _Flag [boolean] Ability to attack
+-- @param[type=number]  _PlayerID ID of player
+-- @param[type=number]  _ArmyID   ID of army
+-- @param[type=boolean] _Flag     Ability to patrol
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -535,12 +567,12 @@ end
 ---
 -- Creates an army for the AI that is recruited from the barracks of the player.
 -- The cannon type is automatically set by the technology level of the AI.
--- @param _PlayerID [number] ID of player
--- @param _Strength [number] Strength of army
--- @param _Position [string] Home area center
--- @param _RodeLength [number] Rode length
--- @param _TroopTypes [table] Allowed troops
--- @return [number] Army ID
+-- @param[type=number] _PlayerID   ID of player
+-- @param[type=number] _Strength   Strength of army
+-- @param[type=string] _Position   Home area center
+-- @param[type=number] _RodeLength Rode length
+-- @param[type=table]  _TroopTypes Allowed troops
+-- @return[table=number] Army ID
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -613,13 +645,13 @@ end
 
 ---
 -- Creates an army for the AI that is spawned from a life thread building.
--- @param _PlayerID [number] ID of player
--- @param _Strength [number] Strength of army
--- @param _Position [string] Home area center
--- @param _LifeThread [string] Name of generator
--- @param _RodeLength [number] Rode length
--- @param _EntityTypes [table] Spawned troops
--- @param _RespawnTime [number] Time to respawn
+-- @param[type=number] _PlayerID    ID of player
+-- @param[type=number] _Strength    Strength of army
+-- @param[type=string] _Position    Home area center
+-- @param[type=string] _LifeThread  Name of generator
+-- @param[type=number] _RodeLength  Rode length
+-- @param[type=table]  _EntityTypes Spawned troops
+-- @param[type=number] _RespawnTime Time to respawn
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -854,7 +886,7 @@ end
 
 ---
 -- Calls a user function as objective.
--- @param _FunctionName [string] function to call
+-- @param[type=string] _FunctionName function to call
 -- @within Goals
 --
 function Goal_MapScriptFunction(...)
@@ -974,7 +1006,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_NoChange);
 
 ---
 -- The goal is won after the hero is comatose or the entity/army is destroyed.
--- @param _Target [string|table] Target (Army, hero, unit)
+-- @param _Target Target (Army, hero, unit)
 -- @within Goals
 --
 function Goal_Destroy(...)
@@ -1004,12 +1036,12 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Destroy);
 
 ---
 -- The goal is won after the player creates entities in the area.
--- @param _EntityType [string] Entity type
--- @param _Position [string] Area center
--- @param _Area [number] Checked area size
--- @param _Amount [number] Amount to create
--- @param _Marker [boolean] Use pointer
--- @param _NewOwner [number] Change owner after completion
+-- @param[type=string] _EntityType Entity type
+-- @param[type=string] _Position Area center
+-- @param[type=number] _Area Checked area size
+-- @param[type=number] _Amount Amount to create
+-- @param[type=boolean] _MarkerUse pointer
+-- @param[type=number] _NewOwner Change owner after completion
 -- @within Goals
 --
 function Goal_Create(...)
@@ -1049,8 +1081,8 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Create);
 
 ---
 -- The goal is won after the receiver has the diplomatic state to the player.
--- @param _TargetPlayer [number] Entity type
--- @param _State [string] Diplomacy state name
+-- @param[type=number] _TargetPlayer Entity type
+-- @param[type=string] _State Diplomacy state name
 -- @within Goals
 --
 function Goal_Diplomacy(...)
@@ -1082,9 +1114,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Diplomacy);
 
 ---
 -- The goal is won after the receiver produces some resources.
--- @param _ResourceType [string] Name of resource
--- @param _Amount [number] Amount of resource
--- @param _ExcludeRaw [boolean] Don't count raw type (default true)
+-- @param[type=string] _ResourceType Name of resource
+-- @param[type=number] _Amount Amount of resource
+-- @param[type=boolean] _ExcludeRaw Don't count raw type (default true)
 -- @within Goals
 --
 function Goal_Produce(...)
@@ -1119,7 +1151,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Produce);
 ---
 -- This goal is automatically won, after the time limit is up. Until then the
 -- unit or hero must be protected.
--- @param _Target [string] Target to protect
+-- @param[type=string] _Target Target to protect
 -- @within Goals
 --
 function Goal_Protect(...)
@@ -1149,10 +1181,10 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Protect);
 
 ---
 -- This goal is won, after the entity has reached (or left) the target.
--- @param _Entity [string] Entity to move
--- @param _Target [string] Target to reach
--- @param _Distance [number] Distance between entities
--- @param _LowerThan [boolean] Be lower than distance
+-- @param[type=string] _Entity Entity to move
+-- @param[type=string] _Target Target to reach
+-- @param[type=number] _Distance Distance between entities
+-- @param[type=boolean] _LowerThan  Be lower than distance
 -- @within Goals
 --
 function Goal_EntityDistance(...)
@@ -1191,9 +1223,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_EntityDistance);
 
 ---
 -- This goal is won, after the player has an amount of worker.
--- @param _Amount [number] Amount to reach
--- @param _LowerThan [boolean] Be lower than
--- @param _OtherPlayer [number] Other player
+-- @param[type=number] _Amount Amount to reach
+-- @param[type=boolean] _LowerThan  Be lower than
+-- @param[type=number] _OtherPlayer Other player
 -- @within Goals
 --
 function Goal_WorkerCount(...)
@@ -1230,9 +1262,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_WorkerCount);
 
 ---
 -- This goal is won, after the player has an amount of motivation.
--- @param _Amount [number] Amount to reach
--- @param _LowerThan [boolean] Be lower than
--- @param _OtherPlayer [number] Other player
+-- @param[type=number] _Amount Amount to reach
+-- @param[type=boolean] _LowerThan  Be lower than
+-- @param[type=number] _OtherPlayer Other player
 -- @within Goals
 --
 function Goal_Motivation(...)
@@ -1269,9 +1301,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Motivation);
 
 ---
 -- This goal is won, after the player has an amount of settlers.
--- @param _Amount [number] Amount to reach
--- @param _LowerThan [boolean] Be lower than
--- @param _OtherPlayer [number] Other player
+-- @param[type=number] _Amount Amount to reach
+-- @param[type=boolean] _LowerThan  Be lower than
+-- @param[type=number] _OtherPlayer Other player
 -- @within Goals
 --
 function Goal_SettlerCount(...)
@@ -1308,9 +1340,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_SettlerCount);
 
 ---
 -- This goal is won, after the player has an amount of soldiers.
--- @param _Amount [number] Amount to reach
--- @param _LowerThan [boolean] Be lower than
--- @param _OtherPlayer [number] Other player
+-- @param[type=number] _AmountAmount to reach
+-- @param[type=boolean] _LowerThan  Be lower than
+-- @param[type=number] _OtherPlayer Other player
 -- @within Goals
 --
 function Goal_SoldierCount(...)
@@ -1347,8 +1379,8 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_SoldierCount);
 
 ---
 -- This goal is won, after the player reached an amount of units.
--- @param _EntityType [string] Entity type name
--- @param _Amount [number] Amount to reach
+-- @param[type=string] _EntityType Entity type name
+-- @param[type=number] _Amount Amount to reach
 -- @within Goals
 --
 function Goal_Units(...)
@@ -1380,7 +1412,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Units);
 
 ---
 -- This goal is won, after the receiver has researched the technology.
--- @param _Technology [string] Technology name
+-- @param[type=string] _Technology Technology name
 -- @within Goals
 --
 function Goal_Technology(...)
@@ -1410,7 +1442,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Technology);
 
 ---
 -- This goal is won, after the receiver has upgraded their headquarters.
--- @param _Level [number] Upgrades (1 or 2)
+-- @param[type=number] _Level Upgrades (1 or 2)
 -- @within Goals
 --
 function Goal_UpgradeHeadquarters(...)
@@ -1441,9 +1473,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_UpgradeHeadquarters);
 ---
 -- This goal is won, after a hero of the receiver talked to the character.
 -- It can be any hero or a special named hero.
--- @param _Target [string] Target entity
--- @param _Hero [string] Optional required hero
--- @param _Message [string] Optional wrong hero message
+-- @param[type=string] _Target Target entity
+-- @param[type=string] _Hero Optional required hero
+-- @param[type=string] _Message Optional wrong hero message
 -- @within Goals
 --
 function Goal_NPC(...)
@@ -1519,9 +1551,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_NPC);
 ---
 -- This goal is won, after the receiver destroyed some entities of type of the
 -- player.
--- @param _PlayerID [number] Owner of entities
--- @param _TypeName [string] Entity type name
--- @param _Amount [number] Amount to destroy
+-- @param[type=number] _PlayerID Owner of entities
+-- @param[type=string] _TypeName Entity type name
+-- @param[type=number] _Amount Amount to destroy
 -- @within Goals
 --
 function Goal_DestroyType(...)
@@ -1556,9 +1588,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyType);
 ---
 -- This goal is won, after the receiver destroyed some entities of category of
 -- the player.
--- @param _PlayerID [number] Owner of entities
--- @param _TypeName [string] Entity type name
--- @param _Amount [number] Amount to destroy
+-- @param[type=number] _PlayerID Owner of entities
+-- @param[type=string] _TypeName Entity type name
+-- @param[type=number] _Amount Amount to destroy
 -- @within Goals
 --
 function Goal_DestroyCategory(...)
@@ -1592,9 +1624,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyCategory);
 
 ---
 -- This goal is won, after the receiver payed the tribute.
--- @param _Resource [string] Tribute resource
--- @param _Amount [number] Tribute high
--- @param _Message [number] Tribute message
+-- @param[type=string] _Resource Tribute resource
+-- @param[type=number] _Amount Tribute high
+-- @param[type=string] _Message Tribute message
 -- @within Goals
 --
 function Goal_Tribute(...)
@@ -1628,7 +1660,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Tribute);
 
 ---
 -- This goal is won, after the receiver changed the weather to the state.
--- @param _State [number] Weather state
+-- @param[type=number] _State Weather state
 -- @within Goals
 --
 function Goal_WeatherState(...)
@@ -1658,9 +1690,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_WeatherState);
 
 ---
 -- This goal is won, after some offers of a merchant are bought.
--- @param _Merchant [number] Merchant npc
--- @param _Offer [number] Index of offer
--- @param _Amount [number] Amount to buy
+-- @param[type=string] _Merchant  Merchant npc
+-- @param[type=number] _Offer Index of offer
+-- @param[type=number] _Amount Amount to buy
 -- @within Goals
 --
 function Goal_BuyOffer(...)
@@ -1703,7 +1735,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_BuyOffer);
 
 ---
 -- This goal is won, after all units of a player are destroyed.
--- @param _PlayerID [number] id of player
+-- @param[type=number] _PlayerID id of player
 -- @within Goals
 --
 function Goal_DestroyAllPlayerUnits(...)
@@ -1733,7 +1765,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyAllPlayerUnits);
 
 ---
 -- Calls a user function as reprisal.
--- @param _FunctionName [string] function to call
+-- @param[type=string] _FunctionName function to call
 -- @within Reprisals
 --
 function Reprisal_MapScriptFunction(...)
@@ -1827,7 +1859,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_Victory);
 
 ---
 -- Starts the briefing. The briefing function must return the briefing id.
--- @param _FunctionName [string] function to call
+-- @param[type=string] _FunctionName function to call
 -- @within Reprisals
 --
 function Reprisal_Briefing(...)
@@ -1864,6 +1896,10 @@ function b_Reprisal_Briefing:Debug(_Quest)
         dbg(_Quest, self, "Briefing functtion ist invalid:" ..tostring(self.Data.Briefing));
         return true;
     end
+    if _Quest.m_FailureBriefing ~= nil then 
+        dbg(_Quest, self, "There is already a failure briefing assigned!");
+        return true;
+    end
     return false;
 end
 
@@ -1873,8 +1909,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_Briefing);
 
 ---
 -- Changes the owner of the entity.
--- @param _Entity [string] Entity to change
--- @param _Owner [number] Owner of entity
+-- @param[type=string] _Entity Entity to change
+-- @param[type=number] _Owner Owner of entity
 -- @within Reprisals
 --
 function Reprisal_ChangePlayer(...)
@@ -1906,7 +1942,15 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_ChangePlayer);
 
 ---
 -- Displays a text message on the screen.
--- @param _Message [string] Message to display
+--
+-- In addition to the placeholders the game offers (@cr, @color, @ra, ...),
+-- there are 2 new placeholders for both _G values and custom values.
+--
+-- @val:NAME adds a value from _G. The value musn't be in a table!
+--
+-- @cval:NAME adds a custom value.
+--
+-- @param[type=string] _Message Message to display
 -- @within Reprisals
 --
 function Reprisal_Message(...)
@@ -1916,7 +1960,7 @@ end
 b_Reprisal_Message = {
     Data = {
         Name = "Reprisal_Message",
-        Type = Callbacks.Message
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -1927,7 +1971,39 @@ function b_Reprisal_Message:AddParameter(_Index, _Parameter)
 end
 
 function b_Reprisal_Message:GetReprisalTable()
-    return {self.Data.Type, self.Data.Message};
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reprisal_Message:CustomFunction(_Quest)
+    local Text = self.Data.Message;
+    
+    -- Custom variables
+    local s, e = string.find(Text, "@cval:", 1);
+    while (s) do
+        local ss, ee = string.find(Text, " ", e+1);
+        local Before = string.sub(Text, 1, s-1);
+        local After  = string.sub(Text, ee);
+        local Value  = string.sub(Text, e+1, ss-1);
+        if Value and QuestSystemBehavior.Data.CustomVariables[Value] then
+            Text = Before .. QuestSystemBehavior.Data.CustomVariables[Value] .. After;
+        end
+        s, e = string.find(Text, "@cval:", ee+1);
+    end
+
+    -- _G variables
+    local s, e = string.find(Text, "@val:", 1);
+    while (s) do
+        local ss, ee = string.find(Text, " ", e+1);
+        local Before = string.sub(Text, 1, s-1);
+        local After  = string.sub(Text, ee);
+        local Value  = string.sub(Text, e+1, ss-1);
+        if Value and _G[Value] then
+            Text = Before .. _G[Value] .. After;
+        end
+        s, e = string.find(Text, "@val:", ee+1);
+    end
+
+    Message(Text);
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reprisal_Message);
@@ -1936,7 +2012,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_Message);
 
 ---
 -- Replaces the entity with a XD_ScriptEntity.
--- @param _Entity [string] Entity to destroy
+-- @param[type=string] _EntityEntity to destroy
 -- @within Reprisals
 --
 function Reprisal_DestroyEntity(...)
@@ -1966,7 +2042,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_DestroyEntity);
 
 ---
 -- Destroys the effect with the given effect name.
--- @param _Effect [string] Effect to destroy
+-- @param[type=string] _Effect Effect to destroy
 -- @within Reprisals
 --
 function Reprisal_DestroyEffect(...)
@@ -1996,9 +2072,9 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_DestroyEffect);
 
 ---
 -- Changes the diplomacy state between two players.
--- @param _PlayerID1 [number] First player id
--- @param _PlayerID2 [number] Second player id
--- @param _Diplomacy [string] Diplomacy state name
+-- @param[type=number] _PlayerID1 First player id
+-- @param[type=number] _PlayerID2 Second player id
+-- @param[type=string] _Diplomacy Diplomacy state name
 -- @within Reprisals
 --
 function Reprisal_Diplomacy(...)
@@ -2032,7 +2108,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_Diplomacy);
 
 ---
 -- Removes the description of a quest from the quest book.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Reprisals
 --
 function Reprisal_RemoveQuest(...)
@@ -2062,7 +2138,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_RemoveQuest);
 
 ---
 -- Let the quest succeed.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Reprisals
 --
 function Reprisal_QuestSucceed(...)
@@ -2092,7 +2168,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestSucceed);
 
 ---
 -- Let the quest fail.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Reprisals
 --
 function Reprisal_QuestFail(...)
@@ -2122,7 +2198,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestFail);
 
 ---
 -- Interrupts the quest.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Reprisals
 --
 function Reprisal_QuestInterrupt(...)
@@ -2152,7 +2228,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestInterrupt);
 
 ---
 -- Activates the quest.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Reprisals
 --
 function Reprisal_QuestActivate(...)
@@ -2182,7 +2258,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestActivate);
 
 ---
 -- Restarts the quest.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Reprisals
 --
 function Reprisal_QuestRestart(...)
@@ -2212,8 +2288,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestRestart);
 
 ---
 -- Changes the state of a technology.
--- @param _Technology [string] Technology name
--- @param _State [string] Technology state name
+-- @param[type=string] _Technology Technology name
+-- @param[type=string] _State      Technology state name
 -- @within Reprisals
 --
 function Reprisal_Technology(...)
@@ -2245,7 +2321,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_Technology);
 
 ---
 -- Removes the exploration of an area.
--- @param _AreaCenter [string] Center of exploration
+-- @param[type=string] _AreaCenter Center of exploration
 -- @within Reprisals
 --
 function Reprisal_ConcealArea(...)
@@ -2275,8 +2351,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_ConcealArea);
 
 ---
 -- Moves an entity to the destination.
--- @param _Entity [string] Entity to move
--- @param _Destination [string] Moving target of entity
+-- @param[type=string] _Entity Entity to move
+-- @param[type=string] _Destination Moving target of entity
 -- @within Reprisals
 --
 function Reprisal_Move(...)
@@ -2308,7 +2384,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_Move);
 
 ---
 -- Calls a user function as reward.
--- @param _FunctionName [string] function to call
+-- @param[type=string] _FunctionName function to call
 -- @within Rewards
 --
 function Reward_MapScriptFunction(...)
@@ -2392,17 +2468,45 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Victory);
 
 ---
 -- Starts the briefing. The briefing function must return the briefing id.
--- @param _FunctionName [string] function to call
+-- @param[type=string] _FunctionName function to call
 -- @within Rewards
 --
 function Reward_Briefing(...)
     return b_Reward_Briefing:New(unpack(arg));
 end
 
-b_Reward_Briefing = copy(b_Reprisal_Briefing);
-b_Reward_Briefing.Data.Name = "Reward_Briefing";
-b_Reward_Briefing.Data.Type = Callbacks.MapScriptFunction;
-b_Reward_Briefing.GetReprisalTable = nil;
+b_Reward_Briefing = {
+    Data = {
+        Name = "Reward_Briefing",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_Briefing:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Briefing = _Parameter;
+    end
+end
+
+function b_Reward_Briefing:CustomFunction(_Quest)
+    _Quest.m_SuccessBriefing = _G[self.Data.Briefing](self, _Quest);
+end
+
+function b_Reward_Briefing:Reset(_Quest)
+    _Quest.m_SuccessBriefing = nil;
+end
+
+function b_Reward_Briefing:Debug(_Quest)
+    if type(self.Data.Briefing) ~= "string" or _G[self.Data.Briefing] == nil then
+        dbg(_Quest, self, "Briefing functtion ist invalid:" ..tostring(self.Data.Briefing));
+        return true;
+    end
+    if _Quest.m_SuccessBriefing ~= nil then 
+        dbg(_Quest, self, "There is already a success briefing assigned!");
+        return true;
+    end
+    return false;
+end
 
 function b_Reward_Briefing:CustomFunction(_Quest)
     _Quest.m_SuccessBriefing = _G[self.Data.Briefing](self, _Quest);
@@ -2422,8 +2526,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Briefing);
 
 ---
 -- Changes the owner of the entity.
--- @param _Entity [string] Entity to change
--- @param _Owner [number] Owner of entity
+-- @param[type=string] _EntityEntity to change
+-- @param[type=number] _Owner Owner of entity
 -- @within Rewards
 --
 function Reward_ChangePlayer(...)
@@ -2445,7 +2549,15 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_ChangePlayer);
 
 ---
 -- Displays a text message on the screen.
--- @param _Message [string] Message to display
+--
+-- In addition to the placeholders the game offers (@cr, @color, @ra, ...),
+-- there are 2 new placeholders for both _G values and custom values.
+--
+-- @val:NAME adds a value from _G. The value musn't be in a table!
+--
+-- @cval:NAME adds a custom value.
+--
+-- @param[type=string] _Message Message to display
 -- @within Rewards
 --
 function Reward_Message(...)
@@ -2454,11 +2566,11 @@ end
 
 b_Reward_Message = copy(b_Reprisal_Message);
 b_Reward_Message.Data.Name = "Reward_Message";
-b_Reward_Message.Data.Type = Callbacks.Message;
+b_Reward_Message.Data.Type = Callbacks.MapScriptFunction;
 b_Reward_Message.GetReprisalTable = nil;
 
 function b_Reward_Message:GetRewardTable()
-    return {self.Data.Type, self.Data.Message};
+    return {self.Data.Type, {self.CustomFunction, self}};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_Message);
@@ -2467,7 +2579,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Message);
 
 ---
 -- Replaces the entity with a XD_ScriptEntity.
--- @param _Entity [string] Entity to destroy
+-- @param[type=string] _EntityEntity to destroy
 -- @within Rewards
 --
 function Reward_DestroyEntity(...)
@@ -2489,7 +2601,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_DestroyEntity);
 
 ---
 -- Destroys the effect with the given effect name.
--- @param _Effect [string] Effect to destroy
+-- @param[type=string] _Effect Effect to destroy
 -- @within Rewards
 --
 function Reward_DestroyEffect(...)
@@ -2511,9 +2623,9 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_DestroyEffect);
 
 ---
 -- Changes the diplomacy state between two players.
--- @param _PlayerID1 [number] First player id
--- @param _PlayerID2 [number] Second player id
--- @param _Diplomacy [string] Diplomacy state name
+-- @param[type=number] _PlayerID1 First player id
+-- @param[type=number] _PlayerID2 Second player id
+-- @param[type=string] _Diplomacy Diplomacy state name
 -- @within Rewards
 --
 function Reward_Diplomacy(...)
@@ -2535,7 +2647,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Diplomacy);
 
 ---
 -- Removes the description of a quest from the quest book.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Rewards
 --
 function Reward_RemoveQuest(...)
@@ -2557,7 +2669,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_RemoveQuest);
 
 ---
 -- Let the quest succeed.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Rewards
 --
 function Reward_QuestSucceed(...)
@@ -2579,7 +2691,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestSucceed);
 
 ---
 -- Let the quest fail.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Rewards
 --
 function Reward_QuestFail(...)
@@ -2601,7 +2713,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestFail);
 
 ---
 -- Interrupts the quest.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Rewards
 --
 function Reward_QuestInterrupt(...)
@@ -2623,7 +2735,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestInterrupt);
 
 ---
 -- Activates the quest.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Rewards
 --
 function Reward_QuestActivate(...)
@@ -2645,7 +2757,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestActivate);
 
 ---
 -- Restarts the quest.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Rewards
 --
 function Reward_QuestRestart(...)
@@ -2667,8 +2779,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestRestart);
 
 ---
 -- Changes the state of a technology.
--- @param _Technology [string] Technology name
--- @param _State [string] Technology state name
+-- @param[type=string] _Technology Technology name
+-- @param[type=string] _StateTechnology state name
 -- @within Rewards
 --
 function Reward_Technology(...)
@@ -2690,7 +2802,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Technology);
 
 ---
 -- Removes the exploration of an area.
--- @param _AreaCenter [string] Center of exploration
+-- @param[type=string] _AreaCenter Center of exploration
 -- @within Rewards
 --
 function Reward_ConcealArea(...)
@@ -2712,8 +2824,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_ConcealArea);
 
 ---
 -- Moves an entity to the destination.
--- @param _Entity [string] Entity to move
--- @param _Destination [string] Moving target of entity
+-- @param[type=string] _EntityEntity to move
+-- @param[type=string] _Destination Moving target of entity
 -- @within Rewards
 --
 function Reward_Move(...)
@@ -2735,8 +2847,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Move);
 
 ---
 -- Replaces an script entity with a new entity of the chosen type.
--- @param _ScriptName [string] Script name of entity
--- @param _EntityType [string] Entity type name
+-- @param[type=string] _ScriptName Script name of entity
+-- @param[type=string] _EntityType Entity type name
 -- @within Rewards
 --
 function Reward_CreateEntity(...)
@@ -2768,9 +2880,9 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateEntity);
 
 ---
 -- Replaces an script entity with a military group of the chosen type.
--- @param _ScriptName [string] Script name of entity
--- @param _EntityType [string] Entity type name
--- @param _Soldiers [number] Amount of soldiers
+-- @param[type=string] _ScriptName Script name of entity
+-- @param[type=string] _EntityType Entity type name
+-- @param[type=number] _Soldiers Amount of soldiers
 -- @within Rewards
 --
 function Reward_CreateGroup(...)
@@ -2804,9 +2916,9 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateGroup);
 
 ---
 -- Creates an effect at the position.
--- @param _EffectName [string] Name for the effect
--- @param _Position [number] Position of effect
--- @param _EffectType [string] Effect type name
+-- @param[type=string] _EffectName  Name for the effect
+-- @param[type=table] _Position     Position of effect
+-- @param[type=string] _EffectType  Effect type name
 -- @within Rewards
 --
 function Reward_CreateEffect(...)
@@ -2840,8 +2952,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateEffect);
 
 ---
 -- Give or remove resources from the player.
--- @param _Resource [string] Name for the effect
--- @param _Amount [string] Effect type name
+-- @param[type=string] _Resource Name for the effect
+-- @param[type=number] _Amount   Menge an Rohstoffen
 -- @within Rewards
 --
 function Reward_Resource(...)
@@ -2873,8 +2985,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Resource);
 
 ---
 -- Creates an minimap marker or minimap pulsar at the position.
--- @param _MarkerType [string] Marker type name
--- @param _Position [string] Position of marker
+-- @param[type=string] _MarkerType Marker type name
+-- @param[type=string] _Position   Position of marker
 -- @within Rewards
 --
 function Reward_CreateMarker(...)
@@ -2906,7 +3018,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateMarker);
 
 ---
 -- Removes a minimap marker or pulsar at the position.
--- @param _Position [string] Position of marker
+-- @param[type=string] _Position Position of marker
 -- @within Rewards
 --
 function Reward_DestroyMarker(...)
@@ -2936,8 +3048,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_DestroyMarker);
 
 ---
 -- Explores an area around a script entity.
--- @param _AreaCenter [string] Center of exploration
--- @param _Exploration [number] Size of exploration
+-- @param[type=string] _AreaCenter Center of exploration
+-- @param[type=number] _Exploration Size of exploration
 -- @within Rewards
 --
 function Reward_RevealArea(...)
@@ -2970,8 +3082,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_RevealArea);
 ---
 -- Moves an entity to the destination and replace it with an XD_ScriptEntity
 -- once it enters the fog.
--- @param _Entity [string] Entity to move
--- @param _Target [string] Move destination
+-- @param[type=string] _Entity Entity to move
+-- @param[type=string] _Target Move destination
 -- @within Rewards
 --
 function Reward_MoveAndVanish(...)
@@ -3056,7 +3168,7 @@ end
 
 ---
 -- Calls a user function as condition.
--- @param _FunctionName [string] function to call
+-- @param[type=string] _FunctionName function to call
 -- @within Triggers
 --
 function Trigger_MapScriptFunction(...)
@@ -3098,7 +3210,7 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_MapScriptFunction);
 
 ---
 -- Does never trigger the quest.
--- @param _FunctionName [string] function to call
+-- @param[type=string] _FunctionName function to call
 -- @within Triggers
 --
 function Trigger_NeverTriggered(...)
@@ -3128,7 +3240,7 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_NeverTriggered);
 
 ---
 -- Starts the quest x seconds after the game has started.
--- @param _Time [number] Time to wait
+-- @param[type=number] _Time Time to wait
 -- @within Triggers
 --
 function Trigger_Time(...)
@@ -3159,8 +3271,8 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_Time);
 ---
 -- Starts the quest when diplomacy between quest receiver and target player
 -- reaches the state.
--- @param _PlayerID [number] Target player id
--- @param _DiplomacyState [string] Diplomacy state
+-- @param[type=number] _PlayerID Target player id
+-- @param[type=string] _DiplomacyState Diplomacy state
 -- @within Triggers
 --
 function Trigger_Diplomacy(...)
@@ -3191,8 +3303,9 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_Diplomacy);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Starts the quest when the briefing linked to the quest is finished.
--- @param _QuestName [string] Linked quest
+-- Starts the quest when any briefing linked to the quest is finished. Can
+-- either be a success or a failure briefing!
+-- @param[type=string] _QuestName Linked quest
 -- @within Triggers
 --
 function Trigger_Briefing(...)
@@ -3202,7 +3315,7 @@ end
 b_Trigger_Briefing = {
     Data = {
         Name = "Trigger_Briefing",
-        Type = Conditions.Briefing
+        Type = Conditions.MapScriptFunction
     },
 };
 
@@ -3212,6 +3325,17 @@ function b_Trigger_Briefing:AddParameter(_Index, _Parameter)
     elseif _Index == 2 then
         self.Data.Kind = _Parameter;
     end
+end
+
+function b_Trigger_Briefing:CustomFunction(_Quest)
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if Quest and Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true then
+        return true;
+    end
+    if Quest and Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true then
+        return true;
+    end
+    return false;
 end
 
 function b_Trigger_Briefing:GetTriggerTable()
@@ -3229,7 +3353,109 @@ function b_Trigger_Briefing:CustomFunction(_Quest)
     return false;
 end
 
+function b_Trigger_Briefing:Debug()
+    return false;
+end
+
 QuestSystemBehavior:RegisterBehavior(b_Trigger_Briefing);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Starts the quest when the success briefing linked to the quest is finished.
+-- A quest must succeed in order to start a success briefing!
+-- @param[type=string] _QuestName Linked quest
+-- @within Triggers
+--
+function Trigger_BriefingSuccess(...)
+    return b_Trigger_BriefingSuccess:New(unpack(arg));
+end
+
+b_Trigger_BriefingSuccess = {
+    Data = {
+        Name = "Trigger_BriefingSuccess",
+        Type = Conditions.MapScriptFunction
+    },
+};
+
+function b_Trigger_BriefingSuccess:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.BriefingQuest = _Parameter;
+    end
+end
+
+function b_Trigger_BriefingSuccess:CustomFunction(_Quest)
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if Quest then
+        if Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true then
+            return true;
+        end
+    end
+    return false
+end
+
+function b_Trigger_BriefingSuccess:GetTriggerTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Trigger_BriefingSuccess:Debug(_Quest)
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if not Quest or not Quest.m_SuccessBriefing then
+        dbg(_Quest, self, "Quest does not have a success briefing attached!");
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Trigger_BriefingSuccess);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Starts the quest when the failure briefing linked to the quest is finished.
+-- A quest must fail in order to start a failure briefing!
+-- @param[type=string] _QuestName Linked quest
+-- @within Triggers
+--
+function Trigger_BriefingFailure(...)
+    return b_Trigger_BriefingFailure:New(unpack(arg));
+end
+
+b_Trigger_BriefingFailure = {
+    Data = {
+        Name = "Trigger_BriefingFailure",
+        Type = Conditions.MapScriptFunction
+    },
+};
+
+function b_Trigger_BriefingFailure:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.BriefingQuest = _Parameter;
+    end
+end
+
+function b_Trigger_BriefingFailure:CustomFunction(_Quest)
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if Quest then
+        if Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true then
+            return true;
+        end
+    end
+    return false;
+end
+
+function b_Trigger_BriefingFailure:GetTriggerTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Trigger_BriefingFailure:Debug(_Quest)
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
+    if not Quest or not Quest.m_FailureBriefing then
+        dbg(_Quest, self, "Quest does not have a failure briefing attached!");
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Trigger_BriefingFailure);
 
 -- -------------------------------------------------------------------------- --
 
@@ -3262,7 +3488,7 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_Payday);
 ---
 -- Starts the quest after an entity has been destroyed. The quest is triggered
 -- when the entity is destroyed either by script or by another player.
--- @param _ScriptName [string] Script name of entiry
+-- @param[type=string] _ScriptName Script name of entiry
 -- @within Triggers
 --
 function Trigger_EntityDestroyed(...)
@@ -3292,7 +3518,7 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_EntityDestroyed);
 
 ---
 -- Starts the quest when a weather state is activated
--- @param _StateID [number] Weather state to activate
+-- @param[type=number] _StateID Weather state to activate
 -- @within Triggers
 --
 function Trigger_WeatherState(...)
@@ -3322,9 +3548,9 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_WeatherState);
 
 ---
 -- Starts the quest when two other quest are finished with the same result.
--- @param _QuestNameA [string] First quest
--- @param _QuestNameB [string] Second quest
--- @param _Result [number] Expected quest result
+-- @param[type=string] _QuestNameA First quest
+-- @param[type=string] _QuestNameB Second quest
+-- @param[type=string] _Result Expected quest result
 -- @within Triggers
 --
 function Trigger_QuestAndQuest(...)
@@ -3358,9 +3584,9 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestAndQuest);
 
 ---
 -- Starts the quest when one or both quest finished with the expected result.
--- @param _QuestNameA [string] First quest
--- @param _QuestNameB [string] Second quest
--- @param _Result [number] Expected quest result
+-- @param[type=string] _QuestNameA First quest
+-- @param[type=string] _QuestNameB Second quest
+-- @param[type=string] _Result Expected quest result
 -- @within Triggers
 --
 function Trigger_QuestOrQuest(...)
@@ -3395,9 +3621,9 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestOrQuest);
 ---
 -- Starts the quest when one quest but not the other finished with the expected
 -- result.
--- @param _QuestNameA [string] First quest
--- @param _QuestNameB [string] Second quest
--- @param _Result [number] Expected quest result
+-- @param[type=string] _QuestNameA First quest
+-- @param[type=string] _QuestNameB Second quest
+-- @param[type=string] _Result Expected quest result
 -- @within Triggers
 --
 function Trigger_QuestXorQuest(...)
@@ -3433,7 +3659,7 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestXorQuest);
 
 ---
 -- The player must win a quest. If the quest fails this behavior will fail.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Goals
 --
 function Goal_WinQuest(...)
@@ -3490,7 +3716,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuest);
 ---
 -- This goal succeeds if the headquarter entity of the player is destroyed.
 -- In addition, all buildings and settlers of this player get killed.
--- @param _PlayerID [number] id of player
+-- @param[type=number] _PlayerID id of player
 -- @within Goals
 --
 function Goal_DestroyPlayer(...)
@@ -3547,7 +3773,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyPlayer);
 
 ---
 -- Restarts the quest and force it to be active immedaitly.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Reprisals
 --
 function Reprisal_QuestRestartForceActive(...)
@@ -3603,8 +3829,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_QuestRestart);
 
 ---
 -- Changes the vulnerablty of a settler or building.
--- @param _ScriptName [string] Entity to affect
--- @param _Flag [boolean] State of vulnerablty
+-- @param[type=string] _ScriptName Entity to affect
+-- @param[type=boolean] _Flag  State of vulnerablty
 -- @within Reprisals
 --
 function Reprisal_SetVulnerablity(...)
@@ -3660,8 +3886,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_SetVulnerablity);
 
 ---
 -- Changes the vulnerablty of a settler or building.
--- @param _ScriptName [string] Entity to affect
--- @param _Flag [boolean] State of vulnerablty
+-- @param[type=string] _ScriptName Entity to affect
+-- @param[type=boolean] _Flag  State of vulnerablty
 -- @within Rewards
 --
 function Reward_SetVulnerablity(...)
@@ -3683,7 +3909,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_SetVulnerablity);
 
 ---
 -- Restarts the quest and force it to be active immedaitly.
--- @param _QuestName [string] Quest name
+-- @param[type=string] _QuestName Quest name
 -- @within Rewards
 --
 function Reward_QuestRestartForceActive(...)
@@ -3706,15 +3932,15 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestRestartForceActive);
 ---
 -- Creates an merchant with up to 4 offers. Each offer purchases a fixed
 -- amount of a resource for 1000 units of gold. Default inflation will be used.
--- @param _Merchant [string] Merchant name
--- @param _Offer1 [string] Resourcetype on sale
--- @param _Amount1 [number] Quantity to post
--- @param _Offer2 [string] Resourcetype on sale
--- @param _Amount2 [number] Quantity to post
--- @param _Offer3 [string] Resourcetype on sale
--- @param _Amount3 [number] Quantity to post
--- @param _Offer4 [string] Resourcetype on sale
--- @param _Amount4 [number] Quantity to post
+-- @param[type=string] _Merchant Merchant name
+-- @param[type=string] _Offer1 Resourcetype on sale
+-- @param[type=number] _Amount1 Quantity to post
+-- @param[type=string] _Offer2 Resourcetype on sale
+-- @param[type=number] _Amount2 Quantity to post
+-- @param[type=string] _Offer3 Resourcetype on sale
+-- @param[type=number] _Amount3 Quantity to post
+-- @param[type=string] _Offer4 Resourcetype on sale
+-- @param[type=number] _Amount4 Quantity to post
 -- @within Rewards
 --
 function Reward_OpenResourceSale(...)
@@ -3803,15 +4029,15 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_OpenResourceSale);
 ---
 -- Creates an merchant with up to 4 offers. Each offer sells 1000 units of a
 -- resource for a fixed amount of gold. Default inflation will be used.
--- @param _Merchant [string] Merchant name
--- @param _Offer1 [string] Resourcetype on sale
--- @param _Amount1 [number] Quantity to post
--- @param _Offer2 [string] Resourcetype on sale
--- @param _Amount2 [number] Quantity to post
--- @param _Offer3 [string] Resourcetype on sale
--- @param _Amount3 [number] Quantity to post
--- @param _Offer4 [string] Resourcetype on sale
--- @param _Amount4 [number] Quantity to post
+-- @param[type=string] _Merchant Merchant name
+-- @param[type=string] _Offer1 Resourcetype on sale
+-- @param[type=number] _Amount1 Quantity to post
+-- @param[type=string] _Offer2 Resourcetype on sale
+-- @param[type=number] _Amount2 Quantity to post
+-- @param[type=string] _Offer3 Resourcetype on sale
+-- @param[type=number] _Amount3 Quantity to post
+-- @param[type=string] _Offer4 Resourcetype on sale
+-- @param[type=number] _Amount4 Quantity to post
 -- @within Rewards
 --
 function Reward_OpenResourcePurchase(...)
@@ -3900,19 +4126,19 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_OpenResourcePurchase);
 ---
 -- Creates an mercenary merchant with up to 4 offers.
 -- Default inflation will be used.
--- @param _Merchant [string] Merchant name
--- @param _Offer1 [string] Resourcetype on sale
--- @param _Cost1 [number] Gold costs
--- @param _Amount1 [number] Quantity to post
--- @param _Offer2 [string] Resourcetype on sale
--- @param _Cost2 [number] Gold costs
--- @param _Amount2 [number] Quantity to post
--- @param _Offer3 [string] Resourcetype on sale
--- @param _Cost3 [number] Gold costs
--- @param _Amount3 [number] Quantity to post
--- @param _Offer4 [string] Resourcetype on sale
--- @param _Cost4 [number] Gold costs
--- @param _Amount4 [number] Quantity to post
+-- @param[type=string] _Merchant Merchant name
+-- @param[type=string] _Offer1 Resourcetype on sale
+-- @param[type=number] _Cost1 Gold costs
+-- @param[type=number] _Amount1 Quantity to post
+-- @param[type=string] _Offer2 Resourcetype on sale
+-- @param[type=number] _Cost2 Gold costs
+-- @param[type=number] _Amount2 Quantity to post
+-- @param[type=string] _Offer3 Resourcetype on sale
+-- @param[type=number] _Cost3 Gold costs
+-- @param[type=number] _Amount3 Quantity to post
+-- @param[type=string] _Offer4 Resourcetype on sale
+-- @param[type=number] _Cost4 Gold costs
+-- @param[type=number] _Amount4 Quantity to post
 -- @within Rewards
 --
 function Reward_OpenMercenaryMerchant(...)
@@ -3997,7 +4223,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_OpenMercenaryMerchant);
 
 ---
 -- Deactivates any kind of merchant.
--- @param _Merchant [string] Merchant name
+-- @param[type=string] _Merchant Merchant name
 -- @within Rewards
 --
 function Reward_CloseMerchant(...)
@@ -4037,8 +4263,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CloseMerchant);
 -- Initalising the AI is nessessary for usung the quest system behavior army
 -- controller.
 --
--- @param _PlayerID [number] Id of player
--- @param _TechLevel [number] Tech level
+-- @param[type=number] _PlayerID Id of player
+-- @param[type=number] _TechLevel  Tech level
 -- @within Rewards
 --
 function Reward_AI_CreateAIPlayer(...)
@@ -4086,12 +4312,16 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateAIPlayer);
 -- that will be attacked by the army. Also you can use entities named with
 -- PlayerX_PatrolPointY to define positions were the army will patrol.
 --
--- @param _ArmyName [string] Army identifier
--- @param _PlayerID [number] Id of player
--- @param _Strength [number] Strength of army
--- @param _Position [string] Army base position
--- @param _RodeLength [number] Average action range
--- @param _TroopType [number] Army troop type
+-- X shall be replaced with the player ID.
+-- 
+-- Y shall be replaced with the index of the waypoint of players armies.
+--
+-- @param[type=string] _ArmyName Army identifier
+-- @param[type=number] _PlayerID Id of player
+-- @param[type=number] _Strength Strength of army
+-- @param[type=string] _Position Army base position
+-- @param[type=number] _RodeLength Average action range
+-- @param[type=string] _TroopType Army troop type
 -- @within Rewards
 --
 function Reward_AI_CreateArmy(...)
@@ -4165,19 +4395,23 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateArmy);
 -- that will be attacked by the army. Also you can use entities named with
 -- PlayerX_PatrolPointY to define positions were the army will patrol.
 --
--- @param _ArmyName [string] Army identifier
--- @param _PlayerID [number] Id of player
--- @param _LifeThread [string] Name of generator
--- @param _Strength [number] Strength of army
--- @param _Position [string] Army base position
--- @param _RodeLength [number] Average action range
--- @param _RespawnTime [number] Time till reinforcements spawned
--- @param _TroopType1 [string] Troop type 1
--- @param _TroopType2 [string] Troop type 2
--- @param _TroopType3 [string] Troop type 3
--- @param _TroopType4 [string] Troop type 4
--- @param _TroopType5 [string] Troop type 5
--- @param _TroopType6 [string] Troop type 6
+-- X shall be replaced with the player ID.
+-- 
+-- Y shall be replaced with the index of the waypoint of players armies.
+--
+-- @param[type=string] _ArmyName Army identifier
+-- @param[type=number] _PlayerID Id of player
+-- @param[type=string] _LifeThread Name of generator
+-- @param[type=number] _Strength Strength of army
+-- @param[type=string] _Position Army base position
+-- @param[type=number] _RodeLength Average action range
+-- @param[type=number] _RespawnTime Time till reinforcements spawned
+-- @param[type=string] _TroopType1 Troop type 1
+-- @param[type=string] _TroopType2 Troop type 2
+-- @param[type=string] _TroopType3 Troop type 3
+-- @param[type=string] _TroopType4 Troop type 4
+-- @param[type=string] _TroopType5 Troop type 5
+-- @param[type=string] _TroopType6 Troop type 6
 -- @within Rewards
 --
 function Reward_AI_CreateSpawnArmy(...)
@@ -4289,9 +4523,9 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateSpawnArmy);
 ---
 -- Disables or enables the patrol behavior for armies.
 --
--- @param _PlayerID [number] ID of player
--- @param _ArmyName [string] Army identifier
--- @param _Flag [boolean] Patrol disabled
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=string] _ArmyName Army identifier
+-- @param[type=boolean] _Flag  Patrol disabled
 -- @within Rewards
 --
 function Reward_AI_EnableArmyPatrol(...)
@@ -4344,9 +4578,9 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_EnableArmyPatrol);
 ---
 -- Disables or enables the attack behavior for armies.
 --
--- @param _PlayerID [number] ID of player
--- @param _ArmyName [string] Army identifier
--- @param _Flag [boolean] Attack disabled
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=string] _ArmyName Army identifier
+-- @param[type=boolean] _Flag  Attack disabled
 -- @within Rewards
 --
 function Reward_AI_EnableArmyAttack(...)
@@ -4398,8 +4632,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_EnableArmyAttack);
 
 ---
 -- Changes the color of a player.
--- @param _PlayerID [number] ID of player
--- @param _Color [string|number] Color name or Color index
+-- @param[type=number] _PlayerID ID of player
+-- @param              _Color Color name or Color index
 -- @within Rewards
 --
 function Reward_SetPlayerColor(...)
@@ -4451,10 +4685,10 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_SetPlayerColor);
 
 ---
 -- Activates the debug mode.
--- @param _UseDebugQuests [boolean] Activates the runtime debug für quests
--- @param _UseCheats [boolean] Activates the cheats
--- @param _UseShell [boolean] Activates the shell
--- @param _UseQuestTrace [boolean] Activates the quest trace
+-- @param[type=boolean] _UseDebugQuests Activates the runtime debug für quests
+-- @param[type=boolean] _UseCheats Activates the cheats
+-- @param[type=boolean] _UseShell Activates the shell
+-- @param[type=boolean] _UseQuestTrace Activates the quest trace
 -- @within Rewards
 --
 function Reward_DEBUG(...)
@@ -4508,8 +4742,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_DEBUG);
 
 ---
 -- Starts the quest when another quest is successfully finished.
--- @param _QuestName [string] First quest
--- @param _Waittime [number] Time to wait
+-- @param[type=string] _QuestName First quest
+-- @param[type=number] _Waittime Time to wait
 -- @within Triggers
 --
 function Trigger_QuestSuccess(...)
@@ -4563,8 +4797,8 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestSuccess);
 
 ---
 -- Starts the quest when another quest has failed.
--- @param _QuestName [string] First quest
--- @param _Waittime [number] Time to wait
+-- @param[type=string] _QuestName First quest
+-- @param[type=number] _Waittime Time to wait
 -- @within Triggers
 --
 function Trigger_QuestFailure(...)
@@ -4618,8 +4852,8 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestFailure);
 
 ---
 -- Starts the quest when another quest is over.
--- @param _QuestName [string] First quest
--- @param _Waittime [number] Time to wait
+-- @param[type=string] _QuestName First quest
+-- @param[type=number] _Waittime Time to wait
 -- @within Triggers
 --
 function Trigger_QuestOver(...)
@@ -4673,8 +4907,8 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestOver);
 
 ---
 -- Starts the quest when another quest is interrupted.
--- @param _QuestName [string] First quest
--- @param _Waittime [number] Time to wait
+-- @param[type=string] _QuestName First quest
+-- @param[type=number] _Waittime Time to wait
 -- @within Triggers
 --
 function Trigger_QuestInterrupted(...)
@@ -4728,8 +4962,8 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestInterrupted);
 
 ---
 -- Starts the quest when another quest is active.
--- @param _QuestName [string] First quest
--- @param _Waittime [number] Time to wait
+-- @param[type=string] _QuestName First quest
+-- @param[type=number] _Waittime Time to wait
 -- @within Triggers
 --
 function Trigger_QuestActive(...)
@@ -4783,8 +5017,8 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestActive);
 
 ---
 -- Starts the quest when another quest has not been triggered.
--- @param _QuestName [string] First quest
--- @param _Waittime [number] Time to wait
+-- @param[type=string] _QuestName First quest
+-- @param[type=number] _Waittime Time to wait
 -- @within Triggers
 --
 function Trigger_QuestNotTriggered(...)
@@ -4841,9 +5075,9 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestNotTriggered);
 ---
 -- Compares a numeric custom value with number or another custom value.
 -- If the values match the condition then the goal is reached.
--- @param _Name [string] Variable identifier
--- @param _Comparison [string] Comparsion operator
--- @param _Value [number] Integer value
+-- @param[type=string] _Name Variable identifier
+-- @param[type=string] _Comparison Comparsion operator
+-- @param[type=number] _Value Integer value
 -- @within Goals
 --
 function Goal_CustomVariable(...)
@@ -4872,7 +5106,7 @@ function b_Goal_CustomVariable:GetGoalTable()
 end
 
 function b_Goal_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Operator];
+    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
         ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
@@ -4909,9 +5143,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_CustomVariable);
 ---
 -- Alters a numeric custom value by the given value or value of the given
 -- custom variable using the mathematical operation.
--- @param _Name [string] Variable identifier
--- @param _Operator [string] Operator
--- @param _Value [number] Integer value
+-- @param[type=string] _Name Variable identifier
+-- @param[type=string] _Operator Operator
+-- @param[type=number] _Value Integer value
 -- @within Triggers
 --
 function Reprisal_CustomVariable(...)
@@ -4940,7 +5174,7 @@ function b_Reprisal_CustomVariable:GetReprisalTable()
 end
 
 function b_Reprisal_CustomVariable:CustomFunction(_Quest)
-    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Operator];
+    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
     local NewValue = self.Data.Value;
     if type(NewValue) == "string" then
         NewValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
@@ -4962,7 +5196,7 @@ function b_Reprisal_CustomVariable:CustomFunction(_Quest)
         elseif self.Data.Operator == "^" then
             OldValue = OldValue ^ NewValue;
         end
-        QuestSystemBehavior.Data.CustomVariables[self.Data.Operator] = OldValue;
+        QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName] = OldValue;
     end
 end
 
@@ -4980,34 +5214,34 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_CustomVariable);
 ---
 -- Alters a numeric custom value by the given value or value of the given
 -- custom variable using the mathematical operation.
--- @param _Name [string] Variable identifier
--- @param _Operator [string] Operator
--- @param _Value [number] Integer value
+-- @param[type=string] _Name Variable identifier
+-- @param[type=string] _Operator Operator
+-- @param[type=number] _Value Integer value
 -- @within Triggers
 --
-function Reprisal_CustomVariable(...)
-    return b_Reprisal_CustomVariable:New(unpack(arg));
+function Reward_CustomVariable(...)
+    return b_Reward_CustomVariable:New(unpack(arg));
 end
 
-b_Reprisal_CustomVariable = copy(b_Reprisal_CustomVariable);
-b_Reprisal_CustomVariable.Data.Name = "Reprisal_CustomVariable";
-b_Reprisal_CustomVariable.Data.Type = Callbacks.MapScriptFunction;
-b_Reprisal_CustomVariable.GetReprisalTable = nil;
+b_Reward_CustomVariable = copy(b_Reprisal_CustomVariable);
+b_Reward_CustomVariable.Data.Name = "Reward_CustomVariable";
+b_Reward_CustomVariable.Data.Type = Callbacks.MapScriptFunction;
+b_Reward_CustomVariable.GetReprisalTable = nil;
 
-function b_Reprisal_CustomVariable:GetRewardTable()
+function b_Reward_CustomVariable:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
 
-QuestSystemBehavior:RegisterBehavior(b_Reprisal_CustomVariable);
+QuestSystemBehavior:RegisterBehavior(b_Reward_CustomVariable);
 
 -- -------------------------------------------------------------------------- --
 
 ---
 -- Compares a numeric custom value with number or another custom value.
 -- If the values match the condition then the trigger returns true.
--- @param _Name [string] Variable identifier
--- @param _Comparison [string] Comparsion operator
--- @param _Value [number] Integer value
+-- @param[type=string] _Name Variable identifier
+-- @param[type=string] _Comparison Comparsion operator
+-- @param[type=number] _Value Integer value
 -- @within Triggers
 --
 function Trigger_CustomVariable(...)
@@ -5036,7 +5270,7 @@ function b_Trigger_CustomVariable:GetTriggerTable()
 end
 
 function b_Trigger_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Operator];
+    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
         ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];

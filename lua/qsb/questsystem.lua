@@ -5,9 +5,7 @@
 -- ########################################################################## --
 
 ---
--- This is an approach to create a RoaE like quest system. Although we can not
--- visualize a failed quest in the quest log, the pure logic of the system is
--- portable to Settlers 5. This little system implements the RoaE system.
+-- This is an approach to create a RoaE like quest system.
 --
 -- Quests can be either successfully finished or failed. If a quest is finished
 -- successfully the rewards will be executed. If the quest fails the reprisals
@@ -20,12 +18,15 @@
 -- <li>Condition: Triggering the quest if conditions are true</li>
 -- <li>Objective: What the player has to do to win (or to fail)</li>
 -- <li>Reward: Rewards for successfully finishing a quest.</li>
--- <li>Reprisal: Pubishments after the quest faild.</li>
+-- <li>Reprisal: Pubishments after the quest failed.</li>
 -- </ul>
 -- But reprisals and rewards are both callbacks!
 --
 -- A quest is generated like this:<br>
 -- <pre>local QuestID = new(QuestTemplate, "SomeName", SomeObjectives, SomeConditions, 1, 0, SomeRewards, SomeReprisals)</pre>
+--
+-- Some of the behavior might be redefined in the qsb.questbehavior abstraction
+-- layer.
 --
 -- <b>Required modules:</b>
 -- <ul>
@@ -37,6 +38,7 @@
 
 QuestSystem = {
     QuestLoop = "QuestSystem_QuestControllerJob",
+    QuestDescriptions = {},
     Quests = {},
     QuestMarkers = {},
     MinimapMarkers = {},
@@ -272,6 +274,41 @@ function QuestSystem:InitalizeQuestEventTrigger()
     end
 end
 
+---
+-- Returns the next free slot in the quest book.
+-- @return[type=number] Journal ID
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:GetNextFreeJornalID()
+    for i= 1, 8, 1 do
+        if self.QuestDescriptions[i] == nil then
+            return i;
+        end
+    end
+end
+
+---
+-- Registers a quest from the quest system for the quest book slot.
+-- @return[type=number] Jornal ID
+-- @return[type=number] Quest ID
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:RegisterQuestAtJornalID(_JornalID, _QuestID)
+    self.QuestDescriptions[_JornalID] = _QuestID;
+end
+
+---
+-- Removes the registered entry for the quest book slot.
+-- @return[type=number] Jornal ID
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:InvalidateQuestAtJornalID(_JornalID)
+    self.QuestDescriptions[_JornalID] = nil;
+end
+
 -- -------------------------------------------------------------------------- --
 
 QuestTemplate = {};
@@ -279,14 +316,14 @@ QuestTemplate = {};
 ---
 -- Creates a quest.
 --
--- @param _QuestName [string] Quest name
--- @param _Receiver [number] Receiving player
--- @param _Time [number] Completion time
--- @param _Objectives [table] List of objectives
--- @param _Conditions [table] List of conditions
--- @param _Rewards [table] List of rewards
--- @param _Reprisals [table] List of reprisals
--- @param _Description [table] Quest description
+-- @param[type=string] _QuestName   Quest name
+-- @param[type=number] _Receiver    Receiving player
+-- @param[type=number] _Time        Completion time
+-- @param[type=table]  _Objectives  List of objectives
+-- @param[type=table]  _Conditions  List of conditions
+-- @param[type=table]  _Rewards     List of rewards
+-- @param[type=table]  _Reprisals   List of reprisals
+-- @param[type=table]  _Description Quest description
 -- @within Constructor
 --
 function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Conditions, _Rewards, _Reprisals, _Description)
@@ -320,7 +357,7 @@ class(QuestTemplate);
 
 ---
 -- Displays a debug message if the verbose flag is set.
--- @param _Text [string] Displayed message
+-- @param[type=string] _Text Displayed message
 -- @within QuestTemplate
 -- @local
 --
@@ -335,7 +372,7 @@ end
 ---
 -- Checks, if the objective of the quest is fullfilled, failed or undecided.
 --
--- @param _Index [number] Index of behavior
+-- @param[type=number] _Index Index of behavior
 -- @within QuestTemplate
 -- @local
 --
@@ -505,7 +542,7 @@ end
 ---
 -- Checks the trigger condition for the quest.
 --
--- @param _Index [number] Index of behavior
+-- @param[type=number] _Index Index of behavior
 -- @within QuestTemplate
 -- @local
 --
@@ -641,7 +678,7 @@ end
 ---
 -- Calls the callback behavior for the quest.
 --
--- @param _Behavior [table] Table of behavior
+-- @param[type=table] _Behavior Table of behavior
 -- @within QuestTemplate
 -- @local
 --
@@ -712,7 +749,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
     elseif _Behavior[1] == Callbacks.RemoveQuest then
         local QuestID = GetQuestID(_Behavior[2]);
         if QuestID > 0 then
-            Logic.RemoveQuest(self.m_Receiver, QuestID);
+            self:RemoveQuest();
         end
 
     elseif _Behavior[1] == Callbacks.QuestSucceed then
@@ -812,11 +849,10 @@ function QuestTemplate:Trigger()
 
     -- Add quest
     if self.m_Description then
-        local Desc = self.m_Description;
-        if not Desc.Position then
-            Logic.AddQuest(self.m_Receiver, self.m_QuestID, Desc.Type, Desc.Title, Desc.Text, Desc.Info or 1);
+        if not self.m_Description.Position then
+            self:CreateQuest();
         else
-            Logic.AddQuestEx(self.m_Receiver, self.m_QuestID, Desc.Type, Desc.Title, Desc.Text, Desc.Position.X, Desc.Position.Y, Desc.Info or 1);
+            self:CreateQuestEx();
         end
     end
 
@@ -836,17 +872,16 @@ end
 -- @local
 --
 function QuestTemplate:Success()
-    -- Remove quest
-    if self.m_Description then
-        Logic.SetQuestType(self.m_Receiver, self.m_QuestID, self.m_Description.Type +1, self.m_Description.Info or 1);
-    end
-
     self:verbose("DEBUG: Succeed quest '" ..self.m_QuestName.. "'");
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Success;
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
+
+    if self.m_Description then
+        self:QuestSetSuccessfull();
+    end
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -859,17 +894,16 @@ end
 -- @local
 --
 function QuestTemplate:Fail()
-    -- Remove quest
-    if self.m_Description then
-        Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
-    end
-
     self:verbose("DEBUG: Fail quest '" ..self.m_QuestName.. "'");
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Failure;
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
+
+    if self.m_Description then
+        self:QuestSetFailed();
+    end
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -904,7 +938,7 @@ end
 function QuestTemplate:Reset()
     -- Remove quest
     if self.m_Description then
-        Logic.RemoveQuest(self.m_Receiver, self.m_QuestID);
+        self:RemoveQuest();
     end
 
     -- Reset quest briefing
@@ -961,6 +995,139 @@ end
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Creates a normal quest in the quest book.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:CreateQuest()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if self.m_Description then
+        if gvExtensionNumber > 2 then
+            mcbQuestGUI.simpleQuest.logicAddQuest(
+                self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
+                self.m_Description.Text, self.m_Description.Info or 1
+            );
+        else
+            local QuestID = QuestSystem:GetNextFreeJornalID();
+            if QuestID == nil then
+                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                return;
+            end
+            Logic.AddQuest(
+                self.m_Receiver, QuestID, self.m_Description.Type, self.m_Description.Title, 
+                self.m_Description.Text, self.m_Description.Info or 1
+            );
+            QuestSystem:RegisterQuestAtJornalID(QuestID, self.m_QuestID);
+        end
+    end
+end
+
+---
+-- Creates a quest with an attached position in the quest book.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:CreateQuestEx()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if self.m_Description and self.m_Description.Position then
+        if gvExtensionNumber > 2 then
+            mcbQuestGUI.simpleQuest.logicAddQuestEx(
+                self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
+                self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
+                self.m_Description.Info or 1
+            );
+        else
+            local QuestID = QuestSystem:GetNextFreeJornalID();
+            if QuestID == nil then
+                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                return;
+            end
+            Logic.AddQuestEx(
+                self.m_Receiver, QuestID, self.m_Description.Type, self.m_Description.Title, 
+                self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
+                self.m_Description.Info or 1
+            );
+            QuestSystem:RegisterQuestAtJornalID(QuestID, self.m_QuestID);
+        end
+    end
+end
+
+---
+-- Marks the quest as failed in the quest book. In vanilla game the quest
+-- is just removed.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:QuestSetFailed()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if gvExtensionNumber > 2 then
+        mcbQuestGUI.simpleQuest.logicSetQuestType(
+            self.m_Receiver, self.m_QuestID, self.m_Description.Type +2, self.m_Description.Info or 1
+        );
+    else
+        for k, v in pairs(QuestSystem.QuestDescriptions) do
+            if v == self.m_QuestID then
+                Logic.RemoveQuest(self.m_Receiver, k);
+                QuestSystem:InvalidateQuestAtJornalID(k);
+                break;
+            end
+        end
+    end
+end
+
+---
+-- Marks the quest as successfull in the quest book.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:QuestSetSuccessfull()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if gvExtensionNumber > 2 then
+        local Type = self.m_Description.Type +1;
+        mcbQuestGUI.simpleQuest.logicSetQuestType(
+            self.m_Receiver, self.m_QuestID, self.m_Description.Type +1, self.m_Description.Info or 1
+        );
+    else
+        for k, v in pairs(QuestSystem.QuestDescriptions) do
+            if v == self.m_QuestID then
+                Logic.RemoveQuest(self.m_Receiver, k);
+                QuestSystem:InvalidateQuestAtJornalID(k);
+                break;
+            end
+        end
+    end
+end
+
+---
+-- Removes a Quest from the quest book.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:RemoveQuest()
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if self.m_Description then
+        if gvExtensionNumber > 2 then
+            mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, self.m_QuestID);
+        else
+            for k, v in pairs(QuestSystem.QuestDescriptions) do
+                if v == self.m_QuestID then
+                    Logic.RemoveQuest(self.m_Receiver, i);
+                    QuestSystem:InvalidateQuestAtJornalID(k);
+                    break;
+                end
+            end
+        end
+    end
+end
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- Displays all quest markers of the behaviors.
 -- @within QuestTemplate
 -- @local
@@ -1004,10 +1171,10 @@ end
 ---
 -- Handels the event when a player is destroying an entity.
 --
--- @param _AttackingPlayer [number] Player id of attacker
--- @param _AttackingID [number] Entity id of attacker
--- @param _DefendingPlayer [number] Player id of defender
--- @param _DefendingID [number] Entity of defender
+-- @param[type=number] _AttackingPlayer Player id of attacker
+-- @param[type=number] _AttackingID     Entity id of attacker
+-- @param[type=number] _DefendingPlayer Player id of defender
+-- @param[type=number] _DefendingID     Entity of defender
 -- @within QuestTemplate
 -- @local
 --
@@ -1041,7 +1208,7 @@ end
 ---
 -- Handels the event when a player has paid a tribute.
 --
--- @param _TributeID [number] ID of Tribute
+-- @param[type=number] _TributeID ID of Tribute
 -- @within QuestTemplate
 -- @local
 --
@@ -1063,7 +1230,7 @@ end
 ---
 -- Handles the payday event for all quests.
 --
--- @param _PlayerID [number] ID of player
+-- @param[type=number] _PlayerID ID of player
 -- @within QuestTemplate
 -- @local
 --
@@ -1085,8 +1252,8 @@ end
 ---
 -- Checks if a value is inside a table.
 --
--- @param _Value [mixed] Value to find
--- @param _Table [table] Table to search
+-- @param             _Value Value to find
+-- @param[type=table] _Table Table to search
 -- @return [boolean] Value found
 --
 function FindValue(_Value, _Table)
@@ -1102,9 +1269,9 @@ IstDrin = FindValue;
 ---
 -- Checks the area for entities of an enemy player.
 --
--- @param _player [number] Player ID
--- @param _position [table] Area center
--- @param _range [number] Area size
+-- @param[type=number] _player   Player ID
+-- @param[type=table]  _position Area center
+-- @param[type=number] _range    Area size
 -- @return [boolean] Enemies near
 --
 function AreEnemiesInArea( _player, _position, _range)
@@ -1114,9 +1281,9 @@ end
 ---
 -- Checks the area for entities of an allied player.
 --
--- @param _player [number] Player ID
--- @param _position [table] Area center
--- @param _range [number] Area size
+-- @param[type=number] _player   Player ID
+-- @param[type=table]  _position Area center
+-- @param[type=number] _range    Area size
 -- @return [boolean] Allies near
 --
 function AreAlliesInArea( _player, _position, _range)
@@ -1127,10 +1294,10 @@ end
 -- Checks the area for entities of other parties with a diplomatic state to
 -- the player.
 --
--- @param _player [number] Player ID
--- @param _position [table] Area center
--- @param _range [number] Area size
--- @param _state [number] Diplomatic state
+-- @param[type=number] _player   Player ID
+-- @param[type=table]  _position Area center
+-- @param[type=number] _range    Area size
+-- @param[type=number] _state    Diplomatic state
 -- @return [boolean] Entities near
 --
 function AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state )
@@ -1148,8 +1315,8 @@ end
 -- Returns the quest ID of the quest with the name.
 -- If the quest is not found, 0 is returned.
 --
--- @param _QuestName [string] Quest name
--- @return [number] Quest ID
+-- @param[type=string] _QuestName Quest name
+-- @return[type=number] Quest ID
 -- @within Helper
 --
 function GetQuestID(_QuestName)
@@ -1163,8 +1330,8 @@ end
 
 ---
 -- Returns true, if the quest is a valid (existing) quest.
--- @param _QuestName [string] Name of quest
--- @return [boolean] Valid quest
+-- @param[type=string] _QuestName Name of quest
+-- @return[type=boolean] Valid quest
 -- @within Helper
 --
 function IsValidQuest(_QuestName)
@@ -1174,9 +1341,9 @@ end
 ---
 -- Returns the distance between two positions or entities.
 --
--- @param _pos1 [string|number|table] Position 1
--- @param _pos2 [string|number|table] Position 2
--- @return [number] Distance between positions
+-- @param _pos1 Position 1 (string, number oder table)
+-- @param _pos2 Position 2 (string, number oder table)
+-- @return[type=number] Distance between positions
 -- @within Helper
 --
 function GetDistance(_pos1, _pos2)
@@ -1197,8 +1364,8 @@ end
 -- Checks if an army or entity is dead. If an army has not been created yet
 -- then it will not falsely assumed to be dead.
 --
--- @param _input [table|string|number] Army or entity
--- @return [boolean] Army or entity is dead
+-- @param _input Army or entity (string, number oder table)
+-- @return[type=boolean] Army or entity is dead
 -- @within Helper
 --
 function IsDeadWrapper(_input)
@@ -1214,10 +1381,10 @@ IsDead = IsDeadWrapper;
 ---
 -- Checks if an army is near the position.
 --
--- @param _Army [table] Army to check
--- @param _Target [string|number|table] Target position
--- @param _Distance [number] Area size
--- @return [boolean] Army is near
+-- @param[type=table]  _Army     Army to check
+-- @param              _Target   Target position
+-- @param[type=number] _Distance Area size
+-- @return[type=boolean] Army is near
 --
 function IsArmyNear(_Army, _Target, _Distance)
     local LeaderID = 0;

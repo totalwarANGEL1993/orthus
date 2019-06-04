@@ -8,7 +8,7 @@
 -- This module adds some briefing improvements. Some are just for cosmetics,
 -- some are fixing pittful bugs, some offer helpful new features. This is the
 -- version for the vanilla game.
--- For Extra3 we will using mcbBrief by mcb. This will offer at least equal
+-- For Extra 3 we will using mcbBrief by mcb. This will offer at least equal
 -- features or maybe even more advanced.
 --
 -- @set sort=true
@@ -43,7 +43,7 @@ end
 
 ---
 -- Returns the number of the extension.
--- @return [number] Extension number
+-- @return[type=number] Extension number
 -- @within Information
 -- @local
 --
@@ -56,7 +56,7 @@ end
 -- @within Information
 -- @local
 --
-function Information:CreateAddPageFunctions()
+function Information:CreateAddPageFunctions()   
     ---
     -- Creates the local briefing functions for adding pages.
     --
@@ -69,9 +69,9 @@ function Information:CreateAddPageFunctions()
     -- can be used in talkative missions.</li>
     -- </ul>
     --
-    -- @param _briefing [table] Briefing
-    -- @return [function] AP function
-    -- @return [function] ASP function
+    -- @param[type=table] _briefing Briefing
+    -- @return[type=function] AP function
+    -- @return[type=function] ASP function
     --
     function AddPages(_briefing)
         local AP = function(_page)
@@ -125,9 +125,9 @@ function Information:CreateAddPageFunctions()
                         briefingState.timer = (_page.duration * 10) +1;
 
                         -- A flight can only be started from page 2 and forward because it needs the position of
-                        -- the last page as starting point for the camera movement. Flights areen't a replacement
+                        -- the last page as starting point for the camera movement. Flights aren't a replacement
                         -- for cutscenes so keep your animations short!
-                        -- Keep in mind that there is no access to the z achsis with camera animations!
+                        -- Keep in mind that there is no z achsis with camera animations!
 
                         if briefingState.page > 0 then
                             local LastPage = briefingBook[1][briefingState.page];
@@ -161,25 +161,46 @@ function Information:CreateAddPageFunctions()
             _page.id = table.getn(_briefing);
             return _page;
         end
-        local ASP = function(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
-            return AP(CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog));
+        local ASP = function(...)
+            if (table.getn(arg) == 7) then
+                table.insert(arg, 1, -1);
+            end
+            return AP(CreateShortPage(unpack(arg)));
         end
         return AP, ASP;
     end
 
-    function CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
+    function CreateShortPage(...)
         local page = {
-            title = _title,
-            text = _text,
-            position = _entity,
-            dialogCamera = _dialog == true,
-            action = _action,
-            lookAt = true;
-            disableFog = _disableFog,
-            showSky = _showSky,
+            name         = arg[1],
+            title        = arg[3],
+            text         = arg[4],
+            position     = arg[2],
+            dialogCamera = arg[5] == true,
+            action       = arg[6],
+            lookAt       = true;
+            disableFog   = arg[8],
+            showSky      = arg[7],
         };
         return page;
     end
+end
+
+---
+-- Returns the page id to the page name. If a name is not found a absurd high
+-- page ID is providet to prevent lua errors.
+-- @param[type=string] _Name Name of page
+-- @return[type=number] Page ID
+--
+function Information:GetPageID(_Name)
+    if IsBriefingActive() then
+        for i=1, table.getn(briefingBook[1]), 1 do
+            if briefingBook[1][i].name == _Name then
+                return i;
+            end
+        end
+    end
+    return 999999;
 end
 
 ---
@@ -280,20 +301,34 @@ function Information:OverrideMultipleChoice()
 		assert(briefingBook[1][briefingState.page].mc ~= nil);
 		briefingBook[1][briefingState.page].mc.selectedButton = _index;
 
-		if _index == 1 then
-			if briefingBook[1][briefingState.page].mc.firstSelected ~= nil then
-				briefingState.page = briefingBook[1][briefingState.page].mc.firstSelected - 1;
+        if _index == 1 then
+            -- Get page ID or name
+            local PageID;
+            if briefingBook[1][briefingState.page].mc.firstSelected ~= nil then
+                PageID = briefingBook[1][briefingState.page].mc.firstSelected;
 			else
 				assert(briefingBook[1][briefingState.page].mc.firstSelectedCallback);
-				briefingState.page = briefingBook[1][briefingState.page].mc.firstSelectedCallback(briefingBook[1][briefingState.page])-1;
-			end
-		else
+                PageID = briefingBook[1][briefingState.page].mc.firstSelectedCallback(briefingBook[1][briefingState.page]);
+            end
+            -- Get id if name
+            if type(PageID) == "string" then
+                PageID = Information:GetPageID(PageID);
+            end
+            briefingState.page = PageID -1;
+        else
+            -- Get page ID or name
+            local PageID;
 			if briefingBook[1][briefingState.page].mc.secondSelected ~= nil then
-				briefingState.page = briefingBook[1][briefingState.page].mc.secondSelected - 1;
+                PageID = briefingBook[1][briefingState.page].mc.secondSelected;
 			else
 				assert(briefingBook[1][briefingState.page].mc.secondSelectedCallback);
-				briefingState.page = briefingBook[1][briefingState.page].mc.secondSelectedCallback(briefingBook[1][briefingState.page])-1;
-			end
+				PageID = briefingBook[1][briefingState.page].mc.secondSelectedCallback(briefingBook[1][briefingState.page]);
+            end
+            -- Get id if name
+            if type(PageID) == "string" then
+                PageID = Information:GetPageID(PageID);
+            end
+            briefingState.page = PageID -1;
 		end
 
 		XGUIEng.ShowWidget("CinematicMC_Container",0);
@@ -360,7 +395,7 @@ end
 ---
 -- Fakes camera hight on the unusable Z-achis. This function must be called
 -- after all camera calculations are done.
--- @param _Page [table] Briefing page
+-- @param[type=table] _Page Briefing page
 -- @within Information
 -- @local
 --
@@ -387,7 +422,7 @@ end
 
 ---
 -- Sets the zoom distance of the current briefing page.
--- @param _Page [table] Briefing page
+-- @param[type=table] _Page Briefing page
 -- @within Information
 -- @local
 --
@@ -403,7 +438,7 @@ end
 
 ---
 -- Sets the zoom angle of the current briefing page.
--- @param _Page [table] Briefing page
+-- @param[type=table] _Page Briefing page
 -- @within Information
 -- @local
 --
@@ -419,7 +454,7 @@ end
 
 ---
 -- Sets the rotation angle of the current briefing page.
--- @param _Page [table] Briefing page
+-- @param[type=table] _Page Briefing page
 -- @within Information
 -- @local
 --
@@ -441,7 +476,7 @@ end
 
 ---
 -- Sets the apperance of the cinematic mode.
--- @param _DisableMap [boolean] Hide the minimap
+-- @param[type=boolean] _DisableMap Hide the minimap
 -- @within Information
 -- @local
 --
@@ -471,7 +506,7 @@ function Information:SetBriefingLooks(_DisableMap)
     XGUIEng.SetMaterialColor("CinematicBar02", 0, 255, 255, 255, 255);
     XGUIEng.SetWidgetPositionAndSize("CinematicBar02", 0, 0, size[1], 180);
 
-    -- Set widget isability
+    -- Set widget visability
     XGUIEng.ShowWidget("CinematicMiniMapOverlay", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicMiniMap", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicFrameBG", (_DisableMap and 0) or 1);
@@ -483,7 +518,8 @@ end
 
 ---
 -- Moves the text and the title of the cinmatic widget to the screen center.
--- @param _DisableMap [boolean] Hide the minimap
+-- Position is not ajusted by text length!
+-- @param[type=boolean] _DisableMap Hide the minimap
 -- @within Information
 -- @local
 --
@@ -505,7 +541,8 @@ end
 ---
 -- Moves the text and the title of the cinmatic widget to the screen center in
 -- reversed order. Can be used for movie like map credits.
--- @param _DisableMap [boolean] Hide the minimap
+-- Position is not ajusted by text length!
+-- @param[type=boolean] _DisableMap Hide the minimap
 -- @within Information
 -- @local
 --
@@ -526,7 +563,7 @@ end
 
 ---
 -- Initalizes the fader for the briefing page.
--- @param _Page [table] Briefing page
+-- @param[type=table] _Page Briefing page
 -- @within Information
 -- @local
 --
@@ -562,8 +599,8 @@ end
 ---
 -- Starts a fading process. If it is already fading than the old process will
 -- be aborted.
--- @param _Duration [number] Duration of fading in seconds
--- @param _FadeIn [boolean] Fade in from black
+-- @param[type=number] _Duration Duration of fading in seconds
+-- @param[type=boolean] _FadeIn  Fade in from black
 -- @within Information
 -- @local
 --
@@ -578,9 +615,10 @@ function Information:StartFader(_Duration, _FadeIn)
 end
 
 ---
--- 
--- @param _Duration [number] Duration of fading in seconds
--- @param _FadeIn [boolean] Fade in from black
+-- Starts the fader delayed by a waittime.
+-- @param[type=number] _Waittime Waittime in seconds
+-- @param[type=number] _Duration Duration of fading in seconds
+-- @param[type=boolean] _FadeIn Fade in from black
 -- @within Information
 -- @local
 --
@@ -612,7 +650,7 @@ end
 
 ---
 -- Sets the alpha value of the fader mask.
--- @param _AlphaFactor [number] Alpha factor
+-- @param[type=number] _AlphaFactor Alpha factor
 -- @within Information
 -- @local
 --
@@ -631,7 +669,7 @@ end
 
 ---
 -- Returns the factor for the alpha value of the fader mask.
--- @return [number] Alpha factor
+-- @return[type=number] Alpha factor
 -- @within Information
 -- @local
 --
@@ -684,9 +722,9 @@ end
 --
 -- <b>Note:</b> There can only be one visible but infinit invisible countdonws.
 --
--- @param _Limit [number] Time to count down
--- @param _Callback [function] Countdown callback
--- @param _Show [boolean] Countdown visible
+-- @param[type=number] _Limit      Time to count down
+-- @param[type=function] _Callback Countdown callback
+-- @param[type=boolean] _Show      Countdown visible
 --
 function StartCountdown(_Limit, _Callback, _Show)
     assert(type(_Limit) == "number")
@@ -707,7 +745,7 @@ end
 
 ---
 -- Stops the countdown with the ID.
--- @param _Id [number] Countdown ID
+-- @param[type=number] _Id Countdown ID
 --
 function StopCountdown(_Id)
     if Counter.Index == nil then
@@ -760,7 +798,7 @@ end
 
 ---
 -- Returns true if a countdown is visible.
--- @return [boolean] Visible countdown
+-- @return[type=boolean] Visible countdown
 --
 function CountdownIsVisisble()
     for i = 1, Counter.Index do

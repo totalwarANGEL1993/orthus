@@ -4,7 +4,7 @@
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
 
----
+--
 -- This module is just the interface between the quest system and the briefing
 -- code mcbBrief by mcb.
 --
@@ -13,7 +13,7 @@
 
 Information = {};
 
----
+--
 -- Installs the information mod.
 -- @within Information
 -- @local
@@ -22,7 +22,7 @@ function Information:Install()
     self:OverrideCinematic();
 end
 
----
+--
 -- Overrides the briefing functions that enter or leave the cinematic mode.
 --
 -- @within Information
