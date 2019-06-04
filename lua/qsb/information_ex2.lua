@@ -56,7 +56,7 @@ end
 -- @within Information
 -- @local
 --
-function Information:CreateAddPageFunctions()
+function Information:CreateAddPageFunctions()   
     ---
     -- Creates the local briefing functions for adding pages.
     --
@@ -161,25 +161,46 @@ function Information:CreateAddPageFunctions()
             _page.id = table.getn(_briefing);
             return _page;
         end
-        local ASP = function(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
-            return AP(CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog));
+        local ASP = function(...)
+            if (table.getn(arg) == 7) then
+                table.insert(arg, 1, -1);
+            end
+            return AP(CreateShortPage(unpack(arg)));
         end
         return AP, ASP;
     end
 
-    function CreateShortPage(_entity, _title, _text, _dialog, _action, _showSky, _disableFog)
+    function CreateShortPage(...)
         local page = {
-            title = _title,
-            text = _text,
-            position = _entity,
-            dialogCamera = _dialog == true,
-            action = _action,
-            lookAt = true;
-            disableFog = _disableFog,
-            showSky = _showSky,
+            name         = arg[1],
+            title        = arg[3],
+            text         = arg[4],
+            position     = arg[2],
+            dialogCamera = arg[5] == true,
+            action       = arg[6],
+            lookAt       = true;
+            disableFog   = arg[8],
+            showSky      = arg[7],
         };
         return page;
     end
+end
+
+---
+-- Returns the page id to the page name. If a name is not found a absurd high
+-- page ID is providet to prevent lua errors.
+-- @param[type=string] _Name Name of page
+-- @return[type=number] Page ID
+--
+function Information:GetPageID(_Name)
+    if IsBriefingActive() then
+        for i=1, table.getn(briefingBook[1]), 1 do
+            if briefingBook[1][i].name == _Name then
+                return i;
+            end
+        end
+    end
+    return 999999;
 end
 
 ---
@@ -280,20 +301,34 @@ function Information:OverrideMultipleChoice()
 		assert(briefingBook[1][briefingState.page].mc ~= nil);
 		briefingBook[1][briefingState.page].mc.selectedButton = _index;
 
-		if _index == 1 then
-			if briefingBook[1][briefingState.page].mc.firstSelected ~= nil then
-				briefingState.page = briefingBook[1][briefingState.page].mc.firstSelected - 1;
+        if _index == 1 then
+            -- Get page ID or name
+            local PageID;
+            if briefingBook[1][briefingState.page].mc.firstSelected ~= nil then
+                PageID = briefingBook[1][briefingState.page].mc.firstSelected;
 			else
 				assert(briefingBook[1][briefingState.page].mc.firstSelectedCallback);
-				briefingState.page = briefingBook[1][briefingState.page].mc.firstSelectedCallback(briefingBook[1][briefingState.page])-1;
-			end
-		else
+                PageID = briefingBook[1][briefingState.page].mc.firstSelectedCallback(briefingBook[1][briefingState.page]);
+            end
+            -- Get id if name
+            if type(PageID) == "string" then
+                PageID = Information:GetPageID(PageID);
+            end
+            briefingState.page = PageID -1;
+        else
+            -- Get page ID or name
+            local PageID;
 			if briefingBook[1][briefingState.page].mc.secondSelected ~= nil then
-				briefingState.page = briefingBook[1][briefingState.page].mc.secondSelected - 1;
+                PageID = briefingBook[1][briefingState.page].mc.secondSelected;
 			else
 				assert(briefingBook[1][briefingState.page].mc.secondSelectedCallback);
-				briefingState.page = briefingBook[1][briefingState.page].mc.secondSelectedCallback(briefingBook[1][briefingState.page])-1;
-			end
+				PageID = briefingBook[1][briefingState.page].mc.secondSelectedCallback(briefingBook[1][briefingState.page]);
+            end
+            -- Get id if name
+            if type(PageID) == "string" then
+                PageID = Information:GetPageID(PageID);
+            end
+            briefingState.page = PageID -1;
 		end
 
 		XGUIEng.ShowWidget("CinematicMC_Container",0);

@@ -1942,6 +1942,14 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_ChangePlayer);
 
 ---
 -- Displays a text message on the screen.
+--
+-- In addition to the placeholders the game offers (@cr, @color, @ra, ...),
+-- there are 2 new placeholders for both _G values and custom values.
+--
+-- @val:NAME adds a value from _G. The value musn't be in a table!
+--
+-- @cval:NAME adds a custom value.
+--
 -- @param[type=string] _Message Message to display
 -- @within Reprisals
 --
@@ -1952,7 +1960,7 @@ end
 b_Reprisal_Message = {
     Data = {
         Name = "Reprisal_Message",
-        Type = Callbacks.Message
+        Type = Callbacks.MapScriptFunction
     },
 };
 
@@ -1963,7 +1971,39 @@ function b_Reprisal_Message:AddParameter(_Index, _Parameter)
 end
 
 function b_Reprisal_Message:GetReprisalTable()
-    return {self.Data.Type, self.Data.Message};
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reprisal_Message:CustomFunction(_Quest)
+    local Text = self.Data.Message;
+    
+    -- Custom variables
+    local s, e = string.find(Text, "@cval:", 1);
+    while (s) do
+        local ss, ee = string.find(Text, " ", e+1);
+        local Before = string.sub(Text, 1, s-1);
+        local After  = string.sub(Text, ee);
+        local Value  = string.sub(Text, e+1, ss-1);
+        if Value and QuestSystemBehavior.Data.CustomVariables[Value] then
+            Text = Before .. QuestSystemBehavior.Data.CustomVariables[Value] .. After;
+        end
+        s, e = string.find(Text, "@cval:", ee+1);
+    end
+
+    -- _G variables
+    local s, e = string.find(Text, "@val:", 1);
+    while (s) do
+        local ss, ee = string.find(Text, " ", e+1);
+        local Before = string.sub(Text, 1, s-1);
+        local After  = string.sub(Text, ee);
+        local Value  = string.sub(Text, e+1, ss-1);
+        if Value and _G[Value] then
+            Text = Before .. _G[Value] .. After;
+        end
+        s, e = string.find(Text, "@val:", ee+1);
+    end
+
+    Message(Text);
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reprisal_Message);
@@ -2468,6 +2508,14 @@ function b_Reward_Briefing:Debug(_Quest)
     return false;
 end
 
+function b_Reward_Briefing:CustomFunction(_Quest)
+    _Quest.m_SuccessBriefing = _G[self.Data.Briefing](self, _Quest);
+end
+
+function b_Reward_Briefing:Reset(_Quest)
+    _Quest.m_SuccessBriefing = nil;
+end
+
 function b_Reward_Briefing:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
@@ -2501,6 +2549,14 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_ChangePlayer);
 
 ---
 -- Displays a text message on the screen.
+--
+-- In addition to the placeholders the game offers (@cr, @color, @ra, ...),
+-- there are 2 new placeholders for both _G values and custom values.
+--
+-- @val:NAME adds a value from _G. The value musn't be in a table!
+--
+-- @cval:NAME adds a custom value.
+--
 -- @param[type=string] _Message Message to display
 -- @within Rewards
 --
@@ -2510,11 +2566,11 @@ end
 
 b_Reward_Message = copy(b_Reprisal_Message);
 b_Reward_Message.Data.Name = "Reward_Message";
-b_Reward_Message.Data.Type = Callbacks.Message;
+b_Reward_Message.Data.Type = Callbacks.MapScriptFunction;
 b_Reward_Message.GetReprisalTable = nil;
 
 function b_Reward_Message:GetRewardTable()
-    return {self.Data.Type, self.Data.Message};
+    return {self.Data.Type, {self.CustomFunction, self}};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_Message);
@@ -3265,7 +3321,9 @@ b_Trigger_Briefing = {
 
 function b_Trigger_Briefing:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.BriefingQuest = _Parameter;
+        self.Data.Briefing = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Kind = _Parameter;
     end
 end
 
@@ -3284,11 +3342,18 @@ function b_Trigger_Briefing:GetTriggerTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
 
-function b_Trigger_Briefing:Debug(_Quest)
-    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
-    if not Quest or (not Quest.m_SuccessBriefing and not Quest.m_FailureBriefing) then
-        dbg(_Quest, self, "Quest does not have any briefing attached!");
+function b_Trigger_Briefing:CustomFunction(_Quest)
+    if self.Data.Kind == nil or self.Data.Kind == "Any" then
+        return QuestSystem.Briefings[Quest.m_SuccessBriefing] == true or QuestSystem.Briefings[Quest.m_FailureBriefing] == true;
+    elseif self.Data.Kind == "Success" then
+        return QuestSystem.Briefings[Quest.m_SuccessBriefing] == true;
+    elseif self.Data.Kind == "Failure" then
+        return QuestSystem.Briefings[Quest.m_FailureBriefing] == true;
     end
+    return false;
+end
+
+function b_Trigger_Briefing:Debug()
     return false;
 end
 
@@ -5041,7 +5106,7 @@ function b_Goal_CustomVariable:GetGoalTable()
 end
 
 function b_Goal_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Operator];
+    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
         ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
@@ -5109,7 +5174,7 @@ function b_Reprisal_CustomVariable:GetReprisalTable()
 end
 
 function b_Reprisal_CustomVariable:CustomFunction(_Quest)
-    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Operator];
+    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
     local NewValue = self.Data.Value;
     if type(NewValue) == "string" then
         NewValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
@@ -5131,7 +5196,7 @@ function b_Reprisal_CustomVariable:CustomFunction(_Quest)
         elseif self.Data.Operator == "^" then
             OldValue = OldValue ^ NewValue;
         end
-        QuestSystemBehavior.Data.CustomVariables[self.Data.Operator] = OldValue;
+        QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName] = OldValue;
     end
 end
 
@@ -5154,20 +5219,20 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_CustomVariable);
 -- @param[type=number] _Value Integer value
 -- @within Triggers
 --
-function Reprisal_CustomVariable(...)
-    return b_Reprisal_CustomVariable:New(unpack(arg));
+function Reward_CustomVariable(...)
+    return b_Reward_CustomVariable:New(unpack(arg));
 end
 
-b_Reprisal_CustomVariable = copy(b_Reprisal_CustomVariable);
-b_Reprisal_CustomVariable.Data.Name = "Reprisal_CustomVariable";
-b_Reprisal_CustomVariable.Data.Type = Callbacks.MapScriptFunction;
-b_Reprisal_CustomVariable.GetReprisalTable = nil;
+b_Reward_CustomVariable = copy(b_Reprisal_CustomVariable);
+b_Reward_CustomVariable.Data.Name = "Reward_CustomVariable";
+b_Reward_CustomVariable.Data.Type = Callbacks.MapScriptFunction;
+b_Reward_CustomVariable.GetReprisalTable = nil;
 
-function b_Reprisal_CustomVariable:GetRewardTable()
+function b_Reward_CustomVariable:GetRewardTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
 
-QuestSystemBehavior:RegisterBehavior(b_Reprisal_CustomVariable);
+QuestSystemBehavior:RegisterBehavior(b_Reward_CustomVariable);
 
 -- -------------------------------------------------------------------------- --
 
@@ -5205,7 +5270,7 @@ function b_Trigger_CustomVariable:GetTriggerTable()
 end
 
 function b_Trigger_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Operator];
+    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
         ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
