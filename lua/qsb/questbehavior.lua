@@ -3322,7 +3322,7 @@ b_Trigger_Briefing = {
 
 function b_Trigger_Briefing:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.Briefing = _Parameter;
+        self.Data.BriefingQuest = _Parameter;
     elseif _Index == 2 then
         self.Data.Kind = _Parameter;
     end
@@ -3344,6 +3344,7 @@ function b_Trigger_Briefing:GetTriggerTable()
 end
 
 function b_Trigger_Briefing:CustomFunction(_Quest)
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
     if self.Data.Kind == nil or self.Data.Kind == "Any" then
         return QuestSystem.Briefings[Quest.m_SuccessBriefing] == true or QuestSystem.Briefings[Quest.m_FailureBriefing] == true;
     elseif self.Data.Kind == "Success" then
