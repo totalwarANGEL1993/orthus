@@ -3240,6 +3240,32 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_NeverTriggered);
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Starts the quest immediately.
+-- @within Triggers
+--
+function Trigger_AlwaysActive(...)
+    return b_Trigger_AlwaysActive:New(unpack(arg));
+end
+
+b_Trigger_AlwaysActive = {
+    Data = {
+        Name = "Trigger_AlwaysActive",
+        Type = Conditions.Time
+    },
+};
+
+function b_Trigger_AlwaysActive:AddParameter(_Index, _Parameter)
+end
+
+function b_Trigger_AlwaysActive:GetTriggerTable()
+    return {self.Data.Type, 0};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Trigger_AlwaysActive);
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- Starts the quest x seconds after the game has started.
 -- @param[type=number] _Time Time to wait
 -- @within Triggers
