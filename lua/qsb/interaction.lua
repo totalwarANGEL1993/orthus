@@ -896,10 +896,11 @@ end
 --
 function NonPlayerMerchant:UpdateOfferWidgets()
     XGUIEng.ShowAllSubWidgets("TroopMerchantOffersContainer", 0);
-    for k, v in pairs (self.m_Offers) do
-        XGUIEng.ShowWidget("BuyTroopOfferContainer" ..k, 1);
-        XGUIEng.ShowWidget("Amount_TroopOffer" ..k, 1);
-        XGUIEng.ShowWidget("Buy_TroopOffer" ..k, 1);
+    for i= 1, 4, 1 do
+        local Visible = (self.m_Offers[i] ~= nil and 1) or 0;
+        XGUIEng.ShowWidget("BuyTroopOfferContainer" ..i, Visible);
+        XGUIEng.ShowWidget("Amount_TroopOffer" ..i, Visible);
+        XGUIEng.ShowWidget("Buy_TroopOffer" ..i, Visible);
     end
 end
 
@@ -933,7 +934,6 @@ function NonPlayerMerchant:UpdateOffer(_SlotIndex)
     end
 
     -- Set amount and disable sold out offers
-    local AmountOfOffers = table.getn(self.m_Offers);
     local Amount = self.m_Offers[_SlotIndex].Load;
     if Amount < 1 then
         Amount = "";
