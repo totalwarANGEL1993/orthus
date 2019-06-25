@@ -5202,13 +5202,13 @@ function b_Reprisal_CustomVariable:GetReprisalTable()
 end
 
 function b_Reprisal_CustomVariable:CustomFunction(_Quest)
-    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
+    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName] or 0;
     local NewValue = self.Data.Value;
     if type(NewValue) == "string" then
         NewValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
     end
 
-    if OldValue and NewValue then
+    if NewValue then
         if self.Data.Operator == "=" then
             OldValue = NewValue;
         elseif self.Data.Operator == "+" then
