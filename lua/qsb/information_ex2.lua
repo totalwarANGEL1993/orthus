@@ -216,7 +216,7 @@ function Information:CreateAddPageFunctions()
             name         = arg[1],
             position     = arg[2],
             dialogCamera = arg[5] == true,
-            action       = nil,
+            action       = arg[6],
             lookAt       = true;
             disableFog   = arg[8],
             showSky      = arg[7],
