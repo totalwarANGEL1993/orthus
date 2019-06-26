@@ -174,9 +174,9 @@ function Information:CreateAddPageFunctions()
                         end
                     };
                 end
+                _page.id = table.getn(_briefing);
             end
             table.insert(_briefing, _page);
-            _page.id = table.getn(_briefing);
             return _page;
         end
         
@@ -230,6 +230,7 @@ function Information:CreateAddPageFunctions()
                 secondSelected = arg[12],
             },
         };
+        return page;
     end
 end
 
@@ -241,13 +242,15 @@ end
 --
 function Information:GetPageID(_Name)
     if IsBriefingActive() then
-        for i=1, table.getn(briefingBook[1]), 1 do
-            if type(_Name) == "string" then
-                if briefingBook[1][i].name == _Name then
-                    return i;
+        for k, v in pairs(briefingBook[1]) do
+            if type(v) == "table" then
+                if type(_Name) == "string" then
+                    if v.name == _Name then
+                        return k;
+                    end
+                else
+                    return _Name;
                 end
-            else
-                return _Name;
             end
         end
     end
