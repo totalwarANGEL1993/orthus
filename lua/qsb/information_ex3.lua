@@ -29,6 +29,11 @@ end
 -- @local
 --
 function Information:OverrideCinematic()
+    if not mcbBrief then
+        GUI.AddStaticNote("FATAL: Could not find mcbBrief!");
+        return;
+    end
+    
     StartBriefing_Orig_Information = StartBriefing;
     StartBriefing = function(_briefing)
         assert(type(_briefing) == "table");
@@ -49,5 +54,25 @@ function Information:OverrideCinematic()
 			XGUIEng.ShowWidget("GameClock", 1);
 			gvGameClockWasShown = false;
         end
+    end
+
+    AddPages_Orig_Information = AddPages;
+    AddPages = function(_briefing)
+        local AP = AddPages_Orig_Information(_briefing);
+        local ASP = function(...)
+            if (table.getn(arg) == 7) then
+                table.insert(arg, 1, -1);
+            end
+            table.insert(arg, true);
+            return mcbBrief.createShortPage(unpack(arg));
+        end
+        local ASMC = function(...)
+            if (table.getn(arg) == 11) then
+                table.insert(arg, 1, -1);
+            end
+            table.insert(arg, 9, true);
+            return mcbBrief.createShortMCPage(unpack(arg));
+        end
+        return AP, ASP, ASMC;
     end
 end
