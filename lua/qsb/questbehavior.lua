@@ -308,7 +308,7 @@ QuestSystemBehavior = {
     Data = {
         RegisteredQuestBehaviors = {},
         SystemInitalized = false;
-        Version = "1.0.0",
+        Version = "1.1.0",
 
         SaveLoadedActions = {},
         PlayerColorAssigment = {},
@@ -316,6 +316,7 @@ QuestSystemBehavior = {
         CreatedAiArmies = {},
         AiArmyNameToId = {},
         CustomVariables = {},
+        ChoicePages = {}
     }
 }
 
@@ -3239,6 +3240,32 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_NeverTriggered);
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Starts the quest immediately.
+-- @within Triggers
+--
+function Trigger_AlwaysActive(...)
+    return b_Trigger_AlwaysActive:New(unpack(arg));
+end
+
+b_Trigger_AlwaysActive = {
+    Data = {
+        Name = "Trigger_AlwaysActive",
+        Type = Conditions.Time
+    },
+};
+
+function b_Trigger_AlwaysActive:AddParameter(_Index, _Parameter)
+end
+
+function b_Trigger_AlwaysActive:GetTriggerTable()
+    return {self.Data.Type, 0};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Trigger_AlwaysActive);
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- Starts the quest x seconds after the game has started.
 -- @param[type=number] _Time Time to wait
 -- @within Triggers
@@ -3321,7 +3348,7 @@ b_Trigger_Briefing = {
 
 function b_Trigger_Briefing:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.Briefing = _Parameter;
+        self.Data.BriefingQuest = _Parameter;
     elseif _Index == 2 then
         self.Data.Kind = _Parameter;
     end
@@ -3343,6 +3370,7 @@ function b_Trigger_Briefing:GetTriggerTable()
 end
 
 function b_Trigger_Briefing:CustomFunction(_Quest)
+    local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
     if self.Data.Kind == nil or self.Data.Kind == "Any" then
         return QuestSystem.Briefings[Quest.m_SuccessBriefing] == true or QuestSystem.Briefings[Quest.m_FailureBriefing] == true;
     elseif self.Data.Kind == "Success" then
@@ -5174,13 +5202,13 @@ function b_Reprisal_CustomVariable:GetReprisalTable()
 end
 
 function b_Reprisal_CustomVariable:CustomFunction(_Quest)
-    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
+    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName] or 0;
     local NewValue = self.Data.Value;
     if type(NewValue) == "string" then
         NewValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
     end
 
-    if OldValue and NewValue then
+    if NewValue then
         if self.Data.Operator == "=" then
             OldValue = NewValue;
         elseif self.Data.Operator == "+" then
@@ -5302,3 +5330,66 @@ function b_Trigger_CustomVariable:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Trigger_CustomVariable);
+
+-- -------------------------------------------------------------------------- --
+
+--.
+-- After the player made a choice in a briefing that choice can be checked by
+-- this goal. If the choice was selected, the goal succeeds. If not, it fails.
+--
+-- Use this behavior in hidden quests!
+--
+-- <b>Hint:</b> This goal is only ment to be used by the assistent and thus
+-- not visible in the user documentation. Real mapper don't use the assistent
+-- so they can do this properly by script.
+--
+-- @param[type=string] _ChoicePage Name of page
+-- @param[type=number] _Answer Number of selected answer
+-- @within Goals
+-- @local
+--
+function Goal_MultipleChoiceSelection(...)
+    return b_Goal_MultipleChoiceSelection:New(unpack(arg));
+end
+
+b_Goal_MultipleChoiceSelection = {
+    Data = {
+        Name = "Goal_MultipleChoiceSelection",
+        Type = Objectives.MapScriptFunction
+    },
+};
+
+function b_Goal_MultipleChoiceSelection:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.ChoicePage = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Answer = _Parameter;
+    end
+end
+
+function b_Goal_MultipleChoiceSelection:GetGoalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_MultipleChoiceSelection:CustomFunction(_Quest)
+    if QuestSystemBehavior.Data.ChoicePages[self.Data.ChoicePage] ~= nil then
+        return QuestSystemBehavior.Data.ChoicePages[self.Data.ChoicePage] == self.Data.Answer;
+    end
+end
+
+function b_Goal_MultipleChoiceSelection:Debug(_Quest)
+    if (self.Data.ChoicePage == nil or self.Data.ChoicePage == "") then
+        dbg(_Quest, self, "Choice page name is missing!");
+        return true;
+    end
+    return false;
+end
+
+function b_Goal_MultipleChoiceSelection:Reset(_Quest)
+    if self.Data.Briefing and self.Data.ChoicePage then
+        QuestSystemBehavior.Data.ChoicePages[self.Data.ChoicePage] = nil;
+    end
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_MultipleChoiceSelection);
+

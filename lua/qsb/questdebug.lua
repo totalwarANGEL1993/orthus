@@ -222,9 +222,13 @@ function QuestSystemDebug:EvaluateCommand(_Tokens)
     local CommandExecuted = false;
     for _, command in pairs(_Tokens) do
         local Action = string.lower(command[1]);        
-        -- Quest stuff
-        
-        if Action == "win" then 
+
+        if Action == "load" then
+            CommandExecuted = true;
+            Script.Load(command[2]);
+            Message("Loaded script " ..command[2]);
+
+        elseif Action == "win" then 
             CommandExecuted = true;
             local QuestID = GetQuestID(command[2]);
             if QuestID == 0 then

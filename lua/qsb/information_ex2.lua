@@ -76,98 +76,124 @@ function Information:CreateAddPageFunctions()
     function AddPages(_briefing)
         local AP = function(_page)
             if _page then
-                -- Set position before page is add
-                if type(_page.position) ~= "table" then
-                    _page.entity   = _page.position;
-                    _page.position = GetPosition(_page.position);
-                end
-                -- Set title before page is add
-                if _page.title then
-                    _page.title = "@center " .. _page.title;
-                end
-                if _page.mc and _page.mc.title then
-                    _page.mc.title = "@center " .. _page.mc.title;
-                end
-
-                if _page.action then
-                    _page.actionOrig = _page.action;
-                end
-                _page.action = function()
-                    local ZoomDistance = Information:AdjustBriefingPageZoom(_page);
-                    local ZoomAngle = Information:AdjustBriefingPageAngle(_page);
-                    local RotationAngle = Information:AdjustBriefingPageRotation(_page);
-                    local PagePosition = Information:AdjustBriefingPageCamHeight(_page);
-
-                    -- Fader
-                    Information:InitalizeFaderForBriefingPage(_page);
-
-                    -- Disable fog only on this page
-                    -- (does not overwrite global settings)
-                    if _page.disableFog then
-                        Display.SetRenderFogOfWar(0);
+                if type(_page) == "table" then
+                    -- Set position before page is add
+                    if type(_page.position) ~= "table" then
+                        _page.entity   = _page.position;
+                        _page.position = GetPosition(_page.position);
+                    end
+                    -- Set title before page is add
+                    if _page.title then
+                        _page.title = "@center " .. _page.title;
+                    end
+                    if _page.mc and _page.mc.title then
+                        _page.mc.title = "@center " .. _page.mc.title;
                     end
 
-                    -- Display sky only on this page
-                    -- (does not overwrite global settings)
-                    if _page.showSky then
-                        Display.SetRenderSky(1);
+                    if _page.action then
+                        _page.actionOrig = _page.action;
                     end
+                    _page.action = function()
+                        local ZoomDistance = Information:AdjustBriefingPageZoom(_page);
+                        local ZoomAngle = Information:AdjustBriefingPageAngle(_page);
+                        local RotationAngle = Information:AdjustBriefingPageRotation(_page);
+                        local PagePosition = Information:AdjustBriefingPageCamHeight(_page);
 
-                    -- Override camera flight
-                    Camera.StopCameraFlight();
-                    if not _page.flight then
-                        Camera.ZoomSetDistance(ZoomDistance);
-                        Camera.ZoomSetAngle(ZoomAngle);
-                        Camera.RotSetAngle(RotationAngle);
-                        Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
-                    else
-                        briefingState.nextPageDelayTime = (_page.duration * 10) +1;
-                        briefingState.timer = (_page.duration * 10) +1;
+                        -- Fader
+                        Information:InitalizeFaderForBriefingPage(_page);
 
-                        -- A flight can only be started from page 2 and forward because it needs the position of
-                        -- the last page as starting point for the camera movement. Flights aren't a replacement
-                        -- for cutscenes so keep your animations short!
-                        -- Keep in mind that there is no z achsis with camera animations!
+                        -- Disable fog only on this page
+                        -- (does not overwrite global settings)
+                        if _page.disableFog then
+                            Display.SetRenderFogOfWar(0);
+                        end
 
-                        if briefingState.page > 0 then
-                            local LastPage = briefingBook[1][briefingState.page];
+                        -- Display sky only on this page
+                        -- (does not overwrite global settings)
+                        if _page.showSky then
+                            Display.SetRenderSky(1);
+                        end
 
-                            Camera.InitCameraFlight();
-                            
-                            Camera.ZoomSetDistance(LastPage.zoom or BRIEFING_ZOOMDISTANCE);
-                            Camera.ZoomSetAngle(LastPage.angle or BRIEFING_ZOOMANGLE);
-                            Camera.RotSetAngle(LastPage.rotation or -45);
-                            Camera.ScrollSetLookAt(LastPage.position.X, LastPage.position.Y);
-
-                            Camera.ZoomSetDistanceFlight(ZoomDistance, _page.duration);
-                            Camera.ZoomSetAngleFlight(ZoomAngle, _page.duration);
-                            Camera.RotFlight(RotationAngle, _page.duration);
-                            Camera.FlyToLookAt(_page.position.X, _page.position.Y, _page.duration);
-                        else
-                            Camera.ZoomSetDistance(_page.zoom);
-                            Camera.ZoomSetAngle(_page.angle);
-                            Camera.RotSetAngle(_page.rotation);
+                        -- Override camera flight
+                        Camera.StopCameraFlight();
+                        if not _page.flight then
+                            Camera.ZoomSetDistance(ZoomDistance);
+                            Camera.ZoomSetAngle(ZoomAngle);
+                            Camera.RotSetAngle(RotationAngle);
                             Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
+                        else
+                            briefingState.nextPageDelayTime = (_page.duration * 10) +1;
+                            briefingState.timer = (_page.duration * 10) +1;
+
+                            -- A flight can only be started from page 2 and forward because it needs the position of
+                            -- the last page as starting point for the camera movement. Flights aren't a replacement
+                            -- for cutscenes so keep your animations short!
+                            -- Keep in mind that there is no z achsis with camera animations!
+
+                            if briefingState.page > 0 then
+                                local LastPage = briefingBook[1][briefingState.page];
+
+                                Camera.InitCameraFlight();
+                                
+                                Camera.ZoomSetDistance(LastPage.zoom or BRIEFING_ZOOMDISTANCE);
+                                Camera.ZoomSetAngle(LastPage.angle or BRIEFING_ZOOMANGLE);
+                                Camera.RotSetAngle(LastPage.rotation or -45);
+                                Camera.ScrollSetLookAt(LastPage.position.X, LastPage.position.Y);
+
+                                Camera.ZoomSetDistanceFlight(ZoomDistance, _page.duration);
+                                Camera.ZoomSetAngleFlight(ZoomAngle, _page.duration);
+                                Camera.RotFlight(RotationAngle, _page.duration);
+                                Camera.FlyToLookAt(_page.position.X, _page.position.Y, _page.duration);
+                            else
+                                Camera.ZoomSetDistance(_page.zoom);
+                                Camera.ZoomSetAngle(_page.angle);
+                                Camera.RotSetAngle(_page.rotation);
+                                Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
+                            end
+                        end
+
+                        -- Call original action
+                        if _page.actionOrig then
+                            _page.actionOrig();
                         end
                     end
 
-                    -- Call original action
-                    if _page.actionOrig then
-                        _page.actionOrig();
-                    end
+                -- Jumping to a page
+                elseif type(_page) == "string" or type(_page) == "number" then
+                    page = {
+                        target = _page,
+                        action = function(self)
+                            local PageID = Information:GetPageID(self.target);
+                            if (PageID > 0 and PageID <= table.getn(briefingBook[1])) then
+                                briefingState.nextPageDelayTime = 0;
+                                briefingState.timer = 0;
+                                briefingState.page = PageID;
+                                Briefing(briefingBook[1][briefingState.page], briefingState.page == 0);
+                                miniMapResetCounter = 0;
+                            end
+                        end
+                    };
                 end
+                _page.id = table.getn(_briefing);
             end
             table.insert(_briefing, _page);
-            _page.id = table.getn(_briefing);
             return _page;
         end
+        
         local ASP = function(...)
             if (table.getn(arg) == 7) then
                 table.insert(arg, 1, -1);
             end
             return AP(CreateShortPage(unpack(arg)));
         end
-        return AP, ASP;
+
+        local ASMC = function(...)
+            if (table.getn(arg) == 11) then
+                table.insert(arg, 1, -1);
+            end
+            return AP(CreateShortMCPage(unpack(arg)));
+        end
+        return AP, ASP, ASMC;
     end
 
     function CreateShortPage(...)
@@ -184,6 +210,28 @@ function Information:CreateAddPageFunctions()
         };
         return page;
     end
+
+    function CreateShortMCPage(...)
+        local page = {
+            name         = arg[1],
+            position     = arg[2],
+            dialogCamera = arg[5] == true,
+            action       = arg[6],
+            lookAt       = true;
+            disableFog   = arg[8],
+            showSky      = arg[7],
+
+            mc           = {
+                title	       = arg[3],
+                text 	       = arg[4],
+                firstText      = arg[9],
+                secondText     = arg[11],
+                firstSelected  = arg[10],
+                secondSelected = arg[12],
+            },
+        };
+        return page;
+    end
 end
 
 ---
@@ -194,9 +242,15 @@ end
 --
 function Information:GetPageID(_Name)
     if IsBriefingActive() then
-        for i=1, table.getn(briefingBook[1]), 1 do
-            if briefingBook[1][i].name == _Name then
-                return i;
+        for k, v in pairs(briefingBook[1]) do
+            if type(v) == "table" then
+                if type(_Name) == "string" then
+                    if v.name == _Name then
+                        return k;
+                    end
+                else
+                    return _Name;
+                end
             end
         end
     end
