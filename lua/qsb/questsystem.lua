@@ -1404,6 +1404,45 @@ function IsArmyNear(_Army, _Target, _Distance)
     return false;
 end
 
+---
+-- Checks, if the positions are in the same sector.
+--
+-- @param _pos1 Position 1
+-- @param _pos2 Position 2
+-- @return[type=boolean] Same sector
+--
+function SameSector(_pos1, _pos2)
+	local sectorEntity1 = _pos1;
+	local toVanish1;
+	if type(sectorEntity1) == "table" then
+		sectorEntity1 = Logic.CreateEntity(Entities.XD_ScriptEntity, _pos1.X, _pos1.Y, 0, 8);
+		toVanish1 = true;
+    end
+    
+	local sectorEntity2 = _pos2;
+	local toVanish2;
+	if type(sectorEntity2) == "table" then
+		sectorEntity2 = Logic.CreateEntity(Entities.XD_ScriptEntity, _pos2.X, _pos2.Y, 0, 8);
+		toVanish2 = true;
+	end
+
+	local eID1 = GetID(sectorEntity1);
+	local eID2 = GetID(sectorEntity2);
+	if (eID1 == nil or eID1 == 0) or (eID2 == nil or eID2 == 0) then
+		return false;
+	end
+
+	local sector1 = Logic.GetSector(eID1)
+	if toVanish1 then
+		DestroyEntity(eID1);
+	end
+	local sector2 = Logic.GetSector(eID2)
+	if toVanish2 then
+		DestroyEntity(eID2);
+	end
+    return (sector1 ~= 0 and sector2 ~= 0 and sector1 == sector2);
+end
+
 -- -------------------------------------------------------------------------- --
 
 -- Allows tributes... You are not documented, you are just here. ;)
