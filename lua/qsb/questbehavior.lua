@@ -302,6 +302,26 @@ function GetPlayerEntities(_PlayerID, _EntityType)
     return PlayerEntities
 end
 
+---
+-- Creates an inline job that is executed every second.
+-- @param[type=function] _Function Lua function reference
+-- @param                ... Optional arguments
+-- @return[type=number] Job ID
+--
+function StartSimpleJobEx(_Function, ...)
+    return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, _Function, unpack(arg));
+end
+
+---
+-- Creates an inline job that is executed ten times per second.
+-- @param[type=function] _Function Lua function reference
+-- @param                ... Optional arguments
+-- @return[type=number] Job ID
+--
+function StartSimpleHiResJobEx(_Function, ...)
+    return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, _Function, unpack(arg));
+end
+
 -- Behavior --
 
 QuestSystemBehavior = {
