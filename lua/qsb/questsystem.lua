@@ -46,6 +46,7 @@ QuestSystem = {
     HurtEntities = {},
     NamedEffects = {},
     NamedExplorations = {},
+    InlineJobs = {Counter = 0},
 
     Verbose = false,
 };
@@ -1175,7 +1176,7 @@ end
 -- @param[type=number] _AttackingID     Entity id of attacker
 -- @param[type=number] _DefendingPlayer Player id of defender
 -- @param[type=number] _DefendingID     Entity of defender
--- @within QuestTemplate
+-- @within QuestSystem
 -- @local
 --
 function QuestSystem:ObjectiveDestroyedEntitiesHandler(_AttackingPlayer, _AttackingID, _DefendingPlayer, _DefendingID)
@@ -1209,7 +1210,7 @@ end
 -- Handels the event when a player has paid a tribute.
 --
 -- @param[type=number] _TributeID ID of Tribute
--- @within QuestTemplate
+-- @within QuestSystem
 -- @local
 --
 function QuestSystem:QuestTributePayed(_TributeID)
@@ -1231,7 +1232,7 @@ end
 -- Handles the payday event for all quests.
 --
 -- @param[type=number] _PlayerID ID of player
--- @within QuestTemplate
+-- @within QuestSystem
 -- @local
 --
 function QuestSystem:QuestPaydayEvent(_PlayerID)
@@ -1245,6 +1246,27 @@ function QuestSystem:QuestPaydayEvent(_PlayerID)
             end
         end
     end
+end
+
+---
+-- Creates a new inline job.
+-- @param[type=number]   _EventType Event type
+-- @param[type=function] _Function Lua function reference
+-- @param ...            Optional arguments
+-- @return[type=number] ID of started job
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:StartInlineJob(_EventType, _Function, ...)
+    self.InlineJobs.Counter = self.InlineJobs.Counter +1;
+    _G["QuestSystem_InlineJob_Data_" ..self.InlineJobs.Counter] = copy(arg);
+    _G["QuestSystem_InlineJob_Function_" ..self.InlineJobs.Counter] = _Function;
+    _G["QuestSystem_InlineJob_Executor_" ..self.InlineJobs.Counter] = function(i)
+        if _G["QuestSystem_InlineJob_Function_" ..i](unpack(_G["QuestSystem_InlineJob_Data_" ..i])) then
+            return true;
+        end
+    end
+    return Trigger.RequestTrigger(_EventType, "", "QuestSystem_InlineJob_Executor_" ..self.InlineJobs.Counter, 1, {}, {self.InlineJobs.Counter});
 end
 
 -- -------------------------------------------------------------------------- --
@@ -1402,6 +1424,45 @@ function IsArmyNear(_Army, _Target, _Distance)
         end
     end
     return false;
+end
+
+---
+-- Checks, if the positions are in the same sector.
+--
+-- @param _pos1 Position 1
+-- @param _pos2 Position 2
+-- @return[type=boolean] Same sector
+--
+function SameSector(_pos1, _pos2)
+	local sectorEntity1 = _pos1;
+	local toVanish1;
+	if type(sectorEntity1) == "table" then
+		sectorEntity1 = Logic.CreateEntity(Entities.XD_ScriptEntity, _pos1.X, _pos1.Y, 0, 8);
+		toVanish1 = true;
+    end
+    
+	local sectorEntity2 = _pos2;
+	local toVanish2;
+	if type(sectorEntity2) == "table" then
+		sectorEntity2 = Logic.CreateEntity(Entities.XD_ScriptEntity, _pos2.X, _pos2.Y, 0, 8);
+		toVanish2 = true;
+	end
+
+	local eID1 = GetID(sectorEntity1);
+	local eID2 = GetID(sectorEntity2);
+	if (eID1 == nil or eID1 == 0) or (eID2 == nil or eID2 == 0) then
+		return false;
+	end
+
+	local sector1 = Logic.GetSector(eID1)
+	if toVanish1 then
+		DestroyEntity(eID1);
+	end
+	local sector2 = Logic.GetSector(eID2)
+	if toVanish2 then
+		DestroyEntity(eID2);
+	end
+    return (sector1 ~= 0 and sector2 ~= 0 and sector1 == sector2);
 end
 
 -- -------------------------------------------------------------------------- --

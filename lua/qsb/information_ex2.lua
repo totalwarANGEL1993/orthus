@@ -83,10 +83,10 @@ function Information:CreateAddPageFunctions()
                         _page.position = GetPosition(_page.position);
                     end
                     -- Set title before page is add
-                    if _page.title then
+                    if _page.title and string.sub(_page.title, 1, 1) ~= "@" then
                         _page.title = "@center " .. _page.title;
                     end
-                    if _page.mc and _page.mc.title then
+                    if _page.mc and _page.mc.title and string.sub(_page.mc.title, 1, 1) ~= "@" then
                         _page.mc.title = "@center " .. _page.mc.title;
                     end
 

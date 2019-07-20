@@ -302,6 +302,26 @@ function GetPlayerEntities(_PlayerID, _EntityType)
     return PlayerEntities
 end
 
+---
+-- Creates an inline job that is executed every second.
+-- @param[type=function] _Function Lua function reference
+-- @param                ... Optional arguments
+-- @return[type=number] Job ID
+--
+function StartSimpleJobEx(_Function, ...)
+    return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, _Function, unpack(arg));
+end
+
+---
+-- Creates an inline job that is executed ten times per second.
+-- @param[type=function] _Function Lua function reference
+-- @param                ... Optional arguments
+-- @return[type=number] Job ID
+--
+function StartSimpleHiResJobEx(_Function, ...)
+    return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, _Function, unpack(arg));
+end
+
 -- Behavior --
 
 QuestSystemBehavior = {
@@ -3909,6 +3929,133 @@ function b_Reprisal_SetVulnerablity:Debug(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reprisal_SetVulnerablity);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Opens a palisade or a wall gate.
+-- @param[type=string] _Name Name of gate
+-- @within Reprisals
+--
+function Reprisal_OpenGate(...)
+    return b_Reprisal_OpenGate:New(unpack(arg));
+end
+
+b_Reprisal_OpenGate = {
+    Data = {
+        Name = "Reprisal_OpenGate",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reprisal_OpenGate:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Entity = _Parameter;
+    end
+end
+
+function b_Reprisal_OpenGate:GetReprisalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reprisal_OpenGate:CustomFunction(_Quest)
+    if not IsExisting(self.Data.Entity) then
+        return;
+    end
+    local TypeName = Logic.GetEntityTypeName(Logic.GetEntityType(GetID(self.Data.Entity)));
+    if TypeName == "XD_PalisadeGate1" then
+        ReplaceEntity(self.Data.Entity, Entities.XD_PalisadeGate2);
+    elseif TypeName == "XD_DarkWallStraightGate_Closed" then
+        ReplaceEntity(self.Data.Entity, Entities.XD_DarkWallStraightGate);
+    elseif TypeName == "XD_WallStraightGate_Closed" then
+        ReplaceEntity(self.Data.Entity, Entities.XD_WallStraightGate);
+    end
+end
+
+function b_Reprisal_OpenGate:Debug(_Quest)
+    local EntityID = GetID(self.Data.Entity);
+    if not IsExisting(EntityID) then
+        dbg(_Quest, self, "Gate does not exist!");
+        return true;
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reprisal_OpenGate);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Closes a palisade or a wall gate.
+-- @param[type=string] _Name Name of gate
+-- @within Reprisals
+--
+function Reprisal_CloseGate(...)
+    return b_Reprisal_CloseGate:New(unpack(arg));
+end
+
+b_Reprisal_CloseGate = copy(b_Reprisal_OpenGate);
+b_Reprisal_CloseGate.Data.Name = "Reprisal_CloseGate";
+
+function b_Reprisal_CloseGate:CustomFunction(_Quest)
+    if not IsExisting(self.Data.Entity) then
+        return;
+    end
+    local TypeName = Logic.GetEntityTypeName(Logic.GetEntityType(GetID(self.Data.Entity)));
+    if TypeName == "XD_PalisadeGate2" then
+        ReplaceEntity(self.Data.Entity, Entities.XD_PalisadeGate1);
+    elseif TypeName == "XD_DarkWallStraightGate" then
+        ReplaceEntity(self.Data.Entity, Entities.XD_DarkWallStraightGate_Closed);
+    elseif TypeName == "XD_WallStraightGate" then
+        ReplaceEntity(self.Data.Entity, Entities.XD_WallStraightGate_Closed);
+    end
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reprisal_CloseGate);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Opens a palisade or a wall gate.
+-- @param[type=string] _Name Name of gate
+-- @within Rewards
+--
+function Reward_OpenGate(...)
+    return b_Reward_OpenGate:New(unpack(arg));
+end
+
+b_Reward_OpenGate = copy(b_Reprisal_OpenGate);
+b_Reward_OpenGate.Data.Name = "Reward_OpenGate";
+b_Reward_OpenGate.Data.Type = Callbacks.MapScriptFunction;
+b_Reward_OpenGate.GetReprisalTable = nil;
+
+function b_Reward_OpenGate:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_OpenGate);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Closes a palisade or a wall gate.
+-- @param[type=string] _Name Name of gate
+-- @within Rewards
+--
+function Reward_CloseGate(...)
+    return b_Reward_CloseGate:New(unpack(arg));
+end
+
+b_Reward_CloseGate = copy(b_Reprisal_CloseGate);
+b_Reward_CloseGate.Data.Name = "Reward_CloseGate";
+b_Reward_CloseGate.Data.Type = Callbacks.MapScriptFunction;
+b_Reward_CloseGate.GetReprisalTable = nil;
+
+function b_Reward_CloseGate:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_CloseGate);
 
 -- -------------------------------------------------------------------------- --
 
