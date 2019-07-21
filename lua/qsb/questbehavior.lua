@@ -1535,6 +1535,7 @@ function b_Goal_NPC:CustomFunction(_Quest)
         return false;
     end
     if not self.Data.NPC then
+        local Hero = (self.Data.Hero == "INVALID_SCRIPTNAME" and nil) or self.Data.Hero;
         self.Data.NPC = new(NonPlayerCharacter, self.Data.Target):SetHero(self.Data.Hero):SetHeroInfo(self.Data.Message):Activate();
     end
     if self.Data.NPC:TalkedTo() then
@@ -1547,12 +1548,12 @@ function b_Goal_NPC:Debug(_Quest)
         dbg(_Quest, self, "NPCs must be settlers!");
         return true;
     end
-    if self.Data.Hero and (IsExisting(self.Data.Hero) == false or Logic.IsHero(GetID(self.Data.Hero)) == 0) then
+    if self.Data.Hero and self.Data.Hero ~= "INVALID_SCRIPTNAME" and (IsExisting(self.Data.Hero) == false or Logic.IsHero(GetID(self.Data.Hero)) == 0) then
         dbg(_Quest, self, "Hero '" ..self.Data.Hero.. "' is invalid!");
         return true;
     end
-    if self.Data.Hero and self.Data.Message == nil then
-        dbg(_Quest, self, "Wrong hero message is missing!");
+    if self.Data.Hero and self.Data.Hero ~= "INVALID_SCRIPTNAME" and self.Data.Message == nil then
+        dbg(_Quest, self, "Message is missing!");
         return true;
     end
     return false;
@@ -3102,7 +3103,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_RevealArea);
 
 ---
 -- Moves an entity to the destination and replace it with an XD_ScriptEntity
--- once it enters the fog.
+-- once it enters the fog or reaches the destination.
 -- @param[type=string] _Entity Entity to move
 -- @param[type=string] _Target Move destination
 -- @within Rewards
@@ -3133,14 +3134,25 @@ end
 function b_Reward_MoveAndVanish:CustomFunction(_Quest)
     Move(self.Data.Entity, self.Data.Target);
 
-    self.Data.JobID = Trigger.RequestTrigger(
-        Events.LOGIC_EVENT_EVERY_SECOND,
-        "",
-        "QuestSystemBehavior_MoveAndReplaceController",
-        1,
-        {},
-        {GetID(self.Data.Entity), self.m_Receiver}
-    )
+    self.Data.JobID = StartSimpleJobEx(function(_EntityID, _Target, _LookingPlayerID)
+        if not IsExisting(_EntityID) then
+            return true;
+        end
+    
+        local PlayerID = Logic.EntityGetPlayer(_EntityID);
+        local ScriptName = Logic.GetEntityName(_EntityID);
+        local x, y, z = Logic.EntityGetPos(_EntityID);
+        if Logic.IsMapPositionExplored(_LookingPlayerID, x, y) == 0 or IsNear(_EntityID, _Target, 50) then
+            if Logic.IsLeader(_EntityID) == 1 then
+                Logic.DestroyGroupByLeader(_EntityID)
+            else
+                Logic.DestroyEntity(_EntityID)
+            end
+            local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, 0, PlayerID);
+            Logic.SetEntityName(ID, ScriptName);
+            return true;
+        end
+    end, GetID(self.Data.Entity), self.Data.Target, _Quest.m_Receiver);
 end
 
 function b_Reward_MoveAndVanish:Debug(_Quest)
@@ -3163,27 +3175,6 @@ function b_Reward_MoveAndVanish:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_MoveAndVanish);
-
--- Move and replace helper
-function QuestSystemBehavior_MoveAndReplaceController(_EntityID, _LookingPlayerID)
-    if not IsExisting(_EntityID) then
-        return true;
-    end
-
-    local PlayerID = Logic.EntityGetPlayer(_EntityID);
-    local ScriptName = Logic.GetEntityName(_EntityID);
-    local x, y, z = Logic.EntityGetPos(_EntityID);
-    if Tools.IsEntityOrGroupVisible(_LookingPlayerID, _EntityID) == 0 then
-        if Logic.IsLeader(_EntityID) == 1 then
-            Logic.DestroyGroupByLeader(_EntityID)
-        else
-            Logic.DestroyEntity(_EntityID)
-        end
-        local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, 0, PlayerID);
-        Logic.SetEntityName(ID, ScriptName);
-        return true;
-    end
-end
 
 -- -------------------------------------------------------------------------- --
 
