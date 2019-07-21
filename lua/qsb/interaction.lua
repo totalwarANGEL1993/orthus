@@ -974,7 +974,9 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
                 Position = GetPosition(self.m_ScriptName);
             end
             local ID = AI.Entity_CreateFormation(PlayerID, self.m_Offers[_SlotIndex].Good, 0, 0, Position.X, Position.Y, 0, 0, 3, 0);
-            Tools.CreateSoldiersForLeader(ID, 16);
+            if Logic.IsLeader(ID) == 1 then
+                Tools.CreateSoldiersForLeader(ID, 16);
+            end
 
         -- Resource
         elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
