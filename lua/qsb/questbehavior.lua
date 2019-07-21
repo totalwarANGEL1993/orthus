@@ -2924,7 +2924,7 @@ function b_Reward_CreateGroup:AddParameter(_Index, _Parameter)
     elseif _Index == 2 then
         self.Data.EntityType = Entities[_Parameter];
     elseif _Index == 3 then
-        self.Data.EntityType = _Parameter;
+        self.Data.SoldierCount = _Parameter;
     end
 end
 
