@@ -723,7 +723,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         ReplaceEntity(_Behavior[2], _Behavior[3]);
 
     elseif _Behavior[1] == Callbacks.CreateGroup then
-        if IsExisting(_Behavior[2]) then
+        if not IsExisting(_Behavior[2]) then
             return;
         end
         local Position = GetPosition(_Behavior[2]);
