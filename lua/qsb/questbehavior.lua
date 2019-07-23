@@ -4479,7 +4479,7 @@ function b_Reward_OpenMercenaryMerchant:CustomFunction(_Quest)
         NPC:AddTroopOffer(self.Data.OfferType4, {Gold = self.Data.OfferCost4}, self.Data.OfferAmount4, 3*60);
     end
     if IsExisting(self.Data.Merchant .. "Spawnpoint") then
-        NPC:SetSpawnPoint(self.Data.Merchant .. "Spawnpoint");
+        NPC:SetSpawnpoint(self.Data.Merchant .. "Spawnpoint");
     end
     NPC:Activate();
 end

@@ -304,7 +304,7 @@ end
 -- @within NonPlayerCharacter
 --
 function NonPlayerCharacter:SetWaittime(_Waittime)
-    table.insert(self.m_Waittime, _Waittime);
+    self.m_Waittime = _Waittime;
     return self;
 end
 
