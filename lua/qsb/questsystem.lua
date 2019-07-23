@@ -62,6 +62,11 @@ function QuestSystem:InstallQuestSystem()
     if self.SystemInstalled ~= true then
         self.SystemInstalled = true;
 
+        -- Real random numbers
+        local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
+        math.randomseed(tonumber(TimeString));
+        math.random(1, 100);
+
         self:InitalizeQuestEventTrigger();
 
         -- Optional briefing expansion
@@ -1253,6 +1258,10 @@ end
 
 ---
 -- Creates a new inline job.
+--
+-- If a table is passed as one of the arguments then a copy will be created.
+-- It will not be a reference because of saving issues.
+--
 -- @param[type=number]   _EventType Event type
 -- @param[type=function] _Function Lua function reference
 -- @param ...            Optional arguments
@@ -1261,6 +1270,7 @@ end
 -- @local
 --
 function QuestSystem:StartInlineJob(_EventType, _Function, ...)
+    -- Who needs a trigger fix. :D
     self.InlineJobs.Counter = self.InlineJobs.Counter +1;
     _G["QuestSystem_InlineJob_Data_" ..self.InlineJobs.Counter] = copy(arg);
     _G["QuestSystem_InlineJob_Function_" ..self.InlineJobs.Counter] = _Function;
@@ -1300,7 +1310,7 @@ IstDrin = FindValue;
 -- @return [boolean] Enemies near
 --
 function AreEnemiesInArea( _player, _position, _range)
-    return AreEntitiesOfDiplomacyStateInArea( _player, _position, _range, Diplomacy.Hostile )
+    return AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Hostile);
 end
 
 ---
@@ -1312,12 +1322,15 @@ end
 -- @return [boolean] Allies near
 --
 function AreAlliesInArea( _player, _position, _range)
-    return AreEntitiesOfDiplomacyStateInArea( _player, _position, _range, Diplomacy.Friendly )
+    return AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Friendly);
 end
 
 ---
 -- Checks the area for entities of other parties with a diplomatic state to
 -- the player.
+--
+-- The first 16 player entities in the area will be evaluated. If they're not
+-- settler, heroes or buldings, they will be ignored.
 --
 -- @param[type=number] _player   Player ID
 -- @param[type=table]  _position Area center
@@ -1325,15 +1338,22 @@ end
 -- @param[type=number] _state    Diplomatic state
 -- @return [boolean] Entities near
 --
-function AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state )
+function AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state)
 	for i = 1,8 do
-		if Logic.GetDiplomacyState( _player, i) == _state then
-			if AreEntitiesInArea( i, 0, _position, _range, 1) then
-				return true
+        if Logic.GetDiplomacyState(_player, i) == _state then
+            local Data = {Logic.GetPlayerEntitiesInArea(i, 0, _position.X, _position.Y, _range, 16)};
+            table.remove(Data, 1);
+            for j= table.getn(Data), 1, -1 do
+                if Logic.IsSettler(Data[j]) == 0 and Logic.IsBuilding(Data[j]) == 0 and Logic.IsHero(Data[j]) == 0 then
+                    table.remove(Data, j);
+                end
+            end
+            if table.getn(Data) > 0 then
+				return true;
 			end
 		end
 	end
-	return false
+	return false;
 end
 
 ---
@@ -1430,7 +1450,8 @@ function IsArmyNear(_Army, _Target, _Distance)
 end
 
 ---
--- Checks, if the positions are in the same sector.
+-- Checks, if the positions are in the same sector. If 2 possitions are not
+-- in the same sector then they are not connected.
 --
 -- @param _pos1 Position 1
 -- @param _pos2 Position 2

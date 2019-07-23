@@ -17,6 +17,7 @@ Script.Load(gvBasePath.. "qsb/questdebug.lua");
 Script.Load(gvBasePath.. "qsb/interaction.lua");
 Script.Load(gvBasePath.. "qsb/information.lua");
 Script.Load(gvBasePath.. "qsb/questbehavior.lua");
+Script.Load(gvBasePath.. "qsb/treasure.lua");
 
 -- Settings ----------------------------------------------------------------- --
 

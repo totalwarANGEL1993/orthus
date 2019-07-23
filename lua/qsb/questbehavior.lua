@@ -353,6 +353,7 @@ QuestSystemBehavior = {
 function QuestSystemBehavior:PrepareQuestSystem()
     if not self.Data.SystemInitalized then
         self.Data.SystemInitalized = true;
+        Tools.GiveResources = Tools.GiveResouces;
 
         QuestSystem:InstallQuestSystem();
         Interaction:Install();
@@ -362,6 +363,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
         Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
         Mission_OnSaveGameLoaded = function()
             Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior();
+            Tools.GiveResources = Tools.GiveResouces;
             QuestSystemBehavior:CallSaveLoadActions();
         end
 
@@ -1782,6 +1784,57 @@ function b_Goal_DestroyAllPlayerUnits:GetGoalTable()
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyAllPlayerUnits);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The plaver must eliminate all of his enemies in a distinct area.
+-- @param[type=string] _Position Area center
+-- @param[type=number] _Position Area size
+-- @within Goals
+--
+function Goal_DestroyEnemiesInArea(...)
+    return b_Goal_DestroyEnemiesInArea:New(unpack(arg));
+end
+
+b_Goal_DestroyEnemiesInArea = {
+    Data = {
+        Name = "Goal_DestroyEnemiesInArea",
+        Type = Objectives.MapScriptFunction
+    },
+};
+
+function b_Goal_DestroyEnemiesInArea:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Position = _Parameter;
+    elseif _Index == 2 then
+        self.Data.AreaSize = _Parameter;
+    end
+end
+
+function b_Goal_DestroyEnemiesInArea:GetGoalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_DestroyEnemiesInArea:CustomFunction(_Quest)
+    if not AreEnemiesInArea(_Quest.m_Receiver, GetPosition(self.Data.Position), self.Data.AreaSize) then
+        return true;
+    end
+end
+
+function b_Goal_DestroyEnemiesInArea:Debug(_Quest)
+    if not IsExisting(self.Data.Position) then
+        dbg(_Quest, self, "Position can not be found: " ..tostring(self.Data.Position));
+        return true;
+    end
+    if not self.Data.AreaSize or self.Data.AreaSize < 0 then
+        dbg(_Quest, self, "Area size is invalid!");
+        return true;
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyEnemiesInArea);
 
 -- -------------------------------------------------------------------------- --
 
@@ -4003,6 +4056,61 @@ function b_Reprisal_CloseGate:CustomFunction(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reprisal_CloseGate);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Creates a simple treasure chest with the desired amount of resources
+-- @param[type=string] _ScriptName Name of chest
+-- @param[type=string] _ResourceType Resource Type or "Random"
+-- @param[type=number] _Amount Amount of resource
+-- @within Rewards
+--
+function Reward_CreateChest(...)
+    return b_Reward_CreateChest:New(unpack(arg));
+end
+
+b_Reward_CreateChest = {
+    Data = {
+        Name = "Reward_CreateChest",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_CreateChest:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.ScriptName = _Parameter;
+    elseif _Index == 2 then
+        self.Data.ResourceType = _Parameter or "Random";
+    elseif _Index == 3 then
+        self.Data.Amount = _Parameter;
+    end
+end
+
+function b_Reward_CreateChest:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_CreateChest:CustomFunction(_Quest)
+    local ResourceMap = {Gold = 1, Clay = 2, Wood = 3, Stone = 4, Iron = 5, Sulfur = 6,};
+    local Chest = new(TreasureTemplate, self.Data.ScriptName);
+    Chest.m_Rewards[ResourceMap[self.Data.ResourceType] or math.random(1, 6)] = self.Data.Amount;
+    Chest:Activate();
+end
+
+function b_Reward_CreateChest:Debug(_Quest)
+    if not IsExisting(self.Data.ScriptName) then
+        dbg(_Quest, self, "Script entity is missing: " ..tostring(self.Data.ScriptName));
+        return true;
+    end
+    if not self.Data.Amount or self.Data.Amount < 1 then
+        dbg(_Quest, self, "Amount must be greater than 0!");
+        return true;
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_CreateChest);
 
 -- -------------------------------------------------------------------------- --
 

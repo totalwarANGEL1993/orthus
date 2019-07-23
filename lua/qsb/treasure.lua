@@ -1,0 +1,252 @@
+-- ########################################################################## --
+-- #  Treasure Script                                                       # --
+-- #  --------------------------------------------------------------------  # --
+-- #    Author:   totalwarANGEL                                             # --
+-- ########################################################################## --
+
+---
+-- This module creates better chests.
+--
+-- Chests are opened by any hero but you can set a custom condition that is
+-- checked first.
+--
+-- By default resources are given as reward. It is also possible to write
+-- a custom funktion that will be called after the chest is opened.
+--
+-- <b>Required modules:</b>
+-- <ul>
+-- <li>qsb.oop</li>
+-- <li>qsb.questsystem</li>
+-- <li>qsb.questbehavior</li>
+-- </ul>
+--
+-- @set sort=true
+--
+
+QuestSystemBehavior.Data.Treasure = {};
+
+---
+-- Simplified call to create a chest.
+--
+-- Entries in data table:
+-- <ul>
+-- <li>ScriptName: Script name of entity</li>
+-- <li>Gold: Amount of gold</li>
+-- <li>Clay: Amount of clay</li>
+-- <li>Wood: Amount of wood</li>
+-- <li>Stone: Amount of stone</li>
+-- <li>Iron: Amount of iron</li>
+-- <li>Sulfur: Amount of sulfur</li>
+-- <li>Condition: Additional opening condition</li>
+-- <li>Callback Additional opening callback</li>
+-- </ul>
+--
+-- <b>Note</b>: Condition and callback are optional. The data of the instance
+-- is passed to these function when they are called.
+--
+-- @param[type=table] _Data Data table
+-- @return[type=table] Treasure instance
+--
+function SetupTreasureChest(_Data)
+    return new(TreasureTemplate, _Data.ScriptName)
+        :SetGold(_Data.Rewards.Gold or 0)
+        :SetClay(_Data.Rewards.Clay or 0)
+        :SetWood(_Data.Rewards.Wood or 0)
+        :SetStone(_Data.Rewards.Stone or 0)
+        :SetIron(_Data.Rewards.Iron or 0)
+        :SetSulfur(_Data.Rewards.Sulfur or 0)
+        :SetCondition(_Data.Condition)
+        :SetCallback(_Data.Callback)
+        :Activate();
+end
+
+TreasureTemplate = {}
+
+---
+-- Creates an new instance.
+-- @param[type=string] _ScriptName Script name of entity
+--
+function TreasureTemplate:construct(_ScriptName)
+    self.m_ScriptName = _ScriptName
+    self.m_Rewards = {0, 0, 0, 0, 0, 0};
+
+    QuestSystemBehavior.Data.Treasure[_ScriptName] = self;
+end
+
+class(TreasureTemplate);
+
+---
+-- Activates the treasure chest.
+-- @return[type=table] Instance
+--
+function TreasureTemplate:Activate()
+    ReplaceEntity(self.m_ScriptName, Entities.XD_ChestClose);
+    if not self.m_JobID then
+        self.m_JobID = self:StartController();
+    end
+    return self;
+end
+
+---
+-- Deactivates the treasure chest.
+-- @return[type=table] Instance
+--
+function TreasureTemplate:Deactivate()
+    EndJob(self.m_JobID);
+    self.m_JobID = nil;
+    return self;
+end
+
+---
+-- Sets the optional opening condition.
+-- @param[type=function] _Function Condition method
+-- @return[type=table] Instance
+--
+function TreasureTemplate:SetCondition(_Function)
+    self.m_Condition = _Function;
+    return self;
+end
+
+---
+-- Sets the optional opening callback.
+-- @param[type=function] _Function Callback method
+-- @return[type=table] Instance
+--
+function TreasureTemplate:SetCallback(_Function)
+    self.m_Callback = _Function;
+    return self;
+end
+
+---
+-- Sets the amount of gold.
+-- @param[type=number] _Amount Amount of resource
+-- @return[type=table] Instance
+--
+function TreasureTemplate:SetGold(_Amount)
+    self.m_Rewards[1] = _Amount;
+    return self;
+end
+
+---
+-- Sets the amount of clay.
+-- @param[type=number] _Amount Amount of resource
+-- @return[type=table] Instance
+--
+function TreasureTemplate:SetClay(_Amount)
+    self.m_Rewards[2] = _Amount;
+    return self;
+end
+
+---
+-- Sets the amount of wood.
+-- @param[type=number] _Amount Amount of resource
+-- @return[type=table] Instance
+--
+function TreasureTemplate:SetWood(_Amount)
+    self.m_Rewards[3] = _Amount;
+    return self;
+end
+
+---
+-- Sets the amount of stone.
+-- @param[type=number] _Amount Amount of resource
+-- @return[type=table] Instance
+--
+function TreasureTemplate:SetStone(_Amount)
+    self.m_Rewards[4] = _Amount;
+    return self;
+end
+
+---
+-- Sets the amount of iron.
+-- @param[type=number] _Amount Amount of resource
+-- @return[type=table] Instance
+--
+function TreasureTemplate:SetIron(_Amount)
+    self.m_Rewards[5] = _Amount;
+    return self;
+end
+
+---
+-- Sets the amount of sulfur.
+-- @param[type=number] _Amount Amount of resource
+-- @return[type=table] Instance
+--
+function TreasureTemplate:SetSulfur(_Amount)
+    self.m_Rewards[6] = _Amount;
+    return self;
+end
+
+---
+-- Applies the default rewards of the treasure chest.
+--
+-- The amount of each resource inside the chest is printed to screen.
+--
+function TreasureTemplate:GiveTreasureReward()
+    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+    Tools.GiveResources(gvMission.PlayerID, unpack(self.m_Rewards));
+    local RewardString = "";
+
+    -- Gold
+    if self.m_Rewards[1] ~= 0 then
+        RewardString = RewardString .. self.m_Rewards[1] .. ((Language == "de" and " Taler ") or " gold ");
+    end
+    -- Clay
+    if self.m_Rewards[2] ~= 0 then
+        RewardString = RewardString .. self.m_Rewards[2] .. ((Language == "de" and " Lenm ") or " clay ");
+    end
+    -- Wood
+    if self.m_Rewards[3] ~= 0 then
+        RewardString = RewardString .. self.m_Rewards[3] .. ((Language == "de" and " Holz ") or " wood ");
+    end
+    -- Stone
+    if self.m_Rewards[4] ~= 0 then
+        RewardString = RewardString .. self.m_Rewards[4] .. ((Language == "de" and " Stein ") or " stone ");
+    end
+    -- Iron
+    if self.m_Rewards[5] ~= 0 then
+        RewardString = RewardString .. self.m_Rewards[5] .. ((Language == "de" and " Eisen ") or " iron ");
+    end
+    -- Sulfur
+    if self.m_Rewards[6] ~= 0 then
+        RewardString = RewardString .. self.m_Rewards[6] .. ((Language == "de" and " Schwefel ") or " sulfur ");
+    end
+    -- Print text
+    if RewardString ~= "" then
+        RewardString = ((Language == "de" and "Ihr findet: ") or "You received: ") .. RewardString;
+        Message(RewardString);
+    end
+end
+
+---
+-- Starts the controller job of the treasure chest and returns the ID.
+-- @return[type=number] ID of job
+--
+function TreasureTemplate:StartController()
+    return StartSimpleJobEx(function(_ScriptName)
+        local Chest = QuestSystemBehavior.Data.Treasure[_ScriptName];
+        if not Chest then
+            return true;
+        end
+        if not IsExisting(_ScriptName) then
+            QuestSystemBehavior.Data.Treasure[_ScriptName].JobID = nil;
+            return true;
+        end
+        if Chest.m_Condition and not Chest:m_Condition() then
+            return;
+        end
+        local Position = GetPosition(_ScriptName);
+        if Logic.IsPlayerEntityOfCategoryInArea(gvMission.PlayerID, Position.X, Position.Y, 350, "Hero") == 1 then
+            Sound.PlayFeedbackSound(Sounds.VoicesMentor_CHEST_FoundTreasureChest_rnd_01);
+            ReplaceEntity(_ScriptName, Entities.XD_ChestOpen);
+            Chest:Deactivate();
+            Chest:GiveTreasureReward();
+            if Chest.m_Callback then
+                Chest:m_Callback();
+            end
+            QuestSystemBehavior.Data.Treasure[_ScriptName].JobID = nil;
+            return true;
+        end
+    end, self.m_ScriptName);
+end
+
