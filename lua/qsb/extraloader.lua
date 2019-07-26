@@ -1,10 +1,11 @@
 -- ########################################################################## --
--- #  Interaction Loader                                                    # --
+-- #  Extra Loader                                                          # --
 -- #  --------------------------------------------------------------------  # --
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
 
--- Decides which briefing system to load.
+-- Loads scripts depending on the game version
+-- TODO: Add History Edition fix
 local Version = Framework.GetProgramVersion();
 gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
 if gvExtensionNumber > 2 then
@@ -12,3 +13,5 @@ if gvExtensionNumber > 2 then
 else
     Script.Load(gvBasePath.. "qsb/information_ex2.lua");
 end
+-- Load allways
+Script.Load(gvBasePath.. "qsb/treasure.lua");

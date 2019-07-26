@@ -327,8 +327,8 @@ end
 QuestSystemBehavior = {
     Data = {
         RegisteredQuestBehaviors = {},
-        SystemInitalized = false;
-        Version = "1.1.0",
+        SystemInitalized = false,
+        Version = "1.2.0",
 
         SaveLoadedActions = {},
         PlayerColorAssigment = {},
@@ -336,9 +336,9 @@ QuestSystemBehavior = {
         CreatedAiArmies = {},
         AiArmyNameToId = {},
         CustomVariables = {},
-        ChoicePages = {}
+        ChoicePages = {},
     }
-}
+};
 
 ---
 -- Installs the questsystem. This function is a substitude for the original
@@ -890,6 +890,67 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
     else
         Advance(army);
     end
+end
+
+-- Quest controll --
+
+---
+-- Fails the quest.
+-- @param _Subject Quest name or ID
+--
+function QuestSystemBehavior:FailQuest(_Quest)
+    self:GetQuestByNameOrID(_Quest):Fail();
+end
+
+---
+-- Wins the quest.
+-- @param _Subject Quest name or ID
+--
+function QuestSystemBehavior:StartQuest(_Quest)
+    self:GetQuestByNameOrID(_Quest):Trigger();
+end
+
+---
+-- Interrupts the quest.
+-- @param _Subject Quest name or ID
+--
+function QuestSystemBehavior:StopQuest(_Quest)
+    self:GetQuestByNameOrID(_Quest):Interrupt();
+end
+
+---
+-- Resets the quest.
+-- @param _Subject Quest name or ID
+--
+function QuestSystemBehavior:ResetQuest(_Quest)
+    self:GetQuestByNameOrID(_Quest):Reset();
+end
+
+---
+-- Wins the quest.
+-- @param _Subject Quest name or ID
+--
+function QuestSystemBehavior:WinQuest(_Quest)
+    self:GetQuestByNameOrID(_Quest):Succeed();
+end
+
+---
+-- Returns the quest or a generated null save fallback quest if the desired
+-- quest does not exist.
+-- @param _Subject Quest name or ID
+-- @return[type=table] Quest
+--
+function QuestSystemBehavior:GetQuestByNameOrID(_Subject)
+    local QuestID = GetQuestID(_Subject);
+    if QuestID > 0 and QuestSystem.Quests[QuestID] then
+        return QuestSystem.Quests[QuestID];
+    end
+    Message("Debug: Quest name or ID not found: " ..tostring(_Subject));
+    return CreateQuest {
+        Name = "Fallback_Quest_" ..table.getn(QuestSystem.Quests),
+        Goal_InstantSuccess(),
+        Trigger_NeverTriggered()
+    }
 end
 
 -- Save Actions --
@@ -3191,11 +3252,14 @@ function b_Reward_MoveAndVanish:CustomFunction(_Quest)
         if not IsExisting(_EntityID) then
             return true;
         end
+        if not Logic.IsEntityMoving(_EntityID) then
+            Move(_EntityID, _Target);
+        end
     
         local PlayerID = Logic.EntityGetPlayer(_EntityID);
         local ScriptName = Logic.GetEntityName(_EntityID);
         local x, y, z = Logic.EntityGetPos(_EntityID);
-        if Logic.IsMapPositionExplored(_LookingPlayerID, x, y) == 0 or IsNear(_EntityID, _Target, 50) then
+        if Logic.IsMapPositionExplored(_LookingPlayerID, x, y) == 0 or IsNear(_EntityID, _Target, 150) then
             if Logic.IsLeader(_EntityID) == 1 then
                 Logic.DestroyGroupByLeader(_EntityID)
             else
@@ -4056,61 +4120,6 @@ function b_Reprisal_CloseGate:CustomFunction(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reprisal_CloseGate);
-
--- -------------------------------------------------------------------------- --
-
----
--- Creates a simple treasure chest with the desired amount of resources
--- @param[type=string] _ScriptName Name of chest
--- @param[type=string] _ResourceType Resource Type or "Random"
--- @param[type=number] _Amount Amount of resource
--- @within Rewards
---
-function Reward_CreateChest(...)
-    return b_Reward_CreateChest:New(unpack(arg));
-end
-
-b_Reward_CreateChest = {
-    Data = {
-        Name = "Reward_CreateChest",
-        Type = Callbacks.MapScriptFunction
-    },
-};
-
-function b_Reward_CreateChest:AddParameter(_Index, _Parameter)
-    if _Index == 1 then
-        self.Data.ScriptName = _Parameter;
-    elseif _Index == 2 then
-        self.Data.ResourceType = _Parameter or "Random";
-    elseif _Index == 3 then
-        self.Data.Amount = _Parameter;
-    end
-end
-
-function b_Reward_CreateChest:GetRewardTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
-end
-
-function b_Reward_CreateChest:CustomFunction(_Quest)
-    local ResourceMap = {Gold = 1, Clay = 2, Wood = 3, Stone = 4, Iron = 5, Sulfur = 6,};
-    local Chest = new(TreasureTemplate, self.Data.ScriptName);
-    Chest.m_Rewards[ResourceMap[self.Data.ResourceType] or math.random(1, 6)] = self.Data.Amount;
-    Chest:Activate();
-end
-
-function b_Reward_CreateChest:Debug(_Quest)
-    if not IsExisting(self.Data.ScriptName) then
-        dbg(_Quest, self, "Script entity is missing: " ..tostring(self.Data.ScriptName));
-        return true;
-    end
-    if not self.Data.Amount or self.Data.Amount < 1 then
-        dbg(_Quest, self, "Amount must be greater than 0!");
-        return true;
-    end
-    return false;
-end
-
-QuestSystemBehavior:RegisterBehavior(b_Reward_CreateChest);
 
 -- -------------------------------------------------------------------------- --
 

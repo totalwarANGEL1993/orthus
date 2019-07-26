@@ -377,6 +377,15 @@ function NonPlayerCharacter:Deactivate()
 end
 
 ---
+-- Returns true, if the npc is currently active.
+-- @return[type=boolean] NPC is active
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:IsActive()
+    return self.m_Active == true;
+end
+
+---
 -- Checks, if some hero talked to this npc.
 -- @return[type=boolean] Talked to
 -- @within NonPlayerCharacter
@@ -670,6 +679,15 @@ function NonPlayerMerchant:Deactivate()
 end
 
 ---
+-- Returns true, if the npc is currently active.
+-- @return[type=boolean] NPC is active
+-- @within NonPlayerMerchant
+--
+function NonPlayerMerchant:IsActive()
+    return self.m_Active == true;
+end
+
+---
 -- Calls the merchant menu of the merchant if a hero talks to him.
 -- @param[type=number] _HeroID   ID of hero
 -- @param[type=number] _TraderID ID of merchant
@@ -698,21 +716,23 @@ end
 -- @local
 --
 function NonPlayerMerchant:Controller()
-    for k, v in pairs(self.m_Offers) do
-        if v and v.Refresh > -1 then
-            self.m_Offers[k].LastRefresh = v.LastRefresh or Logic.GetTime();
-            if Logic.GetTime() > v.LastRefresh + v.Refresh then
-                -- Update load
-                if self.m_Offers[k].Load < self.m_Offers[k].LoadMax then
-                    self.m_Offers[k].Load = v.Load +1;
+    if self.m_Active == true then
+        for k, v in pairs(self.m_Offers) do
+            if v and v.Refresh > -1 then
+                self.m_Offers[k].LastRefresh = v.LastRefresh or Logic.GetTime();
+                if Logic.GetTime() > v.LastRefresh + v.Refresh then
+                    -- Update load
+                    if self.m_Offers[k].Load < self.m_Offers[k].LoadMax then
+                        self.m_Offers[k].Load = v.Load +1;
+                    end
+                    -- Update inflation
+                    self.m_Offers[k].Inflation = self.m_Offers[k].Inflation - 0.05;
+                    if self.m_Offers[k].Inflation < 0.75 then
+                        self.m_Offers[k].Inflation = 0.75;
+                    end
+                    -- Delete refresh time
+                    self.m_Offers[k].LastRefresh = nil;
                 end
-                -- Update inflation
-                self.m_Offers[k].Inflation = self.m_Offers[k].Inflation - 0.05;
-                if self.m_Offers[k].Inflation < 0.75 then
-                    self.m_Offers[k].Inflation = 0.75;
-                end
-                -- Delete refresh time
-                self.m_Offers[k].LastRefresh = nil;
             end
         end
     end

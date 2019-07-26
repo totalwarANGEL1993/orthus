@@ -1,5 +1,5 @@
 -- ########################################################################## --
--- #  Treasure Script                                                       # --
+-- #  Treasure Script (Extra 1/2)                                           # --
 -- #  --------------------------------------------------------------------  # --
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
@@ -249,4 +249,59 @@ function TreasureTemplate:StartController()
         end
     end, self.m_ScriptName);
 end
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Creates a simple treasure chest with the desired amount of resources
+-- @param[type=string] _ScriptName Name of chest
+-- @param[type=string] _ResourceType Resource Type or "Random"
+-- @param[type=number] _Amount Amount of resource
+-- @within Rewards
+--
+function Reward_CreateChest(...)
+    return b_Reward_CreateChest:New(unpack(arg));
+end
+
+b_Reward_CreateChest = {
+    Data = {
+        Name = "Reward_CreateChest",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_CreateChest:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.ScriptName = _Parameter;
+    elseif _Index == 2 then
+        self.Data.ResourceType = _Parameter or "Random";
+    elseif _Index == 3 then
+        self.Data.Amount = _Parameter;
+    end
+end
+
+function b_Reward_CreateChest:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_CreateChest:CustomFunction(_Quest)
+    local ResourceMap = {Gold = 1, Clay = 2, Wood = 3, Stone = 4, Iron = 5, Sulfur = 6,};
+    local Chest = new(TreasureTemplate, self.Data.ScriptName);
+    Chest.m_Rewards[ResourceMap[self.Data.ResourceType] or math.random(1, 6)] = self.Data.Amount;
+    Chest:Activate();
+end
+
+function b_Reward_CreateChest:Debug(_Quest)
+    if not IsExisting(self.Data.ScriptName) then
+        dbg(_Quest, self, "Script entity is missing: " ..tostring(self.Data.ScriptName));
+        return true;
+    end
+    if not self.Data.Amount or self.Data.Amount < 1 then
+        dbg(_Quest, self, "Amount must be greater than 0!");
+        return true;
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_CreateChest);
 
