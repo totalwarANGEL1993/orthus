@@ -1612,7 +1612,7 @@ function b_Goal_NPC:Debug(_Quest)
         return true;
     end
     if self.Data.Hero and self.Data.Hero ~= "INVALID_SCRIPTNAME" and (IsExisting(self.Data.Hero) == false or Logic.IsHero(GetID(self.Data.Hero)) == 0) then
-        dbg(_Quest, self, "Hero '" ..self.Data.Hero.. "' is invalid!");
+        dbg(_Quest, self, "Hero '" ..tostring(self.Data.Hero).. "' is invalid!");
         return true;
     end
     if self.Data.Hero and self.Data.Hero ~= "INVALID_SCRIPTNAME" and self.Data.Message == nil then
@@ -3274,11 +3274,11 @@ end
 
 function b_Reward_MoveAndVanish:Debug(_Quest)
     if not IsExisting(self.Data.Entity) then
-        dbg(_Quest, self, "Entity does not exist: " ..self.Data.Entity);
+        dbg(_Quest, self, "Entity does not exist: " ..tostring(self.Data.Entity));
         return true;
     end
     if not IsExisting(self.Data.Target) then
-        dbg(_Quest, self, "Destionation does not exist: " ..self.Data.Target);
+        dbg(_Quest, self, "Destionation does not exist: " ..tostring(self.Data.Target));
         return true;
     end
     return false;
@@ -3856,7 +3856,7 @@ end
 function b_Goal_WinQuest:Debug(_Quest)
     local QuestID = GetQuestID(self.Data.QuestName);
     if QuestID == 0 then
-        dbg(_Quest, self, "Quest '" ..self.Data.QuestName.. "' does not exist!");
+        dbg(_Quest, self, "Quest '" ..tostring(self.Data.QuestName).. "' does not exist!");
         return true;
     end
     return false;
@@ -3914,7 +3914,7 @@ end
 
 function b_Goal_DestroyPlayer:Debug(_Quest)
     if not IsExisting(self.Data.Headquarter) then
-        dbg(_Quest, self, "Headquarter of player " ..self.Data.PlayerID.. " is already destroyed!");
+        dbg(_Quest, self, "Headquarter of player " ..string(self.Data.PlayerID).. " is already destroyed!");
         return true;
     end
     return false;
@@ -3970,7 +3970,7 @@ end
 function b_Reprisal_QuestRestartForceActive:Debug(_Quest)
     local QuestID = GetQuestID(self.Data.QuestName);
     if QuestID == 0 then
-        dbg(_Quest, self, "Quest '" ..self.Data.QuestName.. "' does not exist!");
+        dbg(_Quest, self, "Quest '" ..string(self.Data.QuestName).. "' does not exist!");
         return true;
     end
     return false;
@@ -4655,12 +4655,12 @@ function b_Reward_AI_CreateArmy:Debug(_Quest)
         return true;
     end
     if QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' is already created!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
         return true;
     end
     if  QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] 
     and table.getn(QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID]) > 9 then
-        dbg(_Quest, self, "Player '" ..self.Data.PlayerID.. "' has to many armies!");
+        dbg(_Quest, self, "Player '" ..tostring(self.Data.PlayerID).. "' has to many armies!");
         return true;
     end
     return false;
@@ -4772,16 +4772,16 @@ function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
         return true;
     end
     if QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' is already created!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
         return true;
     end
     if  QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID]
     and table.getn(QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID]) > 9 then
-        dbg(_Quest, self, "Player '" ..self.Data.PlayerID.. "' has to many armies!");
+        dbg(_Quest, self, "Player '" ..tostring(self.Data.PlayerID).. "' has to many armies!");
         return true;
     end
     if not IsExisting(self.Data.LifeThread) then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' has no life thread!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' has no life thread!");
         return true;
     end
     
@@ -4793,7 +4793,7 @@ function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
         end
     end
     if ValidMember == false then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' has no troop types assigned!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' has no troop types assigned!");
         return true;
     end
     return false;
@@ -4848,7 +4848,7 @@ end
 
 function b_Reward_AI_EnableArmyPatrol:Debug(_Quest)
     if not QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' does not exist!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
     end
     return false;
@@ -4903,7 +4903,7 @@ end
 
 function b_Reward_AI_EnableArmyAttack:Debug(_Quest)
     if not QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' does not exist!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
     end
     return false;
@@ -5068,7 +5068,7 @@ end
 
 function b_Trigger_QuestSuccess:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5123,7 +5123,7 @@ end
 
 function b_Trigger_QuestFailure:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5178,7 +5178,7 @@ end
 
 function b_Trigger_QuestOver:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5233,7 +5233,7 @@ end
 
 function b_Trigger_QuestInterrupted:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5288,7 +5288,7 @@ end
 
 function b_Trigger_QuestActive:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5343,7 +5343,7 @@ end
 
 function b_Trigger_QuestNotTriggered:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
