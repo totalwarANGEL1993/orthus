@@ -931,7 +931,7 @@ end
 -- @param _Subject Quest name or ID
 --
 function QuestSystemBehavior:WinQuest(_Quest)
-    self:GetQuestByNameOrID(_Quest):Succeed();
+    self:GetQuestByNameOrID(_Quest):Success();
 end
 
 ---
