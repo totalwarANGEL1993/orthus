@@ -1577,7 +1577,7 @@ function b_Goal_NPC:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.Target = _Parameter;
     elseif _Index == 2 then
-        if _Parameter == "" then
+        if _Parameter == "" or _Parameter == "INVALID_SCRIPTNAME" then
             _Parameter = nil;
         end
         self.Data.Hero = _Parameter;
@@ -4581,7 +4581,28 @@ function b_Reward_AI_CreateAIPlayer:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
-    return false;
+    if not self.Data.PlayerID or self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "Player ID must be between 1 and 8!");
+        return true;
+    end
+    if not self.Data.TechLevel or self.Data.TechLevel < 1 or self.Data.TechLevel > 4 then
+        dbg(_Quest, self, "Technology level must be between 1 and 4!");
+        return true;
+    end
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] then
+        dbg(_Quest, self, "A player already exists for ID " ..tostring(self.Data.PlayerID));
+        return true;
+    end
+
+    -- Most expensive check last
+    local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
+    for i= 1, table.getn(PlayerEntities), 1 do
+        if Logic.IsBuilding(PlayerEntities[i]) == 1 then
+            return false;
+        end
+    end
+    dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " must have at least 1 building!");
+    return true;
 end
 
 function b_Reward_AI_CreateAIPlayer:Reset(_Quest)
@@ -4650,6 +4671,10 @@ function b_Reward_AI_CreateArmy:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_CreateArmy:Debug(_Quest)
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
+        return true;
+    end
     if self.Data.ArmyName == "" or self.Data.ArmyName == nil then
         dbg(_Quest, self, "An army got an invalid identifier!");
         return true;
@@ -4767,6 +4792,10 @@ function b_Reward_AI_CreateSpawnArmy:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
+        return true;
+    end
     if self.Data.ArmyName == "" or self.Data.ArmyName == nil then
         dbg(_Quest, self, "An army got an invalid identifier!");
         return true;
@@ -4847,6 +4876,10 @@ function b_Reward_AI_EnableArmyPatrol:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_EnableArmyPatrol:Debug(_Quest)
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
+        return true;
+    end
     if not QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
@@ -4902,6 +4935,10 @@ function b_Reward_AI_EnableArmyAttack:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_EnableArmyAttack:Debug(_Quest)
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
+        return true;
+    end
     if not QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;

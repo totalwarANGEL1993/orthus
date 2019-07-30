@@ -414,6 +414,9 @@ function Information:OverrideMultipleChoice()
         if _page.creditsText == true then
             Information:SetTextCenteredCredits(MinimapFlag);
         end
+        if _page.wallText == true then
+            Information:SetTextWall();
+        end
 
         -- Display multiple choice
 		if _page.mc ~= nil then
@@ -613,6 +616,29 @@ function Information:SetTextCenteredCredits(_DisableMap)
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(100),textPosY,titleSize,100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
     XGUIEng.SetWidgetPositionAndSize("Cinematic_Headline",100,titlePosY,titleSize,15);
+end
+
+---
+-- Moves the text and the title of the cinmatic widget to the screen center in
+-- reversed order. Can be used for movie like map credits.
+-- Position is not ajusted by text length!
+-- @param[type=boolean] _DisableMap Hide the minimap
+-- @within Information
+-- @local
+--
+function Information:SetTextWall()
+    self:SetBriefingLooks(true);
+
+    local Size   = {GUI.GetScreenSize()};
+    local TextH  = math.ceil(468 * (Size[2]/768));
+    local TextX  = math.ceil((262 * (Size[2]/768)) - (50 * (Size[1]/1920)));
+    local TextY  = math.ceil(200 * (Size[2]/768));
+
+    -- Set widget apperance
+    XGUIEng.SetWidgetPositionAndSize("Cinematic_Text", TextX, TextY, 500, TextH);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text", TextX, TextY, 500, TextH);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline", TextX, TextY -50, 500, 50);
+    XGUIEng.SetWidgetPositionAndSize("Cinematic_Headline", TextX, TextY -50, 500, 50);
 end
 
 ---
