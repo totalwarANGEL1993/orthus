@@ -438,11 +438,17 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
 
     elseif Behavior[1] == Objectives.Create then
         local Position = (type(Behavior[3]) == "table" and Behavior[3]) or GetPosition(Behavior[3]);
-        if AreEntitiesInArea(self.m_Receiver, Behavior[2], Position, Behavior[4], Behavior[5]) then
+
+        local EnoughEntities = SaveCall{
+            AreEntitiesInArea, self.m_Receiver, Behavior[2], Position, Behavior[4], Behavior[5],
+            ErrorHandler = function() return false; end
+        };
+
+        if EnoughEntities then
             if Behavior[7] then
                 local CreatedEntities = {Logic.GetPlayerEntitiesInArea(self.m_Receiver, Behavior[2], Position.X, Position.Y, Behavior[4], Behavior[5])};
                 for i= 2, table.getn(CreatedEntities), 1 do
-                    ChangePlayer(CreatedEntities[i], Behavior[7]);
+                    SaveCall{ChangePlayer, CreatedEntities[i], Behavior[7]};
                 end
             end
             Behavior.Completed = true;
@@ -473,12 +479,17 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         end
 
     elseif Behavior[1] == Objectives.EntityDistance then
+        local Distance = SaveCall{
+            GetDistance, Behavior[2], Behavior[3],
+            ErrorHandler = function() return 0; end
+        };
+
         if Behavior[5] then
-            if GetDistance(Behavior[2], Behavior[3]) < (Behavior[4] or 2000) then
+            if Distance < (Behavior[4] or 2000) then
                 Behavior.Completed = true;
             end
         else
-            if GetDistance(Behavior[2], Behavior[3]) >= (Behavior[4] or 2000) then
+            if Distance >= (Behavior[4] or 2000) then
                 Behavior.Completed = true;
             end
         end
@@ -698,16 +709,16 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         Victory();
 
     elseif _Behavior[1] == Callbacks.MapScriptFunction then
-        _Behavior[2][1](_Behavior[2][2], self);
+        SaveCall{_Behavior[2][1], _Behavior[2][2], self};
 
     elseif _Behavior[1] == Callbacks.Briefing then
         self.m_Briefing = _Behavior[2][1](_Behavior[2][2], self);
 
     elseif _Behavior[1] == Callbacks.ChangePlayer then
-        ChangePlayer(_Behavior[2], _Behavior[3]);
+        SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.Message then
-        Message(_Behavior[2]);
+        SaveCall{Message, _Behavior[2]};
 
     elseif _Behavior[1] == Callbacks.DestroyEntity then
         if IsExisting(_Behavior[2]) then
@@ -725,20 +736,29 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         end
 
     elseif _Behavior[1] == Callbacks.CreateEntity then
-        ReplaceEntity(_Behavior[2], _Behavior[3]);
+        SaveCall{ReplaceEntity, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.CreateGroup then
         if not IsExisting(_Behavior[2]) then
             return;
         end
-        local Position = GetPosition(_Behavior[2]);
-        local PlayerID = GetPlayer(_Behavior[2]);
+        local Position = SaveCall{
+            GetPosition, _Behavior[2],
+            ErrorHandler = function() return {X= 100, Y= 100}; end
+        };
+        local PlayerID = SaveCall{
+            GetPlayer, _Behavior[2],
+            ErrorHandler = function() return 1; end
+        };
         local Orientation = Logic.GetEntityOrientation(GetID(_Behavior[2]));
         DestroyEntity(_Behavior[2]);
-        CreateMilitaryGroup(PlayerID, _Behavior[3], _Behavior[4], Position, _Behavior[2]);
+        SaveCall{CreateMilitaryGroup, PlayerID, _Behavior[3], _Behavior[4], Position, _Behavior[2]};
 
     elseif _Behavior[1] == Callbacks.CreateEffect then
-        local Position = GetPosition(_Behavior[4]);
+        local Position = SaveCall{
+            GetPosition, _Behavior[4],
+            ErrorHandler = function() return {X= 100, Y= 100}; end
+        };
         local EffectID = Logic.CreateEffect(_Behavior[3], Position.X, Position.Y, 0);
         QuestSystem.NamedEffects[_Behavior[2]] = EffectID;
 
@@ -832,7 +852,10 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         if QuestSystem.NamedExplorations[_Behavior[2]] then
             DestroyEntity(QuestSystem.NamedExplorations[_Behavior[2]]);
         end
-        local Position = GetPosition(_Behavior[2]);
+        local Position = SaveCall{
+            GetPosition, _Behavior[2],
+            ErrorHandler = function() return {X= 100, Y= 100}; end
+        };
         local ViewCenter = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, 0, self.m_Receiver);
         Logic.SetEntityExplorationRange(ViewCenter, _Behavior[3]/100);
         QuestSystem.NamedExplorations[_Behavior[2]] = ViewCenter;
@@ -1430,6 +1453,7 @@ IsDead = IsDeadWrapper;
 -- @param              _Target   Target position
 -- @param[type=number] _Distance Area size
 -- @return[type=boolean] Army is near
+-- @within Helper
 --
 function IsArmyNear(_Army, _Target, _Distance)
     local LeaderID = 0;
@@ -1456,6 +1480,7 @@ end
 -- @param _pos1 Position 1
 -- @param _pos2 Position 2
 -- @return[type=boolean] Same sector
+-- @within Helper
 --
 function SameSector(_pos1, _pos2)
 	local sectorEntity1 = _pos1;
@@ -1487,6 +1512,82 @@ function SameSector(_pos1, _pos2)
 		DestroyEntity(eID2);
 	end
     return (sector1 ~= 0 and sector2 ~= 0 and sector1 == sector2);
+end
+
+---
+-- Displays the name of any function that is to large to be loaded when a
+-- savegame is loaded.
+-- @param[type=table] t Table to check
+-- @within Helper
+-- @local
+--
+function CheckFunctionSize(t)
+    table.foreach(t, function(k, v)
+        if type(v) == "function" then
+            local res, dmp = xpcall(
+                function()return string.dump(v) end,
+                function() end
+            );
+            if res and dmp then
+                local size = string.len(dmp);
+                if size > 16000 then
+                    GUI.AddStaticNote(k .. " -> " .. size);
+                    if LuaDebugger.Log then
+                        LuaDebugger.Log(k .. " -> " .. size);
+                    end
+                end
+            end
+        end
+        if type(v) == "table" and not tonumber(k) and v ~= _G then
+            CheckFunctionSize(v);
+        end
+    end);
+end
+
+---
+-- Calls a function in protected mode.
+--
+-- The function and the arguments must be passed as a table. If there is a
+-- field ErrorHandler in the table, the handler will be called in case of
+-- error. The error handler <i>must</i> be a function.
+--
+-- The error handler gets the actual error and all arguments from the original
+-- call passed when executed.
+--
+-- SaveCall returns the return value of the function if no errors occur. If
+-- something went wrong the return value of the error handler is returned. If
+-- no handler is present the return value will always be nil.
+--
+-- <b>Note>/b>: Protected mode is <u>only</u>used when the field 
+-- QuestSystem.IgnoreLuaDebugger is set to <i>true</i> or the LuaDebugger 
+-- (the one coded by yoq) is absend. If non of these conditions met, simply
+-- the original function will be executed.
+--
+-- @param[type=table] _Data Function to call (in a table)
+-- @return Return value of function or of error handler
+-- @within Helper
+-- @local
+--
+--
+function SaveCall(_Data)
+    if type(_Data == "table" and type(_Data[1]) == "function") then
+        local Function = table.remove(_Data, 1);
+        if QuestSystem.IgnoreLuaDebugger or LuaDebugger.Log == nil then
+            local Values = {xpcall(
+                function() return Function(unpack(_Data)); end,
+                function(_Error) return _Error; end
+            )};
+            if Values[1] == false then
+                GUI.AddStaticNote("Runtime error: " ..tostring(Values[2]));
+                if type(_Data.ErrorHandler) == "function" then
+                    return SaveCall{_Data.ErrorHandler, Values[2], unpack(_Data)};
+                end
+            end
+            return Values[2];
+        else
+            return Function(unpack(_Data));
+        end
+    end
 end
 
 -- -------------------------------------------------------------------------- --

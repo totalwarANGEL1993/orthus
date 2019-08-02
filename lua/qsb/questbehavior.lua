@@ -44,6 +44,7 @@
 -- @param[type=table] _Data Quest table
 -- @return[type=number] Quest id
 -- @return[type=table]  Quest instance
+-- @within Functions
 --
 -- @usage CreateQuest {
 --     Name = "VictoryCondition",
@@ -88,6 +89,7 @@ end
 ---
 -- This function starts the quest system by loading all components in the
 -- right order. Must be called on game start in the FMA.
+-- @within Functions
 --
 function LoadQuestSystem()
     QuestSystemBehavior:PrepareQuestSystem();
@@ -101,6 +103,7 @@ end
 -- @param[type=boolean] _TraceQuests Display quest status changes
 -- @param[type=boolean] _Cheats      Activate debug cheats
 -- @param[type=boolean] _Console     Activate debug shell
+-- @within Functions
 --
 -- @usage ActivateDebugMode(true, false, true, true);
 --
@@ -116,6 +119,7 @@ end
 --
 -- @param[type=number] _PlayerID  PlayerID
 -- @param[type=number] _TechLevel Technology level [1|4]
+-- @within Functions
 --
 -- @usage CreateAIPlayer(2, 4);
 --
@@ -130,6 +134,7 @@ end
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _ArmyID   ID of army
 -- @param[type=boolean] _Flag    Ability to attack
+-- @within Functions
 -- 
 -- @usage ArmyDisableAttackAbility(2, 1, true)
 --
@@ -144,6 +149,7 @@ end
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=number]  _ArmyID   ID of army
 -- @param[type=boolean] _Flag     Ability to attack
+-- @within Functions
 -- 
 -- @usage ArmyDisablePatrolAbility(2, 1, true)
 --
@@ -177,6 +183,7 @@ end
 -- @param[type=number] _RodeLength Action range of the army
 -- @param[type=table] _TroopTypes  Upgrade categories to recruit
 -- @return[type=number] Army ID
+-- @within Functions
 --
 -- @usage CreateAIPlayerArmy("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
 --
@@ -218,6 +225,7 @@ end
 -- @param[type=number] _RodeLength  Action range of the army
 -- @param[type=number] _RespawnTime Time till troops are refreshed
 -- @param              ...          List of types to spawn
+-- @within Functions
 --
 -- @usage CreateAIPlayerSpawnArmy(
 --     "Bar", 2, 8, "armyPos1", "lifethread", 5000,
@@ -250,6 +258,7 @@ end
 -- Finds all entities numbered from 1 to n with a common prefix.
 -- @param[type=string] _Prefix Prefix of scriptnames
 -- @return[type=table] List of entities
+-- @within Functions
 --
 function GetEntitiesByPrefix(_Prefix)
     local list = {};
@@ -272,6 +281,7 @@ end
 -- @param[type=number] _PlayerID   ID of player
 -- @param[type=number] _EntityType Type to search
 -- @return[type=table] List of entities
+-- @within Functions
 --
 function GetPlayerEntities(_PlayerID, _EntityType)
     local PlayerEntities = {}
@@ -307,6 +317,7 @@ end
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
+-- @within Functions
 --
 function StartSimpleJobEx(_Function, ...)
     return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, _Function, unpack(arg));
@@ -317,9 +328,83 @@ end
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
+-- @within Functions
 --
 function StartSimpleHiResJobEx(_Function, ...)
     return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, _Function, unpack(arg));
+end
+
+---
+-- Registers a behavior
+-- @param[type=table] _Behavior Behavior pseudo class
+-- @within Functions
+--
+function RegisterBehavior(_Behavior)
+    QuestSystemBehavior:RegisterBehavior(_Behavior)
+end
+
+---
+-- Adds an action that is performed after a save is loaded.
+-- @param[type=function] _Function Action
+-- @param                ...       Data
+-- @within Functions
+--
+function AddOnSaveLoadedAction(_Function, ...)
+    QuestSystemBehavior:AddSaveLoadActions(_Function, unpack(copy(arg)));
+end
+
+---
+-- Fails the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function FailQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Fail();
+end
+
+---
+-- Wins the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function StartQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Trigger();
+end
+
+---
+-- Interrupts the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function StopQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Interrupt();
+end
+
+---
+-- Resets the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function ResetQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset();
+end
+
+---
+-- Resets the quest and activates it immediately.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function RestartQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset():Trigger();
+end
+
+---
+-- Wins the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function WinQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Success();
 end
 
 -- Behavior --
@@ -892,53 +977,12 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
     end
 end
 
--- Quest controll --
-
----
--- Fails the quest.
--- @param _Subject Quest name or ID
---
-function QuestSystemBehavior:FailQuest(_Quest)
-    self:GetQuestByNameOrID(_Quest):Fail();
-end
-
----
--- Wins the quest.
--- @param _Subject Quest name or ID
---
-function QuestSystemBehavior:StartQuest(_Quest)
-    self:GetQuestByNameOrID(_Quest):Trigger();
-end
-
----
--- Interrupts the quest.
--- @param _Subject Quest name or ID
---
-function QuestSystemBehavior:StopQuest(_Quest)
-    self:GetQuestByNameOrID(_Quest):Interrupt();
-end
-
----
--- Resets the quest.
--- @param _Subject Quest name or ID
---
-function QuestSystemBehavior:ResetQuest(_Quest)
-    self:GetQuestByNameOrID(_Quest):Reset();
-end
-
----
--- Wins the quest.
--- @param _Subject Quest name or ID
---
-function QuestSystemBehavior:WinQuest(_Quest)
-    self:GetQuestByNameOrID(_Quest):Success();
-end
-
 ---
 -- Returns the quest or a generated null save fallback quest if the desired
 -- quest does not exist.
 -- @param _Subject Quest name or ID
 -- @return[type=table] Quest
+-- @local
 --
 function QuestSystemBehavior:GetQuestByNameOrID(_Subject)
     local QuestID = GetQuestID(_Subject);
@@ -1302,6 +1346,85 @@ function b_Goal_EntityDistance:GetGoalTable()
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_EntityDistance);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- To win this goal the player must have at least one unit of the category in
+-- the area OR mustn't have any unit of that category in the area.
+-- @param[type=number] _PlayerID Player to check
+-- @param[type=string] _Category Category name
+-- @param[type=string] _Target Area center
+-- @param[type=number] _Area Size of area
+-- @param[type=boolean] _LowerThan  Be lower than distance
+-- @within Goals
+--
+function Goal_UnitsInArea(...)
+    return b_Goal_UnitsInArea:New(unpack(arg));
+end
+
+b_Goal_UnitsInArea = {
+    Data = {
+        Name = "Goal_UnitsInArea",
+        Type = Objectives.EntityDistance
+    },
+};
+
+function b_Goal_UnitsInArea:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Category = _Parameter;
+    elseif _Index == 3 then
+        self.Data.Target = _Parameter;
+    elseif _Index == 4 then
+        self.Data.Distance = _Parameter;
+    elseif _Index == 5 then
+        if type(_Parameter) == "string" then
+            _Parameter = _Parameter == "<";
+        end
+        self.Data.LowerThan = _Parameter;
+    end
+end
+
+function b_Goal_UnitsInArea:GetGoalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_UnitsInArea:CustomFunction(_Quest)
+    local x, y, z = Logic.EntityGetPos(GetID(self.Data.Target));
+    if self.Data.LowerThan then
+        if Logic.IsPlayerEntityOfCategoryInArea(self.Data.PlayerID, x, y, self.Data.Distance, self.Data.Category) == 1 then
+            return true;
+        end
+    else
+        if Logic.IsPlayerEntityOfCategoryInArea(self.Data.PlayerID, x, y, self.Data.Distance, self.Data.Category) == 0 then
+            return true;
+        end
+    end
+end
+
+function b_Goal_UnitsInArea:Debug(_Quest)
+    if not self.Data.PlayerID or self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "The player ID must be between 1 and 8!");
+        return true;
+    end
+    if EntityCategories[self.Data.Category] == nil then
+        dbg(_Quest, self, "The category does not exist!");
+        return true;
+    end
+    if not IsExisting(self.Data.Target) then
+        dbg(_Quest, self, "The entity for the area center does not exist!");
+        return true;
+    end
+    if self.Data.Distance <= 0 then
+        dbg(_Quest, self, "The area size must be greater than 0!");
+        return true;
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_UnitsInArea);
 
 -- -------------------------------------------------------------------------- --
 
