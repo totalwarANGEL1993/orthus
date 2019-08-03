@@ -222,7 +222,6 @@ function GameCallback_OnQuestStatusChanged(_QuestID, _State, _Result)
         QuestSystem.QuestTimer:DeactivateTimer(_QuestID);
         QuestSystem.QuestTimer:ActivateTimer(_QuestID);
     else
-        Message("Quest " .._QuestID.. " has finished!");
         QuestSystem.QuestTimer:DeactivateTimer(_QuestID);
     end
 end
