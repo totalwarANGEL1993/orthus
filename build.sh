@@ -57,6 +57,14 @@ cp lua/qsb/treasure.lua "$1.unpacked/maps/externalmap/qsb/treasure.lua" > /dev/n
 if [ "$?" -ne "0" ]; then
 	$copyQsbFileFailed=1
 fi
+cp lua/qsb/timer_ex2.lua "$1.unpacked/maps/externalmap/qsb/timer_ex2.lua" > /dev/null 2>&1
+if [ "$?" -ne "0" ]; then
+	$copyQsbFileFailed=1
+fi
+cp lua/qsb/timer_ex3.lua "$1.unpacked/maps/externalmap/qsb/timer_ex3.lua" > /dev/null 2>&1
+if [ "$?" -ne "0" ]; then
+	$copyQsbFileFailed=1
+fi
 
 if [ "$copyQsbFileFailed" -ne "0" ]; then
 	echo "Failed to copy files!"

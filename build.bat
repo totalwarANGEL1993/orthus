@@ -15,6 +15,8 @@ xcopy /S lua/qsb/questdebug.lua %1 and ".unpacked/maps/externalmap/qsb/questdebu
 xcopy /S lua/qsb/extraloader.lua %1 and ".unpacked/maps/externalmap/qsb/extraloader.lua"
 xcopy /S lua/qsb/information_ex2.lua %1 and ".unpacked/maps/externalmap/qsb/information_ex2.lua"
 xcopy /S lua/qsb/information_ex3.lua %1 and ".unpacked/maps/externalmap/qsb/information_ex3.lua"
+xcopy /S lua/qsb/timer_ex2.lua %1 and ".unpacked/maps/externalmap/qsb/timer_ex2.lua"
+xcopy /S lua/qsb/timer_ex3.lua %1 and ".unpacked/maps/externalmap/qsb/timer_ex3.lua"
 xcopy /S lua/qsb/treasure.lua %1 and ".unpacked/maps/externalmap/qsb/treasure.lua"
 
 bin/bba5.exe %1 and "$.unpacked"
