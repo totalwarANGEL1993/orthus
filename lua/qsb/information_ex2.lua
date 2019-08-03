@@ -517,7 +517,7 @@ end
 --
 function Information:AdjustBriefingPageRotation(_Page)
     local RotationAngle = -45;
-    if _Page.lookAt and _Page.entity then
+    if _Page.entity then
         RotationAngle = Logic.GetEntityOrientation(GetID(_Page.entity));
         if Logic.IsBuilding(GetID(_Page.entity)) == 1 then
             RotationAngle = RotationAngle - 90;

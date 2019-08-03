@@ -3994,7 +3994,8 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuest);
 
 ---
 -- This goal succeeds if the headquarter entity of the player is destroyed.
--- In addition, all buildings and settlers of this player get killed.
+-- In addition, all buildings and settlers of this player are destroyed. If an
+-- AI is active it will be deactivated.
 -- @param[type=number] _PlayerID id of player
 -- @within Goals
 --
@@ -4023,6 +4024,11 @@ end
 
 function b_Goal_DestroyPlayer:CustomFunction(_Quest)
     if not IsExisting(self.Data.Headquarter) then
+        if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] then
+            AI.Player_DisableAi(self.Data.PlayerID);
+            QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] = nil;
+        end
+
         local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
         for i= 1, table.getn(PlayerEntities), 1 do 
             if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
