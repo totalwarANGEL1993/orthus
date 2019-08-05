@@ -94,10 +94,10 @@ function Information:CreateAddPageFunctions()
                         _page.actionOrig = _page.action;
                     end
                     _page.action = function()
-                        local ZoomDistance = Information:AdjustBriefingPageZoom(_page);
-                        local ZoomAngle = Information:AdjustBriefingPageAngle(_page);
-                        local RotationAngle = Information:AdjustBriefingPageRotation(_page);
-                        local PagePosition = Information:AdjustBriefingPageCamHeight(_page);
+                        _page.zoom = Information:AdjustBriefingPageZoom(_page);
+                        _page.angle = Information:AdjustBriefingPageAngle(_page);
+                        _page.rotation = Information:AdjustBriefingPageRotation(_page);
+                        _page = Information:AdjustBriefingPageCamHeight(_page);
 
                         -- Fader
                         Information:InitalizeFaderForBriefingPage(_page);
@@ -117,9 +117,9 @@ function Information:CreateAddPageFunctions()
                         -- Override camera flight
                         Camera.StopCameraFlight();
                         if not _page.flight then
-                            Camera.ZoomSetDistance(ZoomDistance);
-                            Camera.ZoomSetAngle(ZoomAngle);
-                            Camera.RotSetAngle(RotationAngle);
+                            Camera.ZoomSetDistance(_page.zoom);
+                            Camera.ZoomSetAngle(_page.angle);
+                            Camera.RotSetAngle(_page.rotation);
                             Camera.ScrollSetLookAt(_page.position.X, _page.position.Y);
                         else
                             briefingState.nextPageDelayTime = (_page.duration * 10) +1;
@@ -140,9 +140,9 @@ function Information:CreateAddPageFunctions()
                                 Camera.RotSetAngle(LastPage.rotation or -45);
                                 Camera.ScrollSetLookAt(LastPage.position.X, LastPage.position.Y);
 
-                                Camera.ZoomSetDistanceFlight(ZoomDistance, _page.duration);
-                                Camera.ZoomSetAngleFlight(ZoomAngle, _page.duration);
-                                Camera.RotFlight(RotationAngle, _page.duration);
+                                Camera.ZoomSetDistanceFlight(_page.zoom, _page.duration);
+                                Camera.ZoomSetAngleFlight(_page.angle, _page.duration);
+                                Camera.RotFlight(_page.rotation, _page.duration);
                                 Camera.FlyToLookAt(_page.position.X, _page.position.Y, _page.duration);
                             else
                                 Camera.ZoomSetDistance(_page.zoom);
@@ -453,6 +453,7 @@ end
 -- Fakes camera hight on the unusable Z-achis. This function must be called
 -- after all camera calculations are done.
 -- @param[type=table] _Page Briefing page
+-- @return[type=table] Page
 -- @within Information
 -- @local
 --
@@ -461,20 +462,31 @@ function Information:AdjustBriefingPageCamHeight(_Page)
     if _Page.angle >= 90 then
         _Page.height = 0;
     end
+
 	if _Page.height > 0 and _Page.angle > 0 and _Page.angle < 90 then
-		local AngleTangens = _Page.height / math.tan(math.rad(_Page.angle))
-		local RotationRadiant = math.rad(_Page.rotation)
+		local AngleTangens = _Page.height / math.tan(math.rad(_Page.angle));
+        local RotationRadiant = math.rad(_Page.rotation);
+        -- Save backup for when page is visited again
+        if not _Page.positionOriginal then
+            _Page.positionOriginal = _Page.position;
+        end
+
         -- New position
         local NewPosition = {
-            X = _Page.position.X - math.sin(RotationRadiant) * AngleTangens,
-            Y = _Page.position.Y + math.cos(RotationRadiant) * AngleTangens
+            X = _Page.positionOriginal.X - math.sin(RotationRadiant) * AngleTangens,
+            Y = _Page.positionOriginal.Y + math.cos(RotationRadiant) * AngleTangens
         };
         -- Update if valid position
-		if NewPosition.X > 0 and NewPosition.Y > 0 and NewPosition.X < Logic.WorldGetSize() and NewPosition.Y < Logic.WorldGetSize() then
-			_Page.zoom = _Page.zoom + math.sqrt(_Page.height^2) + (AngleTangens^2);
+        if NewPosition.X > 0 and NewPosition.Y > 0 and NewPosition.X < Logic.WorldGetSize() and NewPosition.Y < Logic.WorldGetSize() then
+            -- Save backup for when page is visited again
+            if not _Page.zoomOriginal then
+                _Page.zoomOriginal = _Page.zoom;
+            end
+			_Page.zoom = _Page.zoomOriginal + math.sqrt(_Page.height^2 + AngleTangens^2);
 			_Page.position = NewPosition;
 		end
-	end
+    end
+    return _Page;
 end
 
 ---
