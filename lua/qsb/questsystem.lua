@@ -242,7 +242,9 @@ function QuestSystem:InitalizeQuestEventTrigger()
                 local AllObjectivesTrue = true;
                 local AnyObjectiveFalse = false;
 
+                Quest.m_Fragments = {{}, {}};
                 for i = 1, table.getn(Quest.m_Objectives) do
+                    Quest:UpdateFragment(i);
                     local ObjectiveCompleted = Quest:IsObjectiveCompleted(i);
                     if Quest.m_Time > 0 and Quest.m_StartTime + Quest.m_Time < Logic.GetTime() then
                         if ObjectiveCompleted == nil then
@@ -256,6 +258,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
                     AllObjectivesTrue = (ObjectiveCompleted == true) and AllObjectivesTrue;
                     AnyObjectiveFalse = (ObjectiveCompleted == false and true) or AnyObjectiveFalse;
                 end
+                Quest:AttachFragments();
 
                 if AnyObjectiveFalse then
                     Quest:Fail();
@@ -295,14 +298,30 @@ function QuestSystem:GetNextFreeJornalID()
 end
 
 ---
--- Registers a quest from the quest system for the quest book slot.
+-- Returns the next free slot in the quest book.
+-- @param[type=number] _QuestID Id of quest
+-- @return[type=table] Journal entry
 -- @return[type=number] Jornal ID
--- @return[type=number] Quest ID
 -- @within QuestSystem
 -- @local
 --
-function QuestSystem:RegisterQuestAtJornalID(_JornalID, _QuestID)
-    self.QuestDescriptions[_JornalID] = _QuestID;
+function QuestSystem:GetJornalByQuestID(_QuestID)
+    for i= 1, 8, 1 do
+        if self.QuestDescriptions[i] and self.QuestDescriptions[i][1] == _QuestID then
+            return self.QuestDescriptions[i], i;
+        end
+    end
+end
+
+---
+-- Registers a quest from the quest system for the quest book slot.
+-- @return[type=number] Jornal ID
+-- @return[type=table] Quest data
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:RegisterQuestAtJornalID(_JornalID, _QuestData)
+    self.QuestDescriptions[_JornalID] = copy(_QuestData);
 end
 
 ---
@@ -342,6 +361,7 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     self.m_Reprisals   = (_Reprisals and copy(_Reprisals)) or {};
     self.m_Description = _Description;
     self.m_Time        = _Time or 0;
+    self.m_Fragments   = {{}, {}};
 
     self.m_State       = QuestStates.Inactive;
     self.m_Result      = QuestResults.Undecided;
@@ -550,6 +570,25 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
     elseif Behavior[1] == Objectives.WeatherState then
         if Logic.GetWeatherState() == Behavior[2] then
             Behavior.Completed = true;
+        end
+
+    elseif Behavior[1] == Objectives.Quest then
+        local QuestID = GetQuestID(Behavior[2]);
+        if QuestID == 0 then
+            Behavior.Completed = false;
+        end
+        if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
+            if QuestSystem.Quests[QuestID].m_Result ~= QuestResults.Undecided then
+                if Behavior[3] == nil or QuestSystem.Quests[QuestID].m_Result == Behavior[3] or QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
+                    Behavior.Completed = true;
+                else
+                    -- failed and not required -> true
+                    -- failed and required -> false
+                    Behavior.Completed = not Behavior[4];
+                end
+            else
+                Behavior.Completed = true;
+            end
         end
     end
 
@@ -905,6 +944,7 @@ end
 --
 function QuestTemplate:Success()
     self:verbose("DEBUG: Succeed quest '" ..self.m_QuestName.. "'");
+    self:Reset();
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Success;
@@ -927,6 +967,7 @@ end
 --
 function QuestTemplate:Fail()
     self:verbose("DEBUG: Fail quest '" ..self.m_QuestName.. "'");
+    self:Reset();
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Failure;
@@ -1027,6 +1068,105 @@ end
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Updates the fragment connected to the objective.
+-- @param[type=number] _Objective Index of objective
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:UpdateFragment(_Objective)
+    local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+    if Jornal == nil then
+        return;
+    end
+
+    local Running = false;
+    local Fragment = "";
+    local Objective = self.m_Objectives[_Objective];
+    if Objective and Objective[1] == Objectives.Quest then
+        local FragmentQuest = QuestSystem.Quests[GetQuestID(Objective[2])];
+        if FragmentQuest and FragmentQuest.m_Description and FragmentQuest.m_Description.Type == nil then
+            if FragmentQuest.m_State == QuestStates.Active then
+                Running = true;
+                Fragment = Fragment .. string.format(
+                    " @color:255,255,255 @cr %d) %s @cr %s @cr @color:255,255,255 ",
+                    _Objective,
+                    FragmentQuest.m_Description.Title,
+                    FragmentQuest.m_Description.Text
+                );
+            elseif FragmentQuest.m_State == QuestStates.Over then
+                if FragmentQuest.m_Result == QuestResults.Success then
+                    Fragment = Fragment .. string.format(
+                        " @color:140,255,140 @cr %d) %s @color:255,255,255 ",
+                        _Objective,
+                        FragmentQuest.m_Description.Title
+                    );
+                elseif FragmentQuest.m_Result == QuestResults.Failure then
+                    Fragment = Fragment .. string.format(
+                        " @color:255,140,140 @cr %d) %s @color:255,255,255 ",
+                        _Objective,
+                        FragmentQuest.m_Description.Title
+                    );
+                elseif FragmentQuest.m_Result == QuestResults.Interrupted then
+                    Fragment = Fragment .. string.format(
+                        " @color:180,180,180 @cr %d) %s @color:255,255,255 ",
+                        _Objective,
+                        FragmentQuest.m_Description.Title
+                    );
+                end
+            end
+        end
+    end
+
+    if Fragment ~= "" then
+        if Running then
+            table.insert(self.m_Fragments[1], Fragment);
+        else
+            table.insert(self.m_Fragments[2], Fragment);
+        end
+    end
+end
+
+---
+-- Updates the fragments in the quest description.
+--
+-- <b>Hint</b>: Currently extra 3 will not be supported.
+--
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:AttachFragments()
+    local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+    if Jornal == nil or ID == nil then
+        return;
+    end
+
+    -- Exclude extra 3
+    local Version = Framework.GetProgramVersion();
+    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
+    if gvExtensionNumber > 2 then
+        return;
+    end
+    if table.getn(self.m_Fragments[1]) == 0 and table.getn(self.m_Fragments[2]) == 0 then
+        return;
+    end
+
+    local NewQuestText = Jornal[5] .. " @cr ";
+    for i= 1, table.getn(self.m_Fragments[1]), 1 do
+        NewQuestText = NewQuestText .. self.m_Fragments[1][i];
+    end
+    for i= 1, table.getn(self.m_Fragments[2]), 1 do
+        NewQuestText = NewQuestText .. self.m_Fragments[2][i];
+    end
+    
+    Logic.RemoveQuest(self.m_Receiver, ID);
+    if self.m_Description.X ~= nil then
+        Logic.AddQuestEx(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
+    else
+        Logic.AddQuest(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, 0);
+    end
+end
+
+---
 -- Creates a normal quest in the quest book.
 -- @within QuestTemplate
 -- @local
@@ -1035,22 +1175,26 @@ function QuestTemplate:CreateQuest()
     local Version = Framework.GetProgramVersion();
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
-        if gvExtensionNumber > 2 then
-            mcbQuestGUI.simpleQuest.logicAddQuest(
-                self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
-                self.m_Description.Text, self.m_Description.Info or 1
-            );
-        else
-            local QuestID = QuestSystem:GetNextFreeJornalID();
-            if QuestID == nil then
-                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
-                return;
+        if self.m_Description.Type ~= nil then
+            if gvExtensionNumber > 2 then
+                mcbQuestGUI.simpleQuest.logicAddQuest(
+                    self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
+                    self.m_Description.Text, self.m_Description.Info or 1
+                );
+            else
+                local QuestID = QuestSystem:GetNextFreeJornalID();
+                if QuestID == nil then
+                    GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                    return;
+                end
+
+                local Description = self.m_Description;
+                Logic.AddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+                QuestSystem:RegisterQuestAtJornalID(
+                    QuestID,
+                    {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+                );
             end
-            Logic.AddQuest(
-                self.m_Receiver, QuestID, self.m_Description.Type, self.m_Description.Title, 
-                self.m_Description.Text, self.m_Description.Info or 1
-            );
-            QuestSystem:RegisterQuestAtJornalID(QuestID, self.m_QuestID);
         end
     end
 end
@@ -1064,24 +1208,27 @@ function QuestTemplate:CreateQuestEx()
     local Version = Framework.GetProgramVersion();
     gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description and self.m_Description.Position then
-        if gvExtensionNumber > 2 then
-            mcbQuestGUI.simpleQuest.logicAddQuestEx(
-                self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
-                self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
-                self.m_Description.Info or 1
-            );
-        else
-            local QuestID = QuestSystem:GetNextFreeJornalID();
-            if QuestID == nil then
-                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
-                return;
+        if self.m_Description.Type ~= nil then
+            if gvExtensionNumber > 2 then
+                mcbQuestGUI.simpleQuest.logicAddQuestEx(
+                    self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
+                    self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
+                    self.m_Description.Info or 1
+                );
+            else
+                local QuestID = QuestSystem:GetNextFreeJornalID();
+                if QuestID == nil then
+                    GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                    return;
+                end
+
+                local Description = self.m_Description;
+                Logic.AddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.X, Description.Y, Description.Info or 1);
+                QuestSystem:RegisterQuestAtJornalID(
+                    QuestID,
+                    {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+                );
             end
-            Logic.AddQuestEx(
-                self.m_Receiver, QuestID, self.m_Description.Type, self.m_Description.Title, 
-                self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
-                self.m_Description.Info or 1
-            );
-            QuestSystem:RegisterQuestAtJornalID(QuestID, self.m_QuestID);
         end
     end
 end
@@ -1100,11 +1247,13 @@ function QuestTemplate:QuestSetFailed()
             self.m_Receiver, self.m_QuestID, self.m_Description.Type +2, self.m_Description.Info or 1
         );
     else
-        for k, v in pairs(QuestSystem.QuestDescriptions) do
-            if v == self.m_QuestID then
-                Logic.RemoveQuest(self.m_Receiver, k);
-                QuestSystem:InvalidateQuestAtJornalID(k);
-                break;
+        if self.m_Description and self.m_Description.Type ~= nil then
+            for k, v in pairs(QuestSystem.QuestDescriptions) do
+                if v[1] == self.m_QuestID then
+                    Logic.RemoveQuest(self.m_Receiver, k);
+                    QuestSystem:InvalidateQuestAtJornalID(k);
+                    break;
+                end
             end
         end
     end
@@ -1124,11 +1273,13 @@ function QuestTemplate:QuestSetSuccessfull()
             self.m_Receiver, self.m_QuestID, self.m_Description.Type +1, self.m_Description.Info or 1
         );
     else
-        for k, v in pairs(QuestSystem.QuestDescriptions) do
-            if v == self.m_QuestID then
-                Logic.RemoveQuest(self.m_Receiver, k);
-                QuestSystem:InvalidateQuestAtJornalID(k);
-                break;
+        if self.m_Description and self.m_Description.Type ~= nil then
+            for k, v in pairs(QuestSystem.QuestDescriptions) do
+                if v[1] == self.m_QuestID then
+                    Logic.RemoveQuest(self.m_Receiver, k);
+                    QuestSystem:InvalidateQuestAtJornalID(k);
+                    break;
+                end
             end
         end
     end
@@ -1146,11 +1297,13 @@ function QuestTemplate:RemoveQuest()
         if gvExtensionNumber > 2 then
             mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, self.m_QuestID);
         else
-            for k, v in pairs(QuestSystem.QuestDescriptions) do
-                if v == self.m_QuestID then
-                    Logic.RemoveQuest(self.m_Receiver, i);
-                    QuestSystem:InvalidateQuestAtJornalID(k);
-                    break;
+            if self.m_Description and self.m_Description.Type ~= nil then
+                for k, v in pairs(QuestSystem.QuestDescriptions) do
+                    if v[1] == self.m_QuestID then
+                        Logic.RemoveQuest(self.m_Receiver, k);
+                        QuestSystem:InvalidateQuestAtJornalID(k);
+                        break;
+                    end
                 end
             end
         end
@@ -1851,6 +2004,11 @@ Conditions = {
 -- The player must destroy all buildings and units of the player.
 -- <pre>{Objectives.DestroyAllPlayerUnits, _PlayerID}</pre>
 --
+-- @field Quest
+-- The player must complete the quest with the desired result. If the quest
+-- is not required, failing the result will not fail the quest.
+-- <pre>{Objectives.Quest, _Quest, _Result, _Required}</pre>
+--
 Objectives = {
     MapScriptFunction = 1,
     InstantFailure = 2,
@@ -1874,6 +2032,7 @@ Objectives = {
     Soldiers = 21,
     WeatherState = 22,
     DestroyAllPlayerUnits = 24,
+    Quest = 25,
 }
 
 ---

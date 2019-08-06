@@ -3933,8 +3933,6 @@ end
 QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestXorQuest);
 
 -- -------------------------------------------------------------------------- --
--- Custom Behavior                                                            --
--- -------------------------------------------------------------------------- --
 
 ---
 -- The player must win a quest. If the quest fails this behavior will fail.
@@ -3948,7 +3946,7 @@ end
 b_Goal_WinQuest = {
     Data = {
         Name = "Goal_WinQuest",
-        Type = Objectives.MapScriptFunction
+        Type = Objectives.Quest
     },
 };
 
@@ -3959,36 +3957,135 @@ function b_Goal_WinQuest:AddParameter(_Index, _Parameter)
 end
 
 function b_Goal_WinQuest:GetGoalTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
-end
-
-function b_Goal_WinQuest:CustomFunction(_Quest)
-    local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestID == 0 then
-        return false;
-    end
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
-        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then
-            return true;
-        elseif QuestSystem.Quests[QuestID].m_Result == QuestResults.Failure then
-            return false;
-        end
-    end
-end
-
-function b_Goal_WinQuest:Debug(_Quest)
-    local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestID == 0 then
-        dbg(_Quest, self, "Quest '" ..tostring(self.Data.QuestName).. "' does not exist!");
-        return true;
-    end
-    return false;
-end
-
-function b_Goal_WinQuest:Reset(_Quest)
+    return {self.Data.Type, self.Data.QuestName, QuestResults.Success, true};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuest);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The player must win a quest.
+-- @param[type=string] _QuestName Quest name
+-- @within Goals
+--
+function Goal_WinQuestWithoutFail(...)
+    return b_Goal_WinQuestWithoutFail:New(unpack(arg));
+end
+
+b_Goal_WinQuestWithoutFail = {
+    Data = {
+        Name = "Goal_WinQuestWithoutFail",
+        Type = Objectives.Quest
+    },
+};
+
+function b_Goal_WinQuestWithoutFail:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.QuestName = _Parameter;
+    end
+end
+
+function b_Goal_WinQuestWithoutFail:GetGoalTable()
+    return {self.Data.Type, self.Data.QuestName, QuestResults.Success, false};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuestWithoutFail);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The player must fail a quest. If the quest does not fails this behavior
+-- will fail.
+-- @param[type=string] _QuestName Quest name
+-- @within Goals
+--
+function Goal_FailQuest(...)
+    return b_Goal_FailQuest:New(unpack(arg));
+end
+
+b_Goal_FailQuest = {
+    Data = {
+        Name = "Goal_FailQuest",
+        Type = Objectives.Quest
+    },
+};
+
+function b_Goal_FailQuest:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.QuestName = _Parameter;
+    end
+end
+
+function b_Goal_FailQuest:GetGoalTable()
+    return {self.Data.Type, self.Data.QuestName, QuestResults.Failure, true};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_FailQuest);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The player must fail a quest.
+-- @param[type=string] _QuestName Quest name
+-- @within Goals
+--
+function Goal_FailQuestWithoutFail(...)
+    return b_Goal_FailQuestWithoutFail:New(unpack(arg));
+end
+
+b_Goal_FailQuestWithoutFail = {
+    Data = {
+        Name = "Goal_FailQuestWithoutFail",
+        Type = Objectives.Quest
+    },
+};
+
+function b_Goal_FailQuestWithoutFail:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.QuestName = _Parameter;
+    end
+end
+
+function b_Goal_FailQuestWithoutFail:GetGoalTable()
+    return {self.Data.Type, self.Data.QuestName, QuestResults.Failure, false};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_FailQuestWithoutFail);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The player must finish a quest. The result does not matter.
+-- @param[type=string] _QuestName Quest name
+-- @within Goals
+--
+function Goal_CompleteQuest(...)
+    return b_Goal_CompleteQuest:New(unpack(arg));
+end
+
+b_Goal_CompleteQuest = {
+    Data = {
+        Name = "Goal_CompleteQuest",
+        Type = Objectives.Quest
+    },
+};
+
+function b_Goal_CompleteQuest:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.QuestName = _Parameter;
+    end
+end
+
+function b_Goal_CompleteQuest:GetGoalTable()
+    return {self.Data.Type, self.Data.QuestName, nil, false};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_CompleteQuest);
+
+-- -------------------------------------------------------------------------- --
+-- Custom Behavior                                                            --
+-- -------------------------------------------------------------------------- --
 
 -- -------------------------------------------------------------------------- --
 
