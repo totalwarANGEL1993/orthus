@@ -3965,36 +3965,6 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuest);
 -- -------------------------------------------------------------------------- --
 
 ---
--- The player must win a quest.
--- @param[type=string] _QuestName Quest name
--- @within Goals
---
-function Goal_WinQuestWithoutFail(...)
-    return b_Goal_WinQuestWithoutFail:New(unpack(arg));
-end
-
-b_Goal_WinQuestWithoutFail = {
-    Data = {
-        Name = "Goal_WinQuestWithoutFail",
-        Type = Objectives.Quest
-    },
-};
-
-function b_Goal_WinQuestWithoutFail:AddParameter(_Index, _Parameter)
-    if _Index == 1 then
-        self.Data.QuestName = _Parameter;
-    end
-end
-
-function b_Goal_WinQuestWithoutFail:GetGoalTable()
-    return {self.Data.Type, self.Data.QuestName, QuestResults.Success, false};
-end
-
-QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuestWithoutFail);
-
--- -------------------------------------------------------------------------- --
-
----
 -- The player must fail a quest. If the quest does not fails this behavior
 -- will fail.
 -- @param[type=string] _QuestName Quest name
@@ -4022,36 +3992,6 @@ function b_Goal_FailQuest:GetGoalTable()
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_FailQuest);
-
--- -------------------------------------------------------------------------- --
-
----
--- The player must fail a quest.
--- @param[type=string] _QuestName Quest name
--- @within Goals
---
-function Goal_FailQuestWithoutFail(...)
-    return b_Goal_FailQuestWithoutFail:New(unpack(arg));
-end
-
-b_Goal_FailQuestWithoutFail = {
-    Data = {
-        Name = "Goal_FailQuestWithoutFail",
-        Type = Objectives.Quest
-    },
-};
-
-function b_Goal_FailQuestWithoutFail:AddParameter(_Index, _Parameter)
-    if _Index == 1 then
-        self.Data.QuestName = _Parameter;
-    end
-end
-
-function b_Goal_FailQuestWithoutFail:GetGoalTable()
-    return {self.Data.Type, self.Data.QuestName, QuestResults.Failure, false};
-end
-
-QuestSystemBehavior:RegisterBehavior(b_Goal_FailQuestWithoutFail);
 
 -- -------------------------------------------------------------------------- --
 

@@ -242,7 +242,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
                 local AllObjectivesTrue = true;
                 local AnyObjectiveFalse = false;
 
-                Quest.m_Fragments = {{}, {}};
+                Quest.m_Fragments = {{}, {}, 0};
                 for i = 1, table.getn(Quest.m_Objectives) do
                     Quest:UpdateFragment(i);
                     local ObjectiveCompleted = Quest:IsObjectiveCompleted(i);
@@ -281,6 +281,19 @@ function QuestSystem:InitalizeQuestEventTrigger()
             return true;
         end
     end
+end
+
+---
+-- Returns the extension number. This function can be used to identify the
+-- current expansion of the game.
+-- @return[type=number] Extension
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:GetExtensionNumber()
+    local Version = Framework.GetProgramVersion();
+    local extensionNumber = tonumber(string.sub(Version, string.len(Version))) or 0;
+    return extensionNumber;
 end
 
 ---
@@ -361,7 +374,7 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     self.m_Reprisals   = (_Reprisals and copy(_Reprisals)) or {};
     self.m_Description = _Description;
     self.m_Time        = _Time or 0;
-    self.m_Fragments   = {{}, {}};
+    self.m_Fragments   = {{}, {}, 0};
 
     self.m_State       = QuestStates.Inactive;
     self.m_Result      = QuestResults.Undecided;
@@ -1084,35 +1097,29 @@ function QuestTemplate:UpdateFragment(_Objective)
     local Objective = self.m_Objectives[_Objective];
     if Objective and Objective[1] == Objectives.Quest then
         local FragmentQuest = QuestSystem.Quests[GetQuestID(Objective[2])];
-        if FragmentQuest and FragmentQuest.m_Description and FragmentQuest.m_Description.Type == nil then
+        if FragmentQuest and FragmentQuest.m_Description and FragmentQuest.m_Description.Type == FRAGMENTQUEST_OPEN then
             if FragmentQuest.m_State == QuestStates.Active then
                 Running = true;
+                self.m_Fragments[3] = self.m_Fragments[3] +1;
                 Fragment = Fragment .. string.format(
                     " @color:255,255,255 @cr %d) %s @cr %s @cr @color:255,255,255 ",
-                    _Objective,
+                    self.m_Fragments[3],
                     FragmentQuest.m_Description.Title,
                     FragmentQuest.m_Description.Text
                 );
             elseif FragmentQuest.m_State == QuestStates.Over then
+                self.m_Fragments[3] = self.m_Fragments[3] +1;
+                local Color = " @color:180,180,180 ";
                 if FragmentQuest.m_Result == QuestResults.Success then
-                    Fragment = Fragment .. string.format(
-                        " @color:140,255,140 @cr %d) %s @color:255,255,255 ",
-                        _Objective,
-                        FragmentQuest.m_Description.Title
-                    );
+                    Color = " @color:140,255,140 ";
                 elseif FragmentQuest.m_Result == QuestResults.Failure then
-                    Fragment = Fragment .. string.format(
-                        " @color:255,140,140 @cr %d) %s @color:255,255,255 ",
-                        _Objective,
-                        FragmentQuest.m_Description.Title
-                    );
-                elseif FragmentQuest.m_Result == QuestResults.Interrupted then
-                    Fragment = Fragment .. string.format(
-                        " @color:180,180,180 @cr %d) %s @color:255,255,255 ",
-                        _Objective,
-                        FragmentQuest.m_Description.Title
-                    );
+                    Color = " @color:255,140,140 ";
                 end
+                Fragment = Fragment .. string.format(
+                    Color.. "@cr %d) %s @color:255,255,255 ",
+                    self.m_Fragments[3],
+                    FragmentQuest.m_Description.Title
+                );
             end
         end
     end
@@ -1140,12 +1147,6 @@ function QuestTemplate:AttachFragments()
         return;
     end
 
-    -- Exclude extra 3
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
-    if gvExtensionNumber > 2 then
-        return;
-    end
     if table.getn(self.m_Fragments[1]) == 0 and table.getn(self.m_Fragments[2]) == 0 then
         return;
     end
@@ -1158,11 +1159,15 @@ function QuestTemplate:AttachFragments()
         NewQuestText = NewQuestText .. self.m_Fragments[2][i];
     end
     
-    Logic.RemoveQuest(self.m_Receiver, ID);
-    if self.m_Description.X ~= nil then
-        Logic.AddQuestEx(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
+    if QuestSystem:GetExtensionNumber() > 2 then
+        -- TODO: implement for ISAM!
     else
-        Logic.AddQuest(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, 0);
+        Logic.RemoveQuest(self.m_Receiver, ID);
+        if self.m_Description.X ~= nil then
+            Logic.AddQuestEx(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
+        else
+            Logic.AddQuest(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, 0);
+        end
     end
 end
 
@@ -1172,11 +1177,9 @@ end
 -- @local
 --
 function QuestTemplate:CreateQuest()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
-        if self.m_Description.Type ~= nil then
-            if gvExtensionNumber > 2 then
+        if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+            if QuestSystem:GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicAddQuest(
                     self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
                     self.m_Description.Text, self.m_Description.Info or 1
@@ -1205,11 +1208,9 @@ end
 -- @local
 --
 function QuestTemplate:CreateQuestEx()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description and self.m_Description.Position then
-        if self.m_Description.Type ~= nil then
-            if gvExtensionNumber > 2 then
+        if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+            if QuestSystem:GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicAddQuestEx(
                     self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
                     self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
@@ -1240,14 +1241,12 @@ end
 -- @local
 --
 function QuestTemplate:QuestSetFailed()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
-    if gvExtensionNumber > 2 then
+    if QuestSystem:GetExtensionNumber() > 2 then
         mcbQuestGUI.simpleQuest.logicSetQuestType(
             self.m_Receiver, self.m_QuestID, self.m_Description.Type +2, self.m_Description.Info or 1
         );
     else
-        if self.m_Description and self.m_Description.Type ~= nil then
+        if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
             for k, v in pairs(QuestSystem.QuestDescriptions) do
                 if v[1] == self.m_QuestID then
                     Logic.RemoveQuest(self.m_Receiver, k);
@@ -1265,15 +1264,13 @@ end
 -- @local
 --
 function QuestTemplate:QuestSetSuccessfull()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
-    if gvExtensionNumber > 2 then
+    if QuestSystem:GetExtensionNumber() > 2 then
         local Type = self.m_Description.Type +1;
         mcbQuestGUI.simpleQuest.logicSetQuestType(
             self.m_Receiver, self.m_QuestID, self.m_Description.Type +1, self.m_Description.Info or 1
         );
     else
-        if self.m_Description and self.m_Description.Type ~= nil then
+        if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
             for k, v in pairs(QuestSystem.QuestDescriptions) do
                 if v[1] == self.m_QuestID then
                     Logic.RemoveQuest(self.m_Receiver, k);
@@ -1291,13 +1288,11 @@ end
 -- @local
 --
 function QuestTemplate:RemoveQuest()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
-        if gvExtensionNumber > 2 then
+        if QuestSystem:GetExtensionNumber() > 2 then
             mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, self.m_QuestID);
         else
-            if self.m_Description and self.m_Description.Type ~= nil then
+            if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
                 for k, v in pairs(QuestSystem.QuestDescriptions) do
                     if v[1] == self.m_QuestID then
                         Logic.RemoveQuest(self.m_Receiver, k);
@@ -1741,6 +1736,39 @@ function SaveCall(_Data)
             return Function(unpack(_Data));
         end
     end
+end
+
+---
+-- Checks if the position table contains a valid position on the map.
+--
+-- @param[type=table] _pos Position to check
+-- @return[type=boolean] Position valid
+--
+function IsValidPosition(_pos)
+	if type(_pos) == "table" then
+		if (_pos.X ~= nil and type(_pos.X) == "number") and (_pos.Y ~= nil and type(_pos.Y) == "number") then
+			local world = {Logic.WorldGetSize()};
+			if _pos.X <= world[1] and _pos.X >= 0 and _pos.Y <= world[2] and _pos.Y >= 0 then
+				return true;
+			end
+		end
+	end
+	return false;
+end
+
+---
+-- Returns the leader entity ID of the soldier.
+--
+-- FIXME: Not compatible to the History Edition!
+--
+-- @param[type=number] _eID Entity ID of soldier
+-- @return[type=number] Entity ID of leader
+--
+function SoldierGetLeaderEntityID(_eID)
+    if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
+        return Logic.GetEntityScriptingValue(_eID, 69) or _eID;
+    end
+    return _eID;
 end
 
 -- -------------------------------------------------------------------------- --
