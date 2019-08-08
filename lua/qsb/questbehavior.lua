@@ -432,18 +432,28 @@ QuestSystemBehavior = {
 --
 -- The modules qsb.interaction and qsb.information are also initalized.
 --
+-- If the S5Hook is found it will be automatically installed.
+--
 -- @within QuestSystemBehavior
 -- @local
 --
 function QuestSystemBehavior:PrepareQuestSystem()
     if not self.Data.SystemInitalized then
         self.Data.SystemInitalized = true;
+
+        self:AddSaveLoadActions(QuestSystemBehavior.UpdatePlayerColorAssigment);
+        if InstallS5Hook then
+            self:AddSaveLoadActions(QuestSystemBehavior.InstallS5Hook);
+            QuestSystemBehavior.InstallS5Hook();
+        end
+
         Tools.GiveResources = Tools.GiveResouces;
 
         QuestSystem:InstallQuestSystem();
         Interaction:Install();
         Information:Install();
         self:CreateBehaviorConstructors();
+        self:OverwriteMapClosingFunctions();
 
         Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
         Mission_OnSaveGameLoaded = function()
@@ -451,9 +461,78 @@ function QuestSystemBehavior:PrepareQuestSystem()
             Tools.GiveResources = Tools.GiveResouces;
             QuestSystemBehavior:CallSaveLoadActions();
         end
+    end
+end
 
-        -- Restore player colors
-        self:AddSaveLoadActions(QuestSystemBehavior.UpdatePlayerColorAssigment);
+---
+-- Returns the quest or a generated null save fallback quest if the desired
+-- quest does not exist.
+-- @param _Subject Quest name or ID
+-- @return[type=table] Quest
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:GetQuestByNameOrID(_Subject)
+    local QuestID = GetQuestID(_Subject);
+    if QuestID > 0 and QuestSystem.Quests[QuestID] then
+        return QuestSystem.Quests[QuestID];
+    end
+    Message("Debug: Quest name or ID not found: " ..tostring(_Subject));
+    return CreateQuest {
+        Name = "Fallback_Quest_" ..table.getn(QuestSystem.Quests),
+        Goal_InstantSuccess(),
+        Trigger_NeverTriggered()
+    }
+end
+
+---
+-- Setup the unloading of the map archive and the S5Hook.
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:OverwriteMapClosingFunctions()
+    if QuestSystem:GetExtensionNumber() <= 2 then
+        GUIAction_RestartMap_Orig_QuestSystemBehavior = GUIAction_RestartMap;
+        GUIAction_RestartMap = function()
+            QuestSystemBehavior:UnloadS5Hook();
+            GUIAction_RestartMap_Orig_QuestSystemBehavior();
+        end
+
+        QuitGame_Orig_QuestSystemBehavior = QuitGame;
+        QuitGame = function()
+            QuestSystemBehavior:UnloadS5Hook();
+            QuitGame_Orig_QuestSystemBehavior();
+        end
+
+        QuitApplication_Orig_QuestSystemBehavior = QuitApplication;
+        QuitApplication = function()
+            QuestSystemBehavior:UnloadS5Hook();
+            QuitApplication_Orig_QuestSystemBehavior();
+        end
+
+        QuickLoad_Orig_QuestSystemBehavior = QuickLoad;
+        QuickLoad = function()
+            QuestSystemBehavior:UnloadS5Hook();
+            QuickLoad_Orig_QuestSystemBehavior();
+        end
+
+        MainWindow_LoadGame_DoLoadGame_Orig_QuestSystemBehavior = MainWindow_LoadGame_DoLoadGame;
+        MainWindow_LoadGame_DoLoadGame = function(_Slot)
+            QuestSystemBehavior:UnloadS5Hook();
+            MainWindow_LoadGame_DoLoadGame_Orig_QuestSystemBehavior(_Slot);
+        end
+    end
+end
+
+---
+-- Unloads the map archive and the S5Hook.
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:UnloadS5Hook()
+    if QuestSystem:GetExtensionNumber() <= 2 and S5Hook then
+        S5Hook.RemoveArchive();
+        Trigger.DisableTriggerSystem(1);
     end
 end
 
@@ -977,26 +1056,6 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
     end
 end
 
----
--- Returns the quest or a generated null save fallback quest if the desired
--- quest does not exist.
--- @param _Subject Quest name or ID
--- @return[type=table] Quest
--- @local
---
-function QuestSystemBehavior:GetQuestByNameOrID(_Subject)
-    local QuestID = GetQuestID(_Subject);
-    if QuestID > 0 and QuestSystem.Quests[QuestID] then
-        return QuestSystem.Quests[QuestID];
-    end
-    Message("Debug: Quest name or ID not found: " ..tostring(_Subject));
-    return CreateQuest {
-        Name = "Fallback_Quest_" ..table.getn(QuestSystem.Quests),
-        Goal_InstantSuccess(),
-        Trigger_NeverTriggered()
-    }
-end
-
 -- Save Actions --
 
 function QuestSystemBehavior.UpdatePlayerColorAssigment()
@@ -1006,6 +1065,16 @@ function QuestSystemBehavior.UpdatePlayerColorAssigment()
             Display.SetPlayerColor(i, Color);
         end
     end
+end
+
+function QuestSystemBehavior.InstallS5Hook()
+    if not InstallS5Hook() then
+        Message("Error: Unable to install hook. Hook features are not available!");
+        return;
+    end
+
+    S5Hook.AddArchive();
+    S5Hook.ReloadCutscenes();
 end
 
 -- -------------------------------------------------------------------------- --

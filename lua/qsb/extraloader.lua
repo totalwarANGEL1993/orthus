@@ -14,6 +14,7 @@ if gvExtensionNumber > 2 then
 else
     Script.Load(gvBasePath.. "qsb/information_ex2.lua");
     Script.Load(gvBasePath.. "qsb/timer_ex2.lua");
+    Script.Load(gvBasePath.. "qsb/s5hook_ex2.lua");
 end
 -- Load allways
 Script.Load(gvBasePath.. "qsb/treasure.lua");

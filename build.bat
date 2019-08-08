@@ -18,6 +18,7 @@ xcopy /S lua/qsb/information_ex3.lua %1 and ".unpacked/maps/externalmap/qsb/info
 xcopy /S lua/qsb/timer_ex2.lua %1 and ".unpacked/maps/externalmap/qsb/timer_ex2.lua"
 xcopy /S lua/qsb/timer_ex3.lua %1 and ".unpacked/maps/externalmap/qsb/timer_ex3.lua"
 xcopy /S lua/qsb/treasure.lua %1 and ".unpacked/maps/externalmap/qsb/treasure.lua"
+xcopy /S lua/qsb/s5hook_ex2.lua %1 and ".unpacked/maps/externalmap/qsb/s5hook_ex2.lua"
 
 bin/bba5.exe %1 and "$.unpacked"
 RMDIR /S /Q %1 and "$.unpacked"
