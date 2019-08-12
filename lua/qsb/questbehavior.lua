@@ -961,7 +961,8 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
                 for i=1,table.getn(army.Advanced.attackPosition),1 do
                     local atkPos = army.Advanced.attackPosition[i];
                     if  AreEnemiesInArea(army.player, GetPosition(atkPos), army.rodeLength)
-                    and army.Advanced.Target == nil and not IstDrin(atkPos, underProcessing) then
+                    and army.Advanced.Target == nil and not IstDrin(atkPos, underProcessing)
+                    and SameSector(atkPos, army.position) then
                         Redeploy(army, GetPosition(atkPos));
                         army.Advanced.Target = atkPos;
                         army.Advanced.State = QuestSystemBehavior.ArmyState.Attack;
@@ -1069,7 +1070,6 @@ end
 
 function QuestSystemBehavior.InstallS5Hook()
     if not InstallS5Hook() then
-        Message("Error: Unable to install hook. Hook features are not available!");
         return;
     end
 
@@ -3650,8 +3650,8 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_Diplomacy);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Starts the quest when any briefing linked to the quest is finished. Can
--- either be a success or a failure briefing!
+-- Starts the quest when any briefing linked to the quest is finished. You can
+-- choose either success or failure briefing or ignore the type entirely!
 -- @param[type=string] _QuestName Linked quest
 -- @within Triggers
 --
@@ -3676,11 +3676,19 @@ end
 
 function b_Trigger_Briefing:CustomFunction(_Quest)
     local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
-    if Quest and Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true then
-        return true;
+    if self.Data.Kind == "Any" then
+        if Quest and Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true then
+            return true;
+        end
+        if Quest and Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true then
+            return true;
+        end
     end
-    if Quest and Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true then
-        return true;
+    if self.Data.Kind == "Success" then
+        return (Quest and Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true);
+    end
+    if self.Data.Kind == "Failure" then
+        return (Quest and Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true);
     end
     return false;
 end
@@ -4096,13 +4104,12 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_CompleteQuest);
 -- Custom Behavior                                                            --
 -- -------------------------------------------------------------------------- --
 
--- -------------------------------------------------------------------------- --
-
 ---
 -- This goal succeeds if the headquarter entity of the player is destroyed.
 -- In addition, all buildings and settlers of this player are destroyed. If an
 -- AI is active it will be deactivated.
 -- @param[type=number] _PlayerID id of player
+-- @param[type=string] _HQ HQ building of player
 -- @within Goals
 --
 function Goal_DestroyPlayer(...)
@@ -4152,6 +4159,10 @@ function b_Goal_DestroyPlayer:Debug(_Quest)
         dbg(_Quest, self, "Headquarter of player " ..string(self.Data.PlayerID).. " is already destroyed!");
         return true;
     end
+    if not Logic.IsBuilding(GetID(self.Data.Headquarter)) == 0 then
+        dbg(_Quest, self, "Headquarter must be a building!");
+        return true;
+    end
     return false;
 end
 
@@ -4159,6 +4170,81 @@ function b_Goal_DestroyPlayer:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyPlayer);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The player must destroy the army. For spawned armies the lifethread must
+-- also be destroyed. Armies that can recruit new leader are defeated after
+-- the ai is defeated.
+-- @param[type=number] _PlayerID id of player
+-- @param[type=number] _ArmyID id of army
+-- @within Goals
+--
+function Goal_DestroyArmy(...)
+    return b_Goal_DestroyArmy:New(unpack(arg));
+end
+
+b_Goal_DestroyArmy = {
+    Data = {
+        Name = "Goal_DestroyArmy",
+        Type = Objectives.MapScriptFunction
+    },
+};
+
+function b_Goal_DestroyArmy:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    elseif _Index == 2 then
+        self.Data.ArmyName = _Parameter;
+    end
+end
+
+function b_Goal_DestroyArmy:GetGoalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_DestroyArmy:CustomFunction(_Quest)
+    local Armies = QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] or {};
+    local Army = Armies[self.Data.PlayerID][QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
+    if Army == nil then
+        return false;
+    end
+    if GetNumberOfLeaders(Army) == 0 then
+        if Army.spawnGenerator ~= nil then
+            if not IsExisting(Army.spawnGenerator) then
+                return true;
+            end
+        elseif Army.AllowedTypes ~= nil then
+            local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
+            for i= 1, table.getn(PlayerEntities), 1 do 
+                if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
+                    return;
+                end
+            end
+            return true;
+        else
+            return true;
+        end
+    end
+end
+
+function b_Goal_DestroyArmy:Debug(_Quest)
+    local Armies = QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] or {};
+    local Army = Armies[self.Data.PlayerID][QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
+    if Army == nil then
+        local Player = tostring(self.Data.PlayerID);
+        local ArmyID = tostring(self.Data.ArmyID);
+        dbg(_Quest, self, "Player " ..Player.. " does not have an army with the id " ..ArmyID.. "!");
+        return true;
+    end
+    return false;
+end
+
+function b_Goal_DestroyArmy:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyArmy);
 
 -- -------------------------------------------------------------------------- --
 
