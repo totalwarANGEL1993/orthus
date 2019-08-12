@@ -269,6 +269,12 @@ function QuestSystem:InitalizeQuestEventTrigger()
         end
 
         if Quest.m_State == QuestStates.Over then
+            Quest.m_Fragments = {{}, {}, 0};
+            for i = 1, table.getn(Quest.m_Objectives) do
+                Quest:UpdateFragment(i);
+            end
+            Quest:AttachFragments();
+
             if Quest.m_Result == QuestResults.Success then
                 for i = 1, table.getn(Quest.m_Rewards) do
                     Quest:ApplyCallbacks(Quest.m_Rewards[i]);
@@ -590,9 +596,13 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         if QuestID == 0 then
             Behavior.Completed = false;
         end
-        if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
+        if QuestSystem.Quests[QuestID]:ContainsObjective(Objectives.NoChange) then
+            Behavior.Completed = true;
+
+        elseif QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
             if QuestSystem.Quests[QuestID].m_Result ~= QuestResults.Undecided then
-                if Behavior[3] == nil or QuestSystem.Quests[QuestID].m_Result == Behavior[3] or QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
+                if Behavior[3] == nil or QuestSystem.Quests[QuestID].m_Result == Behavior[3] 
+                or QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
                     Behavior.Completed = true;
                 else
                     -- failed and not required -> true
@@ -1081,6 +1091,22 @@ end
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Returns true, if the quest contains at least 1 objective of the type.
+-- @param[type=number] _Objective Type of objective
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:ContainsObjective(_Objective)
+    for i= 1, table.getn(self.m_Objectives), 1 do
+        self.m_Objectives[i].Completed = nil;
+        if self.m_Objectives[i][1] == _Objective then
+            return true;
+        end
+    end
+    return false;
+end
+
+---
 -- Updates the fragment connected to the objective.
 -- @param[type=number] _Objective Index of objective
 -- @within QuestTemplate
@@ -1098,25 +1124,36 @@ function QuestTemplate:UpdateFragment(_Objective)
     if Objective and Objective[1] == Objectives.Quest then
         local FragmentQuest = QuestSystem.Quests[GetQuestID(Objective[2])];
         if FragmentQuest and FragmentQuest.m_Description and FragmentQuest.m_Description.Type == FRAGMENTQUEST_OPEN then
-            if FragmentQuest.m_State == QuestStates.Active then
-                Running = true;
-                self.m_Fragments[3] = self.m_Fragments[3] +1;
-                Fragment = Fragment .. string.format(
-                    " @color:255,255,255 @cr %d) %s @cr %s @cr @color:255,255,255 ",
-                    self.m_Fragments[3],
-                    FragmentQuest.m_Description.Title,
-                    FragmentQuest.m_Description.Text
-                );
-            elseif FragmentQuest.m_State == QuestStates.Over then
-                self.m_Fragments[3] = self.m_Fragments[3] +1;
-                local Color = " @color:180,180,180 ";
-                if FragmentQuest.m_Result == QuestResults.Success then
-                    Color = " @color:140,255,140 ";
-                elseif FragmentQuest.m_Result == QuestResults.Failure then
-                    Color = " @color:255,140,140 ";
+            -- As long as the master is running show the fragments colored
+            if self.m_State == QuestStates.Active then
+                if FragmentQuest.m_State == QuestStates.Active or FragmentQuest:ContainsObjective(Objectives.NoChange) then
+                    Running = true;
+                    self.m_Fragments[3] = self.m_Fragments[3] +1;
+                    Fragment = Fragment .. string.format(
+                        " @color:255,255,255 @cr %d) %s @cr %s @cr @color:255,255,255 ",
+                        self.m_Fragments[3],
+                        FragmentQuest.m_Description.Title,
+                        FragmentQuest.m_Description.Text
+                    );
+                elseif FragmentQuest.m_State == QuestStates.Over then
+                    self.m_Fragments[3] = self.m_Fragments[3] +1;
+                    local Color = " @color:180,180,180 ";
+                    if FragmentQuest.m_Result == QuestResults.Success then
+                        Color = " @color:140,255,140 ";
+                    elseif FragmentQuest.m_Result == QuestResults.Failure then
+                        Color = " @color:255,140,140 ";
+                    end
+                    Fragment = Fragment .. string.format(
+                        Color.. "@cr %d) %s @color:255,255,255 ",
+                        self.m_Fragments[3],
+                        FragmentQuest.m_Description.Title
+                    );
                 end
+            -- If the master is finished show all framgents greyed out
+            else
+                self.m_Fragments[3] = self.m_Fragments[3] +1;
                 Fragment = Fragment .. string.format(
-                    Color.. "@cr %d) %s @color:255,255,255 ",
+                    " @color:180,180,180 @cr %d) %s @color:255,255,255 ",
                     self.m_Fragments[3],
                     FragmentQuest.m_Description.Title
                 );
@@ -1161,12 +1198,19 @@ function QuestTemplate:AttachFragments()
     
     if QuestSystem:GetExtensionNumber() > 2 then
         -- TODO: implement for ISAM!
+        if self.m_Description.Type == MAINQUEST_OPEN or self.m_Description.Type == SUBQUEST_OPEN then
+
+        end
     else
-        Logic.RemoveQuest(self.m_Receiver, ID);
-        if self.m_Description.X ~= nil then
-            Logic.AddQuestEx(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
-        else
-            Logic.AddQuest(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, 0);
+        if self.m_State == QuestStates.Active then
+            if self.m_Description.Type == MAINQUEST_OPEN or self.m_Description.Type == SUBQUEST_OPEN then
+                Logic.RemoveQuest(self.m_Receiver, ID);
+                if self.m_Description.X ~= nil then
+                    Logic.AddQuestEx(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
+                else
+                    Logic.AddQuest(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, 0);
+                end
+            end
         end
     end
 end
