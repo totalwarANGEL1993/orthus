@@ -1126,7 +1126,7 @@ function QuestTemplate:UpdateFragment(_Objective)
         if FragmentQuest and FragmentQuest.m_Description and FragmentQuest.m_Description.Type == FRAGMENTQUEST_OPEN then
             -- As long as the master is running show the fragments colored
             if self.m_State == QuestStates.Active then
-                if FragmentQuest.m_State == QuestStates.Active or FragmentQuest:ContainsObjective(Objectives.NoChange) then
+                if FragmentQuest.m_State == QuestStates.Active then
                     Running = true;
                     self.m_Fragments[3] = self.m_Fragments[3] +1;
                     Fragment = Fragment .. string.format(

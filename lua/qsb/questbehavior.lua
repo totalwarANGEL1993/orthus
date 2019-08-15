@@ -1953,7 +1953,7 @@ b_Goal_WeatherState = {
 
 function b_Goal_WeatherState:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.StateID = _Parameter;
+        self.Data.StateID = WeatherStates[_Parameter];
     end
 end
 
@@ -3890,7 +3890,7 @@ b_Trigger_WeatherState = {
 
 function b_Trigger_WeatherState:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.StateID = _Parameter;
+        self.Data.StateID = WeatherStates[_Parameter];
     end
 end
 
@@ -4178,7 +4178,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyPlayer);
 -- also be destroyed. Armies that can recruit new leader are defeated after
 -- the ai is defeated.
 -- @param[type=number] _PlayerID id of player
--- @param[type=number] _ArmyID id of army
+-- @param[type=string] _ArmyName Name of army
 -- @within Goals
 --
 function Goal_DestroyArmy(...)
@@ -4206,7 +4206,7 @@ end
 
 function b_Goal_DestroyArmy:CustomFunction(_Quest)
     local Armies = QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] or {};
-    local Army = Armies[self.Data.PlayerID][QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
+    local Army = Armies[QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
     if Army == nil then
         return false;
     end
@@ -4231,7 +4231,7 @@ end
 
 function b_Goal_DestroyArmy:Debug(_Quest)
     local Armies = QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] or {};
-    local Army = Armies[self.Data.PlayerID][QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
+    local Army = Armies[QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
     if Army == nil then
         local Player = tostring(self.Data.PlayerID);
         local ArmyID = tostring(self.Data.ArmyID);
