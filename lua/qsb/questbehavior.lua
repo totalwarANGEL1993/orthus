@@ -443,6 +443,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
 
         self:AddSaveLoadActions(QuestSystemBehavior.UpdatePlayerColorAssigment);
         if InstallS5Hook then
+            self.Data.CurrentMapName = Framework.GetCurrentMapName();
             self:AddSaveLoadActions(QuestSystemBehavior.InstallS5Hook);
             QuestSystemBehavior.InstallS5Hook();
         end
@@ -1073,7 +1074,14 @@ function QuestSystemBehavior.InstallS5Hook()
         return;
     end
 
-    S5Hook.AddArchive();
+    local ExtraFolder = "extra1";
+    if QuestSystem:GetExtensionNumber() > 1 then
+        ExtraFolder = "extra2";
+    end
+    if QuestSystem:GetExtensionNumber() > 2 then
+        ExtraFolder = "extra3";
+    end
+    S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
     S5Hook.ReloadCutscenes();
 end
 
