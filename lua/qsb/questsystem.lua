@@ -304,15 +304,51 @@ end
 
 ---
 -- Returns the next free slot in the quest book.
+--
+-- If the game is in ISAM mode then the next free slot is always the amount
+-- of entries +1.
+--
+-- If the game is in vanilla mode then the next free slot is the next index
+-- up to 8. If there is a finished quest in the jornal then it's slot is
+-- returned and the old data is invalidated.
+--
+-- If no free slot can be found then nil is returned.
+--
 -- @return[type=number] Journal ID
 -- @within QuestSystem
 -- @local
 --
 function QuestSystem:GetNextFreeJornalID()
-    for i= 1, 8, 1 do
-        if self.QuestDescriptions[i] == nil then
-            return i;
+    if self:GetExtensionNumber() == 3 then
+        return table.getn(self.QuestDescriptions) +1;
+    end
+    
+    local NextID = table.getn(self.QuestDescriptions) +1;
+    if NextID < 9 then
+        return NextID;
+    end
+
+    local OldestQuestIdx;
+    local OldestQuestTime = Logic.GetTime();
+
+    for i= table.getn(self.QuestDescriptions), 1, -1 do
+        if self.QuestDescriptions[i] ~= nil then
+            local Quest = QuestSystem.Quests[self.QuestDescriptions[i][1]];
+            if Quest == nil then
+                self:InvalidateQuestAtJornalID(i);
+                return i;
+            else
+                if Quest.m_FinishTime ~= nil and OldestQuestTime >= Quest.m_FinishTime then
+                    OldestQuestTime = Quest.m_FinishTime;
+                    OldestQuestIdx = i;
+                end
+            end
         end
+    end
+
+    if OldestQuestIdx ~= nil then
+        self:InvalidateQuestAtJornalID(OldestQuestIdx);
+        return OldestQuestIdx;
     end
 end
 
@@ -967,10 +1003,11 @@ end
 --
 function QuestTemplate:Success()
     self:verbose("DEBUG: Succeed quest '" ..self.m_QuestName.. "'");
-    self:Reset();
+    self:Reset(true);
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Success;
+    self.m_FinishTime = Logic.GetTime();
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
 
@@ -990,10 +1027,11 @@ end
 --
 function QuestTemplate:Fail()
     self:verbose("DEBUG: Fail quest '" ..self.m_QuestName.. "'");
-    self:Reset();
+    self:Reset(true);
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Failure;
+    self.m_FinishTime = Logic.GetTime();
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
 
@@ -1017,6 +1055,7 @@ function QuestTemplate:Interrupt()
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Interrupted;
+    self.m_FinishTime = Logic.GetTime();
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
 
@@ -1028,14 +1067,18 @@ end
 ---
 -- Resets the quest. If there is a Reset method in a custom behavior this
 -- method will be called.
+-- @param[type=boolean] _VanillaSpareDescription Do not delete description
 -- @within QuestTemplate
 -- @local
 --
-function QuestTemplate:Reset()
+function QuestTemplate:Reset(_VanillaSpareDescription)
     -- Remove quest
-    if self.m_Description then
+    if self.m_Description and not _VanillaSpareDescription then
         self:RemoveQuest();
     end
+
+    -- Reset finish time
+    self.m_FinishTime = nil;
 
     -- Reset quest briefing
     self.m_Briefing = nil;
@@ -1139,9 +1182,9 @@ function QuestTemplate:UpdateFragment(_Objective)
                     self.m_Fragments[3] = self.m_Fragments[3] +1;
                     local Color = " @color:180,180,180 ";
                     if FragmentQuest.m_Result == QuestResults.Success then
-                        Color = " @color:140,255,140 ";
+                        Color = " @color:60,170,60 ";
                     elseif FragmentQuest.m_Result == QuestResults.Failure then
-                        Color = " @color:255,140,140 ";
+                        Color = " @color:170,60,60 ";
                     end
                     Fragment = Fragment .. string.format(
                         Color.. "@cr %d) %s @color:255,255,255 ",
@@ -1202,13 +1245,25 @@ function QuestTemplate:AttachFragments()
 
         end
     else
-        if self.m_State == QuestStates.Active then
+        if self.m_State ~= QuestStates.Inactive then
             if self.m_Description.Type == MAINQUEST_OPEN or self.m_Description.Type == SUBQUEST_OPEN then
                 Logic.RemoveQuest(self.m_Receiver, ID);
+
+                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                local ResultText = "";
+                local ResultType = Jornal[3] + ((self.m_State == QuestStates.Over and 1) or 0);
+                NewQuestText = ((self.m_State == QuestStates.Over and " @color:180,180,180") or "") ..NewQuestText;
+
+                if self.m_Result == QuestResults.Failure then
+                    ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
+                elseif self.m_Result == QuestResults.Success then
+                    ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
+                end
+
                 if self.m_Description.X ~= nil then
-                    Logic.AddQuestEx(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
+                    Logic.AddQuestEx(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
                 else
-                    Logic.AddQuest(Jornal[2], ID, Jornal[3], Jornal[4], NewQuestText, 0);
+                    Logic.AddQuest(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, 0);
                 end
             end
         end
@@ -1294,7 +1349,15 @@ function QuestTemplate:QuestSetFailed()
             for k, v in pairs(QuestSystem.QuestDescriptions) do
                 if v[1] == self.m_QuestID then
                     Logic.RemoveQuest(self.m_Receiver, k);
-                    QuestSystem:InvalidateQuestAtJornalID(k);
+
+                    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                    local ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
+
+                    if v[7] == nil then
+                        Logic.AddQuest(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[6]);
+                    else
+                        Logic.AddQuestEx(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[7], v[8], v[6]);
+                    end
                     break;
                 end
             end
@@ -1318,7 +1381,15 @@ function QuestTemplate:QuestSetSuccessfull()
             for k, v in pairs(QuestSystem.QuestDescriptions) do
                 if v[1] == self.m_QuestID then
                     Logic.RemoveQuest(self.m_Receiver, k);
-                    QuestSystem:InvalidateQuestAtJornalID(k);
+
+                    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                    local ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
+
+                    if v[7] == nil then
+                        Logic.AddQuest(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[6]);
+                    else
+                        Logic.AddQuestEx(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[7], v[8], v[6]);
+                    end
                     break;
                 end
             end
@@ -2166,7 +2237,7 @@ Objectives = {
 -- <pre>{Callbacks.Resource, _ResourceType, _Amount}</pre>
 --
 -- @field RemoveQuest
--- Removes a quest from the quest book.
+-- Removes a quest from the quest book. The quest itself stays untouched.
 -- <pre>{Callbacks.RemoveQuest, _QuestName}</pre>
 --
 -- @field QuestSucceed
