@@ -44,6 +44,7 @@
 -- @param[type=table] _Data Quest table
 -- @return[type=number] Quest id
 -- @return[type=table]  Quest instance
+-- @within Functions
 --
 -- @usage CreateQuest {
 --     Name = "VictoryCondition",
@@ -88,6 +89,7 @@ end
 ---
 -- This function starts the quest system by loading all components in the
 -- right order. Must be called on game start in the FMA.
+-- @within Functions
 --
 function LoadQuestSystem()
     QuestSystemBehavior:PrepareQuestSystem();
@@ -101,6 +103,7 @@ end
 -- @param[type=boolean] _TraceQuests Display quest status changes
 -- @param[type=boolean] _Cheats      Activate debug cheats
 -- @param[type=boolean] _Console     Activate debug shell
+-- @within Functions
 --
 -- @usage ActivateDebugMode(true, false, true, true);
 --
@@ -116,6 +119,7 @@ end
 --
 -- @param[type=number] _PlayerID  PlayerID
 -- @param[type=number] _TechLevel Technology level [1|4]
+-- @within Functions
 --
 -- @usage CreateAIPlayer(2, 4);
 --
@@ -130,6 +134,7 @@ end
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _ArmyID   ID of army
 -- @param[type=boolean] _Flag    Ability to attack
+-- @within Functions
 -- 
 -- @usage ArmyDisableAttackAbility(2, 1, true)
 --
@@ -144,6 +149,7 @@ end
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=number]  _ArmyID   ID of army
 -- @param[type=boolean] _Flag     Ability to attack
+-- @within Functions
 -- 
 -- @usage ArmyDisablePatrolAbility(2, 1, true)
 --
@@ -177,6 +183,7 @@ end
 -- @param[type=number] _RodeLength Action range of the army
 -- @param[type=table] _TroopTypes  Upgrade categories to recruit
 -- @return[type=number] Army ID
+-- @within Functions
 --
 -- @usage CreateAIPlayerArmy("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
 --
@@ -218,6 +225,7 @@ end
 -- @param[type=number] _RodeLength  Action range of the army
 -- @param[type=number] _RespawnTime Time till troops are refreshed
 -- @param              ...          List of types to spawn
+-- @within Functions
 --
 -- @usage CreateAIPlayerSpawnArmy(
 --     "Bar", 2, 8, "armyPos1", "lifethread", 5000,
@@ -250,6 +258,7 @@ end
 -- Finds all entities numbered from 1 to n with a common prefix.
 -- @param[type=string] _Prefix Prefix of scriptnames
 -- @return[type=table] List of entities
+-- @within Functions
 --
 function GetEntitiesByPrefix(_Prefix)
     local list = {};
@@ -272,6 +281,7 @@ end
 -- @param[type=number] _PlayerID   ID of player
 -- @param[type=number] _EntityType Type to search
 -- @return[type=table] List of entities
+-- @within Functions
 --
 function GetPlayerEntities(_PlayerID, _EntityType)
     local PlayerEntities = {}
@@ -307,6 +317,7 @@ end
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
+-- @within Functions
 --
 function StartSimpleJobEx(_Function, ...)
     return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, _Function, unpack(arg));
@@ -317,9 +328,83 @@ end
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
+-- @within Functions
 --
 function StartSimpleHiResJobEx(_Function, ...)
     return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, _Function, unpack(arg));
+end
+
+---
+-- Registers a behavior
+-- @param[type=table] _Behavior Behavior pseudo class
+-- @within Functions
+--
+function RegisterBehavior(_Behavior)
+    QuestSystemBehavior:RegisterBehavior(_Behavior)
+end
+
+---
+-- Adds an action that is performed after a save is loaded.
+-- @param[type=function] _Function Action
+-- @param                ...       Data
+-- @within Functions
+--
+function AddOnSaveLoadedAction(_Function, ...)
+    QuestSystemBehavior:AddSaveLoadActions(_Function, unpack(copy(arg)));
+end
+
+---
+-- Fails the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function FailQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Fail();
+end
+
+---
+-- Wins the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function StartQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Trigger();
+end
+
+---
+-- Interrupts the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function StopQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Interrupt();
+end
+
+---
+-- Resets the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function ResetQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset();
+end
+
+---
+-- Resets the quest and activates it immediately.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function RestartQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset():Trigger();
+end
+
+---
+-- Wins the quest.
+-- @param _Subject Quest name or ID
+-- @within Functions
+--
+function WinQuest(_Quest)
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Success();
 end
 
 -- Behavior --
@@ -327,8 +412,8 @@ end
 QuestSystemBehavior = {
     Data = {
         RegisteredQuestBehaviors = {},
-        SystemInitalized = false;
-        Version = "1.1.0",
+        SystemInitalized = false,
+        Version = "1.2.0",
 
         SaveLoadedActions = {},
         PlayerColorAssigment = {},
@@ -336,9 +421,9 @@ QuestSystemBehavior = {
         CreatedAiArmies = {},
         AiArmyNameToId = {},
         CustomVariables = {},
-        ChoicePages = {}
+        ChoicePages = {},
     }
-}
+};
 
 ---
 -- Installs the questsystem. This function is a substitude for the original
@@ -347,6 +432,8 @@ QuestSystemBehavior = {
 --
 -- The modules qsb.interaction and qsb.information are also initalized.
 --
+-- If the S5Hook is found it will be automatically installed.
+--
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -354,19 +441,99 @@ function QuestSystemBehavior:PrepareQuestSystem()
     if not self.Data.SystemInitalized then
         self.Data.SystemInitalized = true;
 
+        self:AddSaveLoadActions(QuestSystemBehavior.UpdatePlayerColorAssigment);
+        if InstallS5Hook then
+            self.Data.CurrentMapName = Framework.GetCurrentMapName();
+            self:AddSaveLoadActions(QuestSystemBehavior.InstallS5Hook);
+            QuestSystemBehavior.InstallS5Hook();
+        end
+
+        Tools.GiveResources = Tools.GiveResouces;
+
         QuestSystem:InstallQuestSystem();
         Interaction:Install();
         Information:Install();
         self:CreateBehaviorConstructors();
+        self:OverwriteMapClosingFunctions();
 
         Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
         Mission_OnSaveGameLoaded = function()
             Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior();
+            Tools.GiveResources = Tools.GiveResouces;
             QuestSystemBehavior:CallSaveLoadActions();
         end
+    end
+end
 
-        -- Restore player colors
-        self:AddSaveLoadActions(QuestSystemBehavior.UpdatePlayerColorAssigment);
+---
+-- Returns the quest or a generated null save fallback quest if the desired
+-- quest does not exist.
+-- @param _Subject Quest name or ID
+-- @return[type=table] Quest
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:GetQuestByNameOrID(_Subject)
+    local QuestID = GetQuestID(_Subject);
+    if QuestID > 0 and QuestSystem.Quests[QuestID] then
+        return QuestSystem.Quests[QuestID];
+    end
+    Message("Debug: Quest name or ID not found: " ..tostring(_Subject));
+    return CreateQuest {
+        Name = "Fallback_Quest_" ..table.getn(QuestSystem.Quests),
+        Goal_InstantSuccess(),
+        Trigger_NeverTriggered()
+    }
+end
+
+---
+-- Setup the unloading of the map archive and the S5Hook.
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:OverwriteMapClosingFunctions()
+    if QuestSystem:GetExtensionNumber() <= 2 then
+        GUIAction_RestartMap_Orig_QuestSystemBehavior = GUIAction_RestartMap;
+        GUIAction_RestartMap = function()
+            QuestSystemBehavior:UnloadS5Hook();
+            GUIAction_RestartMap_Orig_QuestSystemBehavior();
+        end
+
+        QuitGame_Orig_QuestSystemBehavior = QuitGame;
+        QuitGame = function()
+            QuestSystemBehavior:UnloadS5Hook();
+            QuitGame_Orig_QuestSystemBehavior();
+        end
+
+        QuitApplication_Orig_QuestSystemBehavior = QuitApplication;
+        QuitApplication = function()
+            QuestSystemBehavior:UnloadS5Hook();
+            QuitApplication_Orig_QuestSystemBehavior();
+        end
+
+        QuickLoad_Orig_QuestSystemBehavior = QuickLoad;
+        QuickLoad = function()
+            QuestSystemBehavior:UnloadS5Hook();
+            QuickLoad_Orig_QuestSystemBehavior();
+        end
+
+        MainWindow_LoadGame_DoLoadGame_Orig_QuestSystemBehavior = MainWindow_LoadGame_DoLoadGame;
+        MainWindow_LoadGame_DoLoadGame = function(_Slot)
+            QuestSystemBehavior:UnloadS5Hook();
+            MainWindow_LoadGame_DoLoadGame_Orig_QuestSystemBehavior(_Slot);
+        end
+    end
+end
+
+---
+-- Unloads the map archive and the S5Hook.
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:UnloadS5Hook()
+    if QuestSystem:GetExtensionNumber() <= 2 and S5Hook then
+        S5Hook.RemoveArchive();
+        Trigger.DisableTriggerSystem(1);
     end
 end
 
@@ -795,7 +962,8 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
                 for i=1,table.getn(army.Advanced.attackPosition),1 do
                     local atkPos = army.Advanced.attackPosition[i];
                     if  AreEnemiesInArea(army.player, GetPosition(atkPos), army.rodeLength)
-                    and army.Advanced.Target == nil and not IstDrin(atkPos, underProcessing) then
+                    and army.Advanced.Target == nil and not IstDrin(atkPos, underProcessing)
+                    and SameSector(atkPos, army.position) then
                         Redeploy(army, GetPosition(atkPos));
                         army.Advanced.Target = atkPos;
                         army.Advanced.State = QuestSystemBehavior.ArmyState.Attack;
@@ -899,6 +1067,22 @@ function QuestSystemBehavior.UpdatePlayerColorAssigment()
             Display.SetPlayerColor(i, Color);
         end
     end
+end
+
+function QuestSystemBehavior.InstallS5Hook()
+    if not InstallS5Hook() then
+        return;
+    end
+
+    local ExtraFolder = "extra1";
+    if QuestSystem:GetExtensionNumber() > 1 then
+        ExtraFolder = "extra2";
+    end
+    if QuestSystem:GetExtensionNumber() > 2 then
+        ExtraFolder = "extra3";
+    end
+    S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
+    S5Hook.ReloadCutscenes();
 end
 
 -- -------------------------------------------------------------------------- --
@@ -1243,6 +1427,85 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_EntityDistance);
 -- -------------------------------------------------------------------------- --
 
 ---
+-- To win this goal the player must have at least one unit of the category in
+-- the area OR mustn't have any unit of that category in the area.
+-- @param[type=number] _PlayerID Player to check
+-- @param[type=string] _Category Category name
+-- @param[type=string] _Target Area center
+-- @param[type=number] _Area Size of area
+-- @param[type=boolean] _LowerThan  Be lower than distance
+-- @within Goals
+--
+function Goal_UnitsInArea(...)
+    return b_Goal_UnitsInArea:New(unpack(arg));
+end
+
+b_Goal_UnitsInArea = {
+    Data = {
+        Name = "Goal_UnitsInArea",
+        Type = Objectives.EntityDistance
+    },
+};
+
+function b_Goal_UnitsInArea:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Category = _Parameter;
+    elseif _Index == 3 then
+        self.Data.Target = _Parameter;
+    elseif _Index == 4 then
+        self.Data.Distance = _Parameter;
+    elseif _Index == 5 then
+        if type(_Parameter) == "string" then
+            _Parameter = _Parameter == "<";
+        end
+        self.Data.LowerThan = _Parameter;
+    end
+end
+
+function b_Goal_UnitsInArea:GetGoalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_UnitsInArea:CustomFunction(_Quest)
+    local x, y, z = Logic.EntityGetPos(GetID(self.Data.Target));
+    if self.Data.LowerThan then
+        if Logic.IsPlayerEntityOfCategoryInArea(self.Data.PlayerID, x, y, self.Data.Distance, self.Data.Category) == 1 then
+            return true;
+        end
+    else
+        if Logic.IsPlayerEntityOfCategoryInArea(self.Data.PlayerID, x, y, self.Data.Distance, self.Data.Category) == 0 then
+            return true;
+        end
+    end
+end
+
+function b_Goal_UnitsInArea:Debug(_Quest)
+    if not self.Data.PlayerID or self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "The player ID must be between 1 and 8!");
+        return true;
+    end
+    if EntityCategories[self.Data.Category] == nil then
+        dbg(_Quest, self, "The category does not exist!");
+        return true;
+    end
+    if not IsExisting(self.Data.Target) then
+        dbg(_Quest, self, "The entity for the area center does not exist!");
+        return true;
+    end
+    if self.Data.Distance <= 0 then
+        dbg(_Quest, self, "The area size must be greater than 0!");
+        return true;
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_UnitsInArea);
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- This goal is won, after the player has an amount of worker.
 -- @param[type=number] _Amount Amount to reach
 -- @param[type=boolean] _LowerThan  Be lower than
@@ -1514,7 +1777,7 @@ function b_Goal_NPC:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.Target = _Parameter;
     elseif _Index == 2 then
-        if _Parameter == "" then
+        if _Parameter == "" or _Parameter == "INVALID_SCRIPTNAME" then
             _Parameter = nil;
         end
         self.Data.Hero = _Parameter;
@@ -1535,6 +1798,7 @@ function b_Goal_NPC:CustomFunction(_Quest)
         return false;
     end
     if not self.Data.NPC then
+        local Hero = (self.Data.Hero == "INVALID_SCRIPTNAME" and nil) or self.Data.Hero;
         self.Data.NPC = new(NonPlayerCharacter, self.Data.Target):SetHero(self.Data.Hero):SetHeroInfo(self.Data.Message):Activate();
     end
     if self.Data.NPC:TalkedTo() then
@@ -1547,12 +1811,12 @@ function b_Goal_NPC:Debug(_Quest)
         dbg(_Quest, self, "NPCs must be settlers!");
         return true;
     end
-    if self.Data.Hero and (IsExisting(self.Data.Hero) == false or Logic.IsHero(GetID(self.Data.Hero)) == 0) then
-        dbg(_Quest, self, "Hero '" ..self.Data.Hero.. "' is invalid!");
+    if self.Data.Hero and self.Data.Hero ~= "INVALID_SCRIPTNAME" and (IsExisting(self.Data.Hero) == false or Logic.IsHero(GetID(self.Data.Hero)) == 0) then
+        dbg(_Quest, self, "Hero '" ..tostring(self.Data.Hero).. "' is invalid!");
         return true;
     end
-    if self.Data.Hero and self.Data.Message == nil then
-        dbg(_Quest, self, "Wrong hero message is missing!");
+    if self.Data.Hero and self.Data.Hero ~= "INVALID_SCRIPTNAME" and self.Data.Message == nil then
+        dbg(_Quest, self, "Message is missing!");
         return true;
     end
     return false;
@@ -1697,7 +1961,7 @@ b_Goal_WeatherState = {
 
 function b_Goal_WeatherState:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.StateID = _Parameter;
+        self.Data.StateID = WeatherStates[_Parameter];
     end
 end
 
@@ -1781,6 +2045,57 @@ function b_Goal_DestroyAllPlayerUnits:GetGoalTable()
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyAllPlayerUnits);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The plaver must eliminate all of his enemies in a distinct area.
+-- @param[type=string] _Position Area center
+-- @param[type=number] _Position Area size
+-- @within Goals
+--
+function Goal_DestroyEnemiesInArea(...)
+    return b_Goal_DestroyEnemiesInArea:New(unpack(arg));
+end
+
+b_Goal_DestroyEnemiesInArea = {
+    Data = {
+        Name = "Goal_DestroyEnemiesInArea",
+        Type = Objectives.MapScriptFunction
+    },
+};
+
+function b_Goal_DestroyEnemiesInArea:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Position = _Parameter;
+    elseif _Index == 2 then
+        self.Data.AreaSize = _Parameter;
+    end
+end
+
+function b_Goal_DestroyEnemiesInArea:GetGoalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_DestroyEnemiesInArea:CustomFunction(_Quest)
+    if not AreEnemiesInArea(_Quest.m_Receiver, GetPosition(self.Data.Position), self.Data.AreaSize) then
+        return true;
+    end
+end
+
+function b_Goal_DestroyEnemiesInArea:Debug(_Quest)
+    if not IsExisting(self.Data.Position) then
+        dbg(_Quest, self, "Position can not be found: " ..tostring(self.Data.Position));
+        return true;
+    end
+    if not self.Data.AreaSize or self.Data.AreaSize < 0 then
+        dbg(_Quest, self, "Area size is invalid!");
+        return true;
+    end
+    return false;
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyEnemiesInArea);
 
 -- -------------------------------------------------------------------------- --
 
@@ -2923,7 +3238,7 @@ function b_Reward_CreateGroup:AddParameter(_Index, _Parameter)
     elseif _Index == 2 then
         self.Data.EntityType = Entities[_Parameter];
     elseif _Index == 3 then
-        self.Data.EntityType = _Parameter;
+        self.Data.SoldierCount = _Parameter;
     end
 end
 
@@ -3102,7 +3417,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_RevealArea);
 
 ---
 -- Moves an entity to the destination and replace it with an XD_ScriptEntity
--- once it enters the fog.
+-- once it enters the fog or reaches the destination.
 -- @param[type=string] _Entity Entity to move
 -- @param[type=string] _Target Move destination
 -- @within Rewards
@@ -3133,23 +3448,37 @@ end
 function b_Reward_MoveAndVanish:CustomFunction(_Quest)
     Move(self.Data.Entity, self.Data.Target);
 
-    self.Data.JobID = Trigger.RequestTrigger(
-        Events.LOGIC_EVENT_EVERY_SECOND,
-        "",
-        "QuestSystemBehavior_MoveAndReplaceController",
-        1,
-        {},
-        {GetID(self.Data.Entity), self.m_Receiver}
-    )
+    self.Data.JobID = StartSimpleJobEx(function(_EntityID, _Target, _LookingPlayerID)
+        if not IsExisting(_EntityID) then
+            return true;
+        end
+        if not Logic.IsEntityMoving(_EntityID) then
+            Move(_EntityID, _Target);
+        end
+    
+        local PlayerID = Logic.EntityGetPlayer(_EntityID);
+        local ScriptName = Logic.GetEntityName(_EntityID);
+        local x, y, z = Logic.EntityGetPos(_EntityID);
+        if Logic.IsMapPositionExplored(_LookingPlayerID, x, y) == 0 or IsNear(_EntityID, _Target, 150) then
+            if Logic.IsLeader(_EntityID) == 1 then
+                Logic.DestroyGroupByLeader(_EntityID)
+            else
+                Logic.DestroyEntity(_EntityID)
+            end
+            local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, 0, PlayerID);
+            Logic.SetEntityName(ID, ScriptName);
+            return true;
+        end
+    end, GetID(self.Data.Entity), self.Data.Target, _Quest.m_Receiver);
 end
 
 function b_Reward_MoveAndVanish:Debug(_Quest)
     if not IsExisting(self.Data.Entity) then
-        dbg(_Quest, self, "Entity does not exist: " ..self.Data.Entity);
+        dbg(_Quest, self, "Entity does not exist: " ..tostring(self.Data.Entity));
         return true;
     end
     if not IsExisting(self.Data.Target) then
-        dbg(_Quest, self, "Destionation does not exist: " ..self.Data.Target);
+        dbg(_Quest, self, "Destionation does not exist: " ..tostring(self.Data.Target));
         return true;
     end
     return false;
@@ -3163,27 +3492,6 @@ function b_Reward_MoveAndVanish:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_MoveAndVanish);
-
--- Move and replace helper
-function QuestSystemBehavior_MoveAndReplaceController(_EntityID, _LookingPlayerID)
-    if not IsExisting(_EntityID) then
-        return true;
-    end
-
-    local PlayerID = Logic.EntityGetPlayer(_EntityID);
-    local ScriptName = Logic.GetEntityName(_EntityID);
-    local x, y, z = Logic.EntityGetPos(_EntityID);
-    if Tools.IsEntityOrGroupVisible(_LookingPlayerID, _EntityID) == 0 then
-        if Logic.IsLeader(_EntityID) == 1 then
-            Logic.DestroyGroupByLeader(_EntityID)
-        else
-            Logic.DestroyEntity(_EntityID)
-        end
-        local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, 0, PlayerID);
-        Logic.SetEntityName(ID, ScriptName);
-        return true;
-    end
-end
 
 -- -------------------------------------------------------------------------- --
 
@@ -3350,8 +3658,8 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_Diplomacy);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Starts the quest when any briefing linked to the quest is finished. Can
--- either be a success or a failure briefing!
+-- Starts the quest when any briefing linked to the quest is finished. You can
+-- choose either success or failure briefing or ignore the type entirely!
 -- @param[type=string] _QuestName Linked quest
 -- @within Triggers
 --
@@ -3376,11 +3684,19 @@ end
 
 function b_Trigger_Briefing:CustomFunction(_Quest)
     local Quest = QuestSystem.Quests[GetQuestID(self.Data.BriefingQuest)];
-    if Quest and Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true then
-        return true;
+    if self.Data.Kind == "Any" then
+        if Quest and Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true then
+            return true;
+        end
+        if Quest and Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true then
+            return true;
+        end
     end
-    if Quest and Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true then
-        return true;
+    if self.Data.Kind == "Success" then
+        return (Quest and Quest.m_SuccessBriefing and QuestSystem.Briefings[Quest.m_SuccessBriefing] == true);
+    end
+    if self.Data.Kind == "Failure" then
+        return (Quest and Quest.m_FailureBriefing and QuestSystem.Briefings[Quest.m_FailureBriefing] == true);
     end
     return false;
 end
@@ -3582,7 +3898,7 @@ b_Trigger_WeatherState = {
 
 function b_Trigger_WeatherState:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.StateID = _Parameter;
+        self.Data.StateID = WeatherStates[_Parameter];
     end
 end
 
@@ -3702,8 +4018,6 @@ end
 QuestSystemBehavior:RegisterBehavior(b_Trigger_QuestXorQuest);
 
 -- -------------------------------------------------------------------------- --
--- Custom Behavior                                                            --
--- -------------------------------------------------------------------------- --
 
 ---
 -- The player must win a quest. If the quest fails this behavior will fail.
@@ -3717,7 +4031,7 @@ end
 b_Goal_WinQuest = {
     Data = {
         Name = "Goal_WinQuest",
-        Type = Objectives.MapScriptFunction
+        Type = Objectives.Quest
     },
 };
 
@@ -3728,33 +4042,7 @@ function b_Goal_WinQuest:AddParameter(_Index, _Parameter)
 end
 
 function b_Goal_WinQuest:GetGoalTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
-end
-
-function b_Goal_WinQuest:CustomFunction(_Quest)
-    local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestID == 0 then
-        return false;
-    end
-    if QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
-        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Success then
-            return true;
-        elseif QuestSystem.Quests[QuestID].m_Result == QuestResults.Failure then
-            return false;
-        end
-    end
-end
-
-function b_Goal_WinQuest:Debug(_Quest)
-    local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestID == 0 then
-        dbg(_Quest, self, "Quest '" ..self.Data.QuestName.. "' does not exist!");
-        return true;
-    end
-    return false;
-end
-
-function b_Goal_WinQuest:Reset(_Quest)
+    return {self.Data.Type, self.Data.QuestName, QuestResults.Success, true};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuest);
@@ -3762,9 +4050,74 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_WinQuest);
 -- -------------------------------------------------------------------------- --
 
 ---
+-- The player must fail a quest. If the quest does not fails this behavior
+-- will fail.
+-- @param[type=string] _QuestName Quest name
+-- @within Goals
+--
+function Goal_FailQuest(...)
+    return b_Goal_FailQuest:New(unpack(arg));
+end
+
+b_Goal_FailQuest = {
+    Data = {
+        Name = "Goal_FailQuest",
+        Type = Objectives.Quest
+    },
+};
+
+function b_Goal_FailQuest:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.QuestName = _Parameter;
+    end
+end
+
+function b_Goal_FailQuest:GetGoalTable()
+    return {self.Data.Type, self.Data.QuestName, QuestResults.Failure, true};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_FailQuest);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The player must finish a quest. The result does not matter.
+-- @param[type=string] _QuestName Quest name
+-- @within Goals
+--
+function Goal_CompleteQuest(...)
+    return b_Goal_CompleteQuest:New(unpack(arg));
+end
+
+b_Goal_CompleteQuest = {
+    Data = {
+        Name = "Goal_CompleteQuest",
+        Type = Objectives.Quest
+    },
+};
+
+function b_Goal_CompleteQuest:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.QuestName = _Parameter;
+    end
+end
+
+function b_Goal_CompleteQuest:GetGoalTable()
+    return {self.Data.Type, self.Data.QuestName, nil, false};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_CompleteQuest);
+
+-- -------------------------------------------------------------------------- --
+-- Custom Behavior                                                            --
+-- -------------------------------------------------------------------------- --
+
+---
 -- This goal succeeds if the headquarter entity of the player is destroyed.
--- In addition, all buildings and settlers of this player get killed.
+-- In addition, all buildings and settlers of this player are destroyed. If an
+-- AI is active it will be deactivated.
 -- @param[type=number] _PlayerID id of player
+-- @param[type=string] _HQ HQ building of player
 -- @within Goals
 --
 function Goal_DestroyPlayer(...)
@@ -3792,6 +4145,11 @@ end
 
 function b_Goal_DestroyPlayer:CustomFunction(_Quest)
     if not IsExisting(self.Data.Headquarter) then
+        if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] then
+            AI.Player_DisableAi(self.Data.PlayerID);
+            QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] = nil;
+        end
+
         local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
         for i= 1, table.getn(PlayerEntities), 1 do 
             if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
@@ -3806,7 +4164,11 @@ end
 
 function b_Goal_DestroyPlayer:Debug(_Quest)
     if not IsExisting(self.Data.Headquarter) then
-        dbg(_Quest, self, "Headquarter of player " ..self.Data.PlayerID.. " is already destroyed!");
+        dbg(_Quest, self, "Headquarter of player " ..string(self.Data.PlayerID).. " is already destroyed!");
+        return true;
+    end
+    if not Logic.IsBuilding(GetID(self.Data.Headquarter)) == 0 then
+        dbg(_Quest, self, "Headquarter must be a building!");
         return true;
     end
     return false;
@@ -3816,6 +4178,81 @@ function b_Goal_DestroyPlayer:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyPlayer);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The player must destroy the army. For spawned armies the lifethread must
+-- also be destroyed. Armies that can recruit new leader are defeated after
+-- the ai is defeated.
+-- @param[type=number] _PlayerID id of player
+-- @param[type=string] _ArmyName Name of army
+-- @within Goals
+--
+function Goal_DestroyArmy(...)
+    return b_Goal_DestroyArmy:New(unpack(arg));
+end
+
+b_Goal_DestroyArmy = {
+    Data = {
+        Name = "Goal_DestroyArmy",
+        Type = Objectives.MapScriptFunction
+    },
+};
+
+function b_Goal_DestroyArmy:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    elseif _Index == 2 then
+        self.Data.ArmyName = _Parameter;
+    end
+end
+
+function b_Goal_DestroyArmy:GetGoalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Goal_DestroyArmy:CustomFunction(_Quest)
+    local Armies = QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] or {};
+    local Army = Armies[QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
+    if Army == nil then
+        return false;
+    end
+    if GetNumberOfLeaders(Army) == 0 then
+        if Army.spawnGenerator ~= nil then
+            if not IsExisting(Army.spawnGenerator) then
+                return true;
+            end
+        elseif Army.AllowedTypes ~= nil then
+            local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
+            for i= 1, table.getn(PlayerEntities), 1 do 
+                if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
+                    return;
+                end
+            end
+            return true;
+        else
+            return true;
+        end
+    end
+end
+
+function b_Goal_DestroyArmy:Debug(_Quest)
+    local Armies = QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] or {};
+    local Army = Armies[QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
+    if Army == nil then
+        local Player = tostring(self.Data.PlayerID);
+        local ArmyID = tostring(self.Data.ArmyID);
+        dbg(_Quest, self, "Player " ..Player.. " does not have an army with the id " ..ArmyID.. "!");
+        return true;
+    end
+    return false;
+end
+
+function b_Goal_DestroyArmy:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyArmy);
 
 -- -------------------------------------------------------------------------- --
 
@@ -3862,7 +4299,7 @@ end
 function b_Reprisal_QuestRestartForceActive:Debug(_Quest)
     local QuestID = GetQuestID(self.Data.QuestName);
     if QuestID == 0 then
-        dbg(_Quest, self, "Quest '" ..self.Data.QuestName.. "' does not exist!");
+        dbg(_Quest, self, "Quest '" ..string(self.Data.QuestName).. "' does not exist!");
         return true;
     end
     return false;
@@ -4379,6 +4816,9 @@ function b_Reward_OpenMercenaryMerchant:CustomFunction(_Quest)
     if self.Data.OfferType4 then
         NPC:AddTroopOffer(self.Data.OfferType4, {Gold = self.Data.OfferCost4}, self.Data.OfferAmount4, 3*60);
     end
+    if IsExisting(self.Data.Merchant .. "Spawnpoint") then
+        NPC:SetSpawnpoint(self.Data.Merchant .. "Spawnpoint");
+    end
     NPC:Activate();
 end
 
@@ -4470,7 +4910,28 @@ function b_Reward_AI_CreateAIPlayer:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
-    return false;
+    if not self.Data.PlayerID or self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "Player ID must be between 1 and 8!");
+        return true;
+    end
+    if not self.Data.TechLevel or self.Data.TechLevel < 1 or self.Data.TechLevel > 4 then
+        dbg(_Quest, self, "Technology level must be between 1 and 4!");
+        return true;
+    end
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] then
+        dbg(_Quest, self, "A player already exists for ID " ..tostring(self.Data.PlayerID));
+        return true;
+    end
+
+    -- Most expensive check last
+    local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
+    for i= 1, table.getn(PlayerEntities), 1 do
+        if Logic.IsBuilding(PlayerEntities[i]) == 1 then
+            return false;
+        end
+    end
+    dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " must have at least 1 building!");
+    return true;
 end
 
 function b_Reward_AI_CreateAIPlayer:Reset(_Quest)
@@ -4539,17 +5000,21 @@ function b_Reward_AI_CreateArmy:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_CreateArmy:Debug(_Quest)
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
+        return true;
+    end
     if self.Data.ArmyName == "" or self.Data.ArmyName == nil then
         dbg(_Quest, self, "An army got an invalid identifier!");
         return true;
     end
     if QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' is already created!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
         return true;
     end
     if  QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] 
     and table.getn(QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID]) > 9 then
-        dbg(_Quest, self, "Player '" ..self.Data.PlayerID.. "' has to many armies!");
+        dbg(_Quest, self, "Player '" ..tostring(self.Data.PlayerID).. "' has to many armies!");
         return true;
     end
     return false;
@@ -4656,21 +5121,25 @@ function b_Reward_AI_CreateSpawnArmy:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
+        return true;
+    end
     if self.Data.ArmyName == "" or self.Data.ArmyName == nil then
         dbg(_Quest, self, "An army got an invalid identifier!");
         return true;
     end
     if QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' is already created!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
         return true;
     end
     if  QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID]
     and table.getn(QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID]) > 9 then
-        dbg(_Quest, self, "Player '" ..self.Data.PlayerID.. "' has to many armies!");
+        dbg(_Quest, self, "Player '" ..tostring(self.Data.PlayerID).. "' has to many armies!");
         return true;
     end
     if not IsExisting(self.Data.LifeThread) then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' has no life thread!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' has no life thread!");
         return true;
     end
     
@@ -4682,7 +5151,7 @@ function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
         end
     end
     if ValidMember == false then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' has no troop types assigned!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' has no troop types assigned!");
         return true;
     end
     return false;
@@ -4736,8 +5205,12 @@ function b_Reward_AI_EnableArmyPatrol:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_EnableArmyPatrol:Debug(_Quest)
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
+        return true;
+    end
     if not QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' does not exist!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
     end
     return false;
@@ -4791,8 +5264,12 @@ function b_Reward_AI_EnableArmyAttack:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_EnableArmyAttack:Debug(_Quest)
+    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
+        return true;
+    end
     if not QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        dbg(_Quest, self, "Army '" ..self.Data.ArmyName.. "' does not exist!");
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
     end
     return false;
@@ -4957,7 +5434,7 @@ end
 
 function b_Trigger_QuestSuccess:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5012,7 +5489,7 @@ end
 
 function b_Trigger_QuestFailure:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5067,7 +5544,7 @@ end
 
 function b_Trigger_QuestOver:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5122,7 +5599,7 @@ end
 
 function b_Trigger_QuestInterrupted:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5177,7 +5654,7 @@ end
 
 function b_Trigger_QuestActive:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end
@@ -5232,7 +5709,7 @@ end
 
 function b_Trigger_QuestNotTriggered:Debug(_Quest)
     if GetQuestID(self.Data.QuestName) == 0 then
-        dbg(_Quest, self, "Quest does not exist: " ..self.Data.QuestName);
+        dbg(_Quest, self, "Quest does not exist: " ..tostring(self.Data.QuestName));
     end
     return false;
 end

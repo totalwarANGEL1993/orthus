@@ -572,38 +572,3 @@ function GameCallback_OnQuestStatusChanged(_QuestID, _State, _Result)
     QuestSystemDebug:PrintQuestStatus(_QuestID, _State, _Result);
 end
 
--- -------------------------------------------------------------------------- --
-
----
--- Checks if the position table contains a valid position on the map.
---
--- @param[type=table] _pos Position to check
--- @return[type=boolean] Position valid
---
-function IsValidPosition(_pos)
-	if type(_pos) == "table" then
-		if (_pos.X ~= nil and type(_pos.X) == "number") and (_pos.Y ~= nil and type(_pos.Y) == "number") then
-			local world = {Logic.WorldGetSize()};
-			if _pos.X <= world[1] and _pos.X >= 0 and _pos.Y <= world[2] and _pos.Y >= 0 then
-				return true;
-			end
-		end
-	end
-	return false;
-end
-
----
--- Returns the leader entity ID of the soldier.
---
--- FIXME: Not compatible to the History Edition!
---
--- @param[type=number] _eID Entity ID of soldier
--- @return[type=number] Entity ID of leader
---
-function SoldierGetLeaderEntityID(_eID)
-    if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
-        return Logic.GetEntityScriptingValue(_eID, 69) or _eID;
-    end
-    return _eID;
-end
-

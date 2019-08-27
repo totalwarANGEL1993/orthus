@@ -62,6 +62,11 @@ function QuestSystem:InstallQuestSystem()
     if self.SystemInstalled ~= true then
         self.SystemInstalled = true;
 
+        -- Real random numbers
+        local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
+        math.randomseed(tonumber(TimeString));
+        math.random(1, 100);
+
         self:InitalizeQuestEventTrigger();
 
         -- Optional briefing expansion
@@ -237,7 +242,9 @@ function QuestSystem:InitalizeQuestEventTrigger()
                 local AllObjectivesTrue = true;
                 local AnyObjectiveFalse = false;
 
+                Quest.m_Fragments = {{}, {}, 0};
                 for i = 1, table.getn(Quest.m_Objectives) do
+                    Quest:UpdateFragment(i);
                     local ObjectiveCompleted = Quest:IsObjectiveCompleted(i);
                     if Quest.m_Time > 0 and Quest.m_StartTime + Quest.m_Time < Logic.GetTime() then
                         if ObjectiveCompleted == nil then
@@ -251,6 +258,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
                     AllObjectivesTrue = (ObjectiveCompleted == true) and AllObjectivesTrue;
                     AnyObjectiveFalse = (ObjectiveCompleted == false and true) or AnyObjectiveFalse;
                 end
+                Quest:AttachFragments();
 
                 if AnyObjectiveFalse then
                     Quest:Fail();
@@ -261,6 +269,12 @@ function QuestSystem:InitalizeQuestEventTrigger()
         end
 
         if Quest.m_State == QuestStates.Over then
+            Quest.m_Fragments = {{}, {}, 0};
+            for i = 1, table.getn(Quest.m_Objectives) do
+                Quest:UpdateFragment(i);
+            end
+            Quest:AttachFragments();
+
             if Quest.m_Result == QuestResults.Success then
                 for i = 1, table.getn(Quest.m_Rewards) do
                     Quest:ApplyCallbacks(Quest.m_Rewards[i]);
@@ -276,15 +290,80 @@ function QuestSystem:InitalizeQuestEventTrigger()
 end
 
 ---
+-- Returns the extension number. This function can be used to identify the
+-- current expansion of the game.
+-- @return[type=number] Extension
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:GetExtensionNumber()
+    local Version = Framework.GetProgramVersion();
+    local extensionNumber = tonumber(string.sub(Version, string.len(Version))) or 0;
+    return extensionNumber;
+end
+
+---
 -- Returns the next free slot in the quest book.
+--
+-- If the game is in ISAM mode then the next free slot is always the amount
+-- of entries +1.
+--
+-- If the game is in vanilla mode then the next free slot is the next index
+-- up to 8. If there is a finished quest in the jornal then it's slot is
+-- returned and the old data is invalidated.
+--
+-- If no free slot can be found then nil is returned.
+--
 -- @return[type=number] Journal ID
 -- @within QuestSystem
 -- @local
 --
 function QuestSystem:GetNextFreeJornalID()
+    if self:GetExtensionNumber() == 3 then
+        return table.getn(self.QuestDescriptions) +1;
+    end
+    
+    local NextID = table.getn(self.QuestDescriptions) +1;
+    if NextID < 9 then
+        return NextID;
+    end
+
+    local OldestQuestIdx;
+    local OldestQuestTime = Logic.GetTime();
+
+    for i= table.getn(self.QuestDescriptions), 1, -1 do
+        if self.QuestDescriptions[i] ~= nil then
+            local Quest = QuestSystem.Quests[self.QuestDescriptions[i][1]];
+            if Quest == nil then
+                self:InvalidateQuestAtJornalID(i);
+                return i;
+            else
+                if Quest.m_FinishTime ~= nil and OldestQuestTime >= Quest.m_FinishTime then
+                    OldestQuestTime = Quest.m_FinishTime;
+                    OldestQuestIdx = i;
+                end
+            end
+        end
+    end
+
+    if OldestQuestIdx ~= nil then
+        self:InvalidateQuestAtJornalID(OldestQuestIdx);
+        return OldestQuestIdx;
+    end
+end
+
+---
+-- Returns the next free slot in the quest book.
+-- @param[type=number] _QuestID Id of quest
+-- @return[type=table] Journal entry
+-- @return[type=number] Jornal ID
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:GetJornalByQuestID(_QuestID)
     for i= 1, 8, 1 do
-        if self.QuestDescriptions[i] == nil then
-            return i;
+        if self.QuestDescriptions[i] and self.QuestDescriptions[i][1] == _QuestID then
+            return self.QuestDescriptions[i], i;
         end
     end
 end
@@ -292,12 +371,12 @@ end
 ---
 -- Registers a quest from the quest system for the quest book slot.
 -- @return[type=number] Jornal ID
--- @return[type=number] Quest ID
+-- @return[type=table] Quest data
 -- @within QuestSystem
 -- @local
 --
-function QuestSystem:RegisterQuestAtJornalID(_JornalID, _QuestID)
-    self.QuestDescriptions[_JornalID] = _QuestID;
+function QuestSystem:RegisterQuestAtJornalID(_JornalID, _QuestData)
+    self.QuestDescriptions[_JornalID] = copy(_QuestData);
 end
 
 ---
@@ -337,6 +416,7 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     self.m_Reprisals   = (_Reprisals and copy(_Reprisals)) or {};
     self.m_Description = _Description;
     self.m_Time        = _Time or 0;
+    self.m_Fragments   = {{}, {}, 0};
 
     self.m_State       = QuestStates.Inactive;
     self.m_Result      = QuestResults.Undecided;
@@ -433,11 +513,17 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
 
     elseif Behavior[1] == Objectives.Create then
         local Position = (type(Behavior[3]) == "table" and Behavior[3]) or GetPosition(Behavior[3]);
-        if AreEntitiesInArea(self.m_Receiver, Behavior[2], Position, Behavior[4], Behavior[5]) then
+
+        local EnoughEntities = SaveCall{
+            AreEntitiesInArea, self.m_Receiver, Behavior[2], Position, Behavior[4], Behavior[5],
+            ErrorHandler = function() return false; end
+        };
+
+        if EnoughEntities then
             if Behavior[7] then
                 local CreatedEntities = {Logic.GetPlayerEntitiesInArea(self.m_Receiver, Behavior[2], Position.X, Position.Y, Behavior[4], Behavior[5])};
                 for i= 2, table.getn(CreatedEntities), 1 do
-                    ChangePlayer(CreatedEntities[i], Behavior[7]);
+                    SaveCall{ChangePlayer, CreatedEntities[i], Behavior[7]};
                 end
             end
             Behavior.Completed = true;
@@ -468,12 +554,17 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         end
 
     elseif Behavior[1] == Objectives.EntityDistance then
+        local Distance = SaveCall{
+            GetDistance, Behavior[2], Behavior[3],
+            ErrorHandler = function() return 0; end
+        };
+
         if Behavior[5] then
-            if GetDistance(Behavior[2], Behavior[3]) < (Behavior[4] or 2000) then
+            if Distance < (Behavior[4] or 2000) then
                 Behavior.Completed = true;
             end
         else
-            if GetDistance(Behavior[2], Behavior[3]) >= (Behavior[4] or 2000) then
+            if Distance >= (Behavior[4] or 2000) then
                 Behavior.Completed = true;
             end
         end
@@ -534,6 +625,29 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
     elseif Behavior[1] == Objectives.WeatherState then
         if Logic.GetWeatherState() == Behavior[2] then
             Behavior.Completed = true;
+        end
+
+    elseif Behavior[1] == Objectives.Quest then
+        local QuestID = GetQuestID(Behavior[2]);
+        if QuestID == 0 then
+            Behavior.Completed = false;
+        end
+        if QuestSystem.Quests[QuestID]:ContainsObjective(Objectives.NoChange) then
+            Behavior.Completed = true;
+
+        elseif QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
+            if QuestSystem.Quests[QuestID].m_Result ~= QuestResults.Undecided then
+                if Behavior[3] == nil or QuestSystem.Quests[QuestID].m_Result == Behavior[3] 
+                or QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
+                    Behavior.Completed = true;
+                else
+                    -- failed and not required -> true
+                    -- failed and required -> false
+                    Behavior.Completed = not Behavior[4];
+                end
+            else
+                Behavior.Completed = true;
+            end
         end
     end
 
@@ -693,16 +807,16 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         Victory();
 
     elseif _Behavior[1] == Callbacks.MapScriptFunction then
-        _Behavior[2][1](_Behavior[2][2], self);
+        SaveCall{_Behavior[2][1], _Behavior[2][2], self};
 
     elseif _Behavior[1] == Callbacks.Briefing then
         self.m_Briefing = _Behavior[2][1](_Behavior[2][2], self);
 
     elseif _Behavior[1] == Callbacks.ChangePlayer then
-        ChangePlayer(_Behavior[2], _Behavior[3]);
+        SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.Message then
-        Message(_Behavior[2]);
+        SaveCall{Message, _Behavior[2]};
 
     elseif _Behavior[1] == Callbacks.DestroyEntity then
         if IsExisting(_Behavior[2]) then
@@ -720,17 +834,29 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         end
 
     elseif _Behavior[1] == Callbacks.CreateEntity then
-        ReplaceEntity(_Behavior[2], _Behavior[3]);
+        SaveCall{ReplaceEntity, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.CreateGroup then
-        local Position = GetPosition(_Behavior[2]);
-        local PlayerID = GetPlayer(_Behavior[2]);
+        if not IsExisting(_Behavior[2]) then
+            return;
+        end
+        local Position = SaveCall{
+            GetPosition, _Behavior[2],
+            ErrorHandler = function() return {X= 100, Y= 100}; end
+        };
+        local PlayerID = SaveCall{
+            GetPlayer, _Behavior[2],
+            ErrorHandler = function() return 1; end
+        };
         local Orientation = Logic.GetEntityOrientation(GetID(_Behavior[2]));
         DestroyEntity(_Behavior[2]);
-        CreateMilitaryGroup(PlayerID, _Behavior[3], _Behavior[4], Position, _Behavior[2]);
+        SaveCall{CreateMilitaryGroup, PlayerID, _Behavior[3], _Behavior[4], Position, _Behavior[2]};
 
     elseif _Behavior[1] == Callbacks.CreateEffect then
-        local Position = GetPosition(_Behavior[4]);
+        local Position = SaveCall{
+            GetPosition, _Behavior[4],
+            ErrorHandler = function() return {X= 100, Y= 100}; end
+        };
         local EffectID = Logic.CreateEffect(_Behavior[3], Position.X, Position.Y, 0);
         QuestSystem.NamedEffects[_Behavior[2]] = EffectID;
 
@@ -824,7 +950,10 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         if QuestSystem.NamedExplorations[_Behavior[2]] then
             DestroyEntity(QuestSystem.NamedExplorations[_Behavior[2]]);
         end
-        local Position = GetPosition(_Behavior[2]);
+        local Position = SaveCall{
+            GetPosition, _Behavior[2],
+            ErrorHandler = function() return {X= 100, Y= 100}; end
+        };
         local ViewCenter = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, 0, self.m_Receiver);
         Logic.SetEntityExplorationRange(ViewCenter, _Behavior[3]/100);
         QuestSystem.NamedExplorations[_Behavior[2]] = ViewCenter;
@@ -874,9 +1003,11 @@ end
 --
 function QuestTemplate:Success()
     self:verbose("DEBUG: Succeed quest '" ..self.m_QuestName.. "'");
+    self:Reset(true);
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Success;
+    self.m_FinishTime = Logic.GetTime();
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
 
@@ -896,9 +1027,11 @@ end
 --
 function QuestTemplate:Fail()
     self:verbose("DEBUG: Fail quest '" ..self.m_QuestName.. "'");
+    self:Reset(true);
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Failure;
+    self.m_FinishTime = Logic.GetTime();
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
 
@@ -922,6 +1055,7 @@ function QuestTemplate:Interrupt()
 
     self.m_State = QuestStates.Over;
     self.m_Result = QuestResults.Interrupted;
+    self.m_FinishTime = Logic.GetTime();
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
 
@@ -933,14 +1067,18 @@ end
 ---
 -- Resets the quest. If there is a Reset method in a custom behavior this
 -- method will be called.
+-- @param[type=boolean] _VanillaSpareDescription Do not delete description
 -- @within QuestTemplate
 -- @local
 --
-function QuestTemplate:Reset()
+function QuestTemplate:Reset(_VanillaSpareDescription)
     -- Remove quest
-    if self.m_Description then
+    if self.m_Description and not _VanillaSpareDescription then
         self:RemoveQuest();
     end
+
+    -- Reset finish time
+    self.m_FinishTime = nil;
 
     -- Reset quest briefing
     self.m_Briefing = nil;
@@ -996,30 +1134,169 @@ end
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Returns true, if the quest contains at least 1 objective of the type.
+-- @param[type=number] _Objective Type of objective
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:ContainsObjective(_Objective)
+    for i= 1, table.getn(self.m_Objectives), 1 do
+        self.m_Objectives[i].Completed = nil;
+        if self.m_Objectives[i][1] == _Objective then
+            return true;
+        end
+    end
+    return false;
+end
+
+---
+-- Updates the fragment connected to the objective.
+-- @param[type=number] _Objective Index of objective
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:UpdateFragment(_Objective)
+    local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+    if Jornal == nil then
+        return;
+    end
+
+    local Running = false;
+    local Fragment = "";
+    local Objective = self.m_Objectives[_Objective];
+    if Objective and Objective[1] == Objectives.Quest then
+        local FragmentQuest = QuestSystem.Quests[GetQuestID(Objective[2])];
+        if FragmentQuest and FragmentQuest.m_Description and FragmentQuest.m_Description.Type == FRAGMENTQUEST_OPEN then
+            -- As long as the master is running show the fragments colored
+            if self.m_State == QuestStates.Active then
+                if FragmentQuest.m_State == QuestStates.Active then
+                    Running = true;
+                    self.m_Fragments[3] = self.m_Fragments[3] +1;
+                    Fragment = Fragment .. string.format(
+                        " @color:255,255,255 @cr %d) %s @cr %s @cr @color:255,255,255 ",
+                        self.m_Fragments[3],
+                        FragmentQuest.m_Description.Title,
+                        FragmentQuest.m_Description.Text
+                    );
+                elseif FragmentQuest.m_State == QuestStates.Over then
+                    self.m_Fragments[3] = self.m_Fragments[3] +1;
+                    local Color = " @color:180,180,180 ";
+                    if FragmentQuest.m_Result == QuestResults.Success then
+                        Color = " @color:60,170,60 ";
+                    elseif FragmentQuest.m_Result == QuestResults.Failure then
+                        Color = " @color:170,60,60 ";
+                    end
+                    Fragment = Fragment .. string.format(
+                        Color.. "@cr %d) %s @color:255,255,255 ",
+                        self.m_Fragments[3],
+                        FragmentQuest.m_Description.Title
+                    );
+                end
+            -- If the master is finished show all framgents greyed out
+            else
+                self.m_Fragments[3] = self.m_Fragments[3] +1;
+                Fragment = Fragment .. string.format(
+                    " @color:180,180,180 @cr %d) %s @color:255,255,255 ",
+                    self.m_Fragments[3],
+                    FragmentQuest.m_Description.Title
+                );
+            end
+        end
+    end
+
+    if Fragment ~= "" then
+        if Running then
+            table.insert(self.m_Fragments[1], Fragment);
+        else
+            table.insert(self.m_Fragments[2], Fragment);
+        end
+    end
+end
+
+---
+-- Updates the fragments in the quest description.
+--
+-- <b>Hint</b>: Currently extra 3 will not be supported.
+--
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:AttachFragments()
+    local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+    if Jornal == nil or ID == nil then
+        return;
+    end
+
+    if table.getn(self.m_Fragments[1]) == 0 and table.getn(self.m_Fragments[2]) == 0 then
+        return;
+    end
+
+    local NewQuestText = Jornal[5] .. " @cr ";
+    for i= 1, table.getn(self.m_Fragments[1]), 1 do
+        NewQuestText = NewQuestText .. self.m_Fragments[1][i];
+    end
+    for i= 1, table.getn(self.m_Fragments[2]), 1 do
+        NewQuestText = NewQuestText .. self.m_Fragments[2][i];
+    end
+    
+    if QuestSystem:GetExtensionNumber() > 2 then
+        -- TODO: implement for ISAM!
+        if self.m_Description.Type == MAINQUEST_OPEN or self.m_Description.Type == SUBQUEST_OPEN then
+
+        end
+    else
+        if self.m_State ~= QuestStates.Inactive then
+            if self.m_Description.Type == MAINQUEST_OPEN or self.m_Description.Type == SUBQUEST_OPEN then
+                Logic.RemoveQuest(self.m_Receiver, ID);
+
+                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                local ResultText = "";
+                local ResultType = Jornal[3] + ((self.m_State == QuestStates.Over and 1) or 0);
+                NewQuestText = ((self.m_State == QuestStates.Over and " @color:180,180,180") or "") ..NewQuestText;
+
+                if self.m_Result == QuestResults.Failure then
+                    ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
+                elseif self.m_Result == QuestResults.Success then
+                    ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
+                end
+
+                if self.m_Description.X ~= nil then
+                    Logic.AddQuestEx(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
+                else
+                    Logic.AddQuest(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, 0);
+                end
+            end
+        end
+    end
+end
+
+---
 -- Creates a normal quest in the quest book.
 -- @within QuestTemplate
 -- @local
 --
 function QuestTemplate:CreateQuest()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
-        if gvExtensionNumber > 2 then
-            mcbQuestGUI.simpleQuest.logicAddQuest(
-                self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
-                self.m_Description.Text, self.m_Description.Info or 1
-            );
-        else
-            local QuestID = QuestSystem:GetNextFreeJornalID();
-            if QuestID == nil then
-                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
-                return;
+        if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicAddQuest(
+                    self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
+                    self.m_Description.Text, self.m_Description.Info or 1
+                );
+            else
+                local QuestID = QuestSystem:GetNextFreeJornalID();
+                if QuestID == nil then
+                    GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                    return;
+                end
+
+                local Description = self.m_Description;
+                Logic.AddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+                QuestSystem:RegisterQuestAtJornalID(
+                    QuestID,
+                    {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+                );
             end
-            Logic.AddQuest(
-                self.m_Receiver, QuestID, self.m_Description.Type, self.m_Description.Title, 
-                self.m_Description.Text, self.m_Description.Info or 1
-            );
-            QuestSystem:RegisterQuestAtJornalID(QuestID, self.m_QuestID);
         end
     end
 end
@@ -1030,27 +1307,28 @@ end
 -- @local
 --
 function QuestTemplate:CreateQuestEx()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description and self.m_Description.Position then
-        if gvExtensionNumber > 2 then
-            mcbQuestGUI.simpleQuest.logicAddQuestEx(
-                self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
-                self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
-                self.m_Description.Info or 1
-            );
-        else
-            local QuestID = QuestSystem:GetNextFreeJornalID();
-            if QuestID == nil then
-                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
-                return;
+        if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicAddQuestEx(
+                    self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
+                    self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
+                    self.m_Description.Info or 1
+                );
+            else
+                local QuestID = QuestSystem:GetNextFreeJornalID();
+                if QuestID == nil then
+                    GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                    return;
+                end
+
+                local Description = self.m_Description;
+                Logic.AddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.X, Description.Y, Description.Info or 1);
+                QuestSystem:RegisterQuestAtJornalID(
+                    QuestID,
+                    {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+                );
             end
-            Logic.AddQuestEx(
-                self.m_Receiver, QuestID, self.m_Description.Type, self.m_Description.Title, 
-                self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
-                self.m_Description.Info or 1
-            );
-            QuestSystem:RegisterQuestAtJornalID(QuestID, self.m_QuestID);
         end
     end
 end
@@ -1062,18 +1340,26 @@ end
 -- @local
 --
 function QuestTemplate:QuestSetFailed()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
-    if gvExtensionNumber > 2 then
+    if QuestSystem:GetExtensionNumber() > 2 then
         mcbQuestGUI.simpleQuest.logicSetQuestType(
             self.m_Receiver, self.m_QuestID, self.m_Description.Type +2, self.m_Description.Info or 1
         );
     else
-        for k, v in pairs(QuestSystem.QuestDescriptions) do
-            if v == self.m_QuestID then
-                Logic.RemoveQuest(self.m_Receiver, k);
-                QuestSystem:InvalidateQuestAtJornalID(k);
-                break;
+        if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+            for k, v in pairs(QuestSystem.QuestDescriptions) do
+                if v[1] == self.m_QuestID then
+                    Logic.RemoveQuest(self.m_Receiver, k);
+
+                    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                    local ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
+
+                    if v[7] == nil then
+                        Logic.AddQuest(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[6]);
+                    else
+                        Logic.AddQuestEx(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[7], v[8], v[6]);
+                    end
+                    break;
+                end
             end
         end
     end
@@ -1085,19 +1371,27 @@ end
 -- @local
 --
 function QuestTemplate:QuestSetSuccessfull()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
-    if gvExtensionNumber > 2 then
+    if QuestSystem:GetExtensionNumber() > 2 then
         local Type = self.m_Description.Type +1;
         mcbQuestGUI.simpleQuest.logicSetQuestType(
             self.m_Receiver, self.m_QuestID, self.m_Description.Type +1, self.m_Description.Info or 1
         );
     else
-        for k, v in pairs(QuestSystem.QuestDescriptions) do
-            if v == self.m_QuestID then
-                Logic.RemoveQuest(self.m_Receiver, k);
-                QuestSystem:InvalidateQuestAtJornalID(k);
-                break;
+        if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+            for k, v in pairs(QuestSystem.QuestDescriptions) do
+                if v[1] == self.m_QuestID then
+                    Logic.RemoveQuest(self.m_Receiver, k);
+
+                    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                    local ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
+
+                    if v[7] == nil then
+                        Logic.AddQuest(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[6]);
+                    else
+                        Logic.AddQuestEx(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[7], v[8], v[6]);
+                    end
+                    break;
+                end
             end
         end
     end
@@ -1109,17 +1403,17 @@ end
 -- @local
 --
 function QuestTemplate:RemoveQuest()
-    local Version = Framework.GetProgramVersion();
-    gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
     if self.m_Description then
-        if gvExtensionNumber > 2 then
+        if QuestSystem:GetExtensionNumber() > 2 then
             mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, self.m_QuestID);
         else
-            for k, v in pairs(QuestSystem.QuestDescriptions) do
-                if v == self.m_QuestID then
-                    Logic.RemoveQuest(self.m_Receiver, i);
-                    QuestSystem:InvalidateQuestAtJornalID(k);
-                    break;
+            if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+                for k, v in pairs(QuestSystem.QuestDescriptions) do
+                    if v[1] == self.m_QuestID then
+                        Logic.RemoveQuest(self.m_Receiver, k);
+                        QuestSystem:InvalidateQuestAtJornalID(k);
+                        break;
+                    end
                 end
             end
         end
@@ -1250,6 +1544,10 @@ end
 
 ---
 -- Creates a new inline job.
+--
+-- If a table is passed as one of the arguments then a copy will be created.
+-- It will not be a reference because of saving issues.
+--
 -- @param[type=number]   _EventType Event type
 -- @param[type=function] _Function Lua function reference
 -- @param ...            Optional arguments
@@ -1258,6 +1556,7 @@ end
 -- @local
 --
 function QuestSystem:StartInlineJob(_EventType, _Function, ...)
+    -- Who needs a trigger fix. :D
     self.InlineJobs.Counter = self.InlineJobs.Counter +1;
     _G["QuestSystem_InlineJob_Data_" ..self.InlineJobs.Counter] = copy(arg);
     _G["QuestSystem_InlineJob_Function_" ..self.InlineJobs.Counter] = _Function;
@@ -1297,7 +1596,7 @@ IstDrin = FindValue;
 -- @return [boolean] Enemies near
 --
 function AreEnemiesInArea( _player, _position, _range)
-    return AreEntitiesOfDiplomacyStateInArea( _player, _position, _range, Diplomacy.Hostile )
+    return AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Hostile);
 end
 
 ---
@@ -1309,12 +1608,15 @@ end
 -- @return [boolean] Allies near
 --
 function AreAlliesInArea( _player, _position, _range)
-    return AreEntitiesOfDiplomacyStateInArea( _player, _position, _range, Diplomacy.Friendly )
+    return AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Friendly);
 end
 
 ---
 -- Checks the area for entities of other parties with a diplomatic state to
 -- the player.
+--
+-- The first 16 player entities in the area will be evaluated. If they're not
+-- settler, heroes or buldings, they will be ignored.
 --
 -- @param[type=number] _player   Player ID
 -- @param[type=table]  _position Area center
@@ -1322,15 +1624,22 @@ end
 -- @param[type=number] _state    Diplomatic state
 -- @return [boolean] Entities near
 --
-function AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state )
+function AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state)
 	for i = 1,8 do
-		if Logic.GetDiplomacyState( _player, i) == _state then
-			if AreEntitiesInArea( i, 0, _position, _range, 1) then
-				return true
+        if Logic.GetDiplomacyState(_player, i) == _state then
+            local Data = {Logic.GetPlayerEntitiesInArea(i, 0, _position.X, _position.Y, _range, 16)};
+            table.remove(Data, 1);
+            for j= table.getn(Data), 1, -1 do
+                if Logic.IsSettler(Data[j]) == 0 and Logic.IsBuilding(Data[j]) == 0 and Logic.IsHero(Data[j]) == 0 then
+                    table.remove(Data, j);
+                end
+            end
+            if table.getn(Data) > 0 then
+				return true;
 			end
 		end
 	end
-	return false
+	return false;
 end
 
 ---
@@ -1407,6 +1716,7 @@ IsDead = IsDeadWrapper;
 -- @param              _Target   Target position
 -- @param[type=number] _Distance Area size
 -- @return[type=boolean] Army is near
+-- @within Helper
 --
 function IsArmyNear(_Army, _Target, _Distance)
     local LeaderID = 0;
@@ -1427,11 +1737,13 @@ function IsArmyNear(_Army, _Target, _Distance)
 end
 
 ---
--- Checks, if the positions are in the same sector.
+-- Checks, if the positions are in the same sector. If 2 possitions are not
+-- in the same sector then they are not connected.
 --
 -- @param _pos1 Position 1
 -- @param _pos2 Position 2
 -- @return[type=boolean] Same sector
+-- @within Helper
 --
 function SameSector(_pos1, _pos2)
 	local sectorEntity1 = _pos1;
@@ -1463,6 +1775,115 @@ function SameSector(_pos1, _pos2)
 		DestroyEntity(eID2);
 	end
     return (sector1 ~= 0 and sector2 ~= 0 and sector1 == sector2);
+end
+
+---
+-- Displays the name of any function that is to large to be loaded when a
+-- savegame is loaded.
+-- @param[type=table] t Table to check
+-- @within Helper
+-- @local
+--
+function CheckFunctionSize(t)
+    table.foreach(t, function(k, v)
+        if type(v) == "function" then
+            local res, dmp = xpcall(
+                function()return string.dump(v) end,
+                function() end
+            );
+            if res and dmp then
+                local size = string.len(dmp);
+                if size > 16000 then
+                    GUI.AddStaticNote(k .. " -> " .. size);
+                    if LuaDebugger.Log then
+                        LuaDebugger.Log(k .. " -> " .. size);
+                    end
+                end
+            end
+        end
+        if type(v) == "table" and not tonumber(k) and v ~= _G then
+            CheckFunctionSize(v);
+        end
+    end);
+end
+
+---
+-- Calls a function in protected mode.
+--
+-- The function and the arguments must be passed as a table. If there is a
+-- field ErrorHandler in the table, the handler will be called in case of
+-- error. The error handler <i>must</i> be a function.
+--
+-- The error handler gets the actual error and all arguments from the original
+-- call passed when executed.
+--
+-- SaveCall returns the return value of the function if no errors occur. If
+-- something went wrong the return value of the error handler is returned. If
+-- no handler is present the return value will always be nil.
+--
+-- <b>Note>/b>: Protected mode is <u>only</u>used when the field 
+-- QuestSystem.IgnoreLuaDebugger is set to <i>true</i> or the LuaDebugger 
+-- (the one coded by yoq) is absend. If non of these conditions met, simply
+-- the original function will be executed.
+--
+-- @param[type=table] _Data Function to call (in a table)
+-- @return Return value of function or of error handler
+-- @within Helper
+-- @local
+--
+--
+function SaveCall(_Data)
+    if type(_Data == "table" and type(_Data[1]) == "function") then
+        local Function = table.remove(_Data, 1);
+        if QuestSystem.IgnoreLuaDebugger or LuaDebugger.Log == nil then
+            local Values = {xpcall(
+                function() return Function(unpack(_Data)); end,
+                function(_Error) return _Error; end
+            )};
+            if Values[1] == false then
+                GUI.AddStaticNote("Runtime error: " ..tostring(Values[2]));
+                if type(_Data.ErrorHandler) == "function" then
+                    return SaveCall{_Data.ErrorHandler, Values[2], unpack(_Data)};
+                end
+            end
+            return Values[2];
+        else
+            return Function(unpack(_Data));
+        end
+    end
+end
+
+---
+-- Checks if the position table contains a valid position on the map.
+--
+-- @param[type=table] _pos Position to check
+-- @return[type=boolean] Position valid
+--
+function IsValidPosition(_pos)
+	if type(_pos) == "table" then
+		if (_pos.X ~= nil and type(_pos.X) == "number") and (_pos.Y ~= nil and type(_pos.Y) == "number") then
+			local world = {Logic.WorldGetSize()};
+			if _pos.X <= world[1] and _pos.X >= 0 and _pos.Y <= world[2] and _pos.Y >= 0 then
+				return true;
+			end
+		end
+	end
+	return false;
+end
+
+---
+-- Returns the leader entity ID of the soldier.
+--
+-- FIXME: Not compatible to the History Edition!
+--
+-- @param[type=number] _eID Entity ID of soldier
+-- @return[type=number] Entity ID of leader
+--
+function SoldierGetLeaderEntityID(_eID)
+    if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
+        return Logic.GetEntityScriptingValue(_eID, 69) or _eID;
+    end
+    return _eID;
 end
 
 -- -------------------------------------------------------------------------- --
@@ -1726,6 +2147,11 @@ Conditions = {
 -- The player must destroy all buildings and units of the player.
 -- <pre>{Objectives.DestroyAllPlayerUnits, _PlayerID}</pre>
 --
+-- @field Quest
+-- The player must complete the quest with the desired result. If the quest
+-- is not required, failing the result will not fail the quest.
+-- <pre>{Objectives.Quest, _Quest, _Result, _Required}</pre>
+--
 Objectives = {
     MapScriptFunction = 1,
     InstantFailure = 2,
@@ -1749,6 +2175,7 @@ Objectives = {
     Soldiers = 21,
     WeatherState = 22,
     DestroyAllPlayerUnits = 24,
+    Quest = 25,
 }
 
 ---
@@ -1810,7 +2237,7 @@ Objectives = {
 -- <pre>{Callbacks.Resource, _ResourceType, _Amount}</pre>
 --
 -- @field RemoveQuest
--- Removes a quest from the quest book.
+-- Removes a quest from the quest book. The quest itself stays untouched.
 -- <pre>{Callbacks.RemoveQuest, _QuestName}</pre>
 --
 -- @field QuestSucceed

@@ -304,7 +304,7 @@ end
 -- @within NonPlayerCharacter
 --
 function NonPlayerCharacter:SetWaittime(_Waittime)
-    table.insert(self.m_Waittime, _Waittime);
+    self.m_Waittime = _Waittime;
     return self;
 end
 
@@ -374,6 +374,15 @@ function NonPlayerCharacter:Deactivate()
         self.m_Active = false;
     end
     return self;
+end
+
+---
+-- Returns true, if the npc is currently active.
+-- @return[type=boolean] NPC is active
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:IsActive()
+    return self.m_Active == true;
 end
 
 ---
@@ -670,6 +679,15 @@ function NonPlayerMerchant:Deactivate()
 end
 
 ---
+-- Returns true, if the npc is currently active.
+-- @return[type=boolean] NPC is active
+-- @within NonPlayerMerchant
+--
+function NonPlayerMerchant:IsActive()
+    return self.m_Active == true;
+end
+
+---
 -- Calls the merchant menu of the merchant if a hero talks to him.
 -- @param[type=number] _HeroID   ID of hero
 -- @param[type=number] _TraderID ID of merchant
@@ -698,21 +716,23 @@ end
 -- @local
 --
 function NonPlayerMerchant:Controller()
-    for k, v in pairs(self.m_Offers) do
-        if v and v.Refresh > -1 then
-            self.m_Offers[k].LastRefresh = v.LastRefresh or Logic.GetTime();
-            if Logic.GetTime() > v.LastRefresh + v.Refresh then
-                -- Update load
-                if self.m_Offers[k].Load < self.m_Offers[k].LoadMax then
-                    self.m_Offers[k].Load = v.Load +1;
+    if self.m_Active == true then
+        for k, v in pairs(self.m_Offers) do
+            if v and v.Refresh > -1 then
+                self.m_Offers[k].LastRefresh = v.LastRefresh or Logic.GetTime();
+                if Logic.GetTime() > v.LastRefresh + v.Refresh then
+                    -- Update load
+                    if self.m_Offers[k].Load < self.m_Offers[k].LoadMax then
+                        self.m_Offers[k].Load = v.Load +1;
+                    end
+                    -- Update inflation
+                    self.m_Offers[k].Inflation = self.m_Offers[k].Inflation - 0.05;
+                    if self.m_Offers[k].Inflation < 0.75 then
+                        self.m_Offers[k].Inflation = 0.75;
+                    end
+                    -- Delete refresh time
+                    self.m_Offers[k].LastRefresh = nil;
                 end
-                -- Update inflation
-                self.m_Offers[k].Inflation = self.m_Offers[k].Inflation - 0.05;
-                if self.m_Offers[k].Inflation < 0.75 then
-                    self.m_Offers[k].Inflation = 0.75;
-                end
-                -- Delete refresh time
-                self.m_Offers[k].LastRefresh = nil;
             end
         end
     end
@@ -974,7 +994,9 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
                 Position = GetPosition(self.m_ScriptName);
             end
             local ID = AI.Entity_CreateFormation(PlayerID, self.m_Offers[_SlotIndex].Good, 0, 0, Position.X, Position.Y, 0, 0, 3, 0);
-            Tools.CreateSoldiersForLeader(ID, 16);
+            if Logic.IsLeader(ID) == 1 then
+                Tools.CreateSoldiersForLeader(ID, 16);
+            end
 
         -- Resource
         elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
