@@ -180,18 +180,18 @@ end
 -- @param[type=number] _PlayerID   Owner of army
 -- @param[type=number] _Strength   Strength of army [1|8]
 -- @param[type=string] _Position   Home Position of army
--- @param[type=number] _RodeLength Action range of the army
+-- @param[type=number] _Area Action range of the army
 -- @param[type=table] _TroopTypes  Upgrade categories to recruit
 -- @return[type=number] Army ID
 -- @within Methods
 --
 -- @usage CreateAIPlayerArmy("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
 --
-function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
+function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, _TroopTypes)
     if QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] then
         return;
     end
-    local ID = QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes);
+    local ID = QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area, _TroopTypes);
     if ID then
         QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] = ID;
     end
@@ -221,9 +221,9 @@ end
 -- @param[type=number] _PlayerID    Owner of army.
 -- @param[type=number] _Strength    Strength of army [1|8]
 -- @param[type=string] _Position    Home Position of army
--- @param[type=string] _LifeThread  Name of generator
--- @param[type=number] _RodeLength  Action range of the army
--- @param[type=number] _RespawnTime Time till troops are refreshed
+-- @param[type=string] _Spawner  Name of generator
+-- @param[type=number] _Area  Action range of the army
+-- @param[type=number] _Respawn Time till troops are refreshed
 -- @param              ...          List of types to spawn
 -- @within Methods
 --
@@ -234,13 +234,13 @@ end
 --     Entities.PV_Cannon2
 -- );
 --
-function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)
+function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)
     if QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] then
         return;
     end
     local EntityTypes = {unpack(arg)};
     assert(table.getn(EntityTypes) > 0);
-    local ID = QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, EntityTypes, _RespawnTime);
+    local ID = QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _Spawner, _Area, EntityTypes, _Respawn);
     if ID then
         QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] = ID;
     end
@@ -758,13 +758,13 @@ end
 -- @param[type=number] _PlayerID   ID of player
 -- @param[type=number] _Strength   Strength of army
 -- @param[type=string] _Position   Home area center
--- @param[type=number] _RodeLength Rode length
+-- @param[type=number] _Area Rode length
 -- @param[type=table]  _TroopTypes Allowed troops
 -- @return[table=number] Army ID
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
+function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area, _TroopTypes)
     self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
     _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
 
@@ -810,10 +810,10 @@ function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Rode
     army.id					     = ArmyID;
     army.strength			     = _Strength;
     army.position			     = GetPosition(_Position);
-    army.rodeLength			     = _RodeLength;
+    army.rodeLength			     = _Area;
     army.retreatStrength	     = math.ceil(_Strength/3);
-    army.baseDefenseRange	     = _RodeLength * 0.7;
-    army.outerDefenseRange	     = _RodeLength * 1.5;
+    army.baseDefenseRange	     = _Area * 0.7;
+    army.outerDefenseRange	     = _Area * 1.5;
     army.AllowedTypes		     = _TroopTypes;
 
     army.Advanced                = {};
@@ -836,14 +836,14 @@ end
 -- @param[type=number] _PlayerID    ID of player
 -- @param[type=number] _Strength    Strength of army
 -- @param[type=string] _Position    Home area center
--- @param[type=string] _LifeThread  Name of generator
--- @param[type=number] _RodeLength  Rode length
+-- @param[type=string] _Spawner  Name of generator
+-- @param[type=number] _Area  Rode length
 -- @param[type=table]  _EntityTypes Spawned troops
--- @param[type=number] _RespawnTime Time to respawn
+-- @param[type=number] _Respawn Time to respawn
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _EntityTypes, _RespawnTime)
+function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _Spawner, _Area, _EntityTypes, _Respawn)
     self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
     _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
 
@@ -889,16 +889,16 @@ function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, 
     army.id					     = ArmyID;
     army.strength			     = _Strength;
     army.position			     = GetPosition(_Position);
-    army.rodeLength			     = _RodeLength;
+    army.rodeLength			     = _Area;
     army.refresh 			     = true;
     army.retreatStrength	     = math.ceil(_Strength/3);
-    army.baseDefenseRange	     = _RodeLength * 0.7;
-    army.outerDefenseRange	     = _RodeLength * 1.5;
+    army.baseDefenseRange	     = _Area * 0.7;
+    army.outerDefenseRange	     = _Area * 1.5;
 
     army.spawnPos 		 	     = GetPosition(_Position);
-    army.spawnGenerator 		 = _LifeThread;
+    army.spawnGenerator 		 = _Spawner;
     army.spawnTypes 			 = SpawnedTypes;
-    army.respawnTime 		     = _RespawnTime;
+    army.respawnTime 		     = _Respawn;
     army.maxSpawnAmount 		 = math.ceil(_Strength/3);
     army.endless 			     = true;
     army.noEnemy 			     = true;
@@ -4537,14 +4537,14 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestRestartForceActive);
 -- Creates an merchant with up to 4 offers. Each offer purchases a fixed
 -- amount of a resource for 1000 units of gold. Default inflation will be used.
 -- @param[type=string] _Merchant Merchant name
--- @param[type=string] _Offer1 Resourcetype on sale
--- @param[type=number] _Amount1 Quantity to post
--- @param[type=string] _Offer2 Resourcetype on sale
--- @param[type=number] _Amount2 Quantity to post
--- @param[type=string] _Offer3 Resourcetype on sale
--- @param[type=number] _Amount3 Quantity to post
--- @param[type=string] _Offer4 Resourcetype on sale
--- @param[type=number] _Amount4 Quantity to post
+-- @param[type=string] _O1 Resourcetype on sale
+-- @param[type=number] _A1 Quantity to post
+-- @param[type=string] _O2 Resourcetype on sale
+-- @param[type=number] _A2 Quantity to post
+-- @param[type=string] _O3 Resourcetype on sale
+-- @param[type=number] _A3 Quantity to post
+-- @param[type=string] _O4 Resourcetype on sale
+-- @param[type=number] _A4 Quantity to post
 -- @within Rewards
 --
 function Reward_OpenResourceSale(...)
@@ -4634,14 +4634,14 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_OpenResourceSale);
 -- Creates an merchant with up to 4 offers. Each offer sells 1000 units of a
 -- resource for a fixed amount of gold. Default inflation will be used.
 -- @param[type=string] _Merchant Merchant name
--- @param[type=string] _Offer1 Resourcetype on sale
--- @param[type=number] _Amount1 Quantity to post
--- @param[type=string] _Offer2 Resourcetype on sale
--- @param[type=number] _Amount2 Quantity to post
--- @param[type=string] _Offer3 Resourcetype on sale
--- @param[type=number] _Amount3 Quantity to post
--- @param[type=string] _Offer4 Resourcetype on sale
--- @param[type=number] _Amount4 Quantity to post
+-- @param[type=string] _O1 Resourcetype on sale
+-- @param[type=number] _A1 Quantity to post
+-- @param[type=string] _O2 Resourcetype on sale
+-- @param[type=number] _A2 Quantity to post
+-- @param[type=string] _O3 Resourcetype on sale
+-- @param[type=number] _A3 Quantity to post
+-- @param[type=string] _O4 Resourcetype on sale
+-- @param[type=number] _A4 Quantity to post
 -- @within Rewards
 --
 function Reward_OpenResourcePurchase(...)
@@ -4731,18 +4731,18 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_OpenResourcePurchase);
 -- Creates an mercenary merchant with up to 4 offers.
 -- Default inflation will be used.
 -- @param[type=string] _Merchant Merchant name
--- @param[type=string] _Offer1 Resourcetype on sale
--- @param[type=number] _Cost1 Gold costs
--- @param[type=number] _Amount1 Quantity to post
--- @param[type=string] _Offer2 Resourcetype on sale
--- @param[type=number] _Cost2 Gold costs
--- @param[type=number] _Amount2 Quantity to post
--- @param[type=string] _Offer3 Resourcetype on sale
--- @param[type=number] _Cost3 Gold costs
--- @param[type=number] _Amount3 Quantity to post
--- @param[type=string] _Offer4 Resourcetype on sale
--- @param[type=number] _Cost4 Gold costs
--- @param[type=number] _Amount4 Quantity to post
+-- @param[type=string] _O1 Resourcetype on sale
+-- @param[type=number] _C1 Gold costs
+-- @param[type=number] _A1 Quantity to post
+-- @param[type=string] _O2 Resourcetype on sale
+-- @param[type=number] _C2 Gold costs
+-- @param[type=number] _A2 Quantity to post
+-- @param[type=string] _O3 Resourcetype on sale
+-- @param[type=number] _C3 Gold costs
+-- @param[type=number] _A3 Quantity to post
+-- @param[type=string] _O4 Resourcetype on sale
+-- @param[type=number] _C4 Gold costs
+-- @param[type=number] _A4 Quantity to post
 -- @within Rewards
 --
 function Reward_OpenMercenaryMerchant(...)
@@ -4948,7 +4948,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateAIPlayer);
 -- @param[type=number] _PlayerID Id of player
 -- @param[type=number] _Strength Strength of army
 -- @param[type=string] _Position Army base position
--- @param[type=number] _RodeLength Average action range
+-- @param[type=number] _Area Average action range
 -- @param[type=string] _TroopType Army troop type
 -- @within Rewards
 --
@@ -5033,17 +5033,17 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateArmy);
 --
 -- @param[type=string] _ArmyName Army identifier
 -- @param[type=number] _PlayerID Id of player
--- @param[type=string] _LifeThread Name of generator
+-- @param[type=string] _Spawner Name of generator
 -- @param[type=number] _Strength Strength of army
 -- @param[type=string] _Position Army base position
--- @param[type=number] _RodeLength Average action range
--- @param[type=number] _RespawnTime Time till reinforcements spawned
--- @param[type=string] _TroopType1 Troop type 1
--- @param[type=string] _TroopType2 Troop type 2
--- @param[type=string] _TroopType3 Troop type 3
--- @param[type=string] _TroopType4 Troop type 4
--- @param[type=string] _TroopType5 Troop type 5
--- @param[type=string] _TroopType6 Troop type 6
+-- @param[type=number] _Area Average action range
+-- @param[type=number] _Respawn Time till reinforcements spawned
+-- @param[type=string] _TT1 Troop type 1
+-- @param[type=string] _TT2 Troop type 2
+-- @param[type=string] _TT3 Troop type 3
+-- @param[type=string] _TT4 Troop type 4
+-- @param[type=string] _TT5 Troop type 5
+-- @param[type=string] _TT6 Troop type 6
 -- @within Rewards
 --
 function Reward_AI_CreateSpawnArmy(...)

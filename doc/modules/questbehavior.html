@@ -99,11 +99,11 @@
 	<td class="summary">Creates an AI player and sets the technology level.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerArmy">CreateAIPlayerArmy (_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)</a></td>
+	<td class="name" nowrap><a href="#CreateAIPlayerArmy">CreateAIPlayerArmy (_ArmyName, _PlayerID, _Strength, _Position, _Area, _TroopTypes)</a></td>
 	<td class="summary">Initalizes an army that is recruited by the AI player.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerSpawnArmy">CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)</a></td>
+	<td class="name" nowrap><a href="#CreateAIPlayerSpawnArmy">CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)</a></td>
 	<td class="summary">Initalizes an army that is spawned until a generator entity is destroyed.</td>
 	</tr>
 	<tr>
@@ -399,11 +399,11 @@
 	<td class="summary">Creates an AI player but don't creates any armies.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_AI_CreateArmy">Reward_AI_CreateArmy (_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopType)</a></td>
+	<td class="name" nowrap><a href="#Reward_AI_CreateArmy">Reward_AI_CreateArmy (_ArmyName, _PlayerID, _Strength, _Position, _Area, _TroopType)</a></td>
 	<td class="summary">Defines an army that must be recruited by the AI.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_AI_CreateSpawnArmy">Reward_AI_CreateSpawnArmy (_ArmyName, _PlayerID, _LifeThread, _Strength, _Position, _RodeLength, _RespawnTime, _TroopType1, _TroopType2, _TroopType3, _TroopType4, _TroopType5, _TroopType6)</a></td>
+	<td class="name" nowrap><a href="#Reward_AI_CreateSpawnArmy">Reward_AI_CreateSpawnArmy (_ArmyName, _PlayerID, _Spawner, _Strength, _Position, _Area, _Respawn, _TT1, _TT2, _TT3, _TT4, _TT5, _TT6)</a></td>
 	<td class="summary">Defines an army of up to 6 different unit types that is spawned from a
  generator entiry.</td>
 	</tr>
@@ -497,15 +497,15 @@
 	<td class="summary">Opens a palisade or a wall gate.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_OpenMercenaryMerchant">Reward_OpenMercenaryMerchant (_Merchant, _Offer1, _Cost1, _Amount1, _Offer2, _Cost2, _Amount2, _Offer3, _Cost3, _Amount3, _Offer4, _Cost4, _Amount4)</a></td>
+	<td class="name" nowrap><a href="#Reward_OpenMercenaryMerchant">Reward_OpenMercenaryMerchant (_Merchant, _O1, _C1, _A1, _O2, _C2, _A2, _O3, _C3, _A3, _O4, _C4, _A4)</a></td>
 	<td class="summary">Creates an mercenary merchant with up to 4 offers.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_OpenResourcePurchase">Reward_OpenResourcePurchase (_Merchant, _Offer1, _Amount1, _Offer2, _Amount2, _Offer3, _Amount3, _Offer4, _Amount4)</a></td>
+	<td class="name" nowrap><a href="#Reward_OpenResourcePurchase">Reward_OpenResourcePurchase (_Merchant, _O1, _A1, _O2, _A2, _O3, _A3, _O4, _A4)</a></td>
 	<td class="summary">Creates an merchant with up to 4 offers.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_OpenResourceSale">Reward_OpenResourceSale (_Merchant, _Offer1, _Amount1, _Offer2, _Amount2, _Offer3, _Amount3, _Offer4, _Amount4)</a></td>
+	<td class="name" nowrap><a href="#Reward_OpenResourceSale">Reward_OpenResourceSale (_Merchant, _O1, _A1, _O2, _A2, _O3, _A3, _O4, _A4)</a></td>
 	<td class="summary">Creates an merchant with up to 4 offers.</td>
 	</tr>
 	<tr>
@@ -835,7 +835,7 @@
 </dd>
     <dt>
     <a name = "CreateAIPlayerArmy"></a>
-    <strong>CreateAIPlayerArmy (_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)</strong>
+    <strong>CreateAIPlayerArmy (_ArmyName, _PlayerID, _Strength, _Position, _Area, _TroopTypes)</strong>
     </dt>
     <dd>
     Initalizes an army that is recruited by the AI player.
@@ -872,7 +872,7 @@
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
            Home Position of army
         </li>
-        <li><span class="parameter">_RodeLength</span>
+        <li><span class="parameter">_Area</span>
             <span class="types"><span class="type">number</span></span>
          Action range of the army
         </li>
@@ -899,7 +899,7 @@
 </dd>
     <dt>
     <a name = "CreateAIPlayerSpawnArmy"></a>
-    <strong>CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)</strong>
+    <strong>CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)</strong>
     </dt>
     <dd>
     Initalizes an army that is spawned until a generator entity is destroyed.
@@ -936,15 +936,15 @@
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
             Home Position of army
         </li>
-        <li><span class="parameter">_LifeThread</span>
+        <li><span class="parameter">_Spawner</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
           Name of generator
         </li>
-        <li><span class="parameter">_RodeLength</span>
+        <li><span class="parameter">_Area</span>
             <span class="types"><span class="type">number</span></span>
           Action range of the army
         </li>
-        <li><span class="parameter">_RespawnTime</span>
+        <li><span class="parameter">_Respawn</span>
             <span class="types"><span class="type">number</span></span>
          Time till troops are refreshed
         </li>
@@ -2701,7 +2701,7 @@
 </dd>
     <dt>
     <a name = "Reward_AI_CreateArmy"></a>
-    <strong>Reward_AI_CreateArmy (_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopType)</strong>
+    <strong>Reward_AI_CreateArmy (_ArmyName, _PlayerID, _Strength, _Position, _Area, _TroopType)</strong>
     </dt>
     <dd>
     Defines an army that must be recruited by the AI.
@@ -2732,7 +2732,7 @@
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Army base position
         </li>
-        <li><span class="parameter">_RodeLength</span>
+        <li><span class="parameter">_Area</span>
             <span class="types"><span class="type">number</span></span>
          Average action range
         </li>
@@ -2749,7 +2749,7 @@
 </dd>
     <dt>
     <a name = "Reward_AI_CreateSpawnArmy"></a>
-    <strong>Reward_AI_CreateSpawnArmy (_ArmyName, _PlayerID, _LifeThread, _Strength, _Position, _RodeLength, _RespawnTime, _TroopType1, _TroopType2, _TroopType3, _TroopType4, _TroopType5, _TroopType6)</strong>
+    <strong>Reward_AI_CreateSpawnArmy (_ArmyName, _PlayerID, _Spawner, _Strength, _Position, _Area, _Respawn, _TT1, _TT2, _TT3, _TT4, _TT5, _TT6)</strong>
     </dt>
     <dd>
     Defines an army of up to 6 different unit types that is spawned from a
@@ -2773,7 +2773,7 @@
             <span class="types"><span class="type">number</span></span>
          Id of player
         </li>
-        <li><span class="parameter">_LifeThread</span>
+        <li><span class="parameter">_Spawner</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Name of generator
         </li>
@@ -2785,35 +2785,35 @@
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Army base position
         </li>
-        <li><span class="parameter">_RodeLength</span>
+        <li><span class="parameter">_Area</span>
             <span class="types"><span class="type">number</span></span>
          Average action range
         </li>
-        <li><span class="parameter">_RespawnTime</span>
+        <li><span class="parameter">_Respawn</span>
             <span class="types"><span class="type">number</span></span>
          Time till reinforcements spawned
         </li>
-        <li><span class="parameter">_TroopType1</span>
+        <li><span class="parameter">_TT1</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Troop type 1
         </li>
-        <li><span class="parameter">_TroopType2</span>
+        <li><span class="parameter">_TT2</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Troop type 2
         </li>
-        <li><span class="parameter">_TroopType3</span>
+        <li><span class="parameter">_TT3</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Troop type 3
         </li>
-        <li><span class="parameter">_TroopType4</span>
+        <li><span class="parameter">_TT4</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Troop type 4
         </li>
-        <li><span class="parameter">_TroopType5</span>
+        <li><span class="parameter">_TT5</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Troop type 5
         </li>
-        <li><span class="parameter">_TroopType6</span>
+        <li><span class="parameter">_TT6</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Troop type 6
         </li>
@@ -3363,7 +3363,7 @@
 </dd>
     <dt>
     <a name = "Reward_OpenMercenaryMerchant"></a>
-    <strong>Reward_OpenMercenaryMerchant (_Merchant, _Offer1, _Cost1, _Amount1, _Offer2, _Cost2, _Amount2, _Offer3, _Cost3, _Amount3, _Offer4, _Cost4, _Amount4)</strong>
+    <strong>Reward_OpenMercenaryMerchant (_Merchant, _O1, _C1, _A1, _O2, _C2, _A2, _O3, _C3, _A3, _O4, _C4, _A4)</strong>
     </dt>
     <dd>
     Creates an mercenary merchant with up to 4 offers.
@@ -3376,51 +3376,51 @@
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Merchant name
         </li>
-        <li><span class="parameter">_Offer1</span>
+        <li><span class="parameter">_O1</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Cost1</span>
+        <li><span class="parameter">_C1</span>
             <span class="types"><span class="type">number</span></span>
          Gold costs
         </li>
-        <li><span class="parameter">_Amount1</span>
+        <li><span class="parameter">_A1</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
-        <li><span class="parameter">_Offer2</span>
+        <li><span class="parameter">_O2</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Cost2</span>
+        <li><span class="parameter">_C2</span>
             <span class="types"><span class="type">number</span></span>
          Gold costs
         </li>
-        <li><span class="parameter">_Amount2</span>
+        <li><span class="parameter">_A2</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
-        <li><span class="parameter">_Offer3</span>
+        <li><span class="parameter">_O3</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Cost3</span>
+        <li><span class="parameter">_C3</span>
             <span class="types"><span class="type">number</span></span>
          Gold costs
         </li>
-        <li><span class="parameter">_Amount3</span>
+        <li><span class="parameter">_A3</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
-        <li><span class="parameter">_Offer4</span>
+        <li><span class="parameter">_O4</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Cost4</span>
+        <li><span class="parameter">_C4</span>
             <span class="types"><span class="type">number</span></span>
          Gold costs
         </li>
-        <li><span class="parameter">_Amount4</span>
+        <li><span class="parameter">_A4</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
@@ -3433,7 +3433,7 @@
 </dd>
     <dt>
     <a name = "Reward_OpenResourcePurchase"></a>
-    <strong>Reward_OpenResourcePurchase (_Merchant, _Offer1, _Amount1, _Offer2, _Amount2, _Offer3, _Amount3, _Offer4, _Amount4)</strong>
+    <strong>Reward_OpenResourcePurchase (_Merchant, _O1, _A1, _O2, _A2, _O3, _A3, _O4, _A4)</strong>
     </dt>
     <dd>
     Creates an merchant with up to 4 offers.  Each offer sells 1000 units of a
@@ -3446,35 +3446,35 @@
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Merchant name
         </li>
-        <li><span class="parameter">_Offer1</span>
+        <li><span class="parameter">_O1</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Amount1</span>
+        <li><span class="parameter">_A1</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
-        <li><span class="parameter">_Offer2</span>
+        <li><span class="parameter">_O2</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Amount2</span>
+        <li><span class="parameter">_A2</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
-        <li><span class="parameter">_Offer3</span>
+        <li><span class="parameter">_O3</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Amount3</span>
+        <li><span class="parameter">_A3</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
-        <li><span class="parameter">_Offer4</span>
+        <li><span class="parameter">_O4</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Amount4</span>
+        <li><span class="parameter">_A4</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
@@ -3487,7 +3487,7 @@
 </dd>
     <dt>
     <a name = "Reward_OpenResourceSale"></a>
-    <strong>Reward_OpenResourceSale (_Merchant, _Offer1, _Amount1, _Offer2, _Amount2, _Offer3, _Amount3, _Offer4, _Amount4)</strong>
+    <strong>Reward_OpenResourceSale (_Merchant, _O1, _A1, _O2, _A2, _O3, _A3, _O4, _A4)</strong>
     </dt>
     <dd>
     Creates an merchant with up to 4 offers.  Each offer purchases a fixed
@@ -3500,35 +3500,35 @@
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Merchant name
         </li>
-        <li><span class="parameter">_Offer1</span>
+        <li><span class="parameter">_O1</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Amount1</span>
+        <li><span class="parameter">_A1</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
-        <li><span class="parameter">_Offer2</span>
+        <li><span class="parameter">_O2</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Amount2</span>
+        <li><span class="parameter">_A2</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
-        <li><span class="parameter">_Offer3</span>
+        <li><span class="parameter">_O3</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Amount3</span>
+        <li><span class="parameter">_A3</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
-        <li><span class="parameter">_Offer4</span>
+        <li><span class="parameter">_O4</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
          Resourcetype on sale
         </li>
-        <li><span class="parameter">_Amount4</span>
+        <li><span class="parameter">_A4</span>
             <span class="types"><span class="type">number</span></span>
          Quantity to post
         </li>
@@ -4407,7 +4407,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2019-08-28 18:56:32 </i>
+<i style="float:right;">Last updated 2019-08-28 19:04:26 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 
