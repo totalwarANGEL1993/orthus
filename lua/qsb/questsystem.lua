@@ -242,9 +242,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
                 local AllObjectivesTrue = true;
                 local AnyObjectiveFalse = false;
 
-                Quest.m_Fragments = {{}, {}, 0};
                 for i = 1, table.getn(Quest.m_Objectives) do
-                    Quest:UpdateFragment(i);
                     local ObjectiveCompleted = Quest:IsObjectiveCompleted(i);
                     if Quest.m_Time > 0 and Quest.m_StartTime + Quest.m_Time < Logic.GetTime() then
                         if ObjectiveCompleted == nil then
@@ -258,7 +256,6 @@ function QuestSystem:InitalizeQuestEventTrigger()
                     AllObjectivesTrue = (ObjectiveCompleted == true) and AllObjectivesTrue;
                     AnyObjectiveFalse = (ObjectiveCompleted == false and true) or AnyObjectiveFalse;
                 end
-                Quest:AttachFragments();
 
                 if AnyObjectiveFalse then
                     Quest:Fail();
@@ -269,12 +266,6 @@ function QuestSystem:InitalizeQuestEventTrigger()
         end
 
         if Quest.m_State == QuestStates.Over then
-            Quest.m_Fragments = {{}, {}, 0};
-            for i = 1, table.getn(Quest.m_Objectives) do
-                Quest:UpdateFragment(i);
-            end
-            Quest:AttachFragments();
-
             if Quest.m_Result == QuestResults.Success then
                 for i = 1, table.getn(Quest.m_Rewards) do
                     Quest:ApplyCallbacks(Quest.m_Rewards[i]);
@@ -990,6 +981,8 @@ function QuestTemplate:Trigger()
     self.m_Result = QuestResults.Undecided;
     self.m_StartTime = Logic.GetTime();
     self:ShowQuestMarkers();
+    self:PushFragment();
+    self:PullFragments();
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -1014,6 +1007,8 @@ function QuestTemplate:Success()
     if self.m_Description then
         self:QuestSetSuccessfull();
     end
+    self:PushFragment();
+    self:PullFragments();
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -1038,6 +1033,8 @@ function QuestTemplate:Fail()
     if self.m_Description then
         self:QuestSetFailed();
     end
+    self:PushFragment();
+    self:PullFragments();
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -1058,6 +1055,8 @@ function QuestTemplate:Interrupt()
     self.m_FinishTime = Logic.GetTime();
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
+    self:PushFragment();
+    self:PullFragments();
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -1132,6 +1131,52 @@ function QuestTemplate:Reset(_VanillaSpareDescription)
 end
 
 -- -------------------------------------------------------------------------- --
+
+---
+-- When the state of the quest changes trigger the :PullFragments method of
+-- all master quests when this quest is a fragment.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:PushFragment()
+    if self.m_Description and self.m_Description.Type == FRAGMENTQUEST_OPEN then
+        for k, v in pairs(QuestSystem.Quests) do
+            if v and v.m_Description and v.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+                for i= 1, table.getn(v.m_Objectives), 1 do
+                    if v.m_Objectives[i][1] == Objectives.Quest and GetQuestID(v.m_Objectives[i][2]) == self.m_QuestID then
+                        v:PullFragments();
+                        -- Show quest update info
+                        if self.m_Description.Info == 1 then
+                            local Jornal, ID = QuestSystem:GetJornalByQuestID(v.m_QuestID);
+                            if Jornal then
+                                if QuestSystem:GetExtensionNumber() > 2 then
+                                    -- TODO: implement for ISAM!
+                                else
+                                    Logic.SetQuestType(Jornal[2], ID, Jornal[3] + ((v.m_State == QuestStates.Over and 1) or 0), 1);
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+---
+-- Pulls the descriptions of all fragments attached to the quest.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:PullFragments()
+    if self.m_Description and (self.m_Description.Type == SUBQUEST_OPEN or self.m_Description.Type == MAINQUEST_OPEN) then
+        self.m_Fragments = {{}, {}, 0};
+        for i= 1, table.getn(self.m_Objectives), 1 do
+            self:UpdateFragment(i);
+        end
+        self:AttachFragments();
+    end
+end
 
 ---
 -- Returns true, if the quest contains at least 1 objective of the type.
@@ -1252,7 +1297,7 @@ function QuestTemplate:AttachFragments()
                 local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
                 local ResultText = "";
                 local ResultType = Jornal[3] + ((self.m_State == QuestStates.Over and 1) or 0);
-                NewQuestText = ((self.m_State == QuestStates.Over and " @color:180,180,180") or "") ..NewQuestText;
+                NewQuestText = ((self.m_State == QuestStates.Over and " @color:180,180,180 ") or "") ..NewQuestText;
 
                 if self.m_Result == QuestResults.Failure then
                     ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
@@ -1278,25 +1323,23 @@ end
 function QuestTemplate:CreateQuest()
     if self.m_Description then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            if QuestSystem:GetExtensionNumber() > 2 then
-                mcbQuestGUI.simpleQuest.logicAddQuest(
-                    self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
-                    self.m_Description.Text, self.m_Description.Info or 1
-                );
-            else
-                local QuestID = QuestSystem:GetNextFreeJornalID();
-                if QuestID == nil then
-                    GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
-                    return;
-                end
-
-                local Description = self.m_Description;
-                Logic.AddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
-                QuestSystem:RegisterQuestAtJornalID(
-                    QuestID,
-                    {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
-                );
+            local Description = self.m_Description;
+            local QuestID = QuestSystem:GetNextFreeJornalID();
+            if QuestID == nil then
+                GUI.AddStaticNote("ERROR: Too many quests in jornal!");
+                return;
             end
+
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicAddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+            else
+                Logic.AddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+            end
+            
+            QuestSystem:RegisterQuestAtJornalID(
+                QuestID,
+                {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+            );
         end
     end
 end
@@ -1309,26 +1352,23 @@ end
 function QuestTemplate:CreateQuestEx()
     if self.m_Description and self.m_Description.Position then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            if QuestSystem:GetExtensionNumber() > 2 then
-                mcbQuestGUI.simpleQuest.logicAddQuestEx(
-                    self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
-                    self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
-                    self.m_Description.Info or 1
-                );
-            else
-                local QuestID = QuestSystem:GetNextFreeJornalID();
-                if QuestID == nil then
-                    GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
-                    return;
-                end
-
-                local Description = self.m_Description;
-                Logic.AddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.X, Description.Y, Description.Info or 1);
-                QuestSystem:RegisterQuestAtJornalID(
-                    QuestID,
-                    {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
-                );
+            local Description = self.m_Description;
+            local QuestID = QuestSystem:GetNextFreeJornalID();
+            if QuestID == nil then
+                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                return;
             end
+
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicAddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title,Description.Text, Description.X, Description.Y, Description.Info or 1);
+            else
+                Logic.AddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.X, Description.Y, Description.Info or 1);
+            end
+
+            QuestSystem:RegisterQuestAtJornalID(
+                QuestID,
+                {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+            );
         end
     end
 end
@@ -1340,25 +1380,21 @@ end
 -- @local
 --
 function QuestTemplate:QuestSetFailed()
-    if QuestSystem:GetExtensionNumber() > 2 then
-        mcbQuestGUI.simpleQuest.logicSetQuestType(
-            self.m_Receiver, self.m_QuestID, self.m_Description.Type +2, self.m_Description.Info or 1
-        );
-    else
-        if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            for k, v in pairs(QuestSystem.QuestDescriptions) do
-                if v[1] == self.m_QuestID then
-                    Logic.RemoveQuest(self.m_Receiver, k);
+    if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+        local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+        if Jornal then
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicSetQuestType(self.m_Receiver, ID, Jornal[3] +1, Jornal[6]);
+            else
+                Logic.RemoveQuest(self.m_Receiver, ID);
 
-                    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-                    local ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
+                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                local ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
 
-                    if v[7] == nil then
-                        Logic.AddQuest(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[6]);
-                    else
-                        Logic.AddQuestEx(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[7], v[8], v[6]);
-                    end
-                    break;
+                if Jornal[7] == nil then
+                    Logic.AddQuest(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[6]);
+                else
+                    Logic.AddQuestEx(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[7], Jornal[8], Jornal[6]);
                 end
             end
         end
@@ -1371,26 +1407,21 @@ end
 -- @local
 --
 function QuestTemplate:QuestSetSuccessfull()
-    if QuestSystem:GetExtensionNumber() > 2 then
-        local Type = self.m_Description.Type +1;
-        mcbQuestGUI.simpleQuest.logicSetQuestType(
-            self.m_Receiver, self.m_QuestID, self.m_Description.Type +1, self.m_Description.Info or 1
-        );
-    else
-        if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            for k, v in pairs(QuestSystem.QuestDescriptions) do
-                if v[1] == self.m_QuestID then
-                    Logic.RemoveQuest(self.m_Receiver, k);
+    if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+        local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+        if Jornal then
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicSetQuestType(self.m_Receiver, ID, Jornal[3] +1, Jornal[6]);
+            else
+                Logic.RemoveQuest(self.m_Receiver, ID);
 
-                    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-                    local ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
+                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                local ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
 
-                    if v[7] == nil then
-                        Logic.AddQuest(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[6]);
-                    else
-                        Logic.AddQuestEx(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[7], v[8], v[6]);
-                    end
-                    break;
+                if Jornal[7] == nil then
+                    Logic.AddQuest(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[6]);
+                else
+                    Logic.AddQuestEx(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[7], Jornal[8], Jornal[6]);
                 end
             end
         end
@@ -1403,18 +1434,14 @@ end
 -- @local
 --
 function QuestTemplate:RemoveQuest()
-    if self.m_Description then
-        if QuestSystem:GetExtensionNumber() > 2 then
-            mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, self.m_QuestID);
-        else
-            if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-                for k, v in pairs(QuestSystem.QuestDescriptions) do
-                    if v[1] == self.m_QuestID then
-                        Logic.RemoveQuest(self.m_Receiver, k);
-                        QuestSystem:InvalidateQuestAtJornalID(k);
-                        break;
-                    end
-                end
+    if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+        local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+        if Jornal then
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, ID);
+            else
+                Logic.RemoveQuest(self.m_Receiver, ID);
+                QuestSystem:InvalidateQuestAtJornalID(ID);
             end
         end
     end

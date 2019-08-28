@@ -49,6 +49,9 @@
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/questdebug.html">questdebug</a></li>
   <li><a href="../modules/questsystem.html">questsystem</a></li>
+  <li><a href="../modules/timer_ex2.html">timer_ex2</a></li>
+  <li><a href="../modules/timer_ex3.html">timer_ex3</a></li>
+  <li><a href="../modules/treasure.html">treasure</a></li>
 </ul>
 
 </div>
@@ -116,6 +119,10 @@
 	<td class="summary">Deactivates the NPC.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:IsActive">NonPlayerCharacter:IsActive ()</a></td>
+	<td class="summary">Returns true, if the npc is currently active.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#NonPlayerCharacter:SetCallback">NonPlayerCharacter:SetCallback (_Callback)</a></td>
 	<td class="summary">Sets a talking callback for the npc.</td>
 	</tr>
@@ -180,6 +187,10 @@
 	<td class="summary">Returns how often the offer at the index was accepted by the player.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#NonPlayerMerchant:IsActive">NonPlayerMerchant:IsActive ()</a></td>
+	<td class="summary">Returns true, if the npc is currently active.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#NonPlayerMerchant:SetSpawnpoint">NonPlayerMerchant:SetSpawnpoint (_Spawnpoint)</a></td>
 	<td class="summary">Sets a different spawnpoint for units bought at the merchant.</td>
 	</tr>
@@ -235,7 +246,8 @@
     <h3>Fields:</h3>
     <ul>
         <li><span class="parameter">_ScriptName</span>
-         [string] Script name of merchant
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Script name of merchant
         </li>
     </ul>
 
@@ -280,7 +292,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Waypoint</span>
-         [string] Waypoint to pass
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Waypoint to pass
         </li>
     </ul>
 
@@ -307,7 +320,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Waypoint</span>
-         [string] Waypoint to pass
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Waypoint to pass
         </li>
     </ul>
 
@@ -341,6 +355,26 @@
 
 </dd>
     <dt>
+    <a name = "NonPlayerCharacter:IsActive"></a>
+    <strong>NonPlayerCharacter:IsActive ()</strong>
+    </dt>
+    <dd>
+    Returns true, if the npc is currently active.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        NPC is active
+    </ol>
+
+
+
+
+</dd>
+    <dt>
     <a name = "NonPlayerCharacter:SetCallback"></a>
     <strong>NonPlayerCharacter:SetCallback (_Callback)</strong>
     </dt>
@@ -351,7 +385,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Callback</span>
-         [function] Function to call
+            <span class="types"><span class="type">function</span></span>
+         Function to call
         </li>
     </ul>
 
@@ -377,7 +412,7 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Hero</span>
-         [string|boolean] Hero to follow
+         Hero to follow
         </li>
     </ul>
 
@@ -402,7 +437,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Hero</span>
-         [string] Scriptname of hero
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Scriptname of hero
         </li>
     </ul>
 
@@ -427,7 +463,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Info</span>
-         [string] Info message
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Info message
         </li>
     </ul>
 
@@ -453,7 +490,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Target</span>
-         [string] Destination of npc
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Destination of npc
         </li>
     </ul>
 
@@ -478,7 +516,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Waittime</span>
-         [number] time to wait
+            <span class="types"><span class="type">number</span></span>
+         time to wait
         </li>
     </ul>
 
@@ -504,7 +543,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Callback</span>
-         [function] Function to call
+            <span class="types"><span class="type">function</span></span>
+         Function to call
         </li>
     </ul>
 
@@ -530,7 +570,8 @@
     <h3>Returns:</h3>
     <ol>
 
-        [boolean] Talked to
+           <span class="types"><span class="type">boolean</span></span>
+        Talked to
     </ol>
 
 
@@ -572,22 +613,28 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Action</span>
-         [function] Custom function
+            <span class="types"><span class="type">function</span></span>
+              Custom function
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Amount of offers
+            <span class="types"><span class="type">number</span></span>
+              Amount of offers
         </li>
         <li><span class="parameter">_Costs</span>
-         [table] Costs table
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+               Costs table
         </li>
         <li><span class="parameter">_Icon</span>
-         [string] Icon texture
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+                Icon texture
         </li>
         <li><span class="parameter">_Description</span>
-         [table] Tooltip content
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Tooltip content
         </li>
         <li><span class="parameter">_Refresh</span>
-         [number] Refresh rate
+            <span class="types"><span class="type">number</span></span>
+             Refresh rate
         </li>
     </ul>
 
@@ -616,19 +663,24 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Good</span>
-         [number] Resource type
+            <span class="types"><span class="type">number</span></span>
+             Resource type
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Amount of resource
+            <span class="types"><span class="type">number</span></span>
+           Amount of resource
         </li>
         <li><span class="parameter">_Costs</span>
-         [table] Costs table
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+            Costs table
         </li>
         <li><span class="parameter">_Load</span>
-         [number] Amount of offers
+            <span class="types"><span class="type">number</span></span>
+             Amount of offers
         </li>
         <li><span class="parameter">_Refresh</span>
-         [number] Refresh rate
+            <span class="types"><span class="type">number</span></span>
+          Refresh rate
         </li>
     </ul>
 
@@ -653,10 +705,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Good</span>
-         [number] Technology type
+            <span class="types"><span class="type">number</span></span>
+          Technology type
         </li>
         <li><span class="parameter">_Costs</span>
-         [table] Costs table
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Costs table
         </li>
     </ul>
 
@@ -681,16 +735,20 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Good</span>
-         [number] Entity or leader type
+            <span class="types"><span class="type">number</span></span>
+            Entity or leader type
         </li>
         <li><span class="parameter">_Costs</span>
-         [table] Costs table
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+            Costs table
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Amount of offers
+            <span class="types"><span class="type">number</span></span>
+          Amount of offers
         </li>
         <li><span class="parameter">_Refresh</span>
-         [number] Refresh rate
+            <span class="types"><span class="type">number</span></span>
+         Refresh rate
         </li>
     </ul>
 
@@ -734,14 +792,36 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_SlotIndex</span>
-         [number] Index of offer
+            <span class="types"><span class="type">number</span></span>
+         Index of offer
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [number] Trading volume
+           <span class="types"><span class="type">number</span></span>
+        Trading volume
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerMerchant:IsActive"></a>
+    <strong>NonPlayerMerchant:IsActive ()</strong>
+    </dt>
+    <dd>
+    Returns true, if the npc is currently active.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        NPC is active
     </ol>
 
 
@@ -759,7 +839,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Spawnpoint</span>
-         [string] Script name of spawnpoint.
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Script name of spawnpoint.
         </li>
     </ul>
 
@@ -780,7 +861,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2019-01-09 15:42:54 </i>
+<i style="float:right;">Last updated 2019-08-28 18:56:32 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

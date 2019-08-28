@@ -44,7 +44,7 @@
 -- @param[type=table] _Data Quest table
 -- @return[type=number] Quest id
 -- @return[type=table]  Quest instance
--- @within Functions
+-- @within Methods
 --
 -- @usage CreateQuest {
 --     Name = "VictoryCondition",
@@ -89,7 +89,7 @@ end
 ---
 -- This function starts the quest system by loading all components in the
 -- right order. Must be called on game start in the FMA.
--- @within Functions
+-- @within Methods
 --
 function LoadQuestSystem()
     QuestSystemBehavior:PrepareQuestSystem();
@@ -103,7 +103,7 @@ end
 -- @param[type=boolean] _TraceQuests Display quest status changes
 -- @param[type=boolean] _Cheats      Activate debug cheats
 -- @param[type=boolean] _Console     Activate debug shell
--- @within Functions
+-- @within Methods
 --
 -- @usage ActivateDebugMode(true, false, true, true);
 --
@@ -119,7 +119,7 @@ end
 --
 -- @param[type=number] _PlayerID  PlayerID
 -- @param[type=number] _TechLevel Technology level [1|4]
--- @within Functions
+-- @within Methods
 --
 -- @usage CreateAIPlayer(2, 4);
 --
@@ -134,7 +134,7 @@ end
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _ArmyID   ID of army
 -- @param[type=boolean] _Flag    Ability to attack
--- @within Functions
+-- @within Methods
 -- 
 -- @usage ArmyDisableAttackAbility(2, 1, true)
 --
@@ -149,7 +149,7 @@ end
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=number]  _ArmyID   ID of army
 -- @param[type=boolean] _Flag     Ability to attack
--- @within Functions
+-- @within Methods
 -- 
 -- @usage ArmyDisablePatrolAbility(2, 1, true)
 --
@@ -183,7 +183,7 @@ end
 -- @param[type=number] _RodeLength Action range of the army
 -- @param[type=table] _TroopTypes  Upgrade categories to recruit
 -- @return[type=number] Army ID
--- @within Functions
+-- @within Methods
 --
 -- @usage CreateAIPlayerArmy("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
 --
@@ -225,7 +225,7 @@ end
 -- @param[type=number] _RodeLength  Action range of the army
 -- @param[type=number] _RespawnTime Time till troops are refreshed
 -- @param              ...          List of types to spawn
--- @within Functions
+-- @within Methods
 --
 -- @usage CreateAIPlayerSpawnArmy(
 --     "Bar", 2, 8, "armyPos1", "lifethread", 5000,
@@ -258,7 +258,7 @@ end
 -- Finds all entities numbered from 1 to n with a common prefix.
 -- @param[type=string] _Prefix Prefix of scriptnames
 -- @return[type=table] List of entities
--- @within Functions
+-- @within Methods
 --
 function GetEntitiesByPrefix(_Prefix)
     local list = {};
@@ -281,7 +281,7 @@ end
 -- @param[type=number] _PlayerID   ID of player
 -- @param[type=number] _EntityType Type to search
 -- @return[type=table] List of entities
--- @within Functions
+-- @within Methods
 --
 function GetPlayerEntities(_PlayerID, _EntityType)
     local PlayerEntities = {}
@@ -317,7 +317,7 @@ end
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
--- @within Functions
+-- @within Methods
 --
 function StartSimpleJobEx(_Function, ...)
     return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, _Function, unpack(arg));
@@ -328,7 +328,7 @@ end
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
--- @within Functions
+-- @within Methods
 --
 function StartSimpleHiResJobEx(_Function, ...)
     return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, _Function, unpack(arg));
@@ -337,7 +337,7 @@ end
 ---
 -- Registers a behavior
 -- @param[type=table] _Behavior Behavior pseudo class
--- @within Functions
+-- @within Methods
 --
 function RegisterBehavior(_Behavior)
     QuestSystemBehavior:RegisterBehavior(_Behavior)
@@ -347,7 +347,7 @@ end
 -- Adds an action that is performed after a save is loaded.
 -- @param[type=function] _Function Action
 -- @param                ...       Data
--- @within Functions
+-- @within Methods
 --
 function AddOnSaveLoadedAction(_Function, ...)
     QuestSystemBehavior:AddSaveLoadActions(_Function, unpack(copy(arg)));
@@ -356,7 +356,7 @@ end
 ---
 -- Fails the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function FailQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Fail();
@@ -365,7 +365,7 @@ end
 ---
 -- Wins the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function StartQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Trigger();
@@ -374,7 +374,7 @@ end
 ---
 -- Interrupts the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function StopQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Interrupt();
@@ -383,7 +383,7 @@ end
 ---
 -- Resets the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function ResetQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset();
@@ -392,7 +392,7 @@ end
 ---
 -- Resets the quest and activates it immediately.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function RestartQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset():Trigger();
@@ -401,7 +401,7 @@ end
 ---
 -- Wins the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function WinQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Success();
@@ -2282,10 +2282,6 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_ChangePlayer);
 -- In addition to the placeholders the game offers (@cr, @color, @ra, ...),
 -- there are 2 new placeholders for both _G values and custom values.
 --
--- @val:NAME adds a value from _G. The value musn't be in a table!
---
--- @cval:NAME adds a custom value.
---
 -- @param[type=string] _Message Message to display
 -- @within Reprisals
 --
@@ -2888,10 +2884,6 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_ChangePlayer);
 --
 -- In addition to the placeholders the game offers (@cr, @color, @ra, ...),
 -- there are 2 new placeholders for both _G values and custom values.
---
--- @val:NAME adds a value from _G. The value musn't be in a table!
---
--- @cval:NAME adds a custom value.
 --
 -- @param[type=string] _Message Message to display
 -- @within Rewards
@@ -5957,7 +5949,7 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_CustomVariable);
 
 -- -------------------------------------------------------------------------- --
 
---.
+---
 -- After the player made a choice in a briefing that choice can be checked by
 -- this goal. If the choice was selected, the goal succeeds. If not, it fails.
 --

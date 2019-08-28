@@ -181,7 +181,7 @@ end
 ---
 -- Function called when a hero speaks to a normal npc.
 -- @param[type=number] _Hero Entity id of hero
--- @param[type=table] _NpcInstanceInstance of npc
+-- @param[type=table] _NpcInstance of npc
 -- @within Interaction
 -- @local
 --

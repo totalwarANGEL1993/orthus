@@ -1,0 +1,566 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Reference</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<button onclick="topFunction()" id="back2top" title="Nach oben scrollen">&#11014</button>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>ldoc</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+<li><a href="#Rewards">Rewards</a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/information_ex2.html">information_ex2</a></li>
+  <li><a href="../modules/interaction.html">interaction</a></li>
+  <li><a href="../modules/oop.html">oop</a></li>
+  <li><a href="../modules/questbehavior.html">questbehavior</a></li>
+  <li><a href="../modules/questdebug.html">questdebug</a></li>
+  <li><a href="../modules/questsystem.html">questsystem</a></li>
+  <li><a href="../modules/timer_ex2.html">timer_ex2</a></li>
+  <li><a href="../modules/timer_ex3.html">timer_ex3</a></li>
+  <li><strong>treasure</strong></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>treasure</code></h1>
+<p>This module creates better chests.</p>
+<p>
+<p> Chests are opened by any hero but you can set a custom condition that is
+ checked first.
+<p> By default resources are given as reward. It is also possible to write
+ a custom funktion that will be called after the chest is opened.
+<p> <b>Required modules:</b>
+ <ul>
+ <li>qsb.oop</li>
+ <li>qsb.questsystem</li>
+ <li>qsb.questbehavior</li>
+ </ul>
+</p>
+
+
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#SetupTreasureChest">SetupTreasureChest (_Data)</a></td>
+	<td class="summary">Simplified call to create a chest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:Activate">TreasureTemplate:Activate ()</a></td>
+	<td class="summary">Activates the treasure chest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:Deactivate">TreasureTemplate:Deactivate ()</a></td>
+	<td class="summary">Deactivates the treasure chest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:GiveTreasureReward">TreasureTemplate:GiveTreasureReward ()</a></td>
+	<td class="summary">Applies the default rewards of the treasure chest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:SetCallback">TreasureTemplate:SetCallback (_Function)</a></td>
+	<td class="summary">Sets the optional opening callback.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:SetClay">TreasureTemplate:SetClay (_Amount)</a></td>
+	<td class="summary">Sets the amount of clay.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:SetCondition">TreasureTemplate:SetCondition (_Function)</a></td>
+	<td class="summary">Sets the optional opening condition.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:SetGold">TreasureTemplate:SetGold (_Amount)</a></td>
+	<td class="summary">Sets the amount of gold.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:SetIron">TreasureTemplate:SetIron (_Amount)</a></td>
+	<td class="summary">Sets the amount of iron.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:SetStone">TreasureTemplate:SetStone (_Amount)</a></td>
+	<td class="summary">Sets the amount of stone.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:SetSulfur">TreasureTemplate:SetSulfur (_Amount)</a></td>
+	<td class="summary">Sets the amount of sulfur.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:SetWood">TreasureTemplate:SetWood (_Amount)</a></td>
+	<td class="summary">Sets the amount of wood.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:StartController">TreasureTemplate:StartController ()</a></td>
+	<td class="summary">Starts the controller job of the treasure chest and returns the ID.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#TreasureTemplate:construct">TreasureTemplate:construct (_ScriptName)</a></td>
+	<td class="summary">Creates an new instance.</td>
+	</tr>
+</table>
+<h2><a href="#Rewards">Rewards</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#Reward_CreateChest">Reward_CreateChest (_ScriptName, _ResourceType, _Amount)</a></td>
+	<td class="summary">Creates a simple treasure chest with the desired amount of resources</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "SetupTreasureChest"></a>
+    <strong>SetupTreasureChest (_Data)</strong>
+    </dt>
+    <dd>
+    Simplified call to create a chest.
+<p> Entries in data table:
+ <ul>
+ <li>ScriptName: Script name of entity</li>
+ <li>Gold: Amount of gold</li>
+ <li>Clay: Amount of clay</li>
+ <li>Wood: Amount of wood</li>
+ <li>Stone: Amount of stone</li>
+ <li>Iron: Amount of iron</li>
+ <li>Sulfur: Amount of sulfur</li>
+ <li>Condition: Additional opening condition</li>
+ <li>Callback Additional opening callback</li>
+ </ul>
+<p> <b>Note</b>: Condition and callback are optional. The data of the instance
+ is passed to these function when they are called.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Data</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Data table
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Treasure instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:Activate"></a>
+    <strong>TreasureTemplate:Activate ()</strong>
+    </dt>
+    <dd>
+    Activates the treasure chest.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:Deactivate"></a>
+    <strong>TreasureTemplate:Deactivate ()</strong>
+    </dt>
+    <dd>
+    Deactivates the treasure chest.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:GiveTreasureReward"></a>
+    <strong>TreasureTemplate:GiveTreasureReward ()</strong>
+    </dt>
+    <dd>
+    Applies the default rewards of the treasure chest.
+<p> The amount of each resource inside the chest is printed to screen.
+
+
+
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:SetCallback"></a>
+    <strong>TreasureTemplate:SetCallback (_Function)</strong>
+    </dt>
+    <dd>
+    Sets the optional opening callback.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Function</span>
+            <span class="types"><span class="type">function</span></span>
+         Callback method
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:SetClay"></a>
+    <strong>TreasureTemplate:SetClay (_Amount)</strong>
+    </dt>
+    <dd>
+    Sets the amount of clay.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Amount</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of resource
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:SetCondition"></a>
+    <strong>TreasureTemplate:SetCondition (_Function)</strong>
+    </dt>
+    <dd>
+    Sets the optional opening condition.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Function</span>
+            <span class="types"><span class="type">function</span></span>
+         Condition method
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:SetGold"></a>
+    <strong>TreasureTemplate:SetGold (_Amount)</strong>
+    </dt>
+    <dd>
+    Sets the amount of gold.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Amount</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of resource
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:SetIron"></a>
+    <strong>TreasureTemplate:SetIron (_Amount)</strong>
+    </dt>
+    <dd>
+    Sets the amount of iron.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Amount</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of resource
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:SetStone"></a>
+    <strong>TreasureTemplate:SetStone (_Amount)</strong>
+    </dt>
+    <dd>
+    Sets the amount of stone.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Amount</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of resource
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:SetSulfur"></a>
+    <strong>TreasureTemplate:SetSulfur (_Amount)</strong>
+    </dt>
+    <dd>
+    Sets the amount of sulfur.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Amount</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of resource
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:SetWood"></a>
+    <strong>TreasureTemplate:SetWood (_Amount)</strong>
+    </dt>
+    <dd>
+    Sets the amount of wood.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Amount</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of resource
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Instance
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:StartController"></a>
+    <strong>TreasureTemplate:StartController ()</strong>
+    </dt>
+    <dd>
+    Starts the controller job of the treasure chest and returns the ID.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        ID of job
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "TreasureTemplate:construct"></a>
+    <strong>TreasureTemplate:construct (_ScriptName)</strong>
+    </dt>
+    <dd>
+    Creates an new instance.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_ScriptName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Script name of entity
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Rewards"></a>Rewards</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "Reward_CreateChest"></a>
+    <strong>Reward_CreateChest (_ScriptName, _ResourceType, _Amount)</strong>
+    </dt>
+    <dd>
+    Creates a simple treasure chest with the desired amount of resources
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_ScriptName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of chest
+        </li>
+        <li><span class="parameter">_ResourceType</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resource Type or "Random"
+        </li>
+        <li><span class="parameter">_Amount</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of resource
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2019-08-28 18:56:32 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+
+<script>
+    window.onscroll = function() {scrollFunction()};
+
+    function scrollFunction() {
+        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            document.getElementById("back2top").style.display = "block";
+        } else {
+            document.getElementById("back2top").style.display = "none";
+        }
+    }
+
+    function topFunction() {
+        document.body.scrollTop = 0; // For Safari
+        document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+    }
+</script>
+
+</body>
+</html>

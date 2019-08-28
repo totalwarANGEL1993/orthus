@@ -34,7 +34,7 @@
 
 <h2>Contents</h2>
 <ul>
-<li><a href="#Functions">Functions</a></li>
+<li><a href="#Methods">Methods</a></li>
 <li><a href="#Constants">Constants</a></li>
 <li><a href="#Goals">Goals</a></li>
 <li><a href="#Reprisals">Reprisals</a></li>
@@ -51,6 +51,9 @@
   <li><strong>questbehavior</strong></li>
   <li><a href="../modules/questdebug.html">questdebug</a></li>
   <li><a href="../modules/questsystem.html">questsystem</a></li>
+  <li><a href="../modules/timer_ex2.html">timer_ex2</a></li>
+  <li><a href="../modules/timer_ex3.html">timer_ex3</a></li>
+  <li><a href="../modules/treasure.html">treasure</a></li>
 </ul>
 
 </div>
@@ -73,11 +76,15 @@
 </p>
 
 
-<h2><a href="#Functions">Functions</a></h2>
+<h2><a href="#Methods">Methods</a></h2>
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#ActivateDebugMode">ActivateDebugMode (_CheckQuests, _TraceQuests, _Cheats, _Console)</a></td>
 	<td class="summary">Activates the debug mode.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AddOnSaveLoadedAction">AddOnSaveLoadedAction (_Function, ...)</a></td>
+	<td class="summary">Adds an action that is performed after a save is loaded.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#ArmyDisableAttackAbility">ArmyDisableAttackAbility (_PlayerID, _ArmyID, _Flag)</a></td>
@@ -101,7 +108,11 @@
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#CreateQuest">CreateQuest (_Data)</a></td>
-	<td class="summary">Creates an quest from the given description.</td>
+	<td class="summary">Creates an quest from the given table.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#FailQuest">FailQuest (_Subject)</a></td>
+	<td class="summary">Fails the quest.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#GetEntitiesByPrefix">GetEntitiesByPrefix (_Prefix)</a></td>
@@ -115,6 +126,38 @@
 	<td class="name" nowrap><a href="#LoadQuestSystem">LoadQuestSystem ()</a></td>
 	<td class="summary">This function starts the quest system by loading all components in the
  right order.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#RegisterBehavior">RegisterBehavior (_Behavior)</a></td>
+	<td class="summary">Registers a behavior</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ResetQuest">ResetQuest (_Subject)</a></td>
+	<td class="summary">Resets the quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#RestartQuest">RestartQuest (_Subject)</a></td>
+	<td class="summary">Resets the quest and activates it immediately.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#StartQuest">StartQuest (_Subject)</a></td>
+	<td class="summary">Wins the quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#StartSimpleHiResJobEx">StartSimpleHiResJobEx (_Function, ...)</a></td>
+	<td class="summary">Creates an inline job that is executed ten times per second.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#StartSimpleJobEx">StartSimpleJobEx (_Function, ...)</a></td>
+	<td class="summary">Creates an inline job that is executed every second.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#StopQuest">StopQuest (_Subject)</a></td>
+	<td class="summary">Interrupts the quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#WinQuest">WinQuest (_Subject)</a></td>
+	<td class="summary">Wins the quest.</td>
 	</tr>
 </table>
 <h2><a href="#Constants">Constants</a></h2>
@@ -131,7 +174,11 @@
 	<td class="summary">This goal is won, after some offers of a merchant are bought.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Goal_Create">Goal_Create (_EntityType, _Position, _Area, _Amount, _Marker, _NewOwner)</a></td>
+	<td class="name" nowrap><a href="#Goal_CompleteQuest">Goal_CompleteQuest (_QuestName)</a></td>
+	<td class="summary">The player must finish a quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Goal_Create">Goal_Create (_EntityType, _Position, _Area, _Amount, _MarkerUse, _NewOwner)</a></td>
 	<td class="summary">The goal is won after the player creates entities in the area.</td>
 	</tr>
 	<tr>
@@ -147,12 +194,20 @@
 	<td class="summary">This goal is won, after all units of a player are destroyed.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#Goal_DestroyArmy">Goal_DestroyArmy (_PlayerID, _ArmyName)</a></td>
+	<td class="summary">The player must destroy the army.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Goal_DestroyCategory">Goal_DestroyCategory (_PlayerID, _TypeName, _Amount)</a></td>
 	<td class="summary">This goal is won, after the receiver destroyed some entities of category of
  the player.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Goal_DestroyPlayer">Goal_DestroyPlayer (_PlayerID)</a></td>
+	<td class="name" nowrap><a href="#Goal_DestroyEnemiesInArea">Goal_DestroyEnemiesInArea (_Position, _Position)</a></td>
+	<td class="summary">The plaver must eliminate all of his enemies in a distinct area.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Goal_DestroyPlayer">Goal_DestroyPlayer (_PlayerID, _HQ)</a></td>
 	<td class="summary">This goal succeeds if the headquarter entity of the player is destroyed.</td>
 	</tr>
 	<tr>
@@ -167,6 +222,10 @@
 	<tr>
 	<td class="name" nowrap><a href="#Goal_EntityDistance">Goal_EntityDistance (_Entity, _Target, _Distance, _LowerThan)</a></td>
 	<td class="summary">This goal is won, after the entity has reached (or left) the target.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Goal_FailQuest">Goal_FailQuest (_QuestName)</a></td>
+	<td class="summary">The player must fail a quest.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Goal_InstantFailure">Goal_InstantFailure (...)</a></td>
@@ -205,7 +264,7 @@
 	<td class="summary">This goal is won, after the player has an amount of settlers.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Goal_SoldierCount">Goal_SoldierCount (_Amount, _LowerThan, _OtherPlayer)</a></td>
+	<td class="name" nowrap><a href="#Goal_SoldierCount">Goal_SoldierCount (_AmountAmount, _LowerThan, _OtherPlayer)</a></td>
 	<td class="summary">This goal is won, after the player has an amount of soldiers.</td>
 	</tr>
 	<tr>
@@ -219,6 +278,11 @@
 	<tr>
 	<td class="name" nowrap><a href="#Goal_Units">Goal_Units (_EntityType, _Amount)</a></td>
 	<td class="summary">This goal is won, after the player reached an amount of units.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Goal_UnitsInArea">Goal_UnitsInArea (_PlayerID, _Category, _Target, _Area, _LowerThan)</a></td>
+	<td class="summary">To win this goal the player must have at least one unit of the category in
+ the area OR mustn't have any unit of that category in the area.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Goal_UpgradeHeadquarters">Goal_UpgradeHeadquarters (_Level)</a></td>
@@ -248,6 +312,10 @@
 	<td class="summary">Changes the owner of the entity.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#Reprisal_CloseGate">Reprisal_CloseGate (_Name)</a></td>
+	<td class="summary">Closes a palisade or a wall gate.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Reprisal_ConcealArea">Reprisal_ConcealArea (_AreaCenter)</a></td>
 	<td class="summary">Removes the exploration of an area.</td>
 	</tr>
@@ -260,7 +328,7 @@
 	<td class="summary">Destroys the effect with the given effect name.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reprisal_DestroyEntity">Reprisal_DestroyEntity (_Entity)</a></td>
+	<td class="name" nowrap><a href="#Reprisal_DestroyEntity">Reprisal_DestroyEntity (_EntityEntity)</a></td>
 	<td class="summary">Replaces the entity with a XD_ScriptEntity.</td>
 	</tr>
 	<tr>
@@ -278,6 +346,10 @@
 	<tr>
 	<td class="name" nowrap><a href="#Reprisal_Move">Reprisal_Move (_Entity, _Destination)</a></td>
 	<td class="summary">Moves an entity to the destination.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reprisal_OpenGate">Reprisal_OpenGate (_Name)</a></td>
+	<td class="summary">Opens a palisade or a wall gate.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reprisal_QuestActivate">Reprisal_QuestActivate (_QuestName)</a></td>
@@ -348,8 +420,12 @@
 	<td class="summary">Starts the briefing.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_ChangePlayer">Reward_ChangePlayer (_Entity, _Owner)</a></td>
+	<td class="name" nowrap><a href="#Reward_ChangePlayer">Reward_ChangePlayer (_EntityEntity, _Owner)</a></td>
 	<td class="summary">Changes the owner of the entity.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_CloseGate">Reward_CloseGate (_Name)</a></td>
+	<td class="summary">Closes a palisade or a wall gate.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reward_CloseMerchant">Reward_CloseMerchant (_Merchant)</a></td>
@@ -388,7 +464,7 @@
 	<td class="summary">Destroys the effect with the given effect name.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_DestroyEntity">Reward_DestroyEntity (_Entity)</a></td>
+	<td class="name" nowrap><a href="#Reward_DestroyEntity">Reward_DestroyEntity (_EntityEntity)</a></td>
 	<td class="summary">Replaces the entity with a XD_ScriptEntity.</td>
 	</tr>
 	<tr>
@@ -408,13 +484,17 @@
 	<td class="summary">Displays a text message on the screen.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_Move">Reward_Move (_Entity, _Destination)</a></td>
+	<td class="name" nowrap><a href="#Reward_Move">Reward_Move (_EntityEntity, _Destination)</a></td>
 	<td class="summary">Moves an entity to the destination.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reward_MoveAndVanish">Reward_MoveAndVanish (_Entity, _Target)</a></td>
 	<td class="summary">Moves an entity to the destination and replace it with an XD_ScriptEntity
- once it enters the fog.</td>
+ once it enters the fog or reaches the destination.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_OpenGate">Reward_OpenGate (_Name)</a></td>
+	<td class="summary">Opens a palisade or a wall gate.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reward_OpenMercenaryMerchant">Reward_OpenMercenaryMerchant (_Merchant, _Offer1, _Cost1, _Amount1, _Offer2, _Cost2, _Amount2, _Offer3, _Cost3, _Amount3, _Offer4, _Cost4, _Amount4)</a></td>
@@ -473,7 +553,7 @@
 	<td class="summary">Changes the vulnerablty of a settler or building.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reward_Technology">Reward_Technology (_Technology, _State)</a></td>
+	<td class="name" nowrap><a href="#Reward_Technology">Reward_Technology (_Technology, _StateTechnology)</a></td>
 	<td class="summary">Changes the state of a technology.</td>
 	</tr>
 	<tr>
@@ -489,13 +569,25 @@
  custom variable using the mathematical operation.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Reprisal_CustomVariable">Reprisal_CustomVariable (_Name, _Operator, _Value)</a></td>
+	<td class="name" nowrap><a href="#Reward_CustomVariable">Reward_CustomVariable (_Name, _Operator, _Value)</a></td>
 	<td class="summary">Alters a numeric custom value by the given value or value of the given
  custom variable using the mathematical operation.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#Trigger_AlwaysActive">Trigger_AlwaysActive (...)</a></td>
+	<td class="summary">Starts the quest immediately.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#Trigger_Briefing">Trigger_Briefing (_QuestName)</a></td>
-	<td class="summary">Starts the quest when the briefing linked to the quest is finished.</td>
+	<td class="summary">Starts the quest when any briefing linked to the quest is finished.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Trigger_BriefingFailure">Trigger_BriefingFailure (_QuestName)</a></td>
+	<td class="summary">Starts the quest when the failure briefing linked to the quest is finished.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Trigger_BriefingSuccess">Trigger_BriefingSuccess (_QuestName)</a></td>
+	<td class="summary">Starts the quest when the success briefing linked to the quest is finished.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Trigger_CustomVariable">Trigger_CustomVariable (_Name, _Comparison, _Value)</a></td>
@@ -573,7 +665,7 @@
 <br/>
 
 
-    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+    <h2 class="section-header "><a name="Methods"></a>Methods</h2>
 
     <dl class="function">
     <dt>
@@ -589,16 +681,20 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_CheckQuests</span>
-         [boolean] Call debug check of behavior
+            <span class="types"><span class="type">boolean</span></span>
+         Call debug check of behavior
         </li>
         <li><span class="parameter">_TraceQuests</span>
-         [boolean] Display quest status changes
+            <span class="types"><span class="type">boolean</span></span>
+         Display quest status changes
         </li>
         <li><span class="parameter">_Cheats</span>
-         [boolean] Activate debug cheats
+            <span class="types"><span class="type">boolean</span></span>
+              Activate debug cheats
         </li>
         <li><span class="parameter">_Console</span>
-         [boolean] Activate debug shell
+            <span class="types"><span class="type">boolean</span></span>
+             Activate debug shell
         </li>
     </ul>
 
@@ -609,6 +705,30 @@
     <ul>
         <pre class="example">ActivateDebugMode(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">true</span>);</pre>
     </ul>
+
+</dd>
+    <dt>
+    <a name = "AddOnSaveLoadedAction"></a>
+    <strong>AddOnSaveLoadedAction (_Function, ...)</strong>
+    </dt>
+    <dd>
+    Adds an action that is performed after a save is loaded.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Function</span>
+            <span class="types"><span class="type">function</span></span>
+         Action
+        </li>
+        <li><span class="parameter">...</span>
+               Data
+        </li>
+    </ul>
+
+
+
+
 
 </dd>
     <dt>
@@ -624,13 +744,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] ID of player
+            <span class="types"><span class="type">number</span></span>
+         ID of player
         </li>
         <li><span class="parameter">_ArmyID</span>
-         [number] ID of army
+            <span class="types"><span class="type">number</span></span>
+           ID of army
         </li>
         <li><span class="parameter">_Flag</span>
-         [boolean] Ability to attack
+            <span class="types"><span class="type">boolean</span></span>
+            Ability to attack
         </li>
     </ul>
 
@@ -656,13 +779,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] ID of player
+            <span class="types"><span class="type">number</span></span>
+         ID of player
         </li>
         <li><span class="parameter">_ArmyID</span>
-         [number] ID of army
+            <span class="types"><span class="type">number</span></span>
+           ID of army
         </li>
         <li><span class="parameter">_Flag</span>
-         [boolean] Ability to attack
+            <span class="types"><span class="type">boolean</span></span>
+             Ability to attack
         </li>
     </ul>
 
@@ -689,10 +815,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] PlayerID
+            <span class="types"><span class="type">number</span></span>
+          PlayerID
         </li>
         <li><span class="parameter">_TechLevel</span>
-         [number] Technology level [1|4]
+            <span class="types"><span class="type">number</span></span>
+         Technology level [1|4]
         </li>
     </ul>
 
@@ -729,29 +857,36 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ArmyName</span>
-         [String] Army identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+           Army identifier
         </li>
         <li><span class="parameter">_PlayerID</span>
-         [number] Owner of army
+            <span class="types"><span class="type">number</span></span>
+           Owner of army
         </li>
         <li><span class="parameter">_Strength</span>
-         [number] Strength of army [1|8]
+            <span class="types"><span class="type">number</span></span>
+           Strength of army [1|8]
         </li>
         <li><span class="parameter">_Position</span>
-         [string] Home Position of army
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+           Home Position of army
         </li>
         <li><span class="parameter">_RodeLength</span>
-         [number] Action range of the army
+            <span class="types"><span class="type">number</span></span>
+         Action range of the army
         </li>
         <li><span class="parameter">_TroopTypes</span>
-         [table] Upgrade categories to recruit
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+          Upgrade categories to recruit
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [number] Army ID
+           <span class="types"><span class="type">number</span></span>
+        Army ID
     </ol>
 
 
@@ -786,28 +921,35 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ArmyName</span>
-         [String] Army identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+            Army identifier
         </li>
         <li><span class="parameter">_PlayerID</span>
-         [number] Owner of army.
+            <span class="types"><span class="type">number</span></span>
+            Owner of army.
         </li>
         <li><span class="parameter">_Strength</span>
-         [number] Strength of army [1|8]
+            <span class="types"><span class="type">number</span></span>
+            Strength of army [1|8]
         </li>
         <li><span class="parameter">_Position</span>
-         [string] Home Position of army
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+            Home Position of army
         </li>
         <li><span class="parameter">_LifeThread</span>
-         [string] Name of generator
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+          Name of generator
         </li>
         <li><span class="parameter">_RodeLength</span>
-         [number] Action range of the army
+            <span class="types"><span class="type">number</span></span>
+          Action range of the army
         </li>
         <li><span class="parameter">_RespawnTime</span>
-         [number] Time till troops are refreshed
+            <span class="types"><span class="type">number</span></span>
+         Time till troops are refreshed
         </li>
         <li><span class="parameter">...</span>
-         [number..] List of types to spawn
+                  List of types to spawn
         </li>
     </ul>
 
@@ -830,13 +972,18 @@
     <strong>CreateQuest (_Data)</strong>
     </dt>
     <dd>
-    Creates an quest from the given description.
-<p> Description contains of the following entries:
+    Creates an quest from the given table.  If the table contains a description,
+ the quest will insert itself into the questbook when it is triggered and
+ erase it, after it is finished or interrupted.
+<p> Keep in mind that there can be only 8 entries in the quest book unless you
+ use extra 3 or the standalone version of mcb's quest!
+<p> Table contains of the following entries:
  <ul>
  <li><b>Name:</b> Name of quest</li>
  <li><b>Receiver:</b> Player that receives the quest</li>
  <li><b>Time:</b> Time, until the quest is automatically over</li>
- <li><b>Description:</b> Quest information displayed in the quest book</li>
+ <li><b>Description:</b> Quest information displayed in the quest book.
+ (Mostly identical to Logic.CreateQuest or Logic.CreateQuestEx)</li>
  </ul>
  After the fields the behavior constructors are called.
 
@@ -845,16 +992,19 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Data</span>
-         [table] Quest description
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Quest table
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
         <li>
-        [number] Quest id</li>
+           <span class="types"><span class="type">number</span></span>
+        Quest id</li>
         <li>
-        [table] Quest instance</li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Quest instance</li>
     </ol>
 
 
@@ -862,19 +1012,39 @@
     <h3>Usage:</h3>
     <ul>
         <pre class="example">CreateQuest {
-    Name = <span class="string">"SomeQuestName"</span>,
+    Name = <span class="string">"VictoryCondition"</span>,
     Description = {
-        Title = <span class="string">"Name of quest"</span>,
-        Text  = <span class="string">"Description of quest"</span>,
+        Title = <span class="string">"Justice!"</span>,
+        Text  = <span class="string">"Time for paybeck. Destroy your enemy!"</span>,
         Type  = MAINQUEST_OPEN,
         Info  = <span class="number">1</span>
     },
 
-    Goal_DestroyAllPlayerUnits(<span class="number">2</span>),
+    Goal_DestroyPlayer(<span class="number">2</span>),
     Reward_Victory(),
     Trigger_Time(<span class="number">0</span>)
 }</pre>
     </ul>
+
+</dd>
+    <dt>
+    <a name = "FailQuest"></a>
+    <strong>FailQuest (_Subject)</strong>
+    </dt>
+    <dd>
+    Fails the quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Subject</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
 
 </dd>
     <dt>
@@ -888,14 +1058,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Prefix</span>
-         [string] Prefix of scriptnames
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Prefix of scriptnames
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [table] List of entities
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        List of entities
     </ol>
 
 
@@ -913,17 +1085,20 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] ID of player
+            <span class="types"><span class="type">number</span></span>
+           ID of player
         </li>
         <li><span class="parameter">_EntityType</span>
-         [number] Type to search
+            <span class="types"><span class="type">number</span></span>
+         Type to search
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [table] List of entities
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        List of entities
     </ol>
 
 
@@ -940,6 +1115,186 @@
 
 
 
+
+
+
+
+</dd>
+    <dt>
+    <a name = "RegisterBehavior"></a>
+    <strong>RegisterBehavior (_Behavior)</strong>
+    </dt>
+    <dd>
+    Registers a behavior
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Behavior</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Behavior pseudo class
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "ResetQuest"></a>
+    <strong>ResetQuest (_Subject)</strong>
+    </dt>
+    <dd>
+    Resets the quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Subject</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "RestartQuest"></a>
+    <strong>RestartQuest (_Subject)</strong>
+    </dt>
+    <dd>
+    Resets the quest and activates it immediately.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Subject</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "StartQuest"></a>
+    <strong>StartQuest (_Subject)</strong>
+    </dt>
+    <dd>
+    Wins the quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Subject</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "StartSimpleHiResJobEx"></a>
+    <strong>StartSimpleHiResJobEx (_Function, ...)</strong>
+    </dt>
+    <dd>
+    Creates an inline job that is executed ten times per second.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Function</span>
+            <span class="types"><span class="type">function</span></span>
+         Lua function reference
+        </li>
+        <li><span class="parameter">...</span>
+         Optional arguments
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        Job ID
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "StartSimpleJobEx"></a>
+    <strong>StartSimpleJobEx (_Function, ...)</strong>
+    </dt>
+    <dd>
+    Creates an inline job that is executed every second.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Function</span>
+            <span class="types"><span class="type">function</span></span>
+         Lua function reference
+        </li>
+        <li><span class="parameter">...</span>
+         Optional arguments
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        Job ID
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "StopQuest"></a>
+    <strong>StopQuest (_Subject)</strong>
+    </dt>
+    <dd>
+    Interrupts the quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Subject</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "WinQuest"></a>
+    <strong>WinQuest (_Subject)</strong>
+    </dt>
+    <dd>
+    Wins the quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Subject</span>
+         Quest name or ID
+        </li>
+    </ul>
 
 
 
@@ -997,13 +1352,37 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Merchant</span>
-         [number] Merchant npc
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+          Merchant npc
         </li>
         <li><span class="parameter">_Offer</span>
-         [number] Index of offer
+            <span class="types"><span class="type">number</span></span>
+         Index of offer
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Amount to buy
+            <span class="types"><span class="type">number</span></span>
+         Amount to buy
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Goal_CompleteQuest"></a>
+    <strong>Goal_CompleteQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    The player must finish a quest.  The result does not matter.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1014,7 +1393,7 @@
 </dd>
     <dt>
     <a name = "Goal_Create"></a>
-    <strong>Goal_Create (_EntityType, _Position, _Area, _Amount, _Marker, _NewOwner)</strong>
+    <strong>Goal_Create (_EntityType, _Position, _Area, _Amount, _MarkerUse, _NewOwner)</strong>
     </dt>
     <dd>
     The goal is won after the player creates entities in the area.
@@ -1023,22 +1402,28 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_EntityType</span>
-         [string] Entity type
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity type
         </li>
         <li><span class="parameter">_Position</span>
-         [string] Area center
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Area center
         </li>
         <li><span class="parameter">_Area</span>
-         [number] Checked area size
+            <span class="types"><span class="type">number</span></span>
+         Checked area size
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Amount to create
+            <span class="types"><span class="type">number</span></span>
+         Amount to create
         </li>
-        <li><span class="parameter">_Marker</span>
-         [boolean] Use pointer
+        <li><span class="parameter">_MarkerUse</span>
+            <span class="types"><span class="type">boolean</span></span>
+         pointer
         </li>
         <li><span class="parameter">_NewOwner</span>
-         [number] Change owner after completion
+            <span class="types"><span class="type">number</span></span>
+         Change owner after completion
         </li>
     </ul>
 
@@ -1059,13 +1444,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Name</span>
-         [string] Variable identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Variable identifier
         </li>
         <li><span class="parameter">_Comparison</span>
-         [string] Comparsion operator
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Comparsion operator
         </li>
         <li><span class="parameter">_Value</span>
-         [number] Integer value
+            <span class="types"><span class="type">number</span></span>
+         Integer value
         </li>
     </ul>
 
@@ -1085,7 +1473,7 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Target</span>
-         [string|table] Target (Army, hero, unit)
+         Target (Army, hero, unit)
         </li>
     </ul>
 
@@ -1105,7 +1493,35 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] id of player
+            <span class="types"><span class="type">number</span></span>
+         id of player
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Goal_DestroyArmy"></a>
+    <strong>Goal_DestroyArmy (_PlayerID, _ArmyName)</strong>
+    </dt>
+    <dd>
+    The player must destroy the army.  For spawned armies the lifethread must
+ also be destroyed. Armies that can recruit new leader are defeated after
+ the ai is defeated.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         id of player
+        </li>
+        <li><span class="parameter">_ArmyName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of army
         </li>
     </ul>
 
@@ -1126,13 +1542,41 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] Owner of entities
+            <span class="types"><span class="type">number</span></span>
+         Owner of entities
         </li>
         <li><span class="parameter">_TypeName</span>
-         [string] Entity type name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity type name
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Amount to destroy
+            <span class="types"><span class="type">number</span></span>
+         Amount to destroy
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Goal_DestroyEnemiesInArea"></a>
+    <strong>Goal_DestroyEnemiesInArea (_Position, _Position)</strong>
+    </dt>
+    <dd>
+    The plaver must eliminate all of his enemies in a distinct area.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Position</span>
+            <span class="types"><span class="type">number</span></span>
+         Area size
+        </li>
+        <li><span class="parameter">_Position</span>
+            <span class="types"><span class="type">number</span></span>
+         Area size
         </li>
     </ul>
 
@@ -1143,17 +1587,23 @@
 </dd>
     <dt>
     <a name = "Goal_DestroyPlayer"></a>
-    <strong>Goal_DestroyPlayer (_PlayerID)</strong>
+    <strong>Goal_DestroyPlayer (_PlayerID, _HQ)</strong>
     </dt>
     <dd>
     This goal succeeds if the headquarter entity of the player is destroyed.
- In addition, all buildings and settlers of this player get killed.
+ In addition, all buildings and settlers of this player are destroyed. If an
+ AI is active it will be deactivated.
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] id of player
+            <span class="types"><span class="type">number</span></span>
+         id of player
+        </li>
+        <li><span class="parameter">_HQ</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         HQ building of player
         </li>
     </ul>
 
@@ -1174,13 +1624,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] Owner of entities
+            <span class="types"><span class="type">number</span></span>
+         Owner of entities
         </li>
         <li><span class="parameter">_TypeName</span>
-         [string] Entity type name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity type name
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Amount to destroy
+            <span class="types"><span class="type">number</span></span>
+         Amount to destroy
         </li>
     </ul>
 
@@ -1200,10 +1653,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_TargetPlayer</span>
-         [number] Entity type
+            <span class="types"><span class="type">number</span></span>
+         Entity type
         </li>
         <li><span class="parameter">_State</span>
-         [string] Diplomacy state name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Diplomacy state name
         </li>
     </ul>
 
@@ -1223,16 +1678,42 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Entity</span>
-         [string] Entity to move
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity to move
         </li>
         <li><span class="parameter">_Target</span>
-         [string] Target to reach
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Target to reach
         </li>
         <li><span class="parameter">_Distance</span>
-         [number] Distance between entities
+            <span class="types"><span class="type">number</span></span>
+         Distance between entities
         </li>
         <li><span class="parameter">_LowerThan</span>
-         [boolean] Be lower than distance
+            <span class="types"><span class="type">boolean</span></span>
+          Be lower than distance
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Goal_FailQuest"></a>
+    <strong>Goal_FailQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    The player must fail a quest.  If the quest does not fails this behavior
+ will fail.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1292,7 +1773,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_FunctionName</span>
-         [string] function to call
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         function to call
         </li>
     </ul>
 
@@ -1312,13 +1794,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Amount</span>
-         [number] Amount to reach
+            <span class="types"><span class="type">number</span></span>
+         Amount to reach
         </li>
         <li><span class="parameter">_LowerThan</span>
-         [boolean] Be lower than
+            <span class="types"><span class="type">boolean</span></span>
+          Be lower than
         </li>
         <li><span class="parameter">_OtherPlayer</span>
-         [number] Other player
+            <span class="types"><span class="type">number</span></span>
+         Other player
         </li>
     </ul>
 
@@ -1339,13 +1824,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Target</span>
-         [string] Target entity
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Target entity
         </li>
         <li><span class="parameter">_Hero</span>
-         [string] Optional required hero
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Optional required hero
         </li>
         <li><span class="parameter">_Message</span>
-         [string] Optional wrong hero message
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Optional wrong hero message
         </li>
     </ul>
 
@@ -1385,13 +1873,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ResourceType</span>
-         [string] Name of resource
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of resource
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Amount of resource
+            <span class="types"><span class="type">number</span></span>
+         Amount of resource
         </li>
         <li><span class="parameter">_ExcludeRaw</span>
-         [boolean] Don't count raw type (default true)
+            <span class="types"><span class="type">boolean</span></span>
+         Don't count raw type (default true)
         </li>
     </ul>
 
@@ -1412,7 +1903,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Target</span>
-         [string] Target to protect
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Target to protect
         </li>
     </ul>
 
@@ -1432,13 +1924,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Amount</span>
-         [number] Amount to reach
+            <span class="types"><span class="type">number</span></span>
+         Amount to reach
         </li>
         <li><span class="parameter">_LowerThan</span>
-         [boolean] Be lower than
+            <span class="types"><span class="type">boolean</span></span>
+          Be lower than
         </li>
         <li><span class="parameter">_OtherPlayer</span>
-         [number] Other player
+            <span class="types"><span class="type">number</span></span>
+         Other player
         </li>
     </ul>
 
@@ -1449,7 +1944,7 @@
 </dd>
     <dt>
     <a name = "Goal_SoldierCount"></a>
-    <strong>Goal_SoldierCount (_Amount, _LowerThan, _OtherPlayer)</strong>
+    <strong>Goal_SoldierCount (_AmountAmount, _LowerThan, _OtherPlayer)</strong>
     </dt>
     <dd>
     This goal is won, after the player has an amount of soldiers.
@@ -1457,14 +1952,17 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Amount</span>
-         [number] Amount to reach
+        <li><span class="parameter">_AmountAmount</span>
+            <span class="types"><span class="type">number</span></span>
+         to reach
         </li>
         <li><span class="parameter">_LowerThan</span>
-         [boolean] Be lower than
+            <span class="types"><span class="type">boolean</span></span>
+          Be lower than
         </li>
         <li><span class="parameter">_OtherPlayer</span>
-         [number] Other player
+            <span class="types"><span class="type">number</span></span>
+         Other player
         </li>
     </ul>
 
@@ -1484,7 +1982,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Technology</span>
-         [string] Technology name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Technology name
         </li>
     </ul>
 
@@ -1504,13 +2003,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Resource</span>
-         [string] Tribute resource
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Tribute resource
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Tribute high
+            <span class="types"><span class="type">number</span></span>
+         Tribute high
         </li>
         <li><span class="parameter">_Message</span>
-         [number] Tribute message
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Tribute message
         </li>
     </ul>
 
@@ -1530,10 +2032,50 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_EntityType</span>
-         [string] Entity type name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity type name
         </li>
         <li><span class="parameter">_Amount</span>
-         [number] Amount to reach
+            <span class="types"><span class="type">number</span></span>
+         Amount to reach
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Goal_UnitsInArea"></a>
+    <strong>Goal_UnitsInArea (_PlayerID, _Category, _Target, _Area, _LowerThan)</strong>
+    </dt>
+    <dd>
+    To win this goal the player must have at least one unit of the category in
+ the area OR mustn't have any unit of that category in the area.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         Player to check
+        </li>
+        <li><span class="parameter">_Category</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Category name
+        </li>
+        <li><span class="parameter">_Target</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Area center
+        </li>
+        <li><span class="parameter">_Area</span>
+            <span class="types"><span class="type">number</span></span>
+         Size of area
+        </li>
+        <li><span class="parameter">_LowerThan</span>
+            <span class="types"><span class="type">boolean</span></span>
+          Be lower than distance
         </li>
     </ul>
 
@@ -1553,7 +2095,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Level</span>
-         [number] Upgrades (1 or 2)
+            <span class="types"><span class="type">number</span></span>
+         Upgrades (1 or 2)
         </li>
     </ul>
 
@@ -1573,7 +2116,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_State</span>
-         [number] Weather state
+            <span class="types"><span class="type">number</span></span>
+         Weather state
         </li>
     </ul>
 
@@ -1593,7 +2137,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1613,13 +2158,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Amount</span>
-         [number] Amount to reach
+            <span class="types"><span class="type">number</span></span>
+         Amount to reach
         </li>
         <li><span class="parameter">_LowerThan</span>
-         [boolean] Be lower than
+            <span class="types"><span class="type">boolean</span></span>
+          Be lower than
         </li>
         <li><span class="parameter">_OtherPlayer</span>
-         [number] Other player
+            <span class="types"><span class="type">number</span></span>
+         Other player
         </li>
     </ul>
 
@@ -1643,7 +2191,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_FunctionName</span>
-         [string] function to call
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         function to call
         </li>
     </ul>
 
@@ -1663,10 +2212,33 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Entity</span>
-         [string] Entity to change
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity to change
         </li>
         <li><span class="parameter">_Owner</span>
-         [number] Owner of entity
+            <span class="types"><span class="type">number</span></span>
+         Owner of entity
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reprisal_CloseGate"></a>
+    <strong>Reprisal_CloseGate (_Name)</strong>
+    </dt>
+    <dd>
+    Closes a palisade or a wall gate.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Name</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of gate
         </li>
     </ul>
 
@@ -1686,7 +2258,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_AreaCenter</span>
-         [string] Center of exploration
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Center of exploration
         </li>
     </ul>
 
@@ -1726,7 +2299,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Effect</span>
-         [string] Effect to destroy
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Effect to destroy
         </li>
     </ul>
 
@@ -1737,7 +2311,7 @@
 </dd>
     <dt>
     <a name = "Reprisal_DestroyEntity"></a>
-    <strong>Reprisal_DestroyEntity (_Entity)</strong>
+    <strong>Reprisal_DestroyEntity (_EntityEntity)</strong>
     </dt>
     <dd>
     Replaces the entity with a XD_ScriptEntity.
@@ -1745,8 +2319,9 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Entity</span>
-         [string] Entity to destroy
+        <li><span class="parameter">_EntityEntity</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         to destroy
         </li>
     </ul>
 
@@ -1766,13 +2341,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID1</span>
-         [number] First player id
+            <span class="types"><span class="type">number</span></span>
+         First player id
         </li>
         <li><span class="parameter">_PlayerID2</span>
-         [number] Second player id
+            <span class="types"><span class="type">number</span></span>
+         Second player id
         </li>
         <li><span class="parameter">_Diplomacy</span>
-         [string] Diplomacy state name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Diplomacy state name
         </li>
     </ul>
 
@@ -1792,7 +2370,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_FunctionName</span>
-         [string] function to call
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         function to call
         </li>
     </ul>
 
@@ -1807,12 +2386,16 @@
     </dt>
     <dd>
     Displays a text message on the screen.
+<p> In addition to the placeholders the game offers (@cr, @color, @ra, ...),
+ there are 2 new placeholders for both _G values and custom values.
+
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Message</span>
-         [string] Message to display
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Message to display
         </li>
     </ul>
 
@@ -1832,10 +2415,33 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Entity</span>
-         [string] Entity to move
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity to move
         </li>
         <li><span class="parameter">_Destination</span>
-         [string] Moving target of entity
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Moving target of entity
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reprisal_OpenGate"></a>
+    <strong>Reprisal_OpenGate (_Name)</strong>
+    </dt>
+    <dd>
+    Opens a palisade or a wall gate.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Name</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of gate
         </li>
     </ul>
 
@@ -1855,7 +2461,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1875,7 +2482,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1895,7 +2503,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1915,7 +2524,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1935,7 +2545,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1955,7 +2566,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1975,7 +2587,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -1995,10 +2608,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ScriptName</span>
-         [string] Entity to affect
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity to affect
         </li>
         <li><span class="parameter">_Flag</span>
-         [boolean] State of vulnerablty
+            <span class="types"><span class="type">boolean</span></span>
+          State of vulnerablty
         </li>
     </ul>
 
@@ -2018,10 +2633,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Technology</span>
-         [string] Technology name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Technology name
         </li>
         <li><span class="parameter">_State</span>
-         [string] Technology state name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+              Technology state name
         </li>
     </ul>
 
@@ -2068,10 +2685,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] Id of player
+            <span class="types"><span class="type">number</span></span>
+         Id of player
         </li>
         <li><span class="parameter">_TechLevel</span>
-         [number] Tech level
+            <span class="types"><span class="type">number</span></span>
+          Tech level
         </li>
     </ul>
 
@@ -2089,28 +2708,37 @@
 <p> Use script entities named with PlayerX_AttackTargetY to define positions
  that will be attacked by the army. Also you can use entities named with
  PlayerX_PatrolPointY to define positions were the army will patrol.
+<p> X shall be replaced with the player ID.
+
+ Y shall be replaced with the index of the waypoint of players armies.
 
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ArmyName</span>
-         [string] Army identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Army identifier
         </li>
         <li><span class="parameter">_PlayerID</span>
-         [number] Id of player
+            <span class="types"><span class="type">number</span></span>
+         Id of player
         </li>
         <li><span class="parameter">_Strength</span>
-         [number] Strength of army
+            <span class="types"><span class="type">number</span></span>
+         Strength of army
         </li>
         <li><span class="parameter">_Position</span>
-         [string] Army base position
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Army base position
         </li>
         <li><span class="parameter">_RodeLength</span>
-         [number] Average action range
+            <span class="types"><span class="type">number</span></span>
+         Average action range
         </li>
         <li><span class="parameter">_TroopType</span>
-         [number] Army troop type
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Army troop type
         </li>
     </ul>
 
@@ -2129,49 +2757,65 @@
 <p> Use script entities named with PlayerX_AttackTargetY to define positions
  that will be attacked by the army. Also you can use entities named with
  PlayerX_PatrolPointY to define positions were the army will patrol.
+<p> X shall be replaced with the player ID.
+
+ Y shall be replaced with the index of the waypoint of players armies.
 
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ArmyName</span>
-         [string] Army identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Army identifier
         </li>
         <li><span class="parameter">_PlayerID</span>
-         [number] Id of player
+            <span class="types"><span class="type">number</span></span>
+         Id of player
         </li>
         <li><span class="parameter">_LifeThread</span>
-         [string] Name of generator
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of generator
         </li>
         <li><span class="parameter">_Strength</span>
-         [number] Strength of army
+            <span class="types"><span class="type">number</span></span>
+         Strength of army
         </li>
         <li><span class="parameter">_Position</span>
-         [string] Army base position
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Army base position
         </li>
         <li><span class="parameter">_RodeLength</span>
-         [number] Average action range
+            <span class="types"><span class="type">number</span></span>
+         Average action range
         </li>
         <li><span class="parameter">_RespawnTime</span>
-         [number] Time till reinforcements spawned
+            <span class="types"><span class="type">number</span></span>
+         Time till reinforcements spawned
         </li>
         <li><span class="parameter">_TroopType1</span>
-         [string] Troop type 1
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Troop type 1
         </li>
         <li><span class="parameter">_TroopType2</span>
-         [string] Troop type 2
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Troop type 2
         </li>
         <li><span class="parameter">_TroopType3</span>
-         [string] Troop type 3
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Troop type 3
         </li>
         <li><span class="parameter">_TroopType4</span>
-         [string] Troop type 4
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Troop type 4
         </li>
         <li><span class="parameter">_TroopType5</span>
-         [string] Troop type 5
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Troop type 5
         </li>
         <li><span class="parameter">_TroopType6</span>
-         [string] Troop type 6
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Troop type 6
         </li>
     </ul>
 
@@ -2191,13 +2835,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] ID of player
+            <span class="types"><span class="type">number</span></span>
+         ID of player
         </li>
         <li><span class="parameter">_ArmyName</span>
-         [string] Army identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Army identifier
         </li>
         <li><span class="parameter">_Flag</span>
-         [boolean] Attack disabled
+            <span class="types"><span class="type">boolean</span></span>
+          Attack disabled
         </li>
     </ul>
 
@@ -2217,13 +2864,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] ID of player
+            <span class="types"><span class="type">number</span></span>
+         ID of player
         </li>
         <li><span class="parameter">_ArmyName</span>
-         [string] Army identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Army identifier
         </li>
         <li><span class="parameter">_Flag</span>
-         [boolean] Patrol disabled
+            <span class="types"><span class="type">boolean</span></span>
+          Patrol disabled
         </li>
     </ul>
 
@@ -2243,7 +2893,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_FunctionName</span>
-         [string] function to call
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         function to call
         </li>
     </ul>
 
@@ -2254,7 +2905,7 @@
 </dd>
     <dt>
     <a name = "Reward_ChangePlayer"></a>
-    <strong>Reward_ChangePlayer (_Entity, _Owner)</strong>
+    <strong>Reward_ChangePlayer (_EntityEntity, _Owner)</strong>
     </dt>
     <dd>
     Changes the owner of the entity.
@@ -2262,11 +2913,34 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Entity</span>
-         [string] Entity to change
+        <li><span class="parameter">_EntityEntity</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         to change
         </li>
         <li><span class="parameter">_Owner</span>
-         [number] Owner of entity
+            <span class="types"><span class="type">number</span></span>
+         Owner of entity
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reward_CloseGate"></a>
+    <strong>Reward_CloseGate (_Name)</strong>
+    </dt>
+    <dd>
+    Closes a palisade or a wall gate.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Name</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of gate
         </li>
     </ul>
 
@@ -2286,7 +2960,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Merchant</span>
-         [string] Merchant name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Merchant name
         </li>
     </ul>
 
@@ -2306,7 +2981,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_AreaCenter</span>
-         [string] Center of exploration
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Center of exploration
         </li>
     </ul>
 
@@ -2326,13 +3002,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_EffectName</span>
-         [string] Name for the effect
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+          Name for the effect
         </li>
         <li><span class="parameter">_Position</span>
-         [number] Position of effect
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+             Position of effect
         </li>
         <li><span class="parameter">_EffectType</span>
-         [string] Effect type name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+          Effect type name
         </li>
     </ul>
 
@@ -2352,10 +3031,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ScriptName</span>
-         [string] Script name of entity
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Script name of entity
         </li>
         <li><span class="parameter">_EntityType</span>
-         [string] Entity type name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity type name
         </li>
     </ul>
 
@@ -2375,13 +3056,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ScriptName</span>
-         [string] Script name of entity
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Script name of entity
         </li>
         <li><span class="parameter">_EntityType</span>
-         [string] Entity type name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity type name
         </li>
         <li><span class="parameter">_Soldiers</span>
-         [number] Amount of soldiers
+            <span class="types"><span class="type">number</span></span>
+         Amount of soldiers
         </li>
     </ul>
 
@@ -2401,10 +3085,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_MarkerType</span>
-         [string] Marker type name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Marker type name
         </li>
         <li><span class="parameter">_Position</span>
-         [string] Position of marker
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+           Position of marker
         </li>
     </ul>
 
@@ -2424,16 +3110,20 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_UseDebugQuests</span>
-         [boolean] Activates the runtime debug für quests
+            <span class="types"><span class="type">boolean</span></span>
+         Activates the runtime debug für quests
         </li>
         <li><span class="parameter">_UseCheats</span>
-         [boolean] Activates the cheats
+            <span class="types"><span class="type">boolean</span></span>
+         Activates the cheats
         </li>
         <li><span class="parameter">_UseShell</span>
-         [boolean] Activates the shell
+            <span class="types"><span class="type">boolean</span></span>
+         Activates the shell
         </li>
         <li><span class="parameter">_UseQuestTrace</span>
-         [boolean] Activates the quest trace
+            <span class="types"><span class="type">boolean</span></span>
+         Activates the quest trace
         </li>
     </ul>
 
@@ -2473,7 +3163,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Effect</span>
-         [string] Effect to destroy
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Effect to destroy
         </li>
     </ul>
 
@@ -2484,7 +3175,7 @@
 </dd>
     <dt>
     <a name = "Reward_DestroyEntity"></a>
-    <strong>Reward_DestroyEntity (_Entity)</strong>
+    <strong>Reward_DestroyEntity (_EntityEntity)</strong>
     </dt>
     <dd>
     Replaces the entity with a XD_ScriptEntity.
@@ -2492,8 +3183,9 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Entity</span>
-         [string] Entity to destroy
+        <li><span class="parameter">_EntityEntity</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         to destroy
         </li>
     </ul>
 
@@ -2513,7 +3205,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Position</span>
-         [string] Position of marker
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Position of marker
         </li>
     </ul>
 
@@ -2533,13 +3226,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID1</span>
-         [number] First player id
+            <span class="types"><span class="type">number</span></span>
+         First player id
         </li>
         <li><span class="parameter">_PlayerID2</span>
-         [number] Second player id
+            <span class="types"><span class="type">number</span></span>
+         Second player id
         </li>
         <li><span class="parameter">_Diplomacy</span>
-         [string] Diplomacy state name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Diplomacy state name
         </li>
     </ul>
 
@@ -2559,7 +3255,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_FunctionName</span>
-         [string] function to call
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         function to call
         </li>
     </ul>
 
@@ -2574,12 +3271,16 @@
     </dt>
     <dd>
     Displays a text message on the screen.
+<p> In addition to the placeholders the game offers (@cr, @color, @ra, ...),
+ there are 2 new placeholders for both _G values and custom values.
+
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Message</span>
-         [string] Message to display
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Message to display
         </li>
     </ul>
 
@@ -2590,7 +3291,7 @@
 </dd>
     <dt>
     <a name = "Reward_Move"></a>
-    <strong>Reward_Move (_Entity, _Destination)</strong>
+    <strong>Reward_Move (_EntityEntity, _Destination)</strong>
     </dt>
     <dd>
     Moves an entity to the destination.
@@ -2598,11 +3299,13 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Entity</span>
-         [string] Entity to move
+        <li><span class="parameter">_EntityEntity</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         to move
         </li>
         <li><span class="parameter">_Destination</span>
-         [string] Moving target of entity
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Moving target of entity
         </li>
     </ul>
 
@@ -2617,16 +3320,39 @@
     </dt>
     <dd>
     Moves an entity to the destination and replace it with an XD_ScriptEntity
- once it enters the fog.
+ once it enters the fog or reaches the destination.
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Entity</span>
-         [string] Entity to move
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity to move
         </li>
         <li><span class="parameter">_Target</span>
-         [string] Move destination
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Move destination
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Reward_OpenGate"></a>
+    <strong>Reward_OpenGate (_Name)</strong>
+    </dt>
+    <dd>
+    Opens a palisade or a wall gate.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Name</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of gate
         </li>
     </ul>
 
@@ -2647,43 +3373,56 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Merchant</span>
-         [string] Merchant name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Merchant name
         </li>
         <li><span class="parameter">_Offer1</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Cost1</span>
-         [number] Gold costs
+            <span class="types"><span class="type">number</span></span>
+         Gold costs
         </li>
         <li><span class="parameter">_Amount1</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
         <li><span class="parameter">_Offer2</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Cost2</span>
-         [number] Gold costs
+            <span class="types"><span class="type">number</span></span>
+         Gold costs
         </li>
         <li><span class="parameter">_Amount2</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
         <li><span class="parameter">_Offer3</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Cost3</span>
-         [number] Gold costs
+            <span class="types"><span class="type">number</span></span>
+         Gold costs
         </li>
         <li><span class="parameter">_Amount3</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
         <li><span class="parameter">_Offer4</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Cost4</span>
-         [number] Gold costs
+            <span class="types"><span class="type">number</span></span>
+         Gold costs
         </li>
         <li><span class="parameter">_Amount4</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
     </ul>
 
@@ -2704,31 +3443,40 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Merchant</span>
-         [string] Merchant name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Merchant name
         </li>
         <li><span class="parameter">_Offer1</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Amount1</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
         <li><span class="parameter">_Offer2</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Amount2</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
         <li><span class="parameter">_Offer3</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Amount3</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
         <li><span class="parameter">_Offer4</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Amount4</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
     </ul>
 
@@ -2749,31 +3497,40 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Merchant</span>
-         [string] Merchant name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Merchant name
         </li>
         <li><span class="parameter">_Offer1</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Amount1</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
         <li><span class="parameter">_Offer2</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Amount2</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
         <li><span class="parameter">_Offer3</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Amount3</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
         <li><span class="parameter">_Offer4</span>
-         [string] Resourcetype on sale
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resourcetype on sale
         </li>
         <li><span class="parameter">_Amount4</span>
-         [number] Quantity to post
+            <span class="types"><span class="type">number</span></span>
+         Quantity to post
         </li>
     </ul>
 
@@ -2793,7 +3550,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -2813,7 +3571,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -2833,7 +3592,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -2853,7 +3613,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -2873,7 +3634,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -2893,7 +3655,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -2913,7 +3676,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
@@ -2933,10 +3697,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Resource</span>
-         [string] Name for the effect
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name for the effect
         </li>
         <li><span class="parameter">_Amount</span>
-         [string] Effect type name
+            <span class="types"><span class="type">number</span></span>
+           Menge an Rohstoffen
         </li>
     </ul>
 
@@ -2956,10 +3722,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_AreaCenter</span>
-         [string] Center of exploration
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Center of exploration
         </li>
         <li><span class="parameter">_Exploration</span>
-         [number] Size of exploration
+            <span class="types"><span class="type">number</span></span>
+         Size of exploration
         </li>
     </ul>
 
@@ -2979,10 +3747,11 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] ID of player
+            <span class="types"><span class="type">number</span></span>
+         ID of player
         </li>
         <li><span class="parameter">_Color</span>
-         [string|number] Color name or Color index
+         Color name or Color index
         </li>
     </ul>
 
@@ -3002,10 +3771,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ScriptName</span>
-         [string] Entity to affect
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Entity to affect
         </li>
         <li><span class="parameter">_Flag</span>
-         [boolean] State of vulnerablty
+            <span class="types"><span class="type">boolean</span></span>
+          State of vulnerablty
         </li>
     </ul>
 
@@ -3016,7 +3787,7 @@
 </dd>
     <dt>
     <a name = "Reward_Technology"></a>
-    <strong>Reward_Technology (_Technology, _State)</strong>
+    <strong>Reward_Technology (_Technology, _StateTechnology)</strong>
     </dt>
     <dd>
     Changes the state of a technology.
@@ -3025,10 +3796,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Technology</span>
-         [string] Technology name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Technology name
         </li>
-        <li><span class="parameter">_State</span>
-         [string] Technology state name
+        <li><span class="parameter">_StateTechnology</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         state name
         </li>
     </ul>
 
@@ -3073,13 +3846,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Name</span>
-         [string] Variable identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Variable identifier
         </li>
         <li><span class="parameter">_Operator</span>
-         [string] Operator
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Operator
         </li>
         <li><span class="parameter">_Value</span>
-         [number] Integer value
+            <span class="types"><span class="type">number</span></span>
+         Integer value
         </li>
     </ul>
 
@@ -3089,8 +3865,8 @@
 
 </dd>
     <dt>
-    <a name = "Reprisal_CustomVariable"></a>
-    <strong>Reprisal_CustomVariable (_Name, _Operator, _Value)</strong>
+    <a name = "Reward_CustomVariable"></a>
+    <strong>Reward_CustomVariable (_Name, _Operator, _Value)</strong>
     </dt>
     <dd>
     Alters a numeric custom value by the given value or value of the given
@@ -3100,13 +3876,36 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Name</span>
-         [string] Variable identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Variable identifier
         </li>
         <li><span class="parameter">_Operator</span>
-         [string] Operator
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Operator
         </li>
         <li><span class="parameter">_Value</span>
-         [number] Integer value
+            <span class="types"><span class="type">number</span></span>
+         Integer value
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Trigger_AlwaysActive"></a>
+    <strong>Trigger_AlwaysActive (...)</strong>
+    </dt>
+    <dd>
+    Starts the quest immediately.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">...</span>
+
         </li>
     </ul>
 
@@ -3120,13 +3919,59 @@
     <strong>Trigger_Briefing (_QuestName)</strong>
     </dt>
     <dd>
-    Starts the quest when the briefing linked to the quest is finished.
+    Starts the quest when any briefing linked to the quest is finished.  You can
+ choose either success or failure briefing or ignore the type entirely!
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Linked quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Linked quest
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Trigger_BriefingFailure"></a>
+    <strong>Trigger_BriefingFailure (_QuestName)</strong>
+    </dt>
+    <dd>
+    Starts the quest when the failure briefing linked to the quest is finished.
+ A quest must fail in order to start a failure briefing!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Linked quest
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Trigger_BriefingSuccess"></a>
+    <strong>Trigger_BriefingSuccess (_QuestName)</strong>
+    </dt>
+    <dd>
+    Starts the quest when the success briefing linked to the quest is finished.
+ A quest must succeed in order to start a success briefing!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Linked quest
         </li>
     </ul>
 
@@ -3147,13 +3992,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Name</span>
-         [string] Variable identifier
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Variable identifier
         </li>
         <li><span class="parameter">_Comparison</span>
-         [string] Comparsion operator
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Comparsion operator
         </li>
         <li><span class="parameter">_Value</span>
-         [number] Integer value
+            <span class="types"><span class="type">number</span></span>
+         Integer value
         </li>
     </ul>
 
@@ -3174,10 +4022,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_PlayerID</span>
-         [number] Target player id
+            <span class="types"><span class="type">number</span></span>
+         Target player id
         </li>
         <li><span class="parameter">_DiplomacyState</span>
-         [string] Diplomacy state
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Diplomacy state
         </li>
     </ul>
 
@@ -3198,7 +4048,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_ScriptName</span>
-         [string] Script name of entiry
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Script name of entiry
         </li>
     </ul>
 
@@ -3218,7 +4069,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_FunctionName</span>
-         [string] function to call
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         function to call
         </li>
     </ul>
 
@@ -3238,7 +4090,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_FunctionName</span>
-         [string] function to call
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         function to call
         </li>
     </ul>
 
@@ -3278,10 +4131,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] First quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         First quest
         </li>
         <li><span class="parameter">_Waittime</span>
-         [number] Time to wait
+            <span class="types"><span class="type">number</span></span>
+         Time to wait
         </li>
     </ul>
 
@@ -3301,13 +4156,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestNameA</span>
-         [string] First quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         First quest
         </li>
         <li><span class="parameter">_QuestNameB</span>
-         [string] Second quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Second quest
         </li>
         <li><span class="parameter">_Result</span>
-         [number] Expected quest result
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Expected quest result
         </li>
     </ul>
 
@@ -3327,10 +4185,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] First quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         First quest
         </li>
         <li><span class="parameter">_Waittime</span>
-         [number] Time to wait
+            <span class="types"><span class="type">number</span></span>
+         Time to wait
         </li>
     </ul>
 
@@ -3350,10 +4210,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] First quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         First quest
         </li>
         <li><span class="parameter">_Waittime</span>
-         [number] Time to wait
+            <span class="types"><span class="type">number</span></span>
+         Time to wait
         </li>
     </ul>
 
@@ -3373,10 +4235,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] First quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         First quest
         </li>
         <li><span class="parameter">_Waittime</span>
-         [number] Time to wait
+            <span class="types"><span class="type">number</span></span>
+         Time to wait
         </li>
     </ul>
 
@@ -3396,13 +4260,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestNameA</span>
-         [string] First quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         First quest
         </li>
         <li><span class="parameter">_QuestNameB</span>
-         [string] Second quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Second quest
         </li>
         <li><span class="parameter">_Result</span>
-         [number] Expected quest result
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Expected quest result
         </li>
     </ul>
 
@@ -3422,10 +4289,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] First quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         First quest
         </li>
         <li><span class="parameter">_Waittime</span>
-         [number] Time to wait
+            <span class="types"><span class="type">number</span></span>
+         Time to wait
         </li>
     </ul>
 
@@ -3445,10 +4314,12 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] First quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         First quest
         </li>
         <li><span class="parameter">_Waittime</span>
-         [number] Time to wait
+            <span class="types"><span class="type">number</span></span>
+         Time to wait
         </li>
     </ul>
 
@@ -3469,13 +4340,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestNameA</span>
-         [string] First quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         First quest
         </li>
         <li><span class="parameter">_QuestNameB</span>
-         [string] Second quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Second quest
         </li>
         <li><span class="parameter">_Result</span>
-         [number] Expected quest result
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Expected quest result
         </li>
     </ul>
 
@@ -3495,7 +4369,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Time</span>
-         [number] Time to wait
+            <span class="types"><span class="type">number</span></span>
+         Time to wait
         </li>
     </ul>
 
@@ -3515,7 +4390,8 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_StateID</span>
-         [number] Weather state to activate
+            <span class="types"><span class="type">number</span></span>
+         Weather state to activate
         </li>
     </ul>
 
@@ -3531,7 +4407,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2019-01-09 15:42:54 </i>
+<i style="float:right;">Last updated 2019-08-28 18:56:32 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

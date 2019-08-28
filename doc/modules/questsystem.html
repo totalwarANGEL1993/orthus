@@ -49,6 +49,9 @@
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/questdebug.html">questdebug</a></li>
   <li><strong>questsystem</strong></li>
+  <li><a href="../modules/timer_ex2.html">timer_ex2</a></li>
+  <li><a href="../modules/timer_ex3.html">timer_ex3</a></li>
+  <li><a href="../modules/treasure.html">treasure</a></li>
 </ul>
 
 </div>
@@ -57,9 +60,7 @@
 
 <h1>Module <code>questsystem</code></h1>
 <p>This is an approach to create a RoaE like quest system.</p>
-<p> Although we can not
- visualize a failed quest in the quest log, the pure logic of the system is
- portable to Settlers 5. This little system implements the RoaE system.
+<p>
 <p> Quests can be either successfully finished or failed. If a quest is finished
  successfully the rewards will be executed. If the quest fails the reprisals
  will be executed instead. Quests are controlled by behaviors. Behind a
@@ -70,11 +71,13 @@
  <li>Condition: Triggering the quest if conditions are true</li>
  <li>Objective: What the player has to do to win (or to fail)</li>
  <li>Reward: Rewards for successfully finishing a quest.</li>
- <li>Reprisal: Pubishments after the quest faild.</li>
+ <li>Reprisal: Pubishments after the quest failed.</li>
  </ul>
  But reprisals and rewards are both callbacks!
 <p> A quest is generated like this:<br>
  <pre>local QuestID = new(QuestTemplate, "SomeName", SomeObjectives, SomeConditions, 1, 0, SomeRewards, SomeReprisals)</pre>
+<p> Some of the behavior might be redefined in the qsb.questbehavior abstraction
+ layer.
 <p> <b>Required modules:</b>
  <ul>
  <li>qsb.oop</li>
@@ -102,8 +105,12 @@
 	<td class="summary">Checks if a value is inside a table.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#IsArmyNear">IsArmyNear (_Army, _Target, _Distance)</a></td>
-	<td class="summary">Checks if an army is near the position.</td>
+	<td class="name" nowrap><a href="#IsValidPosition">IsValidPosition (_pos)</a></td>
+	<td class="summary">Checks if the position table contains a valid position on the map.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#SoldierGetLeaderEntityID">SoldierGetLeaderEntityID (_eID)</a></td>
+	<td class="summary">Returns the leader entity ID of the soldier.</td>
 	</tr>
 </table>
 <h2><a href="#Tables">Tables</a></h2>
@@ -159,12 +166,20 @@
 	<td class="summary">Returns the quest ID of the quest with the name.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#IsArmyNear">IsArmyNear (_Army, _Target, _Distance)</a></td>
+	<td class="summary">Checks if an army is near the position.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#IsDeadWrapper">IsDeadWrapper (_input)</a></td>
 	<td class="summary">Checks if an army or entity is dead.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#IsValidQuest">IsValidQuest (_QuestName)</a></td>
 	<td class="summary">Returns true, if the quest is a valid (existing) quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#SameSector">SameSector (_pos1, _pos2)</a></td>
+	<td class="summary">Checks, if the positions are in the same sector.</td>
 	</tr>
 </table>
 
@@ -186,13 +201,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_player</span>
-         [number] Player ID
+            <span class="types"><span class="type">number</span></span>
+           Player ID
         </li>
         <li><span class="parameter">_position</span>
-         [table] Area center
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Area center
         </li>
         <li><span class="parameter">_range</span>
-         [number] Area size
+            <span class="types"><span class="type">number</span></span>
+            Area size
         </li>
     </ul>
 
@@ -217,13 +235,16 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_player</span>
-         [number] Player ID
+            <span class="types"><span class="type">number</span></span>
+           Player ID
         </li>
         <li><span class="parameter">_position</span>
-         [table] Area center
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Area center
         </li>
         <li><span class="parameter">_range</span>
-         [number] Area size
+            <span class="types"><span class="type">number</span></span>
+            Area size
         </li>
     </ul>
 
@@ -244,21 +265,28 @@
     <dd>
     Checks the area for entities of other parties with a diplomatic state to
  the player.
+<p> The first 16 player entities in the area will be evaluated. If they're not
+ settler, heroes or buldings, they will be ignored.
+
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_player</span>
-         [number] Player ID
+            <span class="types"><span class="type">number</span></span>
+           Player ID
         </li>
         <li><span class="parameter">_position</span>
-         [table] Area center
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Area center
         </li>
         <li><span class="parameter">_range</span>
-         [number] Area size
+            <span class="types"><span class="type">number</span></span>
+            Area size
         </li>
         <li><span class="parameter">_state</span>
-         [number] Diplomatic state
+            <span class="types"><span class="type">number</span></span>
+            Diplomatic state
         </li>
     </ul>
 
@@ -283,10 +311,11 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Value</span>
-         [mixed] Value to find
+         Value to find
         </li>
         <li><span class="parameter">_Table</span>
-         [table] Table to search
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Table to search
         </li>
     </ul>
 
@@ -301,30 +330,55 @@
 
 </dd>
     <dt>
-    <a name = "IsArmyNear"></a>
-    <strong>IsArmyNear (_Army, _Target, _Distance)</strong>
+    <a name = "IsValidPosition"></a>
+    <strong>IsValidPosition (_pos)</strong>
     </dt>
     <dd>
-    Checks if an army is near the position.
+    Checks if the position table contains a valid position on the map.
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Army</span>
-         [table] Army to check
-        </li>
-        <li><span class="parameter">_Target</span>
-         [string|number|table] Target position
-        </li>
-        <li><span class="parameter">_Distance</span>
-         [number] Area size
+        <li><span class="parameter">_pos</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Position to check
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [boolean] Army is near
+           <span class="types"><span class="type">boolean</span></span>
+        Position valid
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "SoldierGetLeaderEntityID"></a>
+    <strong>SoldierGetLeaderEntityID (_eID)</strong>
+    </dt>
+    <dd>
+    Returns the leader entity ID of the soldier.
+<p> FIXME: Not compatible to the History Edition!
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_eID</span>
+            <span class="types"><span class="type">number</span></span>
+         Entity ID of soldier
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        Entity ID of leader
     </ol>
 
 
@@ -428,7 +482,7 @@
         </li>
         <li><span class="parameter">RemoveQuest</span>
 
- Removes a quest from the quest book.
+ Removes a quest from the quest book. The quest itself stays untouched.
  <pre>{Callbacks.RemoveQuest, _QuestName}</pre>
 
         </li>
@@ -809,6 +863,13 @@
  <pre>{Objectives.DestroyAllPlayerUnits, _PlayerID}</pre>
 
         </li>
+        <li><span class="parameter">Quest</span>
+
+ The player must complete the quest with the desired result. If the quest
+ is not required, failing the result will not fail the quest.
+ <pre>{Objectives.Quest, _Quest, _Result, _Required}</pre>
+
+        </li>
     </ul>
 
 
@@ -938,28 +999,36 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+           Quest name
         </li>
         <li><span class="parameter">_Receiver</span>
-         [number] Receiving player
+            <span class="types"><span class="type">number</span></span>
+            Receiving player
         </li>
         <li><span class="parameter">_Time</span>
-         [number] Completion time
+            <span class="types"><span class="type">number</span></span>
+                Completion time
         </li>
         <li><span class="parameter">_Objectives</span>
-         [table] List of objectives
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+          List of objectives
         </li>
         <li><span class="parameter">_Conditions</span>
-         [table] List of conditions
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+          List of conditions
         </li>
         <li><span class="parameter">_Rewards</span>
-         [table] List of rewards
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+             List of rewards
         </li>
         <li><span class="parameter">_Reprisals</span>
-         [table] List of reprisals
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+           List of reprisals
         </li>
         <li><span class="parameter">_Description</span>
-         [table] Quest description
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Quest description
         </li>
     </ul>
 
@@ -983,17 +1052,18 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_pos1</span>
-         [string|number|table] Position 1
+         Position 1 (string, number oder table)
         </li>
         <li><span class="parameter">_pos2</span>
-         [string|number|table] Position 2
+         Position 2 (string, number oder table)
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [number] Distance between positions
+           <span class="types"><span class="type">number</span></span>
+        Distance between positions
     </ol>
 
 
@@ -1013,14 +1083,50 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Quest name
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [number] Quest ID
+           <span class="types"><span class="type">number</span></span>
+        Quest ID
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "IsArmyNear"></a>
+    <strong>IsArmyNear (_Army, _Target, _Distance)</strong>
+    </dt>
+    <dd>
+    Checks if an army is near the position.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Army</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+             Army to check
+        </li>
+        <li><span class="parameter">_Target</span>
+           Target position
+        </li>
+        <li><span class="parameter">_Distance</span>
+            <span class="types"><span class="type">number</span></span>
+         Area size
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Army is near
     </ol>
 
 
@@ -1040,14 +1146,15 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_input</span>
-         [table|string|number] Army or entity
+         Army or entity (string, number oder table)
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [boolean] Army or entity is dead
+           <span class="types"><span class="type">boolean</span></span>
+        Army or entity is dead
     </ol>
 
 
@@ -1065,14 +1172,47 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_QuestName</span>
-         [string] Name of quest
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of quest
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        [boolean] Valid quest
+           <span class="types"><span class="type">boolean</span></span>
+        Valid quest
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "SameSector"></a>
+    <strong>SameSector (_pos1, _pos2)</strong>
+    </dt>
+    <dd>
+    Checks, if the positions are in the same sector.  If 2 possitions are not
+ in the same sector then they are not connected.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_pos1</span>
+         Position 1
+        </li>
+        <li><span class="parameter">_pos2</span>
+         Position 2
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Same sector
     </ol>
 
 
@@ -1086,7 +1226,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2019-01-09 15:42:54 </i>
+<i style="float:right;">Last updated 2019-08-28 18:56:32 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 
