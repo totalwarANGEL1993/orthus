@@ -1285,6 +1285,39 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_Create);
 -- -------------------------------------------------------------------------- --
 
 ---
+-- The player has to build a bridge near the specified position.
+-- @param[type=string] _Position Area center
+-- @param[type=number] _Area Checked area size
+-- @within Goals
+--
+function Goal_CreateBridge(...)
+    return b_Goal_CreateBridge:New(unpack(arg));
+end
+
+b_Goal_CreateBridge = {
+    Data = {
+        Name = "Goal_CreateBridge",
+        Type = Objectives.Bridge
+    },
+};
+
+function b_Goal_CreateBridge:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Position = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Area = _Parameter;
+    end
+end
+
+function b_Goal_CreateBridge:GetGoalTable()
+    return {self.Data.Type, self.Data.Position, self.Data.Area};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_CreateBridge);
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- The goal is won after the receiver has the diplomatic state to the player.
 -- @param[type=number] _TargetPlayer Entity type
 -- @param[type=string] _State Diplomacy state name

@@ -640,6 +640,19 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
                 Behavior.Completed = true;
             end
         end
+    elseif Behavior[1] == Objectives.Bridge then
+        if not IsExisting(Behavior[2]) then
+            Behavior.Completed = false;
+        else
+            local x, y, z = Logic.EntityGetPos(GetID(Behavior[2]));
+            for i= 1, 4, 1 do
+                local n, Entity = Logic.GetEntitiesInArea(Entities["PB_Bridge" ..i], x, y, Behavior[3], 1);
+                if n > 0 then
+                    Behavior.Completed = true;
+                    break;
+                end
+            end
+        end
     end
 
     return Behavior.Completed;
@@ -2178,6 +2191,11 @@ Conditions = {
 -- The player must complete the quest with the desired result. If the quest
 -- is not required, failing the result will not fail the quest.
 -- <pre>{Objectives.Quest, _Quest, _Result, _Required}</pre>
+--
+-- @field Bridge
+-- The player must build a bridge in the marked area. Because bridges loose
+-- their script names often, use a XD_ScriptEntity instead of the site.
+-- <pre>{Objectives.Bridge, _AreaCenter, _AreaSize}</pre>
 --
 Objectives = {
     MapScriptFunction = 1,
