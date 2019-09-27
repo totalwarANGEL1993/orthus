@@ -420,7 +420,6 @@ QuestSystemBehavior = {
         CreatedAiPlayers = {},
         CreatedAiArmies = {},
         AiArmyNameToId = {},
-        CustomVariables = {},
         ChoicePages = {},
     }
 };
@@ -2325,7 +2324,7 @@ end
 b_Reprisal_Message = {
     Data = {
         Name = "Reprisal_Message",
-        Type = Callbacks.MapScriptFunction
+        Type = Callbacks.Message
     },
 };
 
@@ -2336,39 +2335,7 @@ function b_Reprisal_Message:AddParameter(_Index, _Parameter)
 end
 
 function b_Reprisal_Message:GetReprisalTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
-end
-
-function b_Reprisal_Message:CustomFunction(_Quest)
-    local Text = self.Data.Message;
-    
-    -- Custom variables
-    local s, e = string.find(Text, "@cval:", 1);
-    while (s) do
-        local ss, ee = string.find(Text, " ", e+1);
-        local Before = string.sub(Text, 1, s-1);
-        local After  = string.sub(Text, ee);
-        local Value  = string.sub(Text, e+1, ss-1);
-        if Value and QuestSystemBehavior.Data.CustomVariables[Value] then
-            Text = Before .. QuestSystemBehavior.Data.CustomVariables[Value] .. After;
-        end
-        s, e = string.find(Text, "@cval:", ee+1);
-    end
-
-    -- _G variables
-    local s, e = string.find(Text, "@val:", 1);
-    while (s) do
-        local ss, ee = string.find(Text, " ", e+1);
-        local Before = string.sub(Text, 1, s-1);
-        local After  = string.sub(Text, ee);
-        local Value  = string.sub(Text, e+1, ss-1);
-        if Value and _G[Value] then
-            Text = Before .. _G[Value] .. After;
-        end
-        s, e = string.find(Text, "@val:", ee+1);
-    end
-
-    Message(Text);
+    return {self.Data.Type, self.Data.Message};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reprisal_Message);
@@ -2927,11 +2894,11 @@ end
 
 b_Reward_Message = copy(b_Reprisal_Message);
 b_Reward_Message.Data.Name = "Reward_Message";
-b_Reward_Message.Data.Type = Callbacks.MapScriptFunction;
+b_Reward_Message.Data.Type = Callbacks.Message;
 b_Reward_Message.GetReprisalTable = nil;
 
 function b_Reward_Message:GetRewardTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
+    return {self.Data.Type, self.Data.Message};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_Message);
@@ -5783,10 +5750,10 @@ function b_Goal_CustomVariable:GetGoalTable()
 end
 
 function b_Goal_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
+    local CustomValue = QuestSystem.Data.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
-        ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
+        ComparsionValue = QuestSystem.Data.CustomVariables[self.Data.Value];
     end
 
     if CustomValue and ComparsionValue then
@@ -5851,10 +5818,10 @@ function b_Reprisal_CustomVariable:GetReprisalTable()
 end
 
 function b_Reprisal_CustomVariable:CustomFunction(_Quest)
-    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName] or 0;
+    local OldValue = QuestSystem.Data.CustomVariables[self.Data.VariableName] or 0;
     local NewValue = self.Data.Value;
     if type(NewValue) == "string" then
-        NewValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
+        NewValue = QuestSystem.Data.CustomVariables[self.Data.Value];
     end
 
     if NewValue then
@@ -5873,7 +5840,7 @@ function b_Reprisal_CustomVariable:CustomFunction(_Quest)
         elseif self.Data.Operator == "^" then
             OldValue = OldValue ^ NewValue;
         end
-        QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName] = OldValue;
+        QuestSystem.Data.CustomVariables[self.Data.VariableName] = OldValue;
     end
 end
 
@@ -5947,10 +5914,10 @@ function b_Trigger_CustomVariable:GetTriggerTable()
 end
 
 function b_Trigger_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
+    local CustomValue = QuestSystem.Data.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
-        ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
+        ComparsionValue = QuestSystem.Data.CustomVariables[self.Data.Value];
     end
 
     if CustomValue and ComparsionValue then

@@ -82,12 +82,20 @@ function Information:CreateAddPageFunctions()
                         _page.entity   = _page.position;
                         _page.position = GetPosition(_page.position);
                     end
-                    -- Set title before page is add
-                    if _page.title and string.sub(_page.title, 1, 1) ~= "@" then
-                        _page.title = "@center " .. _page.title;
+                    
+                    -- Set normal text
+                    _page = QuestSystem:ReplacePlaceholdersInMessage(_page);
+                    if _page.title then
+                        if string.sub(_page.title, 1, 1) ~= "@" then
+                            _page.title = "@center " .. _page.title;
+                        end
                     end
-                    if _page.mc and _page.mc.title and string.sub(_page.mc.title, 1, 1) ~= "@" then
-                        _page.mc.title = "@center " .. _page.mc.title;
+
+                    -- Set mc text
+                    if _page.mc then and _page.mc.title then
+                        if string.sub(_page.mc.title, 1, 1) ~= "@" then
+                            _page.mc.title = "@center " .. _page.mc.title;
+                        end
                     end
 
                     if _page.action then
@@ -102,17 +110,19 @@ function Information:CreateAddPageFunctions()
                         -- Fader
                         Information:InitalizeFaderForBriefingPage(_page);
 
-                        -- Disable fog only on this page
-                        -- (does not overwrite global settings)
+                        -- Disable fog
+                        local showFoW = (_briefing.disableFog and 0) or 1;
                         if _page.disableFog then
-                            Display.SetRenderFogOfWar(0);
+                            showFoW = 0;
                         end
+                        Display.SetRenderFogOfWar(showFoW);
 
-                        -- Display sky only on this page
-                        -- (does not overwrite global settings)
+                        -- Display sky
+                        local showSky = (_briefing.showSky and 1) or 0;
                         if _page.showSky then
-                            Display.SetRenderSky(1);
+                            showSky = 1;
                         end
+                        Display.SetRenderSky(showSky);
 
                         -- Override camera flight
                         Camera.StopCameraFlight();
@@ -301,14 +311,6 @@ function Information:OverrideCinematic()
         -- Disable escape skipping
         if _briefing.noEscape then
             briefingState.noEscape = true;
-        end
-        -- Don't render fog
-        if _briefing.disableFog then
-            Display.SetRenderFogOfWar(0);
-        end
-        -- Render sky
-        if _briefing.showSky then
-            Display.SetRenderSky(1);
         end
 
         if XGUIEng.IsWidgetShown("GameClock") == 1 then

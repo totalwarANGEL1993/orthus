@@ -36,6 +36,11 @@ Interaction = {
     IO = {},
 }
 
+gvLastInteractionHero = 0;
+gvLastInteractionHeroName = "null";
+gvLastInteractionNpc = 0;
+gvLastInteractionNpcName = "null";
+
 ---
 -- Installs the interaction mod.
 --
@@ -60,8 +65,10 @@ function Interaction:OverrideNpcInteraction()
             return;
         end
 
-        Interaction.LastInteractionHero = _Hero;
-        Interaction.LastInteractionNpc = _NPC;
+        gvLastInteractionHero = _Hero;
+        gvLastInteractionHeroName = Logic.GetEntityName(_Hero);
+        gvLastInteractionNpc = _NPC;
+        gvLastInteractionNpcName = Logic.GetEntityName(_NPC);
 
         local EntityName = Logic.GetEntityName(_NPC);
         local ID = Logic.GetMerchantBuildingId(_NPC);
@@ -117,10 +124,10 @@ function Interaction:OverrideMerchantOffers()
     GUIUpdate_MerchantOffers_Orig_Interaction = GUIUpdate_MerchantOffers;
     GUIUpdate_MerchantOffers = function(_WidgetTable)
         local CurrentWitgetID = XGUIEng.GetCurrentWidgetID();
-        local MerchantID = Logic.GetMerchantBuildingId(Interaction.LastInteractionNpc);
+        local MerchantID = Logic.GetMerchantBuildingId(gvLastInteractionNpc);
         local ScriptName = Logic.GetEntityName(MerchantID);
         if MerchantID == 0 then
-            ScriptName = Logic.GetEntityName(Interaction.LastInteractionNpc);
+            ScriptName = Logic.GetEntityName(gvLastInteractionNpc);
         end
 
         if ScriptName and Interaction.IO[ScriptName] and Interaction.IO[ScriptName].m_Merchant then
@@ -132,10 +139,10 @@ function Interaction:OverrideMerchantOffers()
 
     GUIUpdate_TroopOffer_Orig_Interaction = GUIUpdate_TroopOffer;
     GUIUpdate_TroopOffer = function(_SlotIndex)
-        local MerchantID = Logic.GetMerchantBuildingId(Interaction.LastInteractionNpc);
+        local MerchantID = Logic.GetMerchantBuildingId(gvLastInteractionNpc);
         local ScriptName = Logic.GetEntityName(MerchantID);
         if MerchantID == 0 then
-            ScriptName = Logic.GetEntityName(Interaction.LastInteractionNpc);
+            ScriptName = Logic.GetEntityName(gvLastInteractionNpc);
         end
 
         if ScriptName and Interaction.IO[ScriptName] and Interaction.IO[ScriptName].m_Merchant then
@@ -149,10 +156,10 @@ function Interaction:OverrideMerchantOffers()
 
     GUIAction_BuyMerchantOffer_Orig_Interaction = GUIAction_BuyMerchantOffer;
     GUIAction_BuyMerchantOffer = function(_SlotIndex)
-        local MerchantID = Logic.GetMerchantBuildingId(Interaction.LastInteractionNpc);
+        local MerchantID = Logic.GetMerchantBuildingId(gvLastInteractionNpc);
         local ScriptName = Logic.GetEntityName(MerchantID);
         if MerchantID == 0 then
-            ScriptName = Logic.GetEntityName(Interaction.LastInteractionNpc);
+            ScriptName = Logic.GetEntityName(gvLastInteractionNpc);
         end
 
         if ScriptName and Interaction.IO[ScriptName] and Interaction.IO[ScriptName].m_Merchant then
@@ -164,10 +171,10 @@ function Interaction:OverrideMerchantOffers()
 
     GUITooltip_TroopOffer_Orig_Interaction = GUITooltip_TroopOffer;
     GUITooltip_TroopOffer = function(_SlotIndex)
-        local MerchantID = Logic.GetMerchantBuildingId(Interaction.LastInteractionNpc);
+        local MerchantID = Logic.GetMerchantBuildingId(gvLastInteractionNpc);
         local ScriptName = Logic.GetEntityName(MerchantID);
         if MerchantID == 0 then
-            ScriptName = Logic.GetEntityName(Interaction.LastInteractionNpc);
+            ScriptName = Logic.GetEntityName(gvLastInteractionNpc);
         end
 
         if ScriptName and Interaction.IO[ScriptName] and Interaction.IO[ScriptName].m_Merchant then

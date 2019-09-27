@@ -46,7 +46,9 @@ QuestSystem = {
     HurtEntities = {},
     NamedEffects = {},
     NamedExplorations = {},
+    NamedEntityNames = {},
     InlineJobs = {Counter = 0},
+    CustomVariables = {},
 
     Verbose = false,
 };
@@ -405,9 +407,12 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     self.m_Conditions  = (_Conditions and copy(_Conditions)) or {};
     self.m_Rewards     = (_Rewards and copy(_Rewards)) or {};
     self.m_Reprisals   = (_Reprisals and copy(_Reprisals)) or {};
-    self.m_Description = _Description;
     self.m_Time        = _Time or 0;
     self.m_Fragments   = {{}, {}, 0};
+
+    if _Description then
+        self.m_Description = QuestSystem:ReplacePlaceholdersInMessage(_Description);
+    end
 
     self.m_State       = QuestStates.Inactive;
     self.m_Result      = QuestResults.Undecided;
@@ -622,22 +627,23 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         local QuestID = GetQuestID(Behavior[2]);
         if QuestID == 0 then
             Behavior.Completed = false;
-        end
-        if QuestSystem.Quests[QuestID]:ContainsObjective(Objectives.NoChange) then
-            Behavior.Completed = true;
-
-        elseif QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
-            if QuestSystem.Quests[QuestID].m_Result ~= QuestResults.Undecided then
-                if Behavior[3] == nil or QuestSystem.Quests[QuestID].m_Result == Behavior[3] 
-                or QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
-                    Behavior.Completed = true;
-                else
-                    -- failed and not required -> true
-                    -- failed and required -> false
-                    Behavior.Completed = not Behavior[4];
-                end
-            else
+        else
+            if QuestSystem.Quests[QuestID]:ContainsObjective(Objectives.NoChange) then
                 Behavior.Completed = true;
+
+            elseif QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
+                if QuestSystem.Quests[QuestID].m_Result ~= QuestResults.Undecided then
+                    if Behavior[3] == nil or QuestSystem.Quests[QuestID].m_Result == Behavior[3] 
+                    or QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
+                        Behavior.Completed = true;
+                    else
+                        -- failed and not required -> true
+                        -- failed and required -> false
+                        Behavior.Completed = not Behavior[4];
+                    end
+                else
+                    Behavior.Completed = true;
+                end
             end
         end
     elseif Behavior[1] == Objectives.Bridge then
@@ -820,7 +826,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.Message then
-        SaveCall{Message, _Behavior[2]};
+        SaveCall{Message, QuestSystem:ReplacePlaceholdersInMessage(_Behavior[2])};
 
     elseif _Behavior[1] == Callbacks.DestroyEntity then
         if IsExisting(_Behavior[2]) then
@@ -1606,6 +1612,77 @@ function QuestSystem:StartInlineJob(_EventType, _Function, ...)
         end
     end
     return Trigger.RequestTrigger(_EventType, "", "QuestSystem_InlineJob_Executor_" ..self.InlineJobs.Counter, 1, {}, {self.InlineJobs.Counter});
+end
+
+---
+-- Raplaces the placeholders in the message with their values.
+--
+-- @param[type=string] _Message Text to parse
+-- @return[type=string] New text
+--
+function QuestSystem:ReplacePlaceholdersInMessage(_Message)
+    if type(_Message) == "table" then
+        for k, v in pairs(_Message) do
+            _Message[k] = self:ReplacePlaceholdersInMessage(v);
+        end
+
+    elseif type(_Message) == "string" then
+        _Message = string.gsub(_Message, "{cr}", " @cr ");
+        _Message = string.gsub(_Message, "{ra}", " @ra ");
+        _Message = string.gsub(_Message, "{center}", " @center ");
+        _Message = string.gsub(_Message, "{red}", " @color:180,0,0 ");
+        _Message = string.gsub(_Message, "{green}", " @color:0,180,0 ");
+        _Message = string.gsub(_Message, "{blue}", " @color:0,0,180 ");
+        _Message = string.gsub(_Message, "{yellow}", " @color:235,235,0 ");
+        _Message = string.gsub(_Message, "{violet}", " @color:180,0,180 ");
+        _Message = string.gsub(_Message, "{azure}", " @color:0,180,180 ");
+        _Message = string.gsub(_Message, "{black}", " @color:40,40,40 ");
+        _Message = string.gsub(_Message, "{white}", " @color:255,255,255 ");
+
+        -- Replace with last hero name
+        local Value = QuestSystem.NamedEntityNames[gvLastInteractionHeroName];
+        if Value then
+            _Message = string.gsub(_Message, "{hero}", Value);
+        end
+
+        -- Replace with last npc name
+        local Value = QuestSystem.NamedEntityNames[gvLastInteractionNpcName];
+        if Value then
+            _Message = string.gsub(_Message, "{npc}", Value);
+        end
+
+        local s, e = string.find(_Message, "{", 1);
+        while (s) do
+            local ss, ee      = string.find(_Message, "}", e+1);
+            local Before      = (s <= 1 and "") or string.sub(_Message, 1, s-1);
+            local After       = (ee and string.sub(_Message, ee+1)) or "";
+            local Placeholder = string.sub(_Message, e+1, ss-1);
+
+            if string.find(Placeholder, "color") then
+                _Message = Before .. " @" .. Placeholder .. " " .. After;
+            end
+            if string.find(Placeholder, "val:") then
+                local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
+                if type(Value) == "string" or type(value) == "number" then
+                    _Message = Before .. Value .. After;
+                end
+            end
+            if string.find(Placeholder, "cval:") then
+                local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
+                if Value and QuestSystem.Data.CustomVariables[Value] then
+                    _Message = Before .. QuestSystem.Data.CustomVariables[Value] .. After;
+                end
+            end
+            if string.find(Placeholder, "name:") then
+                local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
+                if Value and QuestSystem.NamedEntityNames[Value] then
+                    _Message = Before .. QuestSystem.NamedEntityNames[Value] .. After;
+                end
+            end
+            s, e = string.find(_Message, "{", ee+1);
+        end
+    end
+    return _Message;
 end
 
 -- -------------------------------------------------------------------------- --
