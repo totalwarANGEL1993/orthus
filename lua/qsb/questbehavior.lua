@@ -96,6 +96,62 @@ function LoadQuestSystem()
 end
 
 ---
+-- Raplaces the placeholders in the message with their values.
+--
+-- <u>Simple placeholders:</u>
+-- <ul>
+-- <li><b>{qq}</b> : Inserts a double quote (")</li>
+-- <li><b>{cr}</b> : Inserts a line break</li>
+-- <li><b>{ra}</b> : Positions the text at the right</li>
+-- <li><b>{center}</b> : Positions the text at the center</li>
+-- <li><b>{red}</b> : Following text is red</li>
+-- <li><b>{green}</b> : Following text is green</li>
+-- <li><b>{blue}</b> : Following text is blue</li>
+-- <li><b>{yellow}</b> : Following text is yellow</li>
+-- <li><b>{violet}</b> : Following text is violet</li>
+-- <li><b>{azure}</b> : Following text is turquoise</li>
+-- <li><b>{black}</b> : Following text is black (not pitch black)</li>
+-- <li><b>{white}</b> : Following text is white</li>
+-- <li><b>{grey}</b> : Following text is grey</li>
+-- <li><b>{hero}</b> : Will be replaced with the configured name of the last
+-- hero involved in an npc interaction.</li>
+-- <li><b>{npc}</b> : Will be replaced with the configured name of the last
+-- npc involved in an npc interaction.</li>
+-- </ul>
+--
+-- <u>Valued placeholders:</u>
+-- <ul>
+-- <li><b>{color:</b><i>r,g,b</i><b>}</b>
+-- Changes the color of the following text to the given RGB value</li>
+-- <li><b>{val:</b><i>name</i><b>}</b>
+-- The placeholder is replaced with a global variable</li>
+-- <li><b>{cval:</b><i>name</i><b>}</b>
+-- The placeholder is replaced with a custom variable</li>
+-- <li><b>{name:</b><i>scriptname</i><b>}</b>
+-- A scriptname is replaced with a pre configured name</li>
+-- </ul>
+--
+-- @param[type=string] _Text Text to parse
+-- @return[type=string] New text
+-- @within Methods
+--
+-- @usage Message(ReplacePlacholders("You open the chest and find a{red}already used{white}bedpan!"));
+--
+function ReplacePlacholders(_Text)
+    return QuestSystem:ReplacePlaceholders(_Text);
+end
+
+---
+-- Sets the display name for the entity with the given scriptname.
+--
+-- @param[type=string] _ScriptName Scriptname of entity
+-- @param[type=string] _DisplayName Displayed name
+--
+function AddDisplayName(_ScriptName, _DisplayName)
+    QuestSystem.NamedEntityNames[_ScriptName] = _DisplayName;
+end
+
+---
 -- Activates the debug mode. Use the flags to decide which features you want
 -- to use.
 --
@@ -1831,7 +1887,8 @@ function b_Goal_NPC:CustomFunction(_Quest)
     end
     if not self.Data.NPC then
         local Hero = (self.Data.Hero == "INVALID_SCRIPTNAME" and nil) or self.Data.Hero;
-        self.Data.NPC = new(NonPlayerCharacter, self.Data.Target):SetHero(self.Data.Hero):SetHeroInfo(self.Data.Message):Activate();
+        local Info = QuestSystem:ReplacePlaceholders(self.Data.Message);
+        self.Data.NPC = new(NonPlayerCharacter, self.Data.Target):SetHero(self.Data.Hero):SetHeroInfo(Info):Activate();
     end
     if self.Data.NPC:TalkedTo() then
         return true;

@@ -84,16 +84,16 @@ function Information:CreateAddPageFunctions()
                     end
                     
                     -- Set normal text
-                    _page = QuestSystem:ReplacePlaceholdersInMessage(_page);
+                    _page = QuestSystem:ReplacePlaceholders(_page);
                     if _page.title then
-                        if string.sub(_page.title, 1, 1) ~= "@" then
+                        if string.sub(_page.title, 1, 1) ~= "@" and string.sub(_page.title, 2, 2) ~= "@" then
                             _page.title = "@center " .. _page.title;
                         end
                     end
 
                     -- Set mc text
-                    if _page.mc then and _page.mc.title then
-                        if string.sub(_page.mc.title, 1, 1) ~= "@" then
+                    if _page.mc and _page.mc.title then
+                        if string.sub(_page.mc.title, 1, 1) ~= "@" and string.sub(_page.mc.title, 2, 2) ~= "@" then
                             _page.mc.title = "@center " .. _page.mc.title;
                         end
                     end
@@ -102,6 +102,9 @@ function Information:CreateAddPageFunctions()
                         _page.actionOrig = _page.action;
                     end
                     _page.action = function()
+                        if _page.entity then
+                            _page.position = GetPosition(_page.entity);
+                        end
                         _page.zoom = Information:AdjustBriefingPageZoom(_page);
                         _page.angle = Information:AdjustBriefingPageAngle(_page);
                         _page.rotation = Information:AdjustBriefingPageRotation(_page);

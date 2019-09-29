@@ -411,7 +411,7 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     self.m_Fragments   = {{}, {}, 0};
 
     if _Description then
-        self.m_Description = QuestSystem:ReplacePlaceholdersInMessage(_Description);
+        self.m_Description = QuestSystem:RemoveFormattingPlaceholders(_Description);
     end
 
     self.m_State       = QuestStates.Inactive;
@@ -610,8 +610,9 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
 
     elseif Behavior[1] == Objectives.Tribute then
         if Behavior[4] == nil then
+            local Text = QuestSystem:ReplacePlaceholders(Behavior[3]);
             g_UniqueTributeCounter = (g_UniqueTributeCounter or 0) +1;
-            Logic.AddTribute(self.m_Receiver, g_UniqueTributeCounter, 0, 0, Behavior[3], unpack(Behavior[2]));
+            Logic.AddTribute(self.m_Receiver, g_UniqueTributeCounter, 0, 0, Text, unpack(Behavior[2]));
             Behavior[4] = g_UniqueTributeCounter;
         end
         if Behavior[5] then
@@ -826,7 +827,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.Message then
-        SaveCall{Message, QuestSystem:ReplacePlaceholdersInMessage(_Behavior[2])};
+        SaveCall{Message, QuestSystem:ReplacePlaceholders(_Behavior[2])};
 
     elseif _Behavior[1] == Callbacks.DestroyEntity then
         if IsExisting(_Behavior[2]) then
@@ -989,6 +990,7 @@ function QuestTemplate:Trigger()
 
     -- Add quest
     if self.m_Description then
+        self.m_Description = QuestSystem:ReplacePlaceholders(self.m_Description);
         if not self.m_Description.Position then
             self:CreateQuest();
         else
@@ -1237,21 +1239,21 @@ function QuestTemplate:UpdateFragment(_Objective)
                     Running = true;
                     self.m_Fragments[3] = self.m_Fragments[3] +1;
                     Fragment = Fragment .. string.format(
-                        " @color:255,255,255 @cr %d) %s @cr %s @cr @color:255,255,255 ",
+                        "{white}{cr}%d) %s{cr}%s{cr}{white}",
                         self.m_Fragments[3],
                         FragmentQuest.m_Description.Title,
                         FragmentQuest.m_Description.Text
                     );
                 elseif FragmentQuest.m_State == QuestStates.Over then
                     self.m_Fragments[3] = self.m_Fragments[3] +1;
-                    local Color = " @color:180,180,180 ";
+                    local Color = "{grey}";
                     if FragmentQuest.m_Result == QuestResults.Success then
-                        Color = " @color:60,170,60 ";
+                        Color = "{green}";
                     elseif FragmentQuest.m_Result == QuestResults.Failure then
-                        Color = " @color:170,60,60 ";
+                        Color = "{red}";
                     end
                     Fragment = Fragment .. string.format(
-                        Color.. "@cr %d) %s @color:255,255,255 ",
+                        Color.. "{cr}%d) %s{white}",
                         self.m_Fragments[3],
                         FragmentQuest.m_Description.Title
                     );
@@ -1260,7 +1262,7 @@ function QuestTemplate:UpdateFragment(_Objective)
             else
                 self.m_Fragments[3] = self.m_Fragments[3] +1;
                 Fragment = Fragment .. string.format(
-                    " @color:180,180,180 @cr %d) %s @color:255,255,255 ",
+                    "{grey}{cr}%d) %s{white}",
                     self.m_Fragments[3],
                     FragmentQuest.m_Description.Title
                 );
@@ -1269,6 +1271,7 @@ function QuestTemplate:UpdateFragment(_Objective)
     end
 
     if Fragment ~= "" then
+        Fragment = QuestSystem:ReplacePlaceholders(Fragment);
         if Running then
             table.insert(self.m_Fragments[1], Fragment);
         else
@@ -1316,13 +1319,16 @@ function QuestTemplate:AttachFragments()
                 local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
                 local ResultText = "";
                 local ResultType = Jornal[3] + ((self.m_State == QuestStates.Over and 1) or 0);
-                NewQuestText = ((self.m_State == QuestStates.Over and " @color:180,180,180 ") or "") ..NewQuestText;
+                NewQuestText = QuestSystem:ReplacePlaceholders(
+                    ((self.m_State == QuestStates.Over and "{grey}") or "") ..NewQuestText
+                );
 
                 if self.m_Result == QuestResults.Failure then
-                    ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
+                    ResultText = "{red}" ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. "{white}";
                 elseif self.m_Result == QuestResults.Success then
-                    ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
+                    ResultText = "{green}" ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. "{white}";
                 end
+                ResultText = QuestSystem:ReplacePlaceholders(ResultText);
 
                 if self.m_Description.X ~= nil then
                     Logic.AddQuestEx(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
@@ -1408,7 +1414,9 @@ function QuestTemplate:QuestSetFailed()
                 Logic.RemoveQuest(self.m_Receiver, ID);
 
                 local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-                local ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
+                local ResultText = QuestSystem:ReplacePlaceholders(
+                    "{red}" ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. "{white}"
+                );
 
                 if Jornal[7] == nil then
                     Logic.AddQuest(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[6]);
@@ -1435,7 +1443,9 @@ function QuestTemplate:QuestSetSuccessfull()
                 Logic.RemoveQuest(self.m_Receiver, ID);
 
                 local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-                local ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
+                local ResultText = QuestSystem:ReplacePlaceholders(
+                    "{green}" ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. "{white}"
+                );
 
                 if Jornal[7] == nil then
                     Logic.AddQuest(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[6]);
@@ -1619,16 +1629,30 @@ end
 --
 -- @param[type=string] _Message Text to parse
 -- @return[type=string] New text
+-- @within QuestSystem
+-- @local
 --
-function QuestSystem:ReplacePlaceholdersInMessage(_Message)
+function QuestSystem:ReplacePlaceholders(_Message)
     if type(_Message) == "table" then
         for k, v in pairs(_Message) do
-            _Message[k] = self:ReplacePlaceholdersInMessage(v);
+            _Message[k] = self:ReplacePlaceholders(v);
         end
 
     elseif type(_Message) == "string" then
+        -- Replace hero and npc names
+        local HeroName = QuestSystem.NamedEntityNames[gvLastInteractionHeroName] or "HERO_NAME_NOT_FOUND";
+        local NpcName = QuestSystem.NamedEntityNames[gvLastInteractionNpcName] or "NPC_NAME_NOT_FOUND";
+        _Message = string.gsub(_Message, "{hero}", HeroName);
+        _Message = string.gsub(_Message, "{npc}", NpcName);
+
+        -- Replace valued placeholders
+        _Message = self:ReplaceKeyValuePlaceholders(_Message);
+        
+        -- Replace basic placeholders last        
         _Message = string.gsub(_Message, "{cr}", " @cr ");
+        _Message = string.gsub(_Message, "{nl}", " @cr ");
         _Message = string.gsub(_Message, "{ra}", " @ra ");
+        _Message = string.gsub(_Message, "{qq}", "\"");
         _Message = string.gsub(_Message, "{center}", " @center ");
         _Message = string.gsub(_Message, "{red}", " @color:180,0,0 ");
         _Message = string.gsub(_Message, "{green}", " @color:0,180,0 ");
@@ -1638,49 +1662,83 @@ function QuestSystem:ReplacePlaceholdersInMessage(_Message)
         _Message = string.gsub(_Message, "{azure}", " @color:0,180,180 ");
         _Message = string.gsub(_Message, "{black}", " @color:40,40,40 ");
         _Message = string.gsub(_Message, "{white}", " @color:255,255,255 ");
+        _Message = string.gsub(_Message, "{grey}", " @color:180,180,180 ");
+    end
+    return _Message;
+end
 
-        -- Replace with last hero name
-        local Value = QuestSystem.NamedEntityNames[gvLastInteractionHeroName];
-        if Value then
-            _Message = string.gsub(_Message, "{hero}", Value);
+---
+-- Replaces all valued placeholders in the message with their value.
+--
+-- @param[type=string] _Message Text to parse
+-- @return[type=string] New text
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:ReplaceKeyValuePlaceholders(_Message)
+    local s, e = string.find(_Message, "{", 1);
+    while (s) do
+        local ss, ee      = string.find(_Message, "}", e+1);
+        local Before      = (s <= 1 and "") or string.sub(_Message, 1, s-1);
+        local After       = (ee and string.sub(_Message, ee+1)) or "";
+        local Placeholder = string.sub(_Message, e+1, ss-1);
+
+        if string.find(Placeholder, "color") then
+            _Message = Before .. " @" .. Placeholder .. " " .. After;
         end
-
-        -- Replace with last npc name
-        local Value = QuestSystem.NamedEntityNames[gvLastInteractionNpcName];
-        if Value then
-            _Message = string.gsub(_Message, "{npc}", Value);
+        if string.find(Placeholder, "val:") then
+            local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
+            if type(Value) == "string" or type(value) == "number" then
+                _Message = Before .. Value .. After;
+            end
         end
-
-        local s, e = string.find(_Message, "{", 1);
-        while (s) do
-            local ss, ee      = string.find(_Message, "}", e+1);
-            local Before      = (s <= 1 and "") or string.sub(_Message, 1, s-1);
-            local After       = (ee and string.sub(_Message, ee+1)) or "";
-            local Placeholder = string.sub(_Message, e+1, ss-1);
-
-            if string.find(Placeholder, "color") then
-                _Message = Before .. " @" .. Placeholder .. " " .. After;
+        if string.find(Placeholder, "cval:") then
+            local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
+            if Value and QuestSystem.Data.CustomVariables[Value] then
+                _Message = Before .. QuestSystem.Data.CustomVariables[Value] .. After;
             end
-            if string.find(Placeholder, "val:") then
-                local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
-                if type(Value) == "string" or type(value) == "number" then
-                    _Message = Before .. Value .. After;
-                end
-            end
-            if string.find(Placeholder, "cval:") then
-                local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
-                if Value and QuestSystem.Data.CustomVariables[Value] then
-                    _Message = Before .. QuestSystem.Data.CustomVariables[Value] .. After;
-                end
-            end
-            if string.find(Placeholder, "name:") then
-                local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
-                if Value and QuestSystem.NamedEntityNames[Value] then
-                    _Message = Before .. QuestSystem.NamedEntityNames[Value] .. After;
-                end
-            end
-            s, e = string.find(_Message, "{", ee+1);
         end
+        if string.find(Placeholder, "name:") then
+            local Value = string.sub(Placeholder, string.find(Placeholder, ":")+1);
+            if Value and QuestSystem.NamedEntityNames[Value] then
+                _Message = Before .. QuestSystem.NamedEntityNames[Value] .. After;
+            end
+        end
+        s, e = string.find(_Message, "{", ee+1);
+    end
+    return _Message;
+end
+
+---
+-- Removes all formating placeholders from the message.
+--
+-- @param[type=string] _Message Text to parse
+-- @return[type=string] New text
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:RemoveFormattingPlaceholders(_Message)
+    if type(_Message) == "table" then
+        for k, v in pairs(_Message) do
+            _Message[k] = self:RemoveFormattingPlaceholders(v);
+        end
+    elseif type(_Message) == "string" then
+        _Message = string.gsub(_Message, "{ra}", "");
+        _Message = string.gsub(_Message, "{center}", "");
+        _Message = string.gsub(_Message, "{color:%d,%d,%d}", "");
+        _Message = string.gsub(_Message, "{red}", "");
+        _Message = string.gsub(_Message, "{green}", "");
+        _Message = string.gsub(_Message, "{blue}", "");
+        _Message = string.gsub(_Message, "{yellow}", "");
+        _Message = string.gsub(_Message, "{violet}", "");
+        _Message = string.gsub(_Message, "{azure}", "");
+        _Message = string.gsub(_Message, "{black}", "");
+        _Message = string.gsub(_Message, "{white}", "");
+        _Message = string.gsub(_Message, "{grey}", "");
+
+        _Message = string.gsub(_Message, "@color:%d,%d,%d", "");
+        _Message = string.gsub(_Message, "@center", "");
+        _Message = string.gsub(_Message, "@ra", "");
     end
     return _Message;
 end
