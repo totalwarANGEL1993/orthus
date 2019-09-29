@@ -76,11 +76,11 @@ function QuestSystem.QuestTimer:UpdateTimer(_Index)
     local Limit   = self.Data[_Index].Duration;
 
     local Progress = Current/Limit;
-    R = 95 + math.floor(155 * Progress);
-    B = 255 - math.floor(200 * Progress);
+    local R =  35 + math.floor(215 * Progress);
+    local G = 150 - math.floor(70 * Progress);
+    local B = 255 - math.floor(220 * Progress);
 
-    -- self:ResetVCMP();
-    self:Show(_Index, self.Data[_Index].Title, Current, Limit, R, 150, B, 255);
+    self:Show(_Index, self.Data[_Index].Title, Current, Limit, R, G, B, 255);
 end
 
 ---
@@ -93,26 +93,11 @@ function QuestSystem.QuestTimer:ResetVCMP()
     GUIUpdate_GetTeamPoints = function()end
 	GUIUpdate_VCTechRaceProgress = function()end
     GUIUpdate_VCTechRaceColor = function()end
-    
+
     XGUIEng.ShowWidget("VCMP_Window", 1);
-	XGUIEng.SetWidgetPosition("VCMP_Window", 5, 100);
-	XGUIEng.SetWidgetPosition("NotesWindow", 220, 150);
+	XGUIEng.SetWidgetPositionAndSize("VCMP_Window", 780, 100, 200, 600);
 	for i=1,8 do
-		XGUIEng.ShowWidget("VCMP_Team"..i.."Player1", 0);
-		XGUIEng.ShowWidget("VCMP_Team"..i.."Player2", 0);
-		XGUIEng.ShowWidget("VCMP_Team"..i.."Player3", 0);
-		XGUIEng.ShowWidget("VCMP_Team"..i.."Player4", 0);
-		XGUIEng.ShowWidget("VCMP_Team"..i.."Player5", 0);
-		XGUIEng.ShowWidget("VCMP_Team"..i.."Player6", 0);
-		XGUIEng.ShowWidget("VCMP_Team"..i.."Player7", 0);
-		XGUIEng.ShowWidget("VCMP_Team"..i.."Player8", 0);
-		XGUIEng.SetWidgetSize("VCMP_Team"..i, 200, 10);
-		XGUIEng.SetWidgetPositionAndSize("VCMP_Team"..i.."Name", 5, 0, 200, 4);
-		XGUIEng.SetWidgetPositionAndSize("VCMP_Team"..i.."Shade", 5, 0, 200, 4);
-		XGUIEng.SetWidgetPositionAndSize("VCMP_Team"..i.."Points", 5, 0, 200, 0);
-		XGUIEng.SetWidgetPositionAndSize("VCMP_Team"..i.."PointGame", 5, 5, 200, 0);
-		XGUIEng.ShowWidget("VCMP_Team"..i, 0);
-		XGUIEng.ShowWidget("VCMP_Team"..i.."_Shade", 0);
+		self:Hide(i);
 	end
 end
 
@@ -157,15 +142,10 @@ end
 -- @local
 --
 function QuestSystem.QuestTimer:Hide(_Index)
-	XGUIEng.ShowWidget("VCMP_Team".._Index.."Player1", 0);
-	XGUIEng.ShowWidget("VCMP_Team".._Index.."Player2", 0);
-	XGUIEng.ShowWidget("VCMP_Team".._Index.."Player3", 0);
-	XGUIEng.ShowWidget("VCMP_Team".._Index.."Player4", 0);
-	XGUIEng.ShowWidget("VCMP_Team".._Index.."Player5", 0);
-	XGUIEng.ShowWidget("VCMP_Team".._Index.."Player6", 0);
-	XGUIEng.ShowWidget("VCMP_Team".._Index.."Player7", 0);
-	XGUIEng.ShowWidget("VCMP_Team".._Index.."Player8", 0);
-	XGUIEng.SetWidgetSize("VCMP_Team".._Index, 200, 10);
+    for i= 1, 8, 1 do
+        XGUIEng.ShowWidget("VCMP_Team".._Index.."Player" ..i, 0);
+    end
+	XGUIEng.SetWidgetSize("VCMP_Team".._Index, 200, 15);
 	XGUIEng.SetWidgetPositionAndSize("VCMP_Team".._Index.."Name", 5, 0, 200, 4);
 	XGUIEng.SetWidgetPositionAndSize("VCMP_Team".._Index.."Shade", 5, 0, 200, 4);
 	XGUIEng.SetWidgetPositionAndSize("VCMP_Team".._Index.."Points", 5, 0, 200, 0);

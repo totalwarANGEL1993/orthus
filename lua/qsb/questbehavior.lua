@@ -44,7 +44,7 @@
 -- @param[type=table] _Data Quest table
 -- @return[type=number] Quest id
 -- @return[type=table]  Quest instance
--- @within Functions
+-- @within Methods
 --
 -- @usage CreateQuest {
 --     Name = "VictoryCondition",
@@ -89,10 +89,66 @@ end
 ---
 -- This function starts the quest system by loading all components in the
 -- right order. Must be called on game start in the FMA.
--- @within Functions
+-- @within Methods
 --
 function LoadQuestSystem()
     QuestSystemBehavior:PrepareQuestSystem();
+end
+
+---
+-- Raplaces the placeholders in the message with their values.
+--
+-- <u>Simple placeholders:</u>
+-- <ul>
+-- <li><b>{qq}</b> : Inserts a double quote (")</li>
+-- <li><b>{cr}</b> : Inserts a line break</li>
+-- <li><b>{ra}</b> : Positions the text at the right</li>
+-- <li><b>{center}</b> : Positions the text at the center</li>
+-- <li><b>{red}</b> : Following text is red</li>
+-- <li><b>{green}</b> : Following text is green</li>
+-- <li><b>{blue}</b> : Following text is blue</li>
+-- <li><b>{yellow}</b> : Following text is yellow</li>
+-- <li><b>{violet}</b> : Following text is violet</li>
+-- <li><b>{azure}</b> : Following text is turquoise</li>
+-- <li><b>{black}</b> : Following text is black (not pitch black)</li>
+-- <li><b>{white}</b> : Following text is white</li>
+-- <li><b>{grey}</b> : Following text is grey</li>
+-- <li><b>{hero}</b> : Will be replaced with the configured name of the last
+-- hero involved in an npc interaction.</li>
+-- <li><b>{npc}</b> : Will be replaced with the configured name of the last
+-- npc involved in an npc interaction.</li>
+-- </ul>
+--
+-- <u>Valued placeholders:</u>
+-- <ul>
+-- <li><b>{color:</b><i>r,g,b</i><b>}</b>
+-- Changes the color of the following text to the given RGB value</li>
+-- <li><b>{val:</b><i>name</i><b>}</b>
+-- The placeholder is replaced with a global variable</li>
+-- <li><b>{cval:</b><i>name</i><b>}</b>
+-- The placeholder is replaced with a custom variable</li>
+-- <li><b>{name:</b><i>scriptname</i><b>}</b>
+-- A scriptname is replaced with a pre configured name</li>
+-- </ul>
+--
+-- @param[type=string] _Text Text to parse
+-- @return[type=string] New text
+-- @within Methods
+--
+-- @usage Message(ReplacePlacholders("You open the chest and find a{red}already used{white}bedpan!"));
+--
+function ReplacePlacholders(_Text)
+    return QuestSystem:ReplacePlaceholders(_Text);
+end
+
+---
+-- Sets the display name for the entity with the given scriptname.
+--
+-- @param[type=string] _ScriptName Scriptname of entity
+-- @param[type=string] _DisplayName Displayed name
+--
+function AddDisplayName(_ScriptName, _DisplayName)
+    QuestSystem.NamedEntityNames[_ScriptName] = _DisplayName;
 end
 
 ---
@@ -103,7 +159,7 @@ end
 -- @param[type=boolean] _TraceQuests Display quest status changes
 -- @param[type=boolean] _Cheats      Activate debug cheats
 -- @param[type=boolean] _Console     Activate debug shell
--- @within Functions
+-- @within Methods
 --
 -- @usage ActivateDebugMode(true, false, true, true);
 --
@@ -119,7 +175,7 @@ end
 --
 -- @param[type=number] _PlayerID  PlayerID
 -- @param[type=number] _TechLevel Technology level [1|4]
--- @within Functions
+-- @within Methods
 --
 -- @usage CreateAIPlayer(2, 4);
 --
@@ -134,7 +190,7 @@ end
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _ArmyID   ID of army
 -- @param[type=boolean] _Flag    Ability to attack
--- @within Functions
+-- @within Methods
 -- 
 -- @usage ArmyDisableAttackAbility(2, 1, true)
 --
@@ -149,7 +205,7 @@ end
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=number]  _ArmyID   ID of army
 -- @param[type=boolean] _Flag     Ability to attack
--- @within Functions
+-- @within Methods
 -- 
 -- @usage ArmyDisablePatrolAbility(2, 1, true)
 --
@@ -180,18 +236,18 @@ end
 -- @param[type=number] _PlayerID   Owner of army
 -- @param[type=number] _Strength   Strength of army [1|8]
 -- @param[type=string] _Position   Home Position of army
--- @param[type=number] _RodeLength Action range of the army
+-- @param[type=number] _Area Action range of the army
 -- @param[type=table] _TroopTypes  Upgrade categories to recruit
 -- @return[type=number] Army ID
--- @within Functions
+-- @within Methods
 --
 -- @usage CreateAIPlayerArmy("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
 --
-function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
+function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, _TroopTypes)
     if QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] then
         return;
     end
-    local ID = QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes);
+    local ID = QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area, _TroopTypes);
     if ID then
         QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] = ID;
     end
@@ -221,11 +277,11 @@ end
 -- @param[type=number] _PlayerID    Owner of army.
 -- @param[type=number] _Strength    Strength of army [1|8]
 -- @param[type=string] _Position    Home Position of army
--- @param[type=string] _LifeThread  Name of generator
--- @param[type=number] _RodeLength  Action range of the army
--- @param[type=number] _RespawnTime Time till troops are refreshed
+-- @param[type=string] _Spawner  Name of generator
+-- @param[type=number] _Area  Action range of the army
+-- @param[type=number] _Respawn Time till troops are refreshed
 -- @param              ...          List of types to spawn
--- @within Functions
+-- @within Methods
 --
 -- @usage CreateAIPlayerSpawnArmy(
 --     "Bar", 2, 8, "armyPos1", "lifethread", 5000,
@@ -234,13 +290,13 @@ end
 --     Entities.PV_Cannon2
 -- );
 --
-function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _RespawnTime, ...)
+function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)
     if QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] then
         return;
     end
     local EntityTypes = {unpack(arg)};
     assert(table.getn(EntityTypes) > 0);
-    local ID = QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, EntityTypes, _RespawnTime);
+    local ID = QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _Spawner, _Area, EntityTypes, _Respawn);
     if ID then
         QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] = ID;
     end
@@ -258,7 +314,7 @@ end
 -- Finds all entities numbered from 1 to n with a common prefix.
 -- @param[type=string] _Prefix Prefix of scriptnames
 -- @return[type=table] List of entities
--- @within Functions
+-- @within Methods
 --
 function GetEntitiesByPrefix(_Prefix)
     local list = {};
@@ -281,7 +337,7 @@ end
 -- @param[type=number] _PlayerID   ID of player
 -- @param[type=number] _EntityType Type to search
 -- @return[type=table] List of entities
--- @within Functions
+-- @within Methods
 --
 function GetPlayerEntities(_PlayerID, _EntityType)
     local PlayerEntities = {}
@@ -317,7 +373,7 @@ end
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
--- @within Functions
+-- @within Methods
 --
 function StartSimpleJobEx(_Function, ...)
     return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, _Function, unpack(arg));
@@ -328,7 +384,7 @@ end
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
--- @within Functions
+-- @within Methods
 --
 function StartSimpleHiResJobEx(_Function, ...)
     return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, _Function, unpack(arg));
@@ -337,7 +393,7 @@ end
 ---
 -- Registers a behavior
 -- @param[type=table] _Behavior Behavior pseudo class
--- @within Functions
+-- @within Methods
 --
 function RegisterBehavior(_Behavior)
     QuestSystemBehavior:RegisterBehavior(_Behavior)
@@ -347,7 +403,7 @@ end
 -- Adds an action that is performed after a save is loaded.
 -- @param[type=function] _Function Action
 -- @param                ...       Data
--- @within Functions
+-- @within Methods
 --
 function AddOnSaveLoadedAction(_Function, ...)
     QuestSystemBehavior:AddSaveLoadActions(_Function, unpack(copy(arg)));
@@ -356,7 +412,7 @@ end
 ---
 -- Fails the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function FailQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Fail();
@@ -365,7 +421,7 @@ end
 ---
 -- Wins the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function StartQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Trigger();
@@ -374,7 +430,7 @@ end
 ---
 -- Interrupts the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function StopQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Interrupt();
@@ -383,7 +439,7 @@ end
 ---
 -- Resets the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function ResetQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset();
@@ -392,7 +448,7 @@ end
 ---
 -- Resets the quest and activates it immediately.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function RestartQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset():Trigger();
@@ -401,7 +457,7 @@ end
 ---
 -- Wins the quest.
 -- @param _Subject Quest name or ID
--- @within Functions
+-- @within Methods
 --
 function WinQuest(_Quest)
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Success();
@@ -420,7 +476,6 @@ QuestSystemBehavior = {
         CreatedAiPlayers = {},
         CreatedAiArmies = {},
         AiArmyNameToId = {},
-        CustomVariables = {},
         ChoicePages = {},
     }
 };
@@ -758,13 +813,13 @@ end
 -- @param[type=number] _PlayerID   ID of player
 -- @param[type=number] _Strength   Strength of army
 -- @param[type=string] _Position   Home area center
--- @param[type=number] _RodeLength Rode length
+-- @param[type=number] _Area Rode length
 -- @param[type=table]  _TroopTypes Allowed troops
 -- @return[table=number] Army ID
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _RodeLength, _TroopTypes)
+function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area, _TroopTypes)
     self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
     _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
 
@@ -810,10 +865,10 @@ function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Rode
     army.id					     = ArmyID;
     army.strength			     = _Strength;
     army.position			     = GetPosition(_Position);
-    army.rodeLength			     = _RodeLength;
+    army.rodeLength			     = _Area;
     army.retreatStrength	     = math.ceil(_Strength/3);
-    army.baseDefenseRange	     = _RodeLength * 0.7;
-    army.outerDefenseRange	     = _RodeLength * 1.5;
+    army.baseDefenseRange	     = _Area * 0.7;
+    army.outerDefenseRange	     = _Area * 1.5;
     army.AllowedTypes		     = _TroopTypes;
 
     army.Advanced                = {};
@@ -836,14 +891,14 @@ end
 -- @param[type=number] _PlayerID    ID of player
 -- @param[type=number] _Strength    Strength of army
 -- @param[type=string] _Position    Home area center
--- @param[type=string] _LifeThread  Name of generator
--- @param[type=number] _RodeLength  Rode length
+-- @param[type=string] _Spawner  Name of generator
+-- @param[type=number] _Area  Rode length
 -- @param[type=table]  _EntityTypes Spawned troops
--- @param[type=number] _RespawnTime Time to respawn
+-- @param[type=number] _Respawn Time to respawn
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _LifeThread, _RodeLength, _EntityTypes, _RespawnTime)
+function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _Spawner, _Area, _EntityTypes, _Respawn)
     self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
     _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
 
@@ -889,16 +944,16 @@ function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, 
     army.id					     = ArmyID;
     army.strength			     = _Strength;
     army.position			     = GetPosition(_Position);
-    army.rodeLength			     = _RodeLength;
+    army.rodeLength			     = _Area;
     army.refresh 			     = true;
     army.retreatStrength	     = math.ceil(_Strength/3);
-    army.baseDefenseRange	     = _RodeLength * 0.7;
-    army.outerDefenseRange	     = _RodeLength * 1.5;
+    army.baseDefenseRange	     = _Area * 0.7;
+    army.outerDefenseRange	     = _Area * 1.5;
 
     army.spawnPos 		 	     = GetPosition(_Position);
-    army.spawnGenerator 		 = _LifeThread;
+    army.spawnGenerator 		 = _Spawner;
     army.spawnTypes 			 = SpawnedTypes;
-    army.respawnTime 		     = _RespawnTime;
+    army.respawnTime 		     = _Respawn;
     army.maxSpawnAmount 		 = math.ceil(_Strength/3);
     army.endless 			     = true;
     army.noEnemy 			     = true;
@@ -1281,6 +1336,39 @@ function b_Goal_Create:GetGoalTable()
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_Create);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- The player has to build a bridge near the specified position.
+-- @param[type=string] _Position Area center
+-- @param[type=number] _Area Checked area size
+-- @within Goals
+--
+function Goal_CreateBridge(...)
+    return b_Goal_CreateBridge:New(unpack(arg));
+end
+
+b_Goal_CreateBridge = {
+    Data = {
+        Name = "Goal_CreateBridge",
+        Type = Objectives.Bridge
+    },
+};
+
+function b_Goal_CreateBridge:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Position = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Area = _Parameter;
+    end
+end
+
+function b_Goal_CreateBridge:GetGoalTable()
+    return {self.Data.Type, self.Data.Position, self.Data.Area};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_CreateBridge);
 
 -- -------------------------------------------------------------------------- --
 
@@ -1799,7 +1887,8 @@ function b_Goal_NPC:CustomFunction(_Quest)
     end
     if not self.Data.NPC then
         local Hero = (self.Data.Hero == "INVALID_SCRIPTNAME" and nil) or self.Data.Hero;
-        self.Data.NPC = new(NonPlayerCharacter, self.Data.Target):SetHero(self.Data.Hero):SetHeroInfo(self.Data.Message):Activate();
+        local Info = QuestSystem:ReplacePlaceholders(self.Data.Message);
+        self.Data.NPC = new(NonPlayerCharacter, self.Data.Target):SetHero(self.Data.Hero):SetHeroInfo(Info):Activate();
     end
     if self.Data.NPC:TalkedTo() then
         return true;
@@ -2282,10 +2371,6 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_ChangePlayer);
 -- In addition to the placeholders the game offers (@cr, @color, @ra, ...),
 -- there are 2 new placeholders for both _G values and custom values.
 --
--- @val:NAME adds a value from _G. The value musn't be in a table!
---
--- @cval:NAME adds a custom value.
---
 -- @param[type=string] _Message Message to display
 -- @within Reprisals
 --
@@ -2296,7 +2381,7 @@ end
 b_Reprisal_Message = {
     Data = {
         Name = "Reprisal_Message",
-        Type = Callbacks.MapScriptFunction
+        Type = Callbacks.Message
     },
 };
 
@@ -2307,39 +2392,7 @@ function b_Reprisal_Message:AddParameter(_Index, _Parameter)
 end
 
 function b_Reprisal_Message:GetReprisalTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
-end
-
-function b_Reprisal_Message:CustomFunction(_Quest)
-    local Text = self.Data.Message;
-    
-    -- Custom variables
-    local s, e = string.find(Text, "@cval:", 1);
-    while (s) do
-        local ss, ee = string.find(Text, " ", e+1);
-        local Before = string.sub(Text, 1, s-1);
-        local After  = string.sub(Text, ee);
-        local Value  = string.sub(Text, e+1, ss-1);
-        if Value and QuestSystemBehavior.Data.CustomVariables[Value] then
-            Text = Before .. QuestSystemBehavior.Data.CustomVariables[Value] .. After;
-        end
-        s, e = string.find(Text, "@cval:", ee+1);
-    end
-
-    -- _G variables
-    local s, e = string.find(Text, "@val:", 1);
-    while (s) do
-        local ss, ee = string.find(Text, " ", e+1);
-        local Before = string.sub(Text, 1, s-1);
-        local After  = string.sub(Text, ee);
-        local Value  = string.sub(Text, e+1, ss-1);
-        if Value and _G[Value] then
-            Text = Before .. _G[Value] .. After;
-        end
-        s, e = string.find(Text, "@val:", ee+1);
-    end
-
-    Message(Text);
+    return {self.Data.Type, self.Data.Message};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reprisal_Message);
@@ -2889,10 +2942,6 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_ChangePlayer);
 -- In addition to the placeholders the game offers (@cr, @color, @ra, ...),
 -- there are 2 new placeholders for both _G values and custom values.
 --
--- @val:NAME adds a value from _G. The value musn't be in a table!
---
--- @cval:NAME adds a custom value.
---
 -- @param[type=string] _Message Message to display
 -- @within Rewards
 --
@@ -2902,11 +2951,11 @@ end
 
 b_Reward_Message = copy(b_Reprisal_Message);
 b_Reward_Message.Data.Name = "Reward_Message";
-b_Reward_Message.Data.Type = Callbacks.MapScriptFunction;
+b_Reward_Message.Data.Type = Callbacks.Message;
 b_Reward_Message.GetReprisalTable = nil;
 
 function b_Reward_Message:GetRewardTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
+    return {self.Data.Type, self.Data.Message};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_Message);
@@ -4545,14 +4594,14 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestRestartForceActive);
 -- Creates an merchant with up to 4 offers. Each offer purchases a fixed
 -- amount of a resource for 1000 units of gold. Default inflation will be used.
 -- @param[type=string] _Merchant Merchant name
--- @param[type=string] _Offer1 Resourcetype on sale
--- @param[type=number] _Amount1 Quantity to post
--- @param[type=string] _Offer2 Resourcetype on sale
--- @param[type=number] _Amount2 Quantity to post
--- @param[type=string] _Offer3 Resourcetype on sale
--- @param[type=number] _Amount3 Quantity to post
--- @param[type=string] _Offer4 Resourcetype on sale
--- @param[type=number] _Amount4 Quantity to post
+-- @param[type=string] _O1 Resourcetype on sale
+-- @param[type=number] _A1 Quantity to post
+-- @param[type=string] _O2 Resourcetype on sale
+-- @param[type=number] _A2 Quantity to post
+-- @param[type=string] _O3 Resourcetype on sale
+-- @param[type=number] _A3 Quantity to post
+-- @param[type=string] _O4 Resourcetype on sale
+-- @param[type=number] _A4 Quantity to post
 -- @within Rewards
 --
 function Reward_OpenResourceSale(...)
@@ -4642,14 +4691,14 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_OpenResourceSale);
 -- Creates an merchant with up to 4 offers. Each offer sells 1000 units of a
 -- resource for a fixed amount of gold. Default inflation will be used.
 -- @param[type=string] _Merchant Merchant name
--- @param[type=string] _Offer1 Resourcetype on sale
--- @param[type=number] _Amount1 Quantity to post
--- @param[type=string] _Offer2 Resourcetype on sale
--- @param[type=number] _Amount2 Quantity to post
--- @param[type=string] _Offer3 Resourcetype on sale
--- @param[type=number] _Amount3 Quantity to post
--- @param[type=string] _Offer4 Resourcetype on sale
--- @param[type=number] _Amount4 Quantity to post
+-- @param[type=string] _O1 Resourcetype on sale
+-- @param[type=number] _A1 Quantity to post
+-- @param[type=string] _O2 Resourcetype on sale
+-- @param[type=number] _A2 Quantity to post
+-- @param[type=string] _O3 Resourcetype on sale
+-- @param[type=number] _A3 Quantity to post
+-- @param[type=string] _O4 Resourcetype on sale
+-- @param[type=number] _A4 Quantity to post
 -- @within Rewards
 --
 function Reward_OpenResourcePurchase(...)
@@ -4739,18 +4788,18 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_OpenResourcePurchase);
 -- Creates an mercenary merchant with up to 4 offers.
 -- Default inflation will be used.
 -- @param[type=string] _Merchant Merchant name
--- @param[type=string] _Offer1 Resourcetype on sale
--- @param[type=number] _Cost1 Gold costs
--- @param[type=number] _Amount1 Quantity to post
--- @param[type=string] _Offer2 Resourcetype on sale
--- @param[type=number] _Cost2 Gold costs
--- @param[type=number] _Amount2 Quantity to post
--- @param[type=string] _Offer3 Resourcetype on sale
--- @param[type=number] _Cost3 Gold costs
--- @param[type=number] _Amount3 Quantity to post
--- @param[type=string] _Offer4 Resourcetype on sale
--- @param[type=number] _Cost4 Gold costs
--- @param[type=number] _Amount4 Quantity to post
+-- @param[type=string] _O1 Resourcetype on sale
+-- @param[type=number] _C1 Gold costs
+-- @param[type=number] _A1 Quantity to post
+-- @param[type=string] _O2 Resourcetype on sale
+-- @param[type=number] _C2 Gold costs
+-- @param[type=number] _A2 Quantity to post
+-- @param[type=string] _O3 Resourcetype on sale
+-- @param[type=number] _C3 Gold costs
+-- @param[type=number] _A3 Quantity to post
+-- @param[type=string] _O4 Resourcetype on sale
+-- @param[type=number] _C4 Gold costs
+-- @param[type=number] _A4 Quantity to post
 -- @within Rewards
 --
 function Reward_OpenMercenaryMerchant(...)
@@ -4956,7 +5005,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateAIPlayer);
 -- @param[type=number] _PlayerID Id of player
 -- @param[type=number] _Strength Strength of army
 -- @param[type=string] _Position Army base position
--- @param[type=number] _RodeLength Average action range
+-- @param[type=number] _Area Average action range
 -- @param[type=string] _TroopType Army troop type
 -- @within Rewards
 --
@@ -5041,17 +5090,17 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateArmy);
 --
 -- @param[type=string] _ArmyName Army identifier
 -- @param[type=number] _PlayerID Id of player
--- @param[type=string] _LifeThread Name of generator
+-- @param[type=string] _Spawner Name of generator
 -- @param[type=number] _Strength Strength of army
 -- @param[type=string] _Position Army base position
--- @param[type=number] _RodeLength Average action range
--- @param[type=number] _RespawnTime Time till reinforcements spawned
--- @param[type=string] _TroopType1 Troop type 1
--- @param[type=string] _TroopType2 Troop type 2
--- @param[type=string] _TroopType3 Troop type 3
--- @param[type=string] _TroopType4 Troop type 4
--- @param[type=string] _TroopType5 Troop type 5
--- @param[type=string] _TroopType6 Troop type 6
+-- @param[type=number] _Area Average action range
+-- @param[type=number] _Respawn Time till reinforcements spawned
+-- @param[type=string] _TT1 Troop type 1
+-- @param[type=string] _TT2 Troop type 2
+-- @param[type=string] _TT3 Troop type 3
+-- @param[type=string] _TT4 Troop type 4
+-- @param[type=string] _TT5 Troop type 5
+-- @param[type=string] _TT6 Troop type 6
 -- @within Rewards
 --
 function Reward_AI_CreateSpawnArmy(...)
@@ -5758,10 +5807,10 @@ function b_Goal_CustomVariable:GetGoalTable()
 end
 
 function b_Goal_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
+    local CustomValue = QuestSystem.Data.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
-        ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
+        ComparsionValue = QuestSystem.Data.CustomVariables[self.Data.Value];
     end
 
     if CustomValue and ComparsionValue then
@@ -5826,10 +5875,10 @@ function b_Reprisal_CustomVariable:GetReprisalTable()
 end
 
 function b_Reprisal_CustomVariable:CustomFunction(_Quest)
-    local OldValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName] or 0;
+    local OldValue = QuestSystem.Data.CustomVariables[self.Data.VariableName] or 0;
     local NewValue = self.Data.Value;
     if type(NewValue) == "string" then
-        NewValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
+        NewValue = QuestSystem.Data.CustomVariables[self.Data.Value];
     end
 
     if NewValue then
@@ -5848,7 +5897,7 @@ function b_Reprisal_CustomVariable:CustomFunction(_Quest)
         elseif self.Data.Operator == "^" then
             OldValue = OldValue ^ NewValue;
         end
-        QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName] = OldValue;
+        QuestSystem.Data.CustomVariables[self.Data.VariableName] = OldValue;
     end
 end
 
@@ -5922,10 +5971,10 @@ function b_Trigger_CustomVariable:GetTriggerTable()
 end
 
 function b_Trigger_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystemBehavior.Data.CustomVariables[self.Data.VariableName];
+    local CustomValue = QuestSystem.Data.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
-        ComparsionValue = QuestSystemBehavior.Data.CustomVariables[self.Data.Value];
+        ComparsionValue = QuestSystem.Data.CustomVariables[self.Data.Value];
     end
 
     if CustomValue and ComparsionValue then
@@ -5957,7 +6006,7 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_CustomVariable);
 
 -- -------------------------------------------------------------------------- --
 
---.
+---
 -- After the player made a choice in a briefing that choice can be checked by
 -- this goal. If the choice was selected, the goal succeeds. If not, it fails.
 --

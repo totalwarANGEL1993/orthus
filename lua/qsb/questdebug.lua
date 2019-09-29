@@ -413,7 +413,6 @@ function QuestSystemDebug:CreateCheats()
         Input.KeyBindDown(Keys.ModifierControl + Keys.ModifierShift + Keys.G,   "Game.GUIActivate(-1)", 2);
         Input.KeyBindDown(Keys.ModifierControl + Keys.ModifierShift + Keys.Y,   "Display.SetRenderSky(-1)", 2);
         
-
         -- Changing entity owner
         Input.KeyBindDown(Keys.ModifierShift + Keys.D1, "Cheats_ChangePlayer(1)", 2);
         Input.KeyBindDown(Keys.ModifierShift + Keys.D2, "Cheats_ChangePlayer(2)", 2);
@@ -423,6 +422,16 @@ function QuestSystemDebug:CreateCheats()
         Input.KeyBindDown(Keys.ModifierShift + Keys.D6, "Cheats_ChangePlayer(6)", 2);
         Input.KeyBindDown(Keys.ModifierShift + Keys.D7, "Cheats_ChangePlayer(7)", 2);
         Input.KeyBindDown(Keys.ModifierShift + Keys.D8, "Cheats_ChangePlayer(8)", 2);
+
+        -- Changing controling player
+        Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D1, "GUI.SetControlledPlayer(1)", 2);
+        Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D2, "GUI.SetControlledPlayer(2)", 2);
+        Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D3, "GUI.SetControlledPlayer(3)", 2);
+        Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D4, "GUI.SetControlledPlayer(4)", 2);
+        Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D5, "GUI.SetControlledPlayer(5)", 2);
+        Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D6, "GUI.SetControlledPlayer(6)", 2);
+        Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D7, "GUI.SetControlledPlayer(7)", 2);
+        Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D8, "GUI.SetControlledPlayer(8)", 2);
         
         -- Change entity health
         Input.KeyBindDown(Keys.ModifierControl + Keys.H, "Cheats_ChangeHealth(0)", 2);

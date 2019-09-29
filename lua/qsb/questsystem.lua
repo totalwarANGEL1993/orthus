@@ -46,7 +46,9 @@ QuestSystem = {
     HurtEntities = {},
     NamedEffects = {},
     NamedExplorations = {},
+    NamedEntityNames = {},
     InlineJobs = {Counter = 0},
+    CustomVariables = {},
 
     Verbose = false,
 };
@@ -242,9 +244,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
                 local AllObjectivesTrue = true;
                 local AnyObjectiveFalse = false;
 
-                Quest.m_Fragments = {{}, {}, 0};
                 for i = 1, table.getn(Quest.m_Objectives) do
-                    Quest:UpdateFragment(i);
                     local ObjectiveCompleted = Quest:IsObjectiveCompleted(i);
                     if Quest.m_Time > 0 and Quest.m_StartTime + Quest.m_Time < Logic.GetTime() then
                         if ObjectiveCompleted == nil then
@@ -258,7 +258,6 @@ function QuestSystem:InitalizeQuestEventTrigger()
                     AllObjectivesTrue = (ObjectiveCompleted == true) and AllObjectivesTrue;
                     AnyObjectiveFalse = (ObjectiveCompleted == false and true) or AnyObjectiveFalse;
                 end
-                Quest:AttachFragments();
 
                 if AnyObjectiveFalse then
                     Quest:Fail();
@@ -269,12 +268,6 @@ function QuestSystem:InitalizeQuestEventTrigger()
         end
 
         if Quest.m_State == QuestStates.Over then
-            Quest.m_Fragments = {{}, {}, 0};
-            for i = 1, table.getn(Quest.m_Objectives) do
-                Quest:UpdateFragment(i);
-            end
-            Quest:AttachFragments();
-
             if Quest.m_Result == QuestResults.Success then
                 for i = 1, table.getn(Quest.m_Rewards) do
                     Quest:ApplyCallbacks(Quest.m_Rewards[i]);
@@ -414,9 +407,12 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     self.m_Conditions  = (_Conditions and copy(_Conditions)) or {};
     self.m_Rewards     = (_Rewards and copy(_Rewards)) or {};
     self.m_Reprisals   = (_Reprisals and copy(_Reprisals)) or {};
-    self.m_Description = _Description;
     self.m_Time        = _Time or 0;
     self.m_Fragments   = {{}, {}, 0};
+
+    if _Description then
+        self.m_Description = QuestSystem:RemoveFormattingPlaceholders(_Description);
+    end
 
     self.m_State       = QuestStates.Inactive;
     self.m_Result      = QuestResults.Undecided;
@@ -614,8 +610,9 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
 
     elseif Behavior[1] == Objectives.Tribute then
         if Behavior[4] == nil then
+            local Text = QuestSystem:ReplacePlaceholders(Behavior[3]);
             g_UniqueTributeCounter = (g_UniqueTributeCounter or 0) +1;
-            Logic.AddTribute(self.m_Receiver, g_UniqueTributeCounter, 0, 0, Behavior[3], unpack(Behavior[2]));
+            Logic.AddTribute(self.m_Receiver, g_UniqueTributeCounter, 0, 0, Text, unpack(Behavior[2]));
             Behavior[4] = g_UniqueTributeCounter;
         end
         if Behavior[5] then
@@ -631,22 +628,36 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         local QuestID = GetQuestID(Behavior[2]);
         if QuestID == 0 then
             Behavior.Completed = false;
-        end
-        if QuestSystem.Quests[QuestID]:ContainsObjective(Objectives.NoChange) then
-            Behavior.Completed = true;
-
-        elseif QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
-            if QuestSystem.Quests[QuestID].m_Result ~= QuestResults.Undecided then
-                if Behavior[3] == nil or QuestSystem.Quests[QuestID].m_Result == Behavior[3] 
-                or QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
-                    Behavior.Completed = true;
-                else
-                    -- failed and not required -> true
-                    -- failed and required -> false
-                    Behavior.Completed = not Behavior[4];
-                end
-            else
+        else
+            if QuestSystem.Quests[QuestID]:ContainsObjective(Objectives.NoChange) then
                 Behavior.Completed = true;
+
+            elseif QuestSystem.Quests[QuestID].m_State == QuestStates.Over then
+                if QuestSystem.Quests[QuestID].m_Result ~= QuestResults.Undecided then
+                    if Behavior[3] == nil or QuestSystem.Quests[QuestID].m_Result == Behavior[3] 
+                    or QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
+                        Behavior.Completed = true;
+                    else
+                        -- failed and not required -> true
+                        -- failed and required -> false
+                        Behavior.Completed = not Behavior[4];
+                    end
+                else
+                    Behavior.Completed = true;
+                end
+            end
+        end
+    elseif Behavior[1] == Objectives.Bridge then
+        if not IsExisting(Behavior[2]) then
+            Behavior.Completed = false;
+        else
+            local x, y, z = Logic.EntityGetPos(GetID(Behavior[2]));
+            for i= 1, 4, 1 do
+                local n, Entity = Logic.GetEntitiesInArea(Entities["PB_Bridge" ..i], x, y, Behavior[3], 1);
+                if n > 0 then
+                    Behavior.Completed = true;
+                    break;
+                end
             end
         end
     end
@@ -816,7 +827,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.Message then
-        SaveCall{Message, _Behavior[2]};
+        SaveCall{Message, QuestSystem:ReplacePlaceholders(_Behavior[2])};
 
     elseif _Behavior[1] == Callbacks.DestroyEntity then
         if IsExisting(_Behavior[2]) then
@@ -979,6 +990,7 @@ function QuestTemplate:Trigger()
 
     -- Add quest
     if self.m_Description then
+        self.m_Description = QuestSystem:ReplacePlaceholders(self.m_Description);
         if not self.m_Description.Position then
             self:CreateQuest();
         else
@@ -990,6 +1002,8 @@ function QuestTemplate:Trigger()
     self.m_Result = QuestResults.Undecided;
     self.m_StartTime = Logic.GetTime();
     self:ShowQuestMarkers();
+    self:PushFragment();
+    self:PullFragments();
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -1014,6 +1028,8 @@ function QuestTemplate:Success()
     if self.m_Description then
         self:QuestSetSuccessfull();
     end
+    self:PushFragment();
+    self:PullFragments();
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -1038,6 +1054,8 @@ function QuestTemplate:Fail()
     if self.m_Description then
         self:QuestSetFailed();
     end
+    self:PushFragment();
+    self:PullFragments();
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -1058,6 +1076,8 @@ function QuestTemplate:Interrupt()
     self.m_FinishTime = Logic.GetTime();
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
+    self:PushFragment();
+    self:PullFragments();
 
     if GameCallback_OnQuestStatusChanged then
         GameCallback_OnQuestStatusChanged(self.m_QuestID, self.m_State, self.m_Result);
@@ -1134,6 +1154,52 @@ end
 -- -------------------------------------------------------------------------- --
 
 ---
+-- When the state of the quest changes trigger the :PullFragments method of
+-- all master quests when this quest is a fragment.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:PushFragment()
+    if self.m_Description and self.m_Description.Type == FRAGMENTQUEST_OPEN then
+        for k, v in pairs(QuestSystem.Quests) do
+            if v and v.m_Description and v.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+                for i= 1, table.getn(v.m_Objectives), 1 do
+                    if v.m_Objectives[i][1] == Objectives.Quest and GetQuestID(v.m_Objectives[i][2]) == self.m_QuestID then
+                        v:PullFragments();
+                        -- Show quest update info
+                        if self.m_Description.Info == 1 then
+                            local Jornal, ID = QuestSystem:GetJornalByQuestID(v.m_QuestID);
+                            if Jornal then
+                                if QuestSystem:GetExtensionNumber() > 2 then
+                                    -- TODO: implement for ISAM!
+                                else
+                                    Logic.SetQuestType(Jornal[2], ID, Jornal[3] + ((v.m_State == QuestStates.Over and 1) or 0), 1);
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+---
+-- Pulls the descriptions of all fragments attached to the quest.
+-- @within QuestTemplate
+-- @local
+--
+function QuestTemplate:PullFragments()
+    if self.m_Description and (self.m_Description.Type == SUBQUEST_OPEN or self.m_Description.Type == MAINQUEST_OPEN) then
+        self.m_Fragments = {{}, {}, 0};
+        for i= 1, table.getn(self.m_Objectives), 1 do
+            self:UpdateFragment(i);
+        end
+        self:AttachFragments();
+    end
+end
+
+---
 -- Returns true, if the quest contains at least 1 objective of the type.
 -- @param[type=number] _Objective Type of objective
 -- @within QuestTemplate
@@ -1173,21 +1239,21 @@ function QuestTemplate:UpdateFragment(_Objective)
                     Running = true;
                     self.m_Fragments[3] = self.m_Fragments[3] +1;
                     Fragment = Fragment .. string.format(
-                        " @color:255,255,255 @cr %d) %s @cr %s @cr @color:255,255,255 ",
+                        "{white}{cr}%d) %s{cr}%s{cr}{white}",
                         self.m_Fragments[3],
                         FragmentQuest.m_Description.Title,
                         FragmentQuest.m_Description.Text
                     );
                 elseif FragmentQuest.m_State == QuestStates.Over then
                     self.m_Fragments[3] = self.m_Fragments[3] +1;
-                    local Color = " @color:180,180,180 ";
+                    local Color = "{grey}";
                     if FragmentQuest.m_Result == QuestResults.Success then
-                        Color = " @color:60,170,60 ";
+                        Color = "{green}";
                     elseif FragmentQuest.m_Result == QuestResults.Failure then
-                        Color = " @color:170,60,60 ";
+                        Color = "{red}";
                     end
                     Fragment = Fragment .. string.format(
-                        Color.. "@cr %d) %s @color:255,255,255 ",
+                        Color.. "{cr}%d) %s{white}",
                         self.m_Fragments[3],
                         FragmentQuest.m_Description.Title
                     );
@@ -1196,7 +1262,7 @@ function QuestTemplate:UpdateFragment(_Objective)
             else
                 self.m_Fragments[3] = self.m_Fragments[3] +1;
                 Fragment = Fragment .. string.format(
-                    " @color:180,180,180 @cr %d) %s @color:255,255,255 ",
+                    "{grey}{cr}%d) %s{white}",
                     self.m_Fragments[3],
                     FragmentQuest.m_Description.Title
                 );
@@ -1205,6 +1271,7 @@ function QuestTemplate:UpdateFragment(_Objective)
     end
 
     if Fragment ~= "" then
+        Fragment = QuestSystem:ReplacePlaceholders(Fragment);
         if Running then
             table.insert(self.m_Fragments[1], Fragment);
         else
@@ -1252,13 +1319,16 @@ function QuestTemplate:AttachFragments()
                 local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
                 local ResultText = "";
                 local ResultType = Jornal[3] + ((self.m_State == QuestStates.Over and 1) or 0);
-                NewQuestText = ((self.m_State == QuestStates.Over and " @color:180,180,180") or "") ..NewQuestText;
+                NewQuestText = QuestSystem:ReplacePlaceholders(
+                    ((self.m_State == QuestStates.Over and "{grey}") or "") ..NewQuestText
+                );
 
                 if self.m_Result == QuestResults.Failure then
-                    ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
+                    ResultText = "{red}" ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. "{white}";
                 elseif self.m_Result == QuestResults.Success then
-                    ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
+                    ResultText = "{green}" ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. "{white}";
                 end
+                ResultText = QuestSystem:ReplacePlaceholders(ResultText);
 
                 if self.m_Description.X ~= nil then
                     Logic.AddQuestEx(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
@@ -1278,25 +1348,23 @@ end
 function QuestTemplate:CreateQuest()
     if self.m_Description then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            if QuestSystem:GetExtensionNumber() > 2 then
-                mcbQuestGUI.simpleQuest.logicAddQuest(
-                    self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
-                    self.m_Description.Text, self.m_Description.Info or 1
-                );
-            else
-                local QuestID = QuestSystem:GetNextFreeJornalID();
-                if QuestID == nil then
-                    GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
-                    return;
-                end
-
-                local Description = self.m_Description;
-                Logic.AddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
-                QuestSystem:RegisterQuestAtJornalID(
-                    QuestID,
-                    {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
-                );
+            local Description = self.m_Description;
+            local QuestID = QuestSystem:GetNextFreeJornalID();
+            if QuestID == nil then
+                GUI.AddStaticNote("ERROR: Too many quests in jornal!");
+                return;
             end
+
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicAddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+            else
+                Logic.AddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+            end
+            
+            QuestSystem:RegisterQuestAtJornalID(
+                QuestID,
+                {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+            );
         end
     end
 end
@@ -1309,26 +1377,23 @@ end
 function QuestTemplate:CreateQuestEx()
     if self.m_Description and self.m_Description.Position then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            if QuestSystem:GetExtensionNumber() > 2 then
-                mcbQuestGUI.simpleQuest.logicAddQuestEx(
-                    self.m_Receiver, self.m_QuestID, self.m_Description.Type, self.m_Description.Title,
-                    self.m_Description.Text, self.m_Description.X, self.m_Description.Y, 
-                    self.m_Description.Info or 1
-                );
-            else
-                local QuestID = QuestSystem:GetNextFreeJornalID();
-                if QuestID == nil then
-                    GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
-                    return;
-                end
-
-                local Description = self.m_Description;
-                Logic.AddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.X, Description.Y, Description.Info or 1);
-                QuestSystem:RegisterQuestAtJornalID(
-                    QuestID,
-                    {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
-                );
+            local Description = self.m_Description;
+            local QuestID = QuestSystem:GetNextFreeJornalID();
+            if QuestID == nil then
+                GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
+                return;
             end
+
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicAddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title,Description.Text, Description.X, Description.Y, Description.Info or 1);
+            else
+                Logic.AddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.X, Description.Y, Description.Info or 1);
+            end
+
+            QuestSystem:RegisterQuestAtJornalID(
+                QuestID,
+                {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+            );
         end
     end
 end
@@ -1340,25 +1405,23 @@ end
 -- @local
 --
 function QuestTemplate:QuestSetFailed()
-    if QuestSystem:GetExtensionNumber() > 2 then
-        mcbQuestGUI.simpleQuest.logicSetQuestType(
-            self.m_Receiver, self.m_QuestID, self.m_Description.Type +2, self.m_Description.Info or 1
-        );
-    else
-        if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            for k, v in pairs(QuestSystem.QuestDescriptions) do
-                if v[1] == self.m_QuestID then
-                    Logic.RemoveQuest(self.m_Receiver, k);
+    if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+        local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+        if Jornal then
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicSetQuestType(self.m_Receiver, ID, Jornal[3] +1, Jornal[6]);
+            else
+                Logic.RemoveQuest(self.m_Receiver, ID);
 
-                    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-                    local ResultText = " @color:170,60,60 " ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. " @color:255,255,255 ";
+                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                local ResultText = QuestSystem:ReplacePlaceholders(
+                    "{red}" ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. "{white}"
+                );
 
-                    if v[7] == nil then
-                        Logic.AddQuest(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[6]);
-                    else
-                        Logic.AddQuestEx(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[7], v[8], v[6]);
-                    end
-                    break;
+                if Jornal[7] == nil then
+                    Logic.AddQuest(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[6]);
+                else
+                    Logic.AddQuestEx(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[7], Jornal[8], Jornal[6]);
                 end
             end
         end
@@ -1371,26 +1434,23 @@ end
 -- @local
 --
 function QuestTemplate:QuestSetSuccessfull()
-    if QuestSystem:GetExtensionNumber() > 2 then
-        local Type = self.m_Description.Type +1;
-        mcbQuestGUI.simpleQuest.logicSetQuestType(
-            self.m_Receiver, self.m_QuestID, self.m_Description.Type +1, self.m_Description.Info or 1
-        );
-    else
-        if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            for k, v in pairs(QuestSystem.QuestDescriptions) do
-                if v[1] == self.m_QuestID then
-                    Logic.RemoveQuest(self.m_Receiver, k);
+    if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+        local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+        if Jornal then
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicSetQuestType(self.m_Receiver, ID, Jornal[3] +1, Jornal[6]);
+            else
+                Logic.RemoveQuest(self.m_Receiver, ID);
 
-                    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-                    local ResultText = " @color:60,170,60 " ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. " @color:255,255,255 ";
+                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                local ResultText = QuestSystem:ReplacePlaceholders(
+                    "{green}" ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. "{white}"
+                );
 
-                    if v[7] == nil then
-                        Logic.AddQuest(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[6]);
-                    else
-                        Logic.AddQuestEx(v[2], k, v[3] +1, ResultText.. v[4], v[5], v[7], v[8], v[6]);
-                    end
-                    break;
+                if Jornal[7] == nil then
+                    Logic.AddQuest(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[6]);
+                else
+                    Logic.AddQuestEx(Jornal[2], ID, Jornal[3] +1, ResultText.. Jornal[4], Jornal[5], Jornal[7], Jornal[8], Jornal[6]);
                 end
             end
         end
@@ -1403,18 +1463,14 @@ end
 -- @local
 --
 function QuestTemplate:RemoveQuest()
-    if self.m_Description then
-        if QuestSystem:GetExtensionNumber() > 2 then
-            mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, self.m_QuestID);
-        else
-            if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-                for k, v in pairs(QuestSystem.QuestDescriptions) do
-                    if v[1] == self.m_QuestID then
-                        Logic.RemoveQuest(self.m_Receiver, k);
-                        QuestSystem:InvalidateQuestAtJornalID(k);
-                        break;
-                    end
-                end
+    if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+        local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+        if Jornal then
+            if QuestSystem:GetExtensionNumber() > 2 then
+                mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, ID);
+            else
+                Logic.RemoveQuest(self.m_Receiver, ID);
+                QuestSystem:InvalidateQuestAtJornalID(ID);
             end
         end
     end
@@ -1566,6 +1622,125 @@ function QuestSystem:StartInlineJob(_EventType, _Function, ...)
         end
     end
     return Trigger.RequestTrigger(_EventType, "", "QuestSystem_InlineJob_Executor_" ..self.InlineJobs.Counter, 1, {}, {self.InlineJobs.Counter});
+end
+
+---
+-- Raplaces the placeholders in the message with their values.
+--
+-- @param[type=string] _Message Text to parse
+-- @return[type=string] New text
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:ReplacePlaceholders(_Message)
+    if type(_Message) == "table" then
+        for k, v in pairs(_Message) do
+            _Message[k] = self:ReplacePlaceholders(v);
+        end
+
+    elseif type(_Message) == "string" then
+        -- Replace hero and npc names
+        local HeroName = QuestSystem.NamedEntityNames[gvLastInteractionHeroName] or "HERO_NAME_NOT_FOUND";
+        local NpcName = QuestSystem.NamedEntityNames[gvLastInteractionNpcName] or "NPC_NAME_NOT_FOUND";
+        _Message = string.gsub(_Message, "{hero}", HeroName);
+        _Message = string.gsub(_Message, "{npc}", NpcName);
+
+        -- Replace valued placeholders
+        _Message = self:ReplaceKeyValuePlaceholders(_Message);
+        
+        -- Replace basic placeholders last        
+        _Message = string.gsub(_Message, "{cr}", " @cr ");
+        _Message = string.gsub(_Message, "{nl}", " @cr ");
+        _Message = string.gsub(_Message, "{ra}", " @ra ");
+        _Message = string.gsub(_Message, "{qq}", "\"");
+        _Message = string.gsub(_Message, "{center}", " @center ");
+        _Message = string.gsub(_Message, "{red}", " @color:180,0,0 ");
+        _Message = string.gsub(_Message, "{green}", " @color:0,180,0 ");
+        _Message = string.gsub(_Message, "{blue}", " @color:0,0,180 ");
+        _Message = string.gsub(_Message, "{yellow}", " @color:235,235,0 ");
+        _Message = string.gsub(_Message, "{violet}", " @color:180,0,180 ");
+        _Message = string.gsub(_Message, "{azure}", " @color:0,180,180 ");
+        _Message = string.gsub(_Message, "{black}", " @color:40,40,40 ");
+        _Message = string.gsub(_Message, "{white}", " @color:255,255,255 ");
+        _Message = string.gsub(_Message, "{grey}", " @color:180,180,180 ");
+    end
+    return _Message;
+end
+
+---
+-- Replaces all valued placeholders in the message with their value.
+--
+-- @param[type=string] _Message Text to parse
+-- @return[type=string] New text
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:ReplaceKeyValuePlaceholders(_Message)
+    local s, e = string.find(_Message, "{", 1);
+    while (s) do
+        local ss, ee      = string.find(_Message, "}", e+1);
+        local Before      = (s <= 1 and "") or string.sub(_Message, 1, s-1);
+        local After       = (ee and string.sub(_Message, ee+1)) or "";
+        local Placeholder = string.sub(_Message, e+1, ss-1);
+
+        if string.find(Placeholder, "color") then
+            _Message = Before .. " @" .. Placeholder .. " " .. After;
+        end
+        if string.find(Placeholder, "val:") then
+            local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
+            if type(Value) == "string" or type(value) == "number" then
+                _Message = Before .. Value .. After;
+            end
+        end
+        if string.find(Placeholder, "cval:") then
+            local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
+            if Value and QuestSystem.Data.CustomVariables[Value] then
+                _Message = Before .. QuestSystem.Data.CustomVariables[Value] .. After;
+            end
+        end
+        if string.find(Placeholder, "name:") then
+            local Value = string.sub(Placeholder, string.find(Placeholder, ":")+1);
+            if Value and QuestSystem.NamedEntityNames[Value] then
+                _Message = Before .. QuestSystem.NamedEntityNames[Value] .. After;
+            end
+        end
+        s, e = string.find(_Message, "{", ee+1);
+    end
+    return _Message;
+end
+
+---
+-- Removes all formating placeholders from the message.
+--
+-- @param[type=string] _Message Text to parse
+-- @return[type=string] New text
+-- @within QuestSystem
+-- @local
+--
+function QuestSystem:RemoveFormattingPlaceholders(_Message)
+    if type(_Message) == "table" then
+        for k, v in pairs(_Message) do
+            _Message[k] = self:RemoveFormattingPlaceholders(v);
+        end
+    elseif type(_Message) == "string" then
+        _Message = string.gsub(_Message, "{ra}", "");
+        _Message = string.gsub(_Message, "{center}", "");
+        _Message = string.gsub(_Message, "{color:%d,%d,%d}", "");
+        _Message = string.gsub(_Message, "{red}", "");
+        _Message = string.gsub(_Message, "{green}", "");
+        _Message = string.gsub(_Message, "{blue}", "");
+        _Message = string.gsub(_Message, "{yellow}", "");
+        _Message = string.gsub(_Message, "{violet}", "");
+        _Message = string.gsub(_Message, "{azure}", "");
+        _Message = string.gsub(_Message, "{black}", "");
+        _Message = string.gsub(_Message, "{white}", "");
+        _Message = string.gsub(_Message, "{grey}", "");
+
+        _Message = string.gsub(_Message, "@color:%d,%d,%d", "");
+        _Message = string.gsub(_Message, "@center", "");
+        _Message = string.gsub(_Message, "@ra", "");
+    end
+    return _Message;
 end
 
 -- -------------------------------------------------------------------------- --
@@ -2151,6 +2326,11 @@ Conditions = {
 -- The player must complete the quest with the desired result. If the quest
 -- is not required, failing the result will not fail the quest.
 -- <pre>{Objectives.Quest, _Quest, _Result, _Required}</pre>
+--
+-- @field Bridge
+-- The player must build a bridge in the marked area. Because bridges loose
+-- their script names often, use a XD_ScriptEntity instead of the site.
+-- <pre>{Objectives.Bridge, _AreaCenter, _AreaSize}</pre>
 --
 Objectives = {
     MapScriptFunction = 1,
