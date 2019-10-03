@@ -102,6 +102,7 @@ function Information:CreateAddPageFunctions()
                         _page.actionOrig = _page.action;
                     end
                     _page.action = function()
+                        _page = QuestSystem:ReplacePlaceholders(_page);
                         if _page.entity then
                             _page.position = GetPosition(_page.entity);
                         end

@@ -1035,7 +1035,7 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
         -- Army is attacking a target
         elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Attack then
             -- Army needs to be refreshed
-            if IsWeak(army) or IsDead(army) then
+            if IsVeryWeak(army) or IsDead(army) then
                 army.Advanced.State = QuestSystemBehavior.ArmyState.Fallback;
                 Redeploy(army, army.position);
             else

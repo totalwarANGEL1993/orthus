@@ -1734,7 +1734,7 @@ function QuestSystem:RemoveFormattingPlaceholders(_Message)
         _Message = string.gsub(_Message, "{azure}", "");
         _Message = string.gsub(_Message, "{black}", "");
         _Message = string.gsub(_Message, "{white}", "");
-        _Message = string.gsub(_Message, "{grey}", "");
+        -- _Message = string.gsub(_Message, "{grey}", "");
 
         _Message = string.gsub(_Message, "@color:%d,%d,%d", "");
         _Message = string.gsub(_Message, "@center", "");

@@ -443,7 +443,7 @@ function NonPlayerCharacter:Controller()
                     Move(self.m_ScriptName, self.m_Target);
                     self.m_Arrived = true;
                 end
-                if Logic.IsEntityMoving(GetID(self.m_ScriptName)) == false then
+                if not self.m_Arrived and Logic.IsEntityMoving(GetID(self.m_ScriptName)) == false then
                     Move(self.m_ScriptName, FollowID, 500);
                 end
             end
