@@ -1694,8 +1694,8 @@ function QuestSystem:ReplaceKeyValuePlaceholders(_Message)
         end
         if string.find(Placeholder, "cval:") then
             local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
-            if Value and QuestSystem.Data.CustomVariables[Value] then
-                _Message = Before .. QuestSystem.Data.CustomVariables[Value] .. After;
+            if Value and QuestSystem.CustomVariables[Value] then
+                _Message = Before .. QuestSystem.CustomVariables[Value] .. After;
             end
         end
         if string.find(Placeholder, "name:") then

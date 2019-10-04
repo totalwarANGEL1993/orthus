@@ -24,9 +24,9 @@
 --
 
 QuestSystem.QuestTimer = {
-    TimerJob = nil,
-    Data = {},
-    Timers = {},
+    m_TimerJob = nil,
+    m_Data = {},
+    m_Timers = {},
 };
 
 ---
@@ -39,7 +39,7 @@ QuestSystem.QuestTimer = {
 function QuestSystem.QuestTimer:ActivateTimer(_QuestID)
     local Quest = QuestSystem.Quests[_QuestID];
     if Quest and Quest.m_Description and Quest.m_Time > 0 then
-        table.insert(self.Data, {
+        table.insert(self.m_Data, {
             QuestID   = _QuestID,
             Title     = string.gsub(Quest.m_Description.Title, "@cr", ""),
             StartTime = Quest.m_StartTime,
@@ -57,9 +57,9 @@ end
 -- @local
 --
 function QuestSystem.QuestTimer:DeactivateTimer(_QuestID)
-    for i= table.getn(self.Data), 1, -1 do
-        if self.Data[i].QuestID == _QuestID then
-            table.remove(self.Data, i);
+    for i= table.getn(self.m_Data), 1, -1 do
+        if self.m_Data[i].QuestID == _QuestID then
+            table.remove(self.m_Data, i);
         end
     end
 end
@@ -72,15 +72,15 @@ end
 -- @local
 --
 function QuestSystem.QuestTimer:UpdateTimer(_Index)
-    local Current = math.floor(Logic.GetTime() - self.Data[_Index].StartTime);
-    local Limit   = self.Data[_Index].Duration;
+    local Current = math.floor(Logic.GetTime() - self.m_Data[_Index].StartTime);
+    local Limit   = self.m_Data[_Index].Duration;
 
     local Progress = Current/Limit;
     local R =  35 + math.floor(215 * Progress);
     local G = 150 - math.floor(70 * Progress);
     local B = 255 - math.floor(220 * Progress);
 
-    self:Show(_Index, self.Data[_Index].Title, Current, Limit, R, G, B, 255);
+    self:Show(_Index, self.m_Data[_Index].Title, Current, Limit, R, G, B, 255);
 end
 
 ---
@@ -178,10 +178,10 @@ end
 -- @local
 --
 function QuestSystem.QuestTimer:Controller()
-    if self.TimerJob == nil then
-        self.TimerJob = StartSimpleJobEx(function()
+    if self.m_TimerJob == nil then
+        self.m_TimerJob = StartSimpleJobEx(function()
             QuestSystem.QuestTimer:HideAllTimer();
-            for i= 1, table.getn(QuestSystem.QuestTimer.Data), 1 do
+            for i= 1, table.getn(QuestSystem.QuestTimer.m_Data), 1 do
                 if i <= 8 then
                     QuestSystem.QuestTimer:UpdateTimer(i);
                 end
@@ -193,7 +193,7 @@ end
 -- Callbacks ---------------------------------------------------------------- --
 
 GameCallback_OnQuestStatusChanged_Orig_QsbTimer = GameCallback_OnQuestStatusChanged;
-function GameCallback_OnQuestStatusChanged(_QuestID, _State, _Result)
+GameCallback_OnQuestStatusChanged = function(_QuestID, _State, _Result)
     if GameCallback_OnQuestStatusChanged_Orig_QsbTimer then
         GameCallback_OnQuestStatusChanged_Orig_QsbTimer(_QuestID, _State, _Result);
     end
