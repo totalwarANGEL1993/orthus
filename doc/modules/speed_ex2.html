@@ -32,6 +32,10 @@
   <li><a href="../index.html">Index</a></li>
 </ul>
 
+<h2>Contents</h2>
+<ul>
+<li><a href="#Methods">Methods</a></li>
+</ul>
 
 
 <h2>Modules</h2>
@@ -42,9 +46,9 @@
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/questdebug.html">questdebug</a></li>
   <li><a href="../modules/questsystem.html">questsystem</a></li>
-  <li><a href="../modules/speed_ex2.html">speed_ex2</a></li>
+  <li><strong>speed_ex2</strong></li>
   <li><a href="../modules/timer_ex2.html">timer_ex2</a></li>
-  <li><strong>timer_ex3</strong></li>
+  <li><a href="../modules/timer_ex3.html">timer_ex3</a></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
   <li><a href="../modules/workplace_ex2.html">workplace_ex2</a></li>
 </ul>
@@ -53,17 +57,80 @@
 
 <div id="content">
 
-<h1>Module <code>timer_ex3</code></h1>
-<p>This module will be implementing the quest timer for extra 3 as soon as
- their widgets are ready.</p>
-<p></p>
+<h1>Module <code>speed_ex2</code></h1>
+<p>This module allows the player to change the game speed.</p>
+<p>
+<p> If the player should be unable to this feature can be deactivated.
+<p> <b>Required modules:</b>
+ <ul>
+ <li>qsb.oop</li>
+ <li>qsb.questsystem</li>
+ </ul>
+</p>
 
 
+<h2><a href="#Methods">Methods</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#GameSpeedSetAllowed">GameSpeedSetAllowed (_Flag)</a></td>
+	<td class="summary">Allows or forbid to use speedup.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GameSpeedSetLimit">GameSpeedSetLimit (_Limit)</a></td>
+	<td class="summary">Sets the speed limit for speedup.</td>
+	</tr>
+</table>
 
 <br/>
 <br/>
 
 
+    <h2 class="section-header "><a name="Methods"></a>Methods</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "GameSpeedSetAllowed"></a>
+    <strong>GameSpeedSetAllowed (_Flag)</strong>
+    </dt>
+    <dd>
+    Allows or forbid to use speedup.  Speedup is enabled by default.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Flag</span>
+            <span class="types"><span class="type">boolean</span></span>
+         Speedup is allowed
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GameSpeedSetLimit"></a>
+    <strong>GameSpeedSetLimit (_Limit)</strong>
+    </dt>
+    <dd>
+    Sets the speed limit for speedup.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Limit</span>
+            <span class="types"><span class="type">number</span></span>
+         Speed limit
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
 
 
 </div> <!-- id="content" -->

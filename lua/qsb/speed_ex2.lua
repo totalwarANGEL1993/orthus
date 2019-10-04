@@ -5,7 +5,7 @@
 -- ########################################################################## --
 
 ---
--- Allows the player to speed up the game.
+-- This module allows the player to change the game speed.
 --
 -- If the player should be unable to this feature can be deactivated.
 --
@@ -23,6 +23,26 @@ QuestSystem.GameSpeedSwitch = {
     m_SpeedLimit = 5,
     m_SpeedUpAllowed = true,
 }
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Allows or forbid to use speedup. Speedup is enabled by default.
+-- @param[type=boolean] _Flag Speedup is allowed
+-- @within Methods
+--
+function GameSpeedSetAllowed(_Flag)
+    QuestSystem.GameSpeedSwitch:SetSpeedUpAllowed(_Flag);
+end
+
+---
+-- Sets the speed limit for speedup.
+-- @param[type=number] _Limit Speed limit
+-- @within Methods
+--
+function GameSpeedSetLimit(_Limit)
+    QuestSystem.GameSpeedSwitch:SetSpeedLimit(_Limit);
+end
 
 -- -------------------------------------------------------------------------- --
 

@@ -397,7 +397,7 @@ QuestTemplate = {};
 -- @param[type=table]  _Rewards     List of rewards
 -- @param[type=table]  _Reprisals   List of reprisals
 -- @param[type=table]  _Description Quest description
--- @within Constructor
+-- @within QuestTemplate
 --
 function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Conditions, _Rewards, _Reprisals, _Description)
     QuestSystem:InstallQuestSystem();
@@ -1751,6 +1751,7 @@ end
 -- @param             _Value Value to find
 -- @param[type=table] _Table Table to search
 -- @return [boolean] Value found
+-- @within Methods
 --
 function FindValue(_Value, _Table)
 	for k,v in pairs(_Table)do
@@ -1769,6 +1770,7 @@ IstDrin = FindValue;
 -- @param[type=table]  _position Area center
 -- @param[type=number] _range    Area size
 -- @return [boolean] Enemies near
+-- @within Methods
 --
 function AreEnemiesInArea( _player, _position, _range)
     return AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Hostile);
@@ -1781,6 +1783,7 @@ end
 -- @param[type=table]  _position Area center
 -- @param[type=number] _range    Area size
 -- @return [boolean] Allies near
+-- @within Methods
 --
 function AreAlliesInArea( _player, _position, _range)
     return AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Friendly);
@@ -1798,6 +1801,7 @@ end
 -- @param[type=number] _range    Area size
 -- @param[type=number] _state    Diplomatic state
 -- @return [boolean] Entities near
+-- @within Methods
 --
 function AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state)
 	for i = 1,8 do
@@ -1823,7 +1827,7 @@ end
 --
 -- @param[type=string] _QuestName Quest name
 -- @return[type=number] Quest ID
--- @within Helper
+-- @within Methods
 --
 function GetQuestID(_QuestName)
     for i= 1, table.getn(QuestSystem.Quests), 1 do
@@ -1838,7 +1842,7 @@ end
 -- Returns true, if the quest is a valid (existing) quest.
 -- @param[type=string] _QuestName Name of quest
 -- @return[type=boolean] Valid quest
--- @within Helper
+-- @within Methods
 --
 function IsValidQuest(_QuestName)
     return GetQuestID(_QuestName) ~= 0;
@@ -1850,7 +1854,7 @@ end
 -- @param _pos1 Position 1 (string, number oder table)
 -- @param _pos2 Position 2 (string, number oder table)
 -- @return[type=number] Distance between positions
--- @within Helper
+-- @within Methods
 --
 function GetDistance(_pos1, _pos2)
     if (type(_pos1) == "string") or (type(_pos1) == "number") then
@@ -1872,7 +1876,7 @@ end
 --
 -- @param _input Army or entity (string, number oder table)
 -- @return[type=boolean] Army or entity is dead
--- @within Helper
+-- @within Methods
 --
 function IsDeadWrapper(_input)
     if type(_input) == "table" and not _input.created then
@@ -1891,7 +1895,7 @@ IsDead = IsDeadWrapper;
 -- @param              _Target   Target position
 -- @param[type=number] _Distance Area size
 -- @return[type=boolean] Army is near
--- @within Helper
+-- @within Methods
 --
 function IsArmyNear(_Army, _Target, _Distance)
     local LeaderID = 0;
@@ -1918,7 +1922,7 @@ end
 -- @param _pos1 Position 1
 -- @param _pos2 Position 2
 -- @return[type=boolean] Same sector
--- @within Helper
+-- @within Methods
 --
 function SameSector(_pos1, _pos2)
 	local sectorEntity1 = _pos1;
@@ -1956,7 +1960,7 @@ end
 -- Displays the name of any function that is to large to be loaded when a
 -- savegame is loaded.
 -- @param[type=table] t Table to check
--- @within Helper
+-- @within Methods
 -- @local
 --
 function CheckFunctionSize(t)
@@ -2003,7 +2007,7 @@ end
 --
 -- @param[type=table] _Data Function to call (in a table)
 -- @return Return value of function or of error handler
--- @within Helper
+-- @within Methods
 -- @local
 --
 --
@@ -2033,6 +2037,7 @@ end
 --
 -- @param[type=table] _pos Position to check
 -- @return[type=boolean] Position valid
+-- @within Methods
 --
 function IsValidPosition(_pos)
 	if type(_pos) == "table" then
@@ -2053,6 +2058,7 @@ end
 --
 -- @param[type=number] _eID Entity ID of soldier
 -- @return[type=number] Entity ID of leader
+-- @within Methods
 --
 function SoldierGetLeaderEntityID(_eID)
     if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
@@ -2072,6 +2078,8 @@ end
 
 ---
 -- Possible technology states for technology behavior.
+-- @within Constants
+--
 -- @field Researched The technology has already been reearched
 -- @field Allowed The technology can be researched
 -- @field Forbidden The technology can not be researched
@@ -2084,6 +2092,8 @@ TechnologyStates = {
 
 ---
 -- Possible weather states for weather behavior
+-- @within Constants
+--
 -- @field Summer Summer weather
 -- @field Rain Rainy weather
 -- @field Winter Snow is falling
@@ -2096,6 +2106,8 @@ WeatherStates = {
 
 ---
 -- Possible types of minimap markers and pulsars.
+-- @within Constants
+--
 -- @field StaticFriendly Static green marker
 -- @field StaticNeutral Static yellow marker
 -- @field StaticEnemy Static red marker
@@ -2114,6 +2126,8 @@ MarkerTypes = {
 
 ---
 -- Possible states of an quest.
+-- @within Constants
+--
 -- @field Inactive Quest was not triggered
 -- @field Active Quest is running
 -- @field Over Quest is finished
@@ -2126,6 +2140,8 @@ QuestStates = {
 
 ---
 -- Possible results of an quest.
+-- @within Constants
+--
 -- @field Undecided Quest result has not been decided
 -- @field Success Quest was successfully completed
 -- @field Failure Quest finished in failure
@@ -2140,6 +2156,7 @@ QuestResults = {
 
 ---
 -- Condition types that triggers quests.
+-- @within Constants
 --
 -- @field NeverTriggered
 -- Quest will never be triggered.
@@ -2233,6 +2250,7 @@ Conditions = {
 
 ---
 -- Objective types the player musst fulfill to succeed.
+-- @within Constants
 --
 -- @field MapScriptFunction
 -- Quest result will be decided by a user function
@@ -2360,6 +2378,7 @@ Objectives = {
 
 ---
 -- Actions that are performed when a quest is finished.
+-- @within Constants
 --
 -- @field MapScriptFunction
 -- Calls a user function as reward.

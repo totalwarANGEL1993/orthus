@@ -26,7 +26,7 @@
 
 <div id="navigation">
 <br/>
-<h1>Orthos</h1>
+<h1>orthos</h1>
 
 <ul>
   <li><a href="../index.html">Index</a></li>
@@ -34,8 +34,9 @@
 
 <h2>Contents</h2>
 <ul>
-<li><a href="#Functions">Functions</a></li>
+<li><a href="#Methods">Methods</a></li>
 <li><a href="#Rewards">Rewards</a></li>
+<li><a href="#TreasureTemplate">TreasureTemplate</a></li>
 </ul>
 
 
@@ -47,9 +48,11 @@
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/questdebug.html">questdebug</a></li>
   <li><a href="../modules/questsystem.html">questsystem</a></li>
+  <li><a href="../modules/speed_ex2.html">speed_ex2</a></li>
   <li><a href="../modules/timer_ex2.html">timer_ex2</a></li>
   <li><a href="../modules/timer_ex3.html">timer_ex3</a></li>
   <li><strong>treasure</strong></li>
+  <li><a href="../modules/workplace_ex2.html">workplace_ex2</a></li>
 </ul>
 
 </div>
@@ -72,12 +75,22 @@
 </p>
 
 
-<h2><a href="#Functions">Functions</a></h2>
+<h2><a href="#Methods">Methods</a></h2>
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#SetupTreasureChest">SetupTreasureChest (_Data)</a></td>
 	<td class="summary">Simplified call to create a chest.</td>
 	</tr>
+</table>
+<h2><a href="#Rewards">Rewards</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#Reward_CreateChest">Reward_CreateChest (_ScriptName, _ResourceType, _Amount)</a></td>
+	<td class="summary">Creates a simple treasure chest with the desired amount of resources</td>
+	</tr>
+</table>
+<h2><a href="#TreasureTemplate">TreasureTemplate</a></h2>
+<table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#TreasureTemplate:Activate">TreasureTemplate:Activate ()</a></td>
 	<td class="summary">Activates the treasure chest.</td>
@@ -85,10 +98,6 @@
 	<tr>
 	<td class="name" nowrap><a href="#TreasureTemplate:Deactivate">TreasureTemplate:Deactivate ()</a></td>
 	<td class="summary">Deactivates the treasure chest.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#TreasureTemplate:GiveTreasureReward">TreasureTemplate:GiveTreasureReward ()</a></td>
-	<td class="summary">Applies the default rewards of the treasure chest.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#TreasureTemplate:SetCallback">TreasureTemplate:SetCallback (_Function)</a></td>
@@ -123,27 +132,16 @@
 	<td class="summary">Sets the amount of wood.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#TreasureTemplate:StartController">TreasureTemplate:StartController ()</a></td>
-	<td class="summary">Starts the controller job of the treasure chest and returns the ID.</td>
-	</tr>
-	<tr>
 	<td class="name" nowrap><a href="#TreasureTemplate:construct">TreasureTemplate:construct (_ScriptName)</a></td>
 	<td class="summary">Creates an new instance.</td>
 	</tr>
 </table>
-<h2><a href="#Rewards">Rewards</a></h2>
-<table class="function_list">
-	<tr>
-	<td class="name" nowrap><a href="#Reward_CreateChest">Reward_CreateChest (_ScriptName, _ResourceType, _Amount)</a></td>
-	<td class="summary">Creates a simple treasure chest with the desired amount of resources</td>
-	</tr>
-</table>
 
 <br/>
 <br/>
 
 
-    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+    <h2 class="section-header "><a name="Methods"></a>Methods</h2>
 
     <dl class="function">
     <dt>
@@ -188,6 +186,43 @@
 
 
 </dd>
+</dl>
+    <h2 class="section-header "><a name="Rewards"></a>Rewards</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "Reward_CreateChest"></a>
+    <strong>Reward_CreateChest (_ScriptName, _ResourceType, _Amount)</strong>
+    </dt>
+    <dd>
+    Creates a simple treasure chest with the desired amount of resources
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_ScriptName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of chest
+        </li>
+        <li><span class="parameter">_ResourceType</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Resource Type or "Random"
+        </li>
+        <li><span class="parameter">_Amount</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of resource
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="TreasureTemplate"></a>TreasureTemplate</h2>
+
+    <dl class="function">
     <dt>
     <a name = "TreasureTemplate:Activate"></a>
     <strong>TreasureTemplate:Activate ()</strong>
@@ -223,22 +258,6 @@
            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
         Instance
     </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "TreasureTemplate:GiveTreasureReward"></a>
-    <strong>TreasureTemplate:GiveTreasureReward ()</strong>
-    </dt>
-    <dd>
-    Applies the default rewards of the treasure chest.
-<p> The amount of each resource inside the chest is printed to screen.
-
-
-
-
 
 
 
@@ -461,26 +480,6 @@
 
 </dd>
     <dt>
-    <a name = "TreasureTemplate:StartController"></a>
-    <strong>TreasureTemplate:StartController ()</strong>
-    </dt>
-    <dd>
-    Starts the controller job of the treasure chest and returns the ID.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">number</span></span>
-        ID of job
-    </ol>
-
-
-
-
-</dd>
-    <dt>
     <a name = "TreasureTemplate:construct"></a>
     <strong>TreasureTemplate:construct (_ScriptName)</strong>
     </dt>
@@ -502,46 +501,13 @@
 
 </dd>
 </dl>
-    <h2 class="section-header "><a name="Rewards"></a>Rewards</h2>
-
-    <dl class="function">
-    <dt>
-    <a name = "Reward_CreateChest"></a>
-    <strong>Reward_CreateChest (_ScriptName, _ResourceType, _Amount)</strong>
-    </dt>
-    <dd>
-    Creates a simple treasure chest with the desired amount of resources
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_ScriptName</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         Name of chest
-        </li>
-        <li><span class="parameter">_ResourceType</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         Resource Type or "Random"
-        </li>
-        <li><span class="parameter">_Amount</span>
-            <span class="types"><span class="type">number</span></span>
-         Amount of resource
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-</dl>
 
 
 </div> <!-- id="content" -->
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2019-09-03 18:13:24 </i>
+<i style="float:right;">Last updated 2019-10-04 22:44:03 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

@@ -143,6 +143,7 @@ end
 
 ---
 -- Sets the display name for the entity with the given scriptname.
+-- @within Methods
 --
 -- @param[type=string] _ScriptName Scriptname of entity
 -- @param[type=string] _DisplayName Displayed name

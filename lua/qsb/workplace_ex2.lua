@@ -5,10 +5,18 @@
 -- ########################################################################## --
 
 ---
--- A mod that allows the player to change the amout of worker in the building.
+-- A passive module that allows the player to change the amout of worker 
+-- in the building.
+--
 -- This way it is not needed to tear down the city to make space for soldiers
 -- in the village centers. After the fight the soldiers can be expelld and
 -- new workers be recruited.
+--
+-- <b>Required modules:</b>
+-- <ul>
+-- <li>qsb.oop</li>
+-- <li>qsb.questsystem</li>
+-- </ul>
 --
 -- @set sort=true
 --
@@ -22,6 +30,8 @@ QuestSystem.Workplace = {
 
 ---
 -- Installs the mod.
+-- @within QuestSystem.Workplace
+-- @local
 --
 function QuestSystem.Workplace:Install()
     self:OverrideInterfaceAction();
@@ -32,7 +42,9 @@ end
 ---
 -- Enables or disables the mod.
 --
--- @param _Flag [boolean] Mod is enabled
+-- @param[type=boolean] _Flag Mod is enabled
+-- @within QuestSystem.Workplace
+-- @local
 --
 function QuestSystem.Workplace:EnableMod(_Flag)
     self.m_Data.UseMod = _Flag == true;
@@ -40,6 +52,8 @@ end
 
 ---
 -- Overrides the interface actions.
+-- @within QuestSystem.Workplace
+-- @local
 --
 function QuestSystem.Workplace:OverrideInterfaceAction()
     GUIAction_SetAmountOfWorkers_Orig_WorkplaceMod = GUIAction_SetAmountOfWorkers
@@ -88,6 +102,8 @@ end
 
 ---
 -- Overrides the interface tooptip methods.
+-- @within QuestSystem.Workplace
+-- @local
 --
 function QuestSystem.Workplace:OverrideInterfaceTooltip()
     GUITooltip_NormalButton_Orig_WorkplaceMod = GUITooltip_NormalButton
@@ -157,6 +173,8 @@ end
 
 ---
 -- Overrides the interface update methods.
+-- @within QuestSystem.Workplace
+-- @local
 --
 function QuestSystem.Workplace:OverrideInterfaceUpdate()
     GUIUpdate_FindView_Orig_WorkplaceMod = GUIUpdate_FindView
@@ -243,6 +261,8 @@ end
 
 ---
 -- Updates the workplace menu for the selected entity.
+-- @within QuestSystem.Workplace
+-- @local
 --
 function QuestSystem.Workplace:UpdateDisplay()
 	local sel = GUI.GetSelectedEntity();

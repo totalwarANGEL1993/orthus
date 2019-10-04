@@ -46,6 +46,7 @@ QuestSystemBehavior.Data.Treasure = {};
 --
 -- @param[type=table] _Data Data table
 -- @return[type=table] Treasure instance
+-- @within Methods
 --
 function SetupTreasureChest(_Data)
     return new(TreasureTemplate, _Data.ScriptName)
@@ -65,6 +66,7 @@ TreasureTemplate = {}
 ---
 -- Creates an new instance.
 -- @param[type=string] _ScriptName Script name of entity
+-- @within TreasureTemplate
 --
 function TreasureTemplate:construct(_ScriptName)
     self.m_ScriptName = _ScriptName
@@ -78,6 +80,7 @@ class(TreasureTemplate);
 ---
 -- Activates the treasure chest.
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:Activate()
     ReplaceEntity(self.m_ScriptName, Entities.XD_ChestClose);
@@ -90,6 +93,7 @@ end
 ---
 -- Deactivates the treasure chest.
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:Deactivate()
     EndJob(self.m_JobID);
@@ -101,6 +105,7 @@ end
 -- Sets the optional opening condition.
 -- @param[type=function] _Function Condition method
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:SetCondition(_Function)
     self.m_Condition = _Function;
@@ -111,6 +116,7 @@ end
 -- Sets the optional opening callback.
 -- @param[type=function] _Function Callback method
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:SetCallback(_Function)
     self.m_Callback = _Function;
@@ -121,6 +127,7 @@ end
 -- Sets the amount of gold.
 -- @param[type=number] _Amount Amount of resource
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:SetGold(_Amount)
     self.m_Rewards[1] = _Amount;
@@ -131,6 +138,7 @@ end
 -- Sets the amount of clay.
 -- @param[type=number] _Amount Amount of resource
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:SetClay(_Amount)
     self.m_Rewards[2] = _Amount;
@@ -141,6 +149,7 @@ end
 -- Sets the amount of wood.
 -- @param[type=number] _Amount Amount of resource
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:SetWood(_Amount)
     self.m_Rewards[3] = _Amount;
@@ -151,6 +160,7 @@ end
 -- Sets the amount of stone.
 -- @param[type=number] _Amount Amount of resource
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:SetStone(_Amount)
     self.m_Rewards[4] = _Amount;
@@ -161,6 +171,7 @@ end
 -- Sets the amount of iron.
 -- @param[type=number] _Amount Amount of resource
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:SetIron(_Amount)
     self.m_Rewards[5] = _Amount;
@@ -171,6 +182,7 @@ end
 -- Sets the amount of sulfur.
 -- @param[type=number] _Amount Amount of resource
 -- @return[type=table] Instance
+-- @within TreasureTemplate
 --
 function TreasureTemplate:SetSulfur(_Amount)
     self.m_Rewards[6] = _Amount;
@@ -181,6 +193,8 @@ end
 -- Applies the default rewards of the treasure chest.
 --
 -- The amount of each resource inside the chest is printed to screen.
+-- @within TreasureTemplate
+-- @local
 --
 function TreasureTemplate:GiveTreasureReward()
     local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
@@ -221,6 +235,8 @@ end
 ---
 -- Starts the controller job of the treasure chest and returns the ID.
 -- @return[type=number] ID of job
+-- @within TreasureTemplate
+-- @local
 --
 function TreasureTemplate:StartController()
     return StartSimpleJobEx(function(_ScriptName)
