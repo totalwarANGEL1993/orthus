@@ -207,7 +207,7 @@ function TreasureTemplate:GiveTreasureReward()
     end
     -- Clay
     if self.m_Rewards[2] ~= 0 then
-        RewardString = RewardString .. self.m_Rewards[2] .. ((Language == "de" and " Lenm ") or " clay ");
+        RewardString = RewardString .. self.m_Rewards[2] .. ((Language == "de" and " Lehm ") or " clay ");
     end
     -- Wood
     if self.m_Rewards[3] ~= 0 then

@@ -30,6 +30,19 @@ Information = {
 };
 
 ---
+-- Returns the page id to the page name. If a name is not found a absurd high
+-- page ID is providet to prevent lua errors.
+-- @param[type=string] _Name Name of page
+-- @return[type=number] Page ID
+-- @within Methods
+--
+function GetPageID(_Name)
+    return Information:GetPageID(_Name);
+end
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- Installs the information mod.
 -- @within Information
 -- @local
@@ -72,6 +85,7 @@ function Information:CreateAddPageFunctions()
     -- @param[type=table] _briefing Briefing
     -- @return[type=function] AP function
     -- @return[type=function] ASP function
+    -- @within Methods
     --
     function AddPages(_briefing)
         local AP = function(_page)
@@ -253,6 +267,7 @@ end
 -- page ID is providet to prevent lua errors.
 -- @param[type=string] _Name Name of page
 -- @return[type=number] Page ID
+-- @local
 --
 function Information:GetPageID(_Name)
     if IsBriefingActive() then
@@ -813,96 +828,3 @@ function Information_FaderDelayController()
     end
 end
 
--- Countdown code --------------------------------------------------------------
-
----
--- Starts a visible or invisible countdown.
---
--- <b>Note:</b> There can only be one visible but infinit invisible countdonws.
---
--- @param[type=number] _Limit      Time to count down
--- @param[type=function] _Callback Countdown callback
--- @param[type=boolean] _Show      Countdown visible
---
-function StartCountdown(_Limit, _Callback, _Show)
-    assert(type(_Limit) == "number")
-    assert( not _Callback or type(_Callback) == "function" )
-    Counter.Index = (Counter.Index or 0) + 1
-    if _Show and CountdownIsVisisble() then
-        assert(false, "StartCountdown: A countdown is already visible")
-    end
-    Counter["counter" .. Counter.Index] = {Limit = _Limit, TickCount = 0, Callback = _Callback, Show = _Show, Finished = false}
-    if _Show then
-        MapLocal_StartCountDown(_Limit)
-    end
-    if Counter.JobId == nil then
-        Counter.JobId = StartSimpleJob("CountdownTick")
-    end
-    return Counter.Index
-end
-
----
--- Stops the countdown with the ID.
--- @param[type=number] _Id Countdown ID
---
-function StopCountdown(_Id)
-    if Counter.Index == nil then
-        return
-    end
-    if _Id == nil then
-        for i = 1, Counter.Index do
-            if Counter.IsValid("counter" .. i) then
-                if Counter["counter" .. i].Show then
-                    MapLocal_StopCountDown()
-                end
-                Counter["counter" .. i] = nil
-            end
-        end
-    else
-        if Counter.IsValid("counter" .. _Id) then
-            if Counter["counter" .. _Id].Show then
-                MapLocal_StopCountDown()
-            end
-            Counter["counter" .. _Id] = nil
-        end
-    end
-end
-
-function CountdownTick()
-    local empty = true
-    for i = 1, Counter.Index do
-        if Counter.IsValid("counter" .. i) then
-            if Counter.Tick("counter" .. i) then
-                Counter["counter" .. i].Finished = true
-            end
-            if Counter["counter" .. i].Finished and not IsBriefingActive() then
-                if Counter["counter" .. i].Show then
-                    MapLocal_StopCountDown()
-                end
-                if type(Counter["counter" .. i].Callback) == "function" then
-                    Counter["counter" .. i].Callback()
-                end
-                Counter["counter" .. i] = nil
-            end
-            empty = false
-        end
-    end
-    if empty then
-        Counter.JobId = nil
-        Counter.Index = nil
-        return true
-    end
-end
-
----
--- Returns true if a countdown is visible.
--- @return[type=boolean] Visible countdown
---
-function CountdownIsVisisble()
-    for i = 1, Counter.Index do
-        if Counter.IsValid("counter" .. i) and Counter["counter" .. i].Show then
-            return true
-        end
-    end
-    return false
-end

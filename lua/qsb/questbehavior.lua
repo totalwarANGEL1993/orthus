@@ -176,12 +176,18 @@ end
 --
 -- @param[type=number] _PlayerID  PlayerID
 -- @param[type=number] _TechLevel Technology level [1|4]
+-- @param[type=number] _SerfAmount (optional) Amount of serfs
+-- @param[type=boolean] _Construct (optional) AI can construct buildings
+-- @param[type=boolean] _Rebuild (optional) AI rebuilds (construction required)
 -- @within Methods
 --
 -- @usage CreateAIPlayer(2, 4);
 --
-function CreateAIPlayer(_PlayerID, _TechLevel)
-    QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel);
+function CreateAIPlayer(_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)
+    _SerfAmount = _SerfAmount or 6;
+    _Construct = (_Construct ~= nil and _Construct) or true;
+    _Rebuild = (_Rebuild ~= nil and _Rebuild) or true;
+    QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild);
 end
 
 ---
@@ -656,22 +662,24 @@ end
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel)
+function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)
     if self.Data.CreatedAiPlayers[_PlayerID] then
         return;
     end
 
     -- Create Player
     local description 	= {
-        serfLimit	  	= 12,
+        serfLimit	  	= _SerfAmount,
         resourceFocus 	= nil,
-        rebuild		  	= {delay = 0},
         extracting	  	= false,
         repairing	  	= true,
-        constructing  	= true,
+        constructing  	= _Construct == true,
         resources	  	= {gold = 30000, clay = 3000, wood = 9000, stone = 3000, iron = 9000, sulfur = 9000},
         refresh   	  	= {gold = 800,   clay =   40, wood =   40, stone =   40, iron =  400, sulfur =  400, updateTime	= 15},
     }
+    if _Rebuild then
+        description.rebuild	= {delay = 2*60};
+    end
     SetupPlayerAi(_PlayerID, description);
 
     -- Upgrade troops
@@ -4955,6 +4963,12 @@ function b_Reward_AI_CreateAIPlayer:AddParameter(_Index, _Parameter)
         self.Data.PlayerID = _Parameter;
     elseif _Index == 2 then
         self.Data.TechLevel = _Parameter;
+    elseif _Index == 3 then
+        self.Data.SerfLimit = _Parameter;
+    elseif _Index == 4 then
+        self.Data.Construct = _Parameter;
+    elseif _Index == 5 then
+        self.Data.Repair = _Parameter;
     end
 end
 
@@ -4963,7 +4977,7 @@ function b_Reward_AI_CreateAIPlayer:GetRewardTable()
 end
 
 function b_Reward_AI_CreateAIPlayer:CustomFunction(_Quest)
-    QuestSystemBehavior:CreateAI(self.Data.PlayerID, self.Data.TechLevel);
+    QuestSystemBehavior:CreateAI(self.Data.PlayerID, self.Data.TechLevel, self.Data.SerfLimit, self.Data.Construct, self.Data.Repair);
 end
 
 function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
@@ -4973,6 +4987,10 @@ function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
     end
     if not self.Data.TechLevel or self.Data.TechLevel < 1 or self.Data.TechLevel > 4 then
         dbg(_Quest, self, "Technology level must be between 1 and 4!");
+        return true;
+    end
+    if type(self.Data.SerfLimit) ~= "number" or self.Data.SerfLimit < 0 then
+        dbg(_Quest, self, "Serf limit must be a number >= 0!");
         return true;
     end
     if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] then
