@@ -990,7 +990,6 @@ function QuestTemplate:Trigger()
 
     -- Add quest
     if self.m_Description then
-        self.m_Description = QuestSystem:ReplacePlaceholders(self.m_Description);
         if not self.m_Description.Position then
             self:CreateQuest();
         else
@@ -1348,22 +1347,31 @@ end
 function QuestTemplate:CreateQuest()
     if self.m_Description then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            local Description = self.m_Description;
             local QuestID = QuestSystem:GetNextFreeJornalID();
             if QuestID == nil then
                 GUI.AddStaticNote("ERROR: Too many quests in jornal!");
                 return;
             end
 
+            local Title = self.m_Description.Title;
+            local Text  = self.m_Description.Text;
+
             if QuestSystem:GetExtensionNumber() > 2 then
-                mcbQuestGUI.simpleQuest.logicAddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+                mcbQuestGUI.simpleQuest.logicAddQuest(
+                    self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.Info or 1
+                );
             else
-                Logic.AddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+                Title = QuestSystem:ReplacePlaceholders(self.m_Description.Title);
+                Text  = QuestSystem:ReplacePlaceholders(self.m_Description.Text);
+                Logic.AddQuest(
+                    self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.Info or 1
+                );
             end
             
             QuestSystem:RegisterQuestAtJornalID(
                 QuestID,
-                {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+                {self.m_QuestID, self.m_Receiver, self.m_Description.Type, Title, Text, 
+                 self.m_Description.Info or 1, self.m_Description.X, self.m_Description.Y}
             );
         end
     end
@@ -1377,22 +1385,33 @@ end
 function QuestTemplate:CreateQuestEx()
     if self.m_Description and self.m_Description.Position then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            local Description = self.m_Description;
             local QuestID = QuestSystem:GetNextFreeJornalID();
             if QuestID == nil then
                 GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
                 return;
             end
 
+            local Title = self.m_Description.Title;
+            local Text  = self.m_Description.Text;
+
             if QuestSystem:GetExtensionNumber() > 2 then
-                mcbQuestGUI.simpleQuest.logicAddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title,Description.Text, Description.X, Description.Y, Description.Info or 1);
+                mcbQuestGUI.simpleQuest.logicAddQuestEx(
+                    self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.X, 
+                    self.m_Description.Y, self.m_Description.Info or 1
+                );
             else
-                Logic.AddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.X, Description.Y, Description.Info or 1);
+                Title = QuestSystem:ReplacePlaceholders(self.m_Description.Title);
+                Text  = QuestSystem:ReplacePlaceholders(self.m_Description.Text);
+                Logic.AddQuestEx(
+                    self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.X, 
+                    self.m_Description.Y, self.m_Description.Info or 1
+                );
             end
 
             QuestSystem:RegisterQuestAtJornalID(
                 QuestID,
-                {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+                {self.m_QuestID, self.m_Receiver, self.m_Description.Type, Title, Text, 
+                 self.m_Description.Info or 1, self.m_Description.X, self.m_Description.Y}
             );
         end
     end
