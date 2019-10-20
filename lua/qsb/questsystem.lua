@@ -654,7 +654,7 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
             local x, y, z = Logic.EntityGetPos(GetID(Behavior[2]));
             for i= 1, 4, 1 do
                 local n, Entity = Logic.GetEntitiesInArea(Entities["PB_Bridge" ..i], x, y, Behavior[3], 1);
-                if n > 0 then
+                if n > 0 and Logic.IsConstructionComplete(Entity) == 1 then
                     Behavior.Completed = true;
                     break;
                 end
@@ -1154,7 +1154,7 @@ end
 
 ---
 -- When the state of the quest changes trigger the :PullFragments method of
--- all master quests when this quest is a fragment.
+-- all master quests to make them update their description.
 -- @within QuestTemplate
 -- @local
 --
@@ -1165,17 +1165,6 @@ function QuestTemplate:PushFragment()
                 for i= 1, table.getn(v.m_Objectives), 1 do
                     if v.m_Objectives[i][1] == Objectives.Quest and GetQuestID(v.m_Objectives[i][2]) == self.m_QuestID then
                         v:PullFragments();
-                        -- Show quest update info
-                        if self.m_Description.Info == 1 then
-                            local Jornal, ID = QuestSystem:GetJornalByQuestID(v.m_QuestID);
-                            if Jornal then
-                                if QuestSystem:GetExtensionNumber() > 2 then
-                                    -- TODO: implement for ISAM!
-                                else
-                                    Logic.SetQuestType(Jornal[2], ID, Jornal[3] + ((v.m_State == QuestStates.Over and 1) or 0), 1);
-                                end
-                            end
-                        end
                     end
                 end
             end
@@ -1330,9 +1319,9 @@ function QuestTemplate:AttachFragments()
                 ResultText = QuestSystem:ReplacePlaceholders(ResultText);
 
                 if self.m_Description.X ~= nil then
-                    Logic.AddQuestEx(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
+                    Logic.AddQuestEx(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, Jornal[7], Jornal[8], 1);
                 else
-                    Logic.AddQuest(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, 0);
+                    Logic.AddQuest(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, 1);
                 end
             end
         end
@@ -2393,6 +2382,7 @@ Objectives = {
     WeatherState = 22,
     DestroyAllPlayerUnits = 24,
     Quest = 25,
+    Bridge = 26,
 }
 
 ---

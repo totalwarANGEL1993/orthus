@@ -54,9 +54,11 @@ end
 function QuestSystem.GameSpeedSwitch:Install()
     if not self.m_Installed then
         self.m_Installed = true;
-        AddOnSaveLoadedAction(self.OnSaveGameLoaded);
         self:OnSaveGameLoaded();
         self:OverrideGUI();
+        AddOnSaveLoadedAction(function()
+            QuestSystem.GameSpeedSwitch:OnSaveGameLoaded()
+        end);
     end
 end
 
@@ -153,9 +155,10 @@ end
 -- @within QuestSystem.GameSpeedSwitch
 -- @local
 --
-function QuestSystem.GameSpeedSwitch.OnSaveGameLoaded()
+function QuestSystem.GameSpeedSwitch:OnSaveGameLoaded()
     XGUIEng.TransferMaterials("StatisticsWindowTimeScaleButton", "OnlineHelpButton" );
     XGUIEng.SetWidgetPositionAndSize("OnlineHelpButton",200,2,35,35);
+    self:OverrideGUI();
     Game.GameTimeSetFactor(QuestSystem.GameSpeedSwitch.m_CurrentSpeed);
 end
 
