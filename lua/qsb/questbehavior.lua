@@ -4671,16 +4671,16 @@ function b_Reward_OpenResourceSale:CustomFunction(_Quest)
     end
 
     local NPC = new(NonPlayerMerchant, self.Data.Merchant);
-    if self.Data.OfferType1 ~= nil and self.Data.OfferType1 ~= "" then
+    if self.Data.OfferType1 ~= nil and self.Data.OfferType1 ~= "-" then
         NPC:AddResourceOffer(ResourceType.Gold, 1000, {[self.Data.OfferType1] = ResourceGoldRatio[self.Data.OfferType1] or 1000}, self.Data.OfferAmount1, 3*60);
     end
-    if self.Data.OfferType2 ~= nil and self.Data.OfferType2 ~= "" then
+    if self.Data.OfferType2 ~= nil and self.Data.OfferType2 ~= "-" then
         NPC:AddResourceOffer(ResourceType.Gold, 1000, {[self.Data.OfferType2] = ResourceGoldRatio[self.Data.OfferType2] or 1000}, self.Data.OfferAmount2, 3*60);
     end
-    if self.Data.OfferType3 ~= nil and self.Data.OfferType3 ~= "" then
+    if self.Data.OfferType3 ~= nil and self.Data.OfferType3 ~= "-" then
         NPC:AddResourceOffer(ResourceType.Gold, 1000, {[self.Data.OfferType3] = ResourceGoldRatio[self.Data.OfferType3] or 1000}, self.Data.OfferAmount3, 3*60);
     end
-    if self.Data.OfferType4 ~= nil and self.Data.OfferType4 ~= "" then
+    if self.Data.OfferType4 ~= nil and self.Data.OfferType4 ~= "-" then
         NPC:AddResourceOffer(ResourceType.Gold, 1000, {[self.Data.OfferType4] = ResourceGoldRatio[self.Data.OfferType4] or 1000}, self.Data.OfferAmount4, 3*60);
     end
     NPC:Activate();
