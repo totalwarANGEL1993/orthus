@@ -26,7 +26,9 @@ Information = {
         BriefingZoomAngle    = 48,
         DialogZoomDistance   = 1200,
         DialogZoomAngle      = 25,
-    }
+    },
+    ClockWasShown = false,
+    ForbidEscaping = false,
 };
 
 ---
@@ -264,7 +266,7 @@ end
 
 ---
 -- Returns the page id to the page name. If a name is not found a absurd high
--- page ID is providet to prevent lua errors.
+-- page ID is provided to prevent lua errors.
 -- @param[type=string] _Name Name of page
 -- @return[type=number] Page ID
 -- @local
@@ -296,7 +298,7 @@ function Information:OverrideEscape()
     GameCallback_Escape = function()
         -- Briefing no escape
         if IsBriefingActive() then
-            if briefingState.noEscape then
+            if Information.NoEscape then
                 return;
             end
         end
@@ -304,7 +306,6 @@ function Information:OverrideEscape()
         if gvCutscene then
 			gvCutscene.Skip = true;
 		end
-
         GameCallback_Escape_Orig_Information();
 	end
 end
@@ -323,18 +324,15 @@ end
 --
 function Information:OverrideCinematic()
     StartBriefing_Orig_Information = StartBriefing;
-    StartBriefing = function(_briefing)
+    StartBriefing = function(_briefing, _ID)
         assert(type(_briefing) == "table");
-        local ID = StartBriefing_Orig_Information(_briefing);
-        
-        -- Disable escape skipping
+        local ID = StartBriefing_Orig_Information(_briefing, _ID);
         if _briefing.noEscape then
-            briefingState.noEscape = true;
+            Information.ForbidEscaping = true;
         end
-
         if XGUIEng.IsWidgetShown("GameClock") == 1 then
 			XGUIEng.ShowWidget("GameClock", 0);
-			gvGameClockWasShown = true;
+			Information.ClockWasShown = true;
         end
 		Game.GameTimeReset();
         GUI.ClearNotes();
@@ -344,16 +342,15 @@ function Information:OverrideCinematic()
     EndBriefing_Orig_Information = EndBriefing;
     EndBriefing = function()
         EndBriefing_Orig_Information();
-        if briefingState.noEscape then
-            briefingState.noEscape = nil;
+        if Information.ForbidEscaping then
+            Information.ForbidEscaping = nil;
         end
-        if gvGameClockWasShown then
+        if Information.ClockWasShown then
 			XGUIEng.ShowWidget("GameClock", 1);
-			gvGameClockWasShown = false;
+			Information.ClockWasShown = false;
         end
         Information:SetFaderAlpha(0);
         Information:StopFader();
-
         Display.SetRenderFogOfWar(1);
         Display.SetRenderSky(0);
     end

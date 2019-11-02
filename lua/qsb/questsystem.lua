@@ -43,6 +43,7 @@ QuestSystem = {
     QuestMarkers = {},
     MinimapMarkers = {},
     Briefings = {},
+    BriefingsQueue = {},
     HurtEntities = {},
     NamedEffects = {},
     NamedExplorations = {},
@@ -78,18 +79,34 @@ function QuestSystem:InstallQuestSystem()
 
         -- Briefing ID
         StartBriefing_Orig_QuestSystem = StartBriefing;
-        StartBriefing = function(_Briefing)
+        StartBriefing = function(_Briefing, _ID)
+            -- Set briefing id
+            if not _ID then
+                gvUniqueBriefingID = (gvUniqueBriefingID or 0) +1;
+                _ID = gvUniqueBriefingID;
+            end
+            -- Enqueue if briefing active
+            if IsBriefingActive() then
+                table.insert(QuestSystem.BriefingsQueue, {copy(_Briefing), _ID});
+                return _ID;
+            end
+            -- Start briefing
             StartBriefing_Orig_QuestSystem(_Briefing);
-            gvUniqueBriefingID = (gvUniqueBriefingID or 0) +1;
-            briefingState.BriefingID = gvUniqueBriefingID;
-            return gvUniqueBriefingID;
+            briefingState.BriefingID = _ID;
+            return _ID;
         end
 
         -- Briefing ID
         EndBriefing_Orig_QuestSystem = EndBriefing;
         EndBriefing = function()
+            -- End briefing
             EndBriefing_Orig_QuestSystem();
             QuestSystem.Briefings[briefingState.BriefingID] = true;
+            -- Dequeue next briefing
+            if table.getn(QuestSystem.BriefingsQueue) > 0 then
+                local Entry = table.remove(QuestSystem.BriefingsQueue, 1);
+                StartBriefing(Entry[1], Entry[2]);
+            end
         end
 
         -- Briefing ID
