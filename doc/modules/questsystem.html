@@ -34,10 +34,9 @@
 
 <h2>Contents</h2>
 <ul>
-<li><a href="#Functions">Functions</a></li>
-<li><a href="#Tables">Tables</a></li>
-<li><a href="#Constructor">Constructor</a></li>
-<li><a href="#Helper">Helper</a></li>
+<li><a href="#Methods">Methods</a></li>
+<li><a href="#Constants">Constants</a></li>
+<li><a href="#QuestTemplate">QuestTemplate</a></li>
 </ul>
 
 
@@ -49,9 +48,11 @@
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/questdebug.html">questdebug</a></li>
   <li><strong>questsystem</strong></li>
+  <li><a href="../modules/speed_ex2.html">speed_ex2</a></li>
   <li><a href="../modules/timer_ex2.html">timer_ex2</a></li>
   <li><a href="../modules/timer_ex3.html">timer_ex3</a></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
+  <li><a href="../modules/workplace_ex2.html">workplace_ex2</a></li>
 </ul>
 
 </div>
@@ -85,7 +86,7 @@
 </p>
 
 
-<h2><a href="#Functions">Functions</a></h2>
+<h2><a href="#Methods">Methods</a></h2>
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#AreAlliesInArea">AreAlliesInArea (_player, _position, _range)</a></td>
@@ -105,15 +106,39 @@
 	<td class="summary">Checks if a value is inside a table.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#GetDistance">GetDistance (_pos1, _pos2)</a></td>
+	<td class="summary">Returns the distance between two positions or entities.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GetQuestID">GetQuestID (_QuestName)</a></td>
+	<td class="summary">Returns the quest ID of the quest with the name.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#IsArmyNear">IsArmyNear (_Army, _Target, _Distance)</a></td>
+	<td class="summary">Checks if an army is near the position.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#IsDeadWrapper">IsDeadWrapper (_input)</a></td>
+	<td class="summary">Checks if an army or entity is dead.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#IsValidPosition">IsValidPosition (_pos)</a></td>
 	<td class="summary">Checks if the position table contains a valid position on the map.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#IsValidQuest">IsValidQuest (_QuestName)</a></td>
+	<td class="summary">Returns true, if the quest is a valid (existing) quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#SameSector">SameSector (_pos1, _pos2)</a></td>
+	<td class="summary">Checks, if the positions are in the same sector.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#SoldierGetLeaderEntityID">SoldierGetLeaderEntityID (_eID)</a></td>
 	<td class="summary">Returns the leader entity ID of the soldier.</td>
 	</tr>
 </table>
-<h2><a href="#Tables">Tables</a></h2>
+<h2><a href="#Constants">Constants</a></h2>
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#Callbacks">Callbacks</a></td>
@@ -148,46 +173,19 @@
 	<td class="summary">Possible weather states for weather behavior</td>
 	</tr>
 </table>
-<h2><a href="#Constructor">Constructor</a></h2>
+<h2><a href="#QuestTemplate">QuestTemplate</a></h2>
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#QuestTemplate:construct">QuestTemplate:construct (_QuestName, _Receiver, _Time, _Objectives, _Conditions, _Rewards, _Reprisals, _Description)</a></td>
 	<td class="summary">Creates a quest.</td>
 	</tr>
 </table>
-<h2><a href="#Helper">Helper</a></h2>
-<table class="function_list">
-	<tr>
-	<td class="name" nowrap><a href="#GetDistance">GetDistance (_pos1, _pos2)</a></td>
-	<td class="summary">Returns the distance between two positions or entities.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#GetQuestID">GetQuestID (_QuestName)</a></td>
-	<td class="summary">Returns the quest ID of the quest with the name.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#IsArmyNear">IsArmyNear (_Army, _Target, _Distance)</a></td>
-	<td class="summary">Checks if an army is near the position.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#IsDeadWrapper">IsDeadWrapper (_input)</a></td>
-	<td class="summary">Checks if an army or entity is dead.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#IsValidQuest">IsValidQuest (_QuestName)</a></td>
-	<td class="summary">Returns true, if the quest is a valid (existing) quest.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#SameSector">SameSector (_pos1, _pos2)</a></td>
-	<td class="summary">Checks, if the positions are in the same sector.</td>
-	</tr>
-</table>
 
 <br/>
 <br/>
 
 
-    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+    <h2 class="section-header "><a name="Methods"></a>Methods</h2>
 
     <dl class="function">
     <dt>
@@ -330,6 +328,126 @@
 
 </dd>
     <dt>
+    <a name = "GetDistance"></a>
+    <strong>GetDistance (_pos1, _pos2)</strong>
+    </dt>
+    <dd>
+    Returns the distance between two positions or entities.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_pos1</span>
+         Position 1 (string, number oder table)
+        </li>
+        <li><span class="parameter">_pos2</span>
+         Position 2 (string, number oder table)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        Distance between positions
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GetQuestID"></a>
+    <strong>GetQuestID (_QuestName)</strong>
+    </dt>
+    <dd>
+    Returns the quest ID of the quest with the name.
+ If the quest is not found, 0 is returned.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Quest name
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        Quest ID
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "IsArmyNear"></a>
+    <strong>IsArmyNear (_Army, _Target, _Distance)</strong>
+    </dt>
+    <dd>
+    Checks if an army is near the position.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Army</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+             Army to check
+        </li>
+        <li><span class="parameter">_Target</span>
+           Target position
+        </li>
+        <li><span class="parameter">_Distance</span>
+            <span class="types"><span class="type">number</span></span>
+         Area size
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Army is near
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "IsDeadWrapper"></a>
+    <strong>IsDeadWrapper (_input)</strong>
+    </dt>
+    <dd>
+    Checks if an army or entity is dead.  If an army has not been created yet
+ then it will not falsely assumed to be dead.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_input</span>
+         Army or entity (string, number oder table)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Army or entity is dead
+    </ol>
+
+
+
+
+</dd>
+    <dt>
     <a name = "IsValidPosition"></a>
     <strong>IsValidPosition (_pos)</strong>
     </dt>
@@ -350,6 +468,64 @@
 
            <span class="types"><span class="type">boolean</span></span>
         Position valid
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "IsValidQuest"></a>
+    <strong>IsValidQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    Returns true, if the quest is a valid (existing) quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of quest
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Valid quest
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "SameSector"></a>
+    <strong>SameSector (_pos1, _pos2)</strong>
+    </dt>
+    <dd>
+    Checks, if the positions are in the same sector.  If 2 possitions are not
+ in the same sector then they are not connected.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_pos1</span>
+         Position 1
+        </li>
+        <li><span class="parameter">_pos2</span>
+         Position 2
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Same sector
     </ol>
 
 
@@ -386,7 +562,7 @@
 
 </dd>
 </dl>
-    <h2 class="section-header "><a name="Tables"></a>Tables</h2>
+    <h2 class="section-header "><a name="Constants"></a>Constants</h2>
 
     <dl class="function">
     <dt>
@@ -992,7 +1168,7 @@
 
 </dd>
 </dl>
-    <h2 class="section-header "><a name="Constructor"></a>Constructor</h2>
+    <h2 class="section-header "><a name="QuestTemplate"></a>QuestTemplate</h2>
 
     <dl class="function">
     <dt>
@@ -1045,195 +1221,13 @@
 
 </dd>
 </dl>
-    <h2 class="section-header "><a name="Helper"></a>Helper</h2>
-
-    <dl class="function">
-    <dt>
-    <a name = "GetDistance"></a>
-    <strong>GetDistance (_pos1, _pos2)</strong>
-    </dt>
-    <dd>
-    Returns the distance between two positions or entities.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_pos1</span>
-         Position 1 (string, number oder table)
-        </li>
-        <li><span class="parameter">_pos2</span>
-         Position 2 (string, number oder table)
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">number</span></span>
-        Distance between positions
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "GetQuestID"></a>
-    <strong>GetQuestID (_QuestName)</strong>
-    </dt>
-    <dd>
-    Returns the quest ID of the quest with the name.
- If the quest is not found, 0 is returned.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_QuestName</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         Quest name
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">number</span></span>
-        Quest ID
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "IsArmyNear"></a>
-    <strong>IsArmyNear (_Army, _Target, _Distance)</strong>
-    </dt>
-    <dd>
-    Checks if an army is near the position.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_Army</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
-             Army to check
-        </li>
-        <li><span class="parameter">_Target</span>
-           Target position
-        </li>
-        <li><span class="parameter">_Distance</span>
-            <span class="types"><span class="type">number</span></span>
-         Area size
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">boolean</span></span>
-        Army is near
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "IsDeadWrapper"></a>
-    <strong>IsDeadWrapper (_input)</strong>
-    </dt>
-    <dd>
-    Checks if an army or entity is dead.  If an army has not been created yet
- then it will not falsely assumed to be dead.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_input</span>
-         Army or entity (string, number oder table)
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">boolean</span></span>
-        Army or entity is dead
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "IsValidQuest"></a>
-    <strong>IsValidQuest (_QuestName)</strong>
-    </dt>
-    <dd>
-    Returns true, if the quest is a valid (existing) quest.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_QuestName</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         Name of quest
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">boolean</span></span>
-        Valid quest
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "SameSector"></a>
-    <strong>SameSector (_pos1, _pos2)</strong>
-    </dt>
-    <dd>
-    Checks, if the positions are in the same sector.  If 2 possitions are not
- in the same sector then they are not connected.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_pos1</span>
-         Position 1
-        </li>
-        <li><span class="parameter">_pos2</span>
-         Position 2
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">boolean</span></span>
-        Same sector
-    </ol>
-
-
-
-
-</dd>
-</dl>
 
 
 </div> <!-- id="content" -->
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2019-09-03 18:13:24 </i>
+<i style="float:right;">Last updated 2019-10-14 18:44:35 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

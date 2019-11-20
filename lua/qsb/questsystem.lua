@@ -43,6 +43,7 @@ QuestSystem = {
     QuestMarkers = {},
     MinimapMarkers = {},
     Briefings = {},
+    BriefingsQueue = {},
     HurtEntities = {},
     NamedEffects = {},
     NamedExplorations = {},
@@ -78,18 +79,34 @@ function QuestSystem:InstallQuestSystem()
 
         -- Briefing ID
         StartBriefing_Orig_QuestSystem = StartBriefing;
-        StartBriefing = function(_Briefing)
+        StartBriefing = function(_Briefing, _ID)
+            -- Set briefing id
+            if not _ID then
+                gvUniqueBriefingID = (gvUniqueBriefingID or 0) +1;
+                _ID = gvUniqueBriefingID;
+            end
+            -- Enqueue if briefing active
+            if IsBriefingActive() then
+                table.insert(QuestSystem.BriefingsQueue, {copy(_Briefing), _ID});
+                return _ID;
+            end
+            -- Start briefing
             StartBriefing_Orig_QuestSystem(_Briefing);
-            gvUniqueBriefingID = (gvUniqueBriefingID or 0) +1;
-            briefingState.BriefingID = gvUniqueBriefingID;
-            return gvUniqueBriefingID;
+            briefingState.BriefingID = _ID;
+            return _ID;
         end
 
         -- Briefing ID
         EndBriefing_Orig_QuestSystem = EndBriefing;
         EndBriefing = function()
+            -- End briefing
             EndBriefing_Orig_QuestSystem();
             QuestSystem.Briefings[briefingState.BriefingID] = true;
+            -- Dequeue next briefing
+            if table.getn(QuestSystem.BriefingsQueue) > 0 then
+                local Entry = table.remove(QuestSystem.BriefingsQueue, 1);
+                StartBriefing(Entry[1], Entry[2]);
+            end
         end
 
         -- Briefing ID
@@ -397,7 +414,7 @@ QuestTemplate = {};
 -- @param[type=table]  _Rewards     List of rewards
 -- @param[type=table]  _Reprisals   List of reprisals
 -- @param[type=table]  _Description Quest description
--- @within Constructor
+-- @within QuestTemplate
 --
 function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Conditions, _Rewards, _Reprisals, _Description)
     QuestSystem:InstallQuestSystem();
@@ -654,7 +671,7 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
             local x, y, z = Logic.EntityGetPos(GetID(Behavior[2]));
             for i= 1, 4, 1 do
                 local n, Entity = Logic.GetEntitiesInArea(Entities["PB_Bridge" ..i], x, y, Behavior[3], 1);
-                if n > 0 then
+                if n > 0 and Logic.IsConstructionComplete(Entity) == 1 then
                     Behavior.Completed = true;
                     break;
                 end
@@ -990,7 +1007,6 @@ function QuestTemplate:Trigger()
 
     -- Add quest
     if self.m_Description then
-        self.m_Description = QuestSystem:ReplacePlaceholders(self.m_Description);
         if not self.m_Description.Position then
             self:CreateQuest();
         else
@@ -1155,7 +1171,7 @@ end
 
 ---
 -- When the state of the quest changes trigger the :PullFragments method of
--- all master quests when this quest is a fragment.
+-- all master quests to make them update their description.
 -- @within QuestTemplate
 -- @local
 --
@@ -1166,17 +1182,6 @@ function QuestTemplate:PushFragment()
                 for i= 1, table.getn(v.m_Objectives), 1 do
                     if v.m_Objectives[i][1] == Objectives.Quest and GetQuestID(v.m_Objectives[i][2]) == self.m_QuestID then
                         v:PullFragments();
-                        -- Show quest update info
-                        if self.m_Description.Info == 1 then
-                            local Jornal, ID = QuestSystem:GetJornalByQuestID(v.m_QuestID);
-                            if Jornal then
-                                if QuestSystem:GetExtensionNumber() > 2 then
-                                    -- TODO: implement for ISAM!
-                                else
-                                    Logic.SetQuestType(Jornal[2], ID, Jornal[3] + ((v.m_State == QuestStates.Over and 1) or 0), 1);
-                                end
-                            end
-                        end
                     end
                 end
             end
@@ -1348,22 +1353,31 @@ end
 function QuestTemplate:CreateQuest()
     if self.m_Description then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            local Description = self.m_Description;
             local QuestID = QuestSystem:GetNextFreeJornalID();
             if QuestID == nil then
                 GUI.AddStaticNote("ERROR: Too many quests in jornal!");
                 return;
             end
 
+            local Title = self.m_Description.Title;
+            local Text  = self.m_Description.Text;
+
             if QuestSystem:GetExtensionNumber() > 2 then
-                mcbQuestGUI.simpleQuest.logicAddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+                mcbQuestGUI.simpleQuest.logicAddQuest(
+                    self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.Info or 1
+                );
             else
-                Logic.AddQuest(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.Info or 1);
+                Title = QuestSystem:ReplacePlaceholders(self.m_Description.Title);
+                Text  = QuestSystem:ReplacePlaceholders(self.m_Description.Text);
+                Logic.AddQuest(
+                    self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.Info or 1
+                );
             end
             
             QuestSystem:RegisterQuestAtJornalID(
                 QuestID,
-                {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+                {self.m_QuestID, self.m_Receiver, self.m_Description.Type, Title, Text, 
+                 self.m_Description.Info or 1, self.m_Description.X, self.m_Description.Y}
             );
         end
     end
@@ -1377,22 +1391,33 @@ end
 function QuestTemplate:CreateQuestEx()
     if self.m_Description and self.m_Description.Position then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            local Description = self.m_Description;
             local QuestID = QuestSystem:GetNextFreeJornalID();
             if QuestID == nil then
                 GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
                 return;
             end
 
+            local Title = self.m_Description.Title;
+            local Text  = self.m_Description.Text;
+
             if QuestSystem:GetExtensionNumber() > 2 then
-                mcbQuestGUI.simpleQuest.logicAddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title,Description.Text, Description.X, Description.Y, Description.Info or 1);
+                mcbQuestGUI.simpleQuest.logicAddQuestEx(
+                    self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.X, 
+                    self.m_Description.Y, self.m_Description.Info or 1
+                );
             else
-                Logic.AddQuestEx(self.m_Receiver, QuestID, Description.Type, Description.Title, Description.Text, Description.X, Description.Y, Description.Info or 1);
+                Title = QuestSystem:ReplacePlaceholders(self.m_Description.Title);
+                Text  = QuestSystem:ReplacePlaceholders(self.m_Description.Text);
+                Logic.AddQuestEx(
+                    self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.X, 
+                    self.m_Description.Y, self.m_Description.Info or 1
+                );
             end
 
             QuestSystem:RegisterQuestAtJornalID(
                 QuestID,
-                {self.m_QuestID, self.m_Receiver, Description.Type, Description.Title, Description.Text, Description.Info or 1, Description.X, Description.Y}
+                {self.m_QuestID, self.m_Receiver, self.m_Description.Type, Title, Text, 
+                 self.m_Description.Info or 1, self.m_Description.X, self.m_Description.Y}
             );
         end
     end
@@ -1694,8 +1719,8 @@ function QuestSystem:ReplaceKeyValuePlaceholders(_Message)
         end
         if string.find(Placeholder, "cval:") then
             local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
-            if Value and QuestSystem.Data.CustomVariables[Value] then
-                _Message = Before .. QuestSystem.Data.CustomVariables[Value] .. After;
+            if Value and QuestSystem.CustomVariables[Value] then
+                _Message = Before .. QuestSystem.CustomVariables[Value] .. After;
             end
         end
         if string.find(Placeholder, "name:") then
@@ -1734,7 +1759,7 @@ function QuestSystem:RemoveFormattingPlaceholders(_Message)
         _Message = string.gsub(_Message, "{azure}", "");
         _Message = string.gsub(_Message, "{black}", "");
         _Message = string.gsub(_Message, "{white}", "");
-        _Message = string.gsub(_Message, "{grey}", "");
+        -- _Message = string.gsub(_Message, "{grey}", "");
 
         _Message = string.gsub(_Message, "@color:%d,%d,%d", "");
         _Message = string.gsub(_Message, "@center", "");
@@ -1751,6 +1776,7 @@ end
 -- @param             _Value Value to find
 -- @param[type=table] _Table Table to search
 -- @return [boolean] Value found
+-- @within Methods
 --
 function FindValue(_Value, _Table)
 	for k,v in pairs(_Table)do
@@ -1769,6 +1795,7 @@ IstDrin = FindValue;
 -- @param[type=table]  _position Area center
 -- @param[type=number] _range    Area size
 -- @return [boolean] Enemies near
+-- @within Methods
 --
 function AreEnemiesInArea( _player, _position, _range)
     return AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Hostile);
@@ -1781,6 +1808,7 @@ end
 -- @param[type=table]  _position Area center
 -- @param[type=number] _range    Area size
 -- @return [boolean] Allies near
+-- @within Methods
 --
 function AreAlliesInArea( _player, _position, _range)
     return AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Friendly);
@@ -1798,6 +1826,7 @@ end
 -- @param[type=number] _range    Area size
 -- @param[type=number] _state    Diplomatic state
 -- @return [boolean] Entities near
+-- @within Methods
 --
 function AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state)
 	for i = 1,8 do
@@ -1823,7 +1852,7 @@ end
 --
 -- @param[type=string] _QuestName Quest name
 -- @return[type=number] Quest ID
--- @within Helper
+-- @within Methods
 --
 function GetQuestID(_QuestName)
     for i= 1, table.getn(QuestSystem.Quests), 1 do
@@ -1838,7 +1867,7 @@ end
 -- Returns true, if the quest is a valid (existing) quest.
 -- @param[type=string] _QuestName Name of quest
 -- @return[type=boolean] Valid quest
--- @within Helper
+-- @within Methods
 --
 function IsValidQuest(_QuestName)
     return GetQuestID(_QuestName) ~= 0;
@@ -1850,7 +1879,7 @@ end
 -- @param _pos1 Position 1 (string, number oder table)
 -- @param _pos2 Position 2 (string, number oder table)
 -- @return[type=number] Distance between positions
--- @within Helper
+-- @within Methods
 --
 function GetDistance(_pos1, _pos2)
     if (type(_pos1) == "string") or (type(_pos1) == "number") then
@@ -1872,7 +1901,7 @@ end
 --
 -- @param _input Army or entity (string, number oder table)
 -- @return[type=boolean] Army or entity is dead
--- @within Helper
+-- @within Methods
 --
 function IsDeadWrapper(_input)
     if type(_input) == "table" and not _input.created then
@@ -1891,7 +1920,7 @@ IsDead = IsDeadWrapper;
 -- @param              _Target   Target position
 -- @param[type=number] _Distance Area size
 -- @return[type=boolean] Army is near
--- @within Helper
+-- @within Methods
 --
 function IsArmyNear(_Army, _Target, _Distance)
     local LeaderID = 0;
@@ -1918,7 +1947,7 @@ end
 -- @param _pos1 Position 1
 -- @param _pos2 Position 2
 -- @return[type=boolean] Same sector
--- @within Helper
+-- @within Methods
 --
 function SameSector(_pos1, _pos2)
 	local sectorEntity1 = _pos1;
@@ -1956,7 +1985,7 @@ end
 -- Displays the name of any function that is to large to be loaded when a
 -- savegame is loaded.
 -- @param[type=table] t Table to check
--- @within Helper
+-- @within Methods
 -- @local
 --
 function CheckFunctionSize(t)
@@ -2003,7 +2032,7 @@ end
 --
 -- @param[type=table] _Data Function to call (in a table)
 -- @return Return value of function or of error handler
--- @within Helper
+-- @within Methods
 -- @local
 --
 --
@@ -2033,6 +2062,7 @@ end
 --
 -- @param[type=table] _pos Position to check
 -- @return[type=boolean] Position valid
+-- @within Methods
 --
 function IsValidPosition(_pos)
 	if type(_pos) == "table" then
@@ -2053,6 +2083,7 @@ end
 --
 -- @param[type=number] _eID Entity ID of soldier
 -- @return[type=number] Entity ID of leader
+-- @within Methods
 --
 function SoldierGetLeaderEntityID(_eID)
     if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
@@ -2072,6 +2103,8 @@ end
 
 ---
 -- Possible technology states for technology behavior.
+-- @within Constants
+--
 -- @field Researched The technology has already been reearched
 -- @field Allowed The technology can be researched
 -- @field Forbidden The technology can not be researched
@@ -2084,6 +2117,8 @@ TechnologyStates = {
 
 ---
 -- Possible weather states for weather behavior
+-- @within Constants
+--
 -- @field Summer Summer weather
 -- @field Rain Rainy weather
 -- @field Winter Snow is falling
@@ -2096,6 +2131,8 @@ WeatherStates = {
 
 ---
 -- Possible types of minimap markers and pulsars.
+-- @within Constants
+--
 -- @field StaticFriendly Static green marker
 -- @field StaticNeutral Static yellow marker
 -- @field StaticEnemy Static red marker
@@ -2114,6 +2151,8 @@ MarkerTypes = {
 
 ---
 -- Possible states of an quest.
+-- @within Constants
+--
 -- @field Inactive Quest was not triggered
 -- @field Active Quest is running
 -- @field Over Quest is finished
@@ -2126,6 +2165,8 @@ QuestStates = {
 
 ---
 -- Possible results of an quest.
+-- @within Constants
+--
 -- @field Undecided Quest result has not been decided
 -- @field Success Quest was successfully completed
 -- @field Failure Quest finished in failure
@@ -2140,6 +2181,7 @@ QuestResults = {
 
 ---
 -- Condition types that triggers quests.
+-- @within Constants
 --
 -- @field NeverTriggered
 -- Quest will never be triggered.
@@ -2233,6 +2275,7 @@ Conditions = {
 
 ---
 -- Objective types the player musst fulfill to succeed.
+-- @within Constants
 --
 -- @field MapScriptFunction
 -- Quest result will be decided by a user function
@@ -2356,10 +2399,12 @@ Objectives = {
     WeatherState = 22,
     DestroyAllPlayerUnits = 24,
     Quest = 25,
+    Bridge = 26,
 }
 
 ---
 -- Actions that are performed when a quest is finished.
+-- @within Constants
 --
 -- @field MapScriptFunction
 -- Calls a user function as reward.

@@ -51,9 +51,11 @@
   <li><strong>questbehavior</strong></li>
   <li><a href="../modules/questdebug.html">questdebug</a></li>
   <li><a href="../modules/questsystem.html">questsystem</a></li>
+  <li><a href="../modules/speed_ex2.html">speed_ex2</a></li>
   <li><a href="../modules/timer_ex2.html">timer_ex2</a></li>
   <li><a href="../modules/timer_ex3.html">timer_ex3</a></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
+  <li><a href="../modules/workplace_ex2.html">workplace_ex2</a></li>
 </ul>
 
 </div>
@@ -83,6 +85,10 @@
 	<td class="summary">Activates the debug mode.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#AddDisplayName">AddDisplayName (_ScriptName, _DisplayName)</a></td>
+	<td class="summary">Sets the display name for the entity with the given scriptname.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#AddOnSaveLoadedAction">AddOnSaveLoadedAction (_Function, ...)</a></td>
 	<td class="summary">Adds an action that is performed after a save is loaded.</td>
 	</tr>
@@ -95,7 +101,7 @@
 	<td class="summary">Disables or enables the ability to patrol between positions.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayer">CreateAIPlayer (_PlayerID, _TechLevel)</a></td>
+	<td class="name" nowrap><a href="#CreateAIPlayer">CreateAIPlayer (_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)</a></td>
 	<td class="summary">Creates an AI player and sets the technology level.</td>
 	</tr>
 	<tr>
@@ -130,6 +136,10 @@
 	<tr>
 	<td class="name" nowrap><a href="#RegisterBehavior">RegisterBehavior (_Behavior)</a></td>
 	<td class="summary">Registers a behavior</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ReplacePlacholders">ReplacePlacholders (_Text)</a></td>
+	<td class="summary">Raplaces the placeholders in the message with their values.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#ResetQuest">ResetQuest (_Subject)</a></td>
@@ -712,6 +722,31 @@
 
 </dd>
     <dt>
+    <a name = "AddDisplayName"></a>
+    <strong>AddDisplayName (_ScriptName, _DisplayName)</strong>
+    </dt>
+    <dd>
+    Sets the display name for the entity with the given scriptname.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_ScriptName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Scriptname of entity
+        </li>
+        <li><span class="parameter">_DisplayName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Displayed name
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "AddOnSaveLoadedAction"></a>
     <strong>AddOnSaveLoadedAction (_Function, ...)</strong>
     </dt>
@@ -807,7 +842,7 @@
 </dd>
     <dt>
     <a name = "CreateAIPlayer"></a>
-    <strong>CreateAIPlayer (_PlayerID, _TechLevel)</strong>
+    <strong>CreateAIPlayer (_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)</strong>
     </dt>
     <dd>
     Creates an AI player and sets the technology level.
@@ -825,6 +860,18 @@
         <li><span class="parameter">_TechLevel</span>
             <span class="types"><span class="type">number</span></span>
          Technology level [1|4]
+        </li>
+        <li><span class="parameter">_SerfAmount</span>
+            <span class="types"><span class="type">number</span></span>
+         (optional) Amount of serfs
+        </li>
+        <li><span class="parameter">_Construct</span>
+            <span class="types"><span class="type">boolean</span></span>
+         (optional) AI can construct buildings
+        </li>
+        <li><span class="parameter">_Rebuild</span>
+            <span class="types"><span class="type">boolean</span></span>
+         (optional) AI rebuilds (construction required)
         </li>
     </ul>
 
@@ -1143,6 +1190,69 @@
 
 
 
+
+</dd>
+    <dt>
+    <a name = "ReplacePlacholders"></a>
+    <strong>ReplacePlacholders (_Text)</strong>
+    </dt>
+    <dd>
+    Raplaces the placeholders in the message with their values.
+<p> <u>Simple placeholders:</u>
+ <ul>
+ <li><b>{qq}</b> : Inserts a double quote (")</li>
+ <li><b>{cr}</b> : Inserts a line break</li>
+ <li><b>{ra}</b> : Positions the text at the right</li>
+ <li><b>{center}</b> : Positions the text at the center</li>
+ <li><b>{red}</b> : Following text is red</li>
+ <li><b>{green}</b> : Following text is green</li>
+ <li><b>{blue}</b> : Following text is blue</li>
+ <li><b>{yellow}</b> : Following text is yellow</li>
+ <li><b>{violet}</b> : Following text is violet</li>
+ <li><b>{azure}</b> : Following text is turquoise</li>
+ <li><b>{black}</b> : Following text is black (not pitch black)</li>
+ <li><b>{white}</b> : Following text is white</li>
+ <li><b>{grey}</b> : Following text is grey</li>
+ <li><b>{hero}</b> : Will be replaced with the configured name of the last
+ hero involved in an npc interaction.</li>
+ <li><b>{npc}</b> : Will be replaced with the configured name of the last
+ npc involved in an npc interaction.</li>
+ </ul>
+<p> <u>Valued placeholders:</u>
+ <ul>
+ <li><b>{color:</b><i>r,g,b</i><b>}</b>
+ Changes the color of the following text to the given RGB value</li>
+ <li><b>{val:</b><i>name</i><b>}</b>
+ The placeholder is replaced with a global variable</li>
+ <li><b>{cval:</b><i>name</i><b>}</b>
+ The placeholder is replaced with a custom variable</li>
+ <li><b>{name:</b><i>scriptname</i><b>}</b>
+ A scriptname is replaced with a pre configured name</li>
+ </ul>
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Text</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Text to parse
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        New text
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">Message(ReplacePlacholders(<span class="string">"You open the chest and find a{red}already used{white}bedpan!"</span>));</pre>
+    </ul>
 
 </dd>
     <dt>
@@ -4436,7 +4546,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2019-09-03 18:13:24 </i>
+<i style="float:right;">Last updated 2019-10-14 18:44:35 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

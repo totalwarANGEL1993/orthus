@@ -143,6 +143,7 @@ end
 
 ---
 -- Sets the display name for the entity with the given scriptname.
+-- @within Methods
 --
 -- @param[type=string] _ScriptName Scriptname of entity
 -- @param[type=string] _DisplayName Displayed name
@@ -175,12 +176,18 @@ end
 --
 -- @param[type=number] _PlayerID  PlayerID
 -- @param[type=number] _TechLevel Technology level [1|4]
+-- @param[type=number] _SerfAmount (optional) Amount of serfs
+-- @param[type=boolean] _Construct (optional) AI can construct buildings
+-- @param[type=boolean] _Rebuild (optional) AI rebuilds (construction required)
 -- @within Methods
 --
 -- @usage CreateAIPlayer(2, 4);
 --
-function CreateAIPlayer(_PlayerID, _TechLevel)
-    QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel);
+function CreateAIPlayer(_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)
+    _SerfAmount = _SerfAmount or 6;
+    _Construct = (_Construct ~= nil and _Construct) or true;
+    _Rebuild = (_Rebuild ~= nil and _Rebuild) or true;
+    QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild);
 end
 
 ---
@@ -511,6 +518,8 @@ function QuestSystemBehavior:PrepareQuestSystem()
         self:CreateBehaviorConstructors();
         self:OverwriteMapClosingFunctions();
 
+        GameCallback_OnQuestSystemLoaded();
+        
         Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
         Mission_OnSaveGameLoaded = function()
             Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior();
@@ -653,22 +662,24 @@ end
 -- @within QuestSystemBehavior
 -- @local
 --
-function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel)
+function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)
     if self.Data.CreatedAiPlayers[_PlayerID] then
         return;
     end
 
     -- Create Player
     local description 	= {
-        serfLimit	  	= 12,
+        serfLimit	  	= _SerfAmount,
         resourceFocus 	= nil,
-        rebuild		  	= {delay = 0},
         extracting	  	= false,
         repairing	  	= true,
-        constructing  	= true,
+        constructing  	= _Construct == true,
         resources	  	= {gold = 30000, clay = 3000, wood = 9000, stone = 3000, iron = 9000, sulfur = 9000},
         refresh   	  	= {gold = 800,   clay =   40, wood =   40, stone =   40, iron =  400, sulfur =  400, updateTime	= 15},
     }
+    if _Rebuild then
+        description.rebuild	= {delay = 2*60};
+    end
     SetupPlayerAi(_PlayerID, description);
 
     -- Upgrade troops
@@ -1035,7 +1046,7 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
         -- Army is attacking a target
         elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Attack then
             -- Army needs to be refreshed
-            if IsWeak(army) or IsDead(army) then
+            if IsVeryWeak(army) or IsDead(army) then
                 army.Advanced.State = QuestSystemBehavior.ArmyState.Fallback;
                 Redeploy(army, army.position);
             else
@@ -1138,6 +1149,11 @@ function QuestSystemBehavior.InstallS5Hook()
     end
     S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
     S5Hook.ReloadCutscenes();
+end
+
+-- Callbacks --
+
+function GameCallback_OnQuestSystemLoaded()
 end
 
 -- -------------------------------------------------------------------------- --
@@ -4655,16 +4671,16 @@ function b_Reward_OpenResourceSale:CustomFunction(_Quest)
     end
 
     local NPC = new(NonPlayerMerchant, self.Data.Merchant);
-    if self.Data.OfferType1 then
+    if self.Data.OfferType1 ~= nil and self.Data.OfferType1 ~= "-" then
         NPC:AddResourceOffer(ResourceType.Gold, 1000, {[self.Data.OfferType1] = ResourceGoldRatio[self.Data.OfferType1] or 1000}, self.Data.OfferAmount1, 3*60);
     end
-    if self.Data.OfferType2 then
+    if self.Data.OfferType2 ~= nil and self.Data.OfferType2 ~= "-" then
         NPC:AddResourceOffer(ResourceType.Gold, 1000, {[self.Data.OfferType2] = ResourceGoldRatio[self.Data.OfferType2] or 1000}, self.Data.OfferAmount2, 3*60);
     end
-    if self.Data.OfferType3 then
+    if self.Data.OfferType3 ~= nil and self.Data.OfferType3 ~= "-" then
         NPC:AddResourceOffer(ResourceType.Gold, 1000, {[self.Data.OfferType3] = ResourceGoldRatio[self.Data.OfferType3] or 1000}, self.Data.OfferAmount3, 3*60);
     end
-    if self.Data.OfferType4 then
+    if self.Data.OfferType4 ~= nil and self.Data.OfferType4 ~= "-" then
         NPC:AddResourceOffer(ResourceType.Gold, 1000, {[self.Data.OfferType4] = ResourceGoldRatio[self.Data.OfferType4] or 1000}, self.Data.OfferAmount4, 3*60);
     end
     NPC:Activate();
@@ -4947,6 +4963,12 @@ function b_Reward_AI_CreateAIPlayer:AddParameter(_Index, _Parameter)
         self.Data.PlayerID = _Parameter;
     elseif _Index == 2 then
         self.Data.TechLevel = _Parameter;
+    elseif _Index == 3 then
+        self.Data.SerfLimit = _Parameter;
+    elseif _Index == 4 then
+        self.Data.Construct = _Parameter;
+    elseif _Index == 5 then
+        self.Data.Repair = _Parameter;
     end
 end
 
@@ -4955,7 +4977,7 @@ function b_Reward_AI_CreateAIPlayer:GetRewardTable()
 end
 
 function b_Reward_AI_CreateAIPlayer:CustomFunction(_Quest)
-    QuestSystemBehavior:CreateAI(self.Data.PlayerID, self.Data.TechLevel);
+    QuestSystemBehavior:CreateAI(self.Data.PlayerID, self.Data.TechLevel, self.Data.SerfLimit, self.Data.Construct, self.Data.Repair);
 end
 
 function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
@@ -4965,6 +4987,10 @@ function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
     end
     if not self.Data.TechLevel or self.Data.TechLevel < 1 or self.Data.TechLevel > 4 then
         dbg(_Quest, self, "Technology level must be between 1 and 4!");
+        return true;
+    end
+    if type(self.Data.SerfLimit) ~= "number" or self.Data.SerfLimit < 0 then
+        dbg(_Quest, self, "Serf limit must be a number >= 0!");
         return true;
     end
     if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] then
@@ -5807,10 +5833,10 @@ function b_Goal_CustomVariable:GetGoalTable()
 end
 
 function b_Goal_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystem.Data.CustomVariables[self.Data.VariableName];
+    local CustomValue = QuestSystem.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
-        ComparsionValue = QuestSystem.Data.CustomVariables[self.Data.Value];
+        ComparsionValue = QuestSystem.CustomVariables[self.Data.Value];
     end
 
     if CustomValue and ComparsionValue then
@@ -5875,10 +5901,10 @@ function b_Reprisal_CustomVariable:GetReprisalTable()
 end
 
 function b_Reprisal_CustomVariable:CustomFunction(_Quest)
-    local OldValue = QuestSystem.Data.CustomVariables[self.Data.VariableName] or 0;
+    local OldValue = QuestSystem.CustomVariables[self.Data.VariableName] or 0;
     local NewValue = self.Data.Value;
     if type(NewValue) == "string" then
-        NewValue = QuestSystem.Data.CustomVariables[self.Data.Value];
+        NewValue = QuestSystem.CustomVariables[self.Data.Value];
     end
 
     if NewValue then
@@ -5897,7 +5923,7 @@ function b_Reprisal_CustomVariable:CustomFunction(_Quest)
         elseif self.Data.Operator == "^" then
             OldValue = OldValue ^ NewValue;
         end
-        QuestSystem.Data.CustomVariables[self.Data.VariableName] = OldValue;
+        QuestSystem.CustomVariables[self.Data.VariableName] = OldValue;
     end
 end
 
@@ -5971,10 +5997,10 @@ function b_Trigger_CustomVariable:GetTriggerTable()
 end
 
 function b_Trigger_CustomVariable:CustomFunction(_Quest)
-    local CustomValue = QuestSystem.Data.CustomVariables[self.Data.VariableName];
+    local CustomValue = QuestSystem.CustomVariables[self.Data.VariableName];
     local ComparsionValue = self.Data.Value;
     if type(ComparsionValue) == "string" then
-        ComparsionValue = QuestSystem.Data.CustomVariables[self.Data.Value];
+        ComparsionValue = QuestSystem.CustomVariables[self.Data.Value];
     end
 
     if CustomValue and ComparsionValue then
