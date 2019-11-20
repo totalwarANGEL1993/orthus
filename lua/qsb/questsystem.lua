@@ -1336,9 +1336,9 @@ function QuestTemplate:AttachFragments()
                 ResultText = QuestSystem:ReplacePlaceholders(ResultText);
 
                 if self.m_Description.X ~= nil then
-                    Logic.AddQuestEx(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, Jornal[7], Jornal[8], 1);
+                    Logic.AddQuestEx(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, Jornal[7], Jornal[8], 0);
                 else
-                    Logic.AddQuest(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, 1);
+                    Logic.AddQuest(Jornal[2], ID, ResultType, ResultText.. Jornal[4], NewQuestText, 0);
                 end
             end
         end
