@@ -1740,7 +1740,7 @@ end
 b_Goal_SoldierCount = {
     Data = {
         Name = "Goal_SoldierCount",
-        Type = Objectives.Settlers
+        Type = Objectives.Soldiers
     },
 };
 
