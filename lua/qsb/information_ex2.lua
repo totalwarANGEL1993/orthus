@@ -298,7 +298,7 @@ function Information:OverrideEscape()
     GameCallback_Escape = function()
         -- Briefing no escape
         if IsBriefingActive() then
-            if Information.NoEscape then
+            if Information.ForbidEscaping then
                 return;
             end
         end
