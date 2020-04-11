@@ -741,7 +741,6 @@ end
 -- @field BlackKnight Black knight troop types
 -- @field Bandit Bandit troop types
 -- @field Barbarian Barbarian troop types
--- @field Nephilim Nephilim troop types
 -- @within Constants
 --
 QuestSystemBehavior.ArmyCategories = {
@@ -772,10 +771,6 @@ QuestSystemBehavior.ArmyCategories = {
         UpgradeCategories.LeaderBarbarian,
         UpgradeCategories.LeaderCavalry,
         UpgradeCategories.LeaderHeavyCavalry
-    },
-    Nephilim = {
-        UpgradeCategories.Evil_LeaderBearman,
-        UpgradeCategories.Evil_LeaderSkirmisher
     },
 };
 
