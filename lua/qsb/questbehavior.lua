@@ -310,6 +310,56 @@ function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Sp
     return ID;
 end
 
+---
+-- Registers an attack target position for the player.
+--
+-- Already generated armies will also add this position to the list of their
+-- possible targets.
+--
+-- @param[type=number] _PlayerID ID of player
+-- @param              _Position Zielppsition
+-- @return[type=number] ID of target position
+-- @within Methods
+--
+function CreateAIPlayerAttackTarget(_PlayerID, _Position)
+    return QuestSystemBehavior:CreateAIPlayerAttackTarget(_PlayerID, _Position)
+end
+
+---
+-- Removes the attack target from the AI player and all armies of said player.
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _ID       Zielppsition
+-- @within Methods
+--
+function DestroyAIPlayerAttackTarget(_PlayerID, _ID)
+    QuestSystemBehavior:DestroyAIPlayerAttackTarget(_PlayerID, _ID)
+end
+
+---
+-- Registers an patrol waypoint position for the player.
+--
+-- Already generated armies will also add this position to the list of their
+-- patrol waypoints.
+--
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _Position Zielppsition
+-- @return[type=number] ID of target position
+-- @within Methods
+--
+function CreateAIPlayerPatrolPoint(_PlayerID, _Position)
+    return QuestSystemBehavior:CreateAIPlayerPatrolPoint(_PlayerID, _ID);
+end
+
+---
+-- Removes the patrol waypoint from the AI player and all armies of said player.
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _ID       Zielppsition
+-- @within Methods
+--
+function DestroyAIPlayerPatrolPoint(_PlayerID, _ID)
+    QuestSystemBehavior:DestroyAIPlayerPatrolPoint(_PlayerID, _ID);
+end
+
 -- Helper --
 
 -- Has no use while mapping, so it's not documented.
@@ -482,6 +532,8 @@ QuestSystemBehavior = {
         PlayerColorAssigment = {},
         CreatedAiPlayers = {},
         CreatedAiArmies = {},
+        AiPlayerAttackTargets = {},
+        AiPlayerPatrolPoints = {},
         AiArmyNameToId = {},
         ChoicePages = {},
     }
@@ -700,6 +752,16 @@ function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Const
         TechnologyLevel = _TechLevel,
         CannonType = Entities["PV_Cannon".._TechLevel],
     };
+    self.Data.AiPlayerAttackTargets[_PlayerID] = {};
+    self.Data.AiPlayerPatrolPoints[_PlayerID] = {};
+
+    -- Find default target and patrol points
+    for k, v in pairs(GetEntitiesByPrefix("Player" .._PlayerID.. "_AttackTarget")) do
+        self:CreateAIPlayerAttackTarget(_PlayerID, v);
+    end
+    for k, v in pairs(GetEntitiesByPrefix("Player" .._PlayerID.. "_PatrolPoint")) do
+        self:CreateAIPlayerPatrolPoint(_PlayerID, v);
+    end
 end
 
 ---
@@ -814,6 +876,204 @@ function QuestSystemBehavior:ArmyDisablePatrolAbility(_PlayerID, _ArmyID, _Flag)
 end
 
 ---
+-- Adds an attack target to the AI player.
+-- @param[type=number] _PlayerID ID of player
+-- @param              _Position Zielppsition
+-- @return[type=number] ID of target position
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:CreateAIPlayerAttackTarget(_PlayerID, _Position)
+    if not self.Data.CreatedAiPlayers[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return -1;
+    end
+    if type(_Position) ~= "table" then
+        _Position = GetPosition(_Position);
+    end
+    local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, _Position.X, _Position.Y, 0, _PlayerID);
+    table.insert(self.Data.AiPlayerAttackTargets[_PlayerID], ID);
+
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        for i= 1, table.getn(self.Data.CreatedAiArmies[_PlayerID]), 1 do
+            self:ArmyCreateAttackTarget(
+                _PlayerID,
+                self.Data.CreatedAiArmies[_PlayerID][i],
+                ID
+            );
+        end
+    end
+    return ID;
+end
+
+---
+-- Removes an attack target from the AI player.
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _ID       Zielppsition
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:DestroyAIPlayerAttackTarget(_PlayerID, _ID)
+    if not self.Data.CreatedAiPlayers[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return;
+    end
+    -- Remove from AI list
+    for i= table.getn(self.Data.AiPlayerAttackTargets[_PlayerID]), 1, -1 do
+        if self.Data.AiPlayerAttackTargets[_PlayerID][i] == _ID then
+            table.remove(self.Data.AiPlayerAttackTargets[_PlayerID], i);
+        end
+    end
+    -- Remove from army list
+    self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
+    for i= 1, table.getn(self.Data.CreatedAiArmies[_PlayerID]), 1 do
+        self:ArmyRemoveAttackTarget(
+            _PlayerID,
+            self.Data.CreatedAiArmies[_PlayerID][i],
+            _ID
+        );
+    end
+end
+
+---
+-- Adds an patrol waypoint to the AI player.
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _Position Zielppsition
+-- @return[type=number] ID of target position
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:CreateAIPlayerPatrolPoint(_PlayerID, _Position)
+    if not self.Data.CreatedAiPlayers[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return -1;
+    end
+    if type(_Position) ~= "table" then
+        _Position = GetPosition(_Position);
+    end
+    local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, _Position.X, _Position.Y, 0, _PlayerID);
+    table.insert(self.Data.AiPlayerPatrolPoints[_PlayerID], ID);
+
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        for i= 1, table.getn(self.Data.CreatedAiArmies[_PlayerID]), 1 do
+            self:ArmyCreatePatrolTarget(
+                _PlayerID,
+                self.Data.CreatedAiArmies[_PlayerID][i],
+                ID
+            );
+        end
+    end
+    return ID;
+end
+
+---
+-- Removes an patrol waypoint from the AI player.
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _ID       Zielppsition
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:DestroyAIPlayerPatrolPoint(_PlayerID, _ID)
+    if not self.Data.CreatedAiPlayers[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return;
+    end
+    -- Remove from AI list
+    for i= table.getn(self.Data.AiPlayerPatrolPoints[_PlayerID]), 1, -1 do
+        if self.Data.AiPlayerPatrolPoints[_PlayerID][i] == _ID then
+            table.remove(self.Data.AiPlayerPatrolPoints[_PlayerID], i);
+        end
+    end
+    -- Remove from army list
+    self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
+    for i= 1, table.getn(self.Data.CreatedAiArmies[_PlayerID]), 1 do
+        self:ArmyRemovePatrolTarget(
+            _PlayerID,
+            self.Data.CreatedAiArmies[_PlayerID][i],
+            _ID
+        );
+    end
+end
+
+---
+-- Adds an attack target to the army.
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _ArmyID   ID of armY
+-- @param[type=number] _Position Zielppsition
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:ArmyCreateAttackTarget(_PlayerID, _ArmyID, _Position)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        local army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
+        if army and army.Advanced then
+            self:ArmyRemoveAttackTarget(_PlayerID, _ArmyID, _Position)
+            table.insert(army.Advanced.attackPosition, _Position);
+        end
+    end
+end
+
+---
+-- Removes an attack target from the army.
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _ArmyID   ID of armY
+-- @param[type=number] _Position Zielppsition
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:ArmyRemoveAttackTarget(_PlayerID, _ArmyID, _Position)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        local army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
+        if army and army.Advanced then
+            for i= table.getn(army.Advanced.attackPosition), 1, -1 do
+                if army.Advanced.attackPosition[i] == _Position then
+                    table.remove(army.Advanced.attackPosition, i);
+                end
+            end
+        end
+    end
+end
+
+---
+-- Adds a patrol waypoint to the army.
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _ArmyID   ID of armY
+-- @param[type=number] _Position Zielppsition
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:ArmyCreatePatrolTarget(_PlayerID, _ArmyID, _Position)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        local army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
+        if army and army.Advanced then
+            self:ArmyRemovePatrolTarget(_PlayerID, _ArmyID, _Position);
+            table.insert(army.Advanced.patrolPoints, _Position);
+        end
+    end
+end
+
+---
+-- Removes a patrol waypoint from the army.
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _ArmyID   ID of armY
+-- @param[type=number] _Position Zielppsition
+-- @within QuestSystemBehavior
+-- @local
+--
+function QuestSystemBehavior:ArmyRemovePatrolTarget(_PlayerID, _ArmyID, _Position)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        local army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
+        if army and army.Advanced then
+            for i= table.getn(army.Advanced.patrolPoints), 1, -1 do
+                if army.Advanced.patrolPoints[i] == _Position then
+                    table.remove(army.Advanced.patrolPoints, i);
+                end
+            end
+        end
+    end
+end
+
+---
 -- Creates an army for the AI that is recruited from the barracks of the player.
 -- The cannon type is automatically set by the technology level of the AI.
 -- @param[type=number] _PlayerID   ID of player
@@ -840,24 +1100,6 @@ function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area
         return;
     end
 
-    -- Get attack positions
-    local AttackPositions = GetEntitiesByPrefix("Player" .._PlayerID.. "_AttackTarget");
-    for i= 1, table.getn(AttackPositions), 1 do
-        AttackPositions[i] = Logic.GetEntityName(AttackPositions[i]);
-    end
-    if table.getn(AttackPositions) == 0 then
-        AttackPositions = nil;
-    end
-
-    -- Get patrol points
-    local PatrolPoints = GetEntitiesByPrefix("Player" .._PlayerID.. "_PatrolPoint");
-    for i= 1, table.getn(PatrolPoints), 1 do
-        PatrolPoints[i] = Logic.GetEntityName(PatrolPoints[i]);
-    end
-    if table.getn(PatrolPoints) == 0 then
-        PatrolPoints = {_Position};
-    end
-
     -- Set allowed types
     if not _TroopTypes then
         _TroopTypes = copy(QuestSystemBehavior.ArmyCategories.City);
@@ -878,8 +1120,8 @@ function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area
     army.AllowedTypes		     = _TroopTypes;
 
     army.Advanced                = {};
-    army.Advanced.attackPosition = AttackPositions;
-    army.Advanced.patrolPoints   = PatrolPoints;
+    army.Advanced.attackPosition = copy(self.Data.AiPlayerAttackTargets[_PlayerID]);
+    army.Advanced.patrolPoints   = copy(self.Data.AiPlayerPatrolPoints[_PlayerID]);
 
     table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
     SetupAITroopGenerator("QuestSystemBehavior_AiArmies_" .._PlayerID.. "_" ..ArmyID, self.Data.CreatedAiArmies[_PlayerID][ArmyID]);
@@ -910,31 +1152,15 @@ function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, 
 
     -- Check created AI
     if not self.Data.CreatedAiPlayers[_PlayerID] then
+        assert(false, "No AI created")
         return;
     end
 
     -- Get army ID
     local ArmyID = table.getn(self.Data.CreatedAiArmies[_PlayerID]) +1;
     if ArmyID > 10 then
+        assert(false, "To many armies");
         return;
-    end
-
-    -- Get attack positions
-    local AttackPositions = GetEntitiesByPrefix("Player" .._PlayerID.. "_AttackTarget");
-    for i= 1, table.getn(AttackPositions), 1 do
-        AttackPositions[i] = Logic.GetEntityName(AttackPositions[i]);
-    end
-    if table.getn(AttackPositions) == 0 then
-        AttackPositions = nil;
-    end
-
-    -- Get patrol points
-    local PatrolPoints = GetEntitiesByPrefix("Player" .._PlayerID.. "_PatrolPoint");
-    for i= 1, table.getn(PatrolPoints), 1 do
-        PatrolPoints[i] = Logic.GetEntityName(PatrolPoints[i]);
-    end
-    if table.getn(PatrolPoints) == 0 then
-        PatrolPoints = {_Position};
     end
 
     -- Convert spawned types list
@@ -966,8 +1192,8 @@ function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, 
     army.noEnemyDistance 	     = 700;
 
     army.Advanced                = {};
-    army.Advanced.attackPosition = AttackPositions;
-    army.Advanced.patrolPoints   = PatrolPoints;
+    army.Advanced.attackPosition = copy(self.Data.AiPlayerAttackTargets[_PlayerID]);
+    army.Advanced.patrolPoints   = copy(self.Data.AiPlayerPatrolPoints[_PlayerID]);
 
     table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
     SetupAITroopSpawnGenerator("QuestSystemBehavior_AiArmies_" .._PlayerID.. "_" ..ArmyID, self.Data.CreatedAiArmies[_PlayerID][ArmyID]);
