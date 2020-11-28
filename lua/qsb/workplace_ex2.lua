@@ -15,7 +15,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.questsystem</li>
+-- <li>qsb.mpsync</li>
 -- </ul>
 --
 -- @set sort=true
@@ -107,7 +107,7 @@ end
 --
 function QuestSystem.Workplace:OverrideInterfaceTooltip()
     GUITooltip_NormalButton_Orig_WorkplaceMod = GUITooltip_NormalButton
-	GUITooltip_NormalButton = function( a )
+	GUITooltip_NormalButton = function(a)
 		GUITooltip_NormalButton_Orig_WorkplaceMod(a);
         local lang = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
 

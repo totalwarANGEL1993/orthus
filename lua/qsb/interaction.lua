@@ -27,6 +27,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
+-- <li>qsb.mpsync</li>
 -- </ul>
 --
 -- @set sort=true

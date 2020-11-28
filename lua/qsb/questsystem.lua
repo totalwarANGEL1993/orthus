@@ -31,6 +31,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
+-- <li>qsb.mpsync</li>
 -- </ul>
 --
 -- @set sort=true
@@ -71,6 +72,7 @@ function QuestSystem:InstallQuestSystem()
         math.random(1, 100);
 
         self:InitalizeQuestEventTrigger();
+        MPSync:Install();
 
         -- Optional briefing expansion
         if ActivateBriefingExpansion then
@@ -628,7 +630,7 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
     elseif Behavior[1] == Objectives.Tribute then
         if Behavior[4] == nil then
             local Text = QuestSystem:ReplacePlaceholders(Behavior[3]);
-            g_UniqueTributeCounter = (g_UniqueTributeCounter or 0) +1;
+            g_UniqueTributeCounter = (g_UniqueTributeCounter or 100000000) +1;
             Logic.AddTribute(self.m_Receiver, g_UniqueTributeCounter, 0, 0, Text, unpack(Behavior[2]));
             Behavior[4] = g_UniqueTributeCounter;
         end
