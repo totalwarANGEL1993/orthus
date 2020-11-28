@@ -20,7 +20,7 @@
 
 QuestSystem.GameSpeedSwitch = {
     m_CurrentSpeed = 1,
-    m_SpeedLimit = 5,
+    m_SpeedLimit = 3,
     m_SpeedUpAllowed = true,
 }
 
@@ -52,6 +52,10 @@ end
 -- @local
 --
 function QuestSystem.GameSpeedSwitch:Install()
+    -- Speed up is not allowed in multiplayer hence will not be started.
+    if XNetwork ~= nil and XNetwork.Manager_DoesExist() == 1 then
+        return;
+    end
     if not self.m_Installed then
         self.m_Installed = true;
         self:OnSaveGameLoaded();
@@ -156,6 +160,11 @@ end
 -- @local
 --
 function QuestSystem.GameSpeedSwitch:OnSaveGameLoaded()
+    -- Speed up is not allowed in multiplayer hence will not be loaded.
+    -- (if a multiplayer game is somehow saved...)
+    if XNetwork ~= nil and XNetwork.Manager_DoesExist() == 1 then
+        return;
+    end
     XGUIEng.TransferMaterials("StatisticsWindowTimeScaleButton", "OnlineHelpButton" );
     XGUIEng.SetWidgetPositionAndSize("OnlineHelpButton",200,2,35,35);
     self:OverrideGUI();
