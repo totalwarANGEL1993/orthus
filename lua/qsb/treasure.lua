@@ -264,7 +264,7 @@ function TreasureTemplate:StartController()
             return;
         end
         local Position = GetPosition(_ScriptName);
-        for i= 1, 8, 1 do
+        for i= 1, table.getn(Score.Player), 1 do
             if Logic.IsPlayerEntityOfCategoryInArea(i, Position.X, Position.Y, 350, "Hero") == 1 then
                 if GUI.GetPlayerID() == i then
                     Sound.PlayFeedbackSound(Sounds.VoicesMentor_CHEST_FoundTreasureChest_rnd_01);

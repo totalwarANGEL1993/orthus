@@ -1348,7 +1348,7 @@ end
 -- Save Actions --
 
 function QuestSystemBehavior.UpdatePlayerColorAssigment()
-    for i= 1, 8, 1 do
+    for i= 1, table.getn(Score.Player), 1 do
         local Color = QuestSystemBehavior.Data.PlayerColorAssigment[i];
         if Color then
             Display.SetPlayerColor(i, Color);

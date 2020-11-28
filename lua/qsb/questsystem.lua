@@ -67,7 +67,7 @@ function QuestSystem:InstallQuestSystem()
         self.SystemInstalled = true;
 
         -- Quest descriptions for all players
-        for i= 1, 8, 1 do
+        for i= 1, table.getn(Score.Player), 1 do
             self.QuestDescriptions[i] = {};
         end
 
@@ -222,7 +222,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
         local PaydayTimeoutFlag = PaydayTimeoutFlag or {};
         local PaydayOverFlag = PaydayOverFlag or {};
 
-        for i= 1, 8, 1 do
+        for i= 1, table.getn(Score.Player), 1 do
             PaydayTimeoutFlag[i] = PaydayTimeoutFlag[i] or false;
             PaydayOverFlag[i] = PaydayOverFlag[i] or false;
 
@@ -382,7 +382,7 @@ function QuestSystem:GetJornalByQuestID(_QuestID)
     if not Quest then
         return;
     end
-    for i= 1, 8, 1 do
+    for i= 1, table.getn(Score.Player), 1 do
         if  self.QuestDescriptions[Quest.m_Receiver][i] 
         and self.QuestDescriptions[Quest.m_Receiver][i][1] == _QuestID then
             return self.QuestDescriptions[Quest.m_Receiver][i], i;
