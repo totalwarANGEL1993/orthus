@@ -435,7 +435,7 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
 
     self.m_State       = QuestStates.Inactive;
     self.m_Result      = QuestResults.Undecided;
-    self.m_Receiver    = _Receiver or GUI.GetPlayerID();
+    self.m_Receiver    = _Receiver;
 
     table.insert(QuestSystem.Quests, self);
     self.m_QuestID = table.getn(QuestSystem.Quests);
