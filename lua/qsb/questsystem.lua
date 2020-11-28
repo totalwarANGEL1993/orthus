@@ -2094,6 +2094,28 @@ function SoldierGetLeaderEntityID(_eID)
     return _eID;
 end
 
+---
+-- Returns the script name of the entity. If the entity do not have a name a
+-- unique ongoing name is added to the entity and returned
+--
+-- @param _eID [number] EntityID
+-- @return [string] Script name
+--
+function GiveEntityName(_eID)
+    if type(_eID) == "string" then
+        return _eID;
+    else
+        assert(type(_eID) == "number");
+        local name = Logic.GetEntityName(_eID);
+        if (type(name) ~= "string" or name == "" ) then
+            GiveEntityName_EntityNameCounter = (GiveEntityName_EntityNameCounter or 0)+ 1;
+            name = "eName_"..GiveEntityName_EntityNameCounter;
+            Logic.SetEntityName(_eID,name);
+        end
+        return name;
+    end
+end
+
 -- -------------------------------------------------------------------------- --
 
 -- Allows tributes... You are not documented, you are just here. ;)

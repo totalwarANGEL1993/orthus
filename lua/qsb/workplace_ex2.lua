@@ -22,10 +22,9 @@
 --
 
 QuestSystem.Workplace = {
-    m_Data = {
-        WorkplaceStates = {},
-        UseMod = true,
-    },
+    WorkplaceStates = {},
+	ScriptEvent = nil,
+    UseMod = true,
 };
 
 ---
@@ -37,6 +36,7 @@ function QuestSystem.Workplace:Install()
     self:OverrideInterfaceAction();
     self:OverrideInterfaceTooltip();
     self:OverrideInterfaceUpdate();
+    self:PrepareWorkerAmountEvent();
 end
 
 ---
@@ -47,7 +47,26 @@ end
 -- @local
 --
 function QuestSystem.Workplace:EnableMod(_Flag)
-    self.m_Data.UseMod = _Flag == true;
+    self.UseMod = _Flag == true;
+end
+
+---
+-- Creates the event for adjusting the worker amount.
+--
+-- @within QuestSystem.Workplace
+-- @local
+--
+function QuestSystem.Workplace:PrepareWorkerAmountEvent()
+	self.ScriptEvent = MPSync:CreateScriptEvent(function(_BuildingID, _Amount, _State, ...)
+		local ScriptName = GiveEntityName(_BuildingID);
+		local WorkerIDs = {Logic.GetAttachedWorkersToBuilding(_BuildingID)};
+		for j=1,table.getn(WorkerIDs)do
+			Logic.SetTaskList(WorkerIDs[j],TaskLists.TL_WORKER_EAT_START);
+		end
+		QuestSystem.Workplace.WorkplaceStates[ScriptName] = _State;
+		GUI.SetCurrentMaxNumWorkersInBuilding(_BuildingID, _Amount);
+		InterfaceTool_UpdateWorkerAmountButtons();
+	end);
 end
 
 ---
@@ -57,45 +76,32 @@ end
 --
 function QuestSystem.Workplace:OverrideInterfaceAction()
     GUIAction_SetAmountOfWorkers_Orig_WorkplaceMod = GUIAction_SetAmountOfWorkers
-    GUIAction_SetAmountOfWorkers = function(_state)
+	GUIAction_SetAmountOfWorkers = function(_state)
+		local BuildingID = GUI.GetSelectedEntity();
+		local WorkerIDs = {Logic.GetAttachedWorkersToBuilding(BuildingID)};
+		local MaxNumberOfworkers = Logic.GetMaxNumWorkersInBuilding(BuildingID);
+		local EventID = QuestSystem.Workplace.ScriptEvent;
 		if _state == "few" then
-			local sel = GUI.GetSelectedEntity();
-			local worker = {Logic.GetAttachedWorkersToBuilding(sel)};
-			local eName = GiveEntityName(sel);
 			XGUIEng.HighLightButton("SetWorkersAmountFew",1);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf",0);
             XGUIEng.HighLightButton("SetWorkersAmountFull",0);
             
-			QuestSystem.Workplace.m_Data.WorkplaceStates[eName] = _state;
-			for j=1,table.getn(worker)do
-				Logic.SetTaskList(worker[j],TaskLists.TL_WORKER_EAT_START);
-			end
-            GUIAction_SetAmountOfWorkers_Orig_WorkplaceMod(_state);
+			MPSync:SnchronizedCall(EventID, BuildingID, 0, _state, unpack(WorkerIDs));
             
 		elseif _state == "half" then
-			local sel = GUI.GetSelectedEntity();
-			local worker = {Logic.GetAttachedWorkersToBuilding(sel)};
-			local eName = GiveEntityName(sel);
 			XGUIEng.HighLightButton("SetWorkersAmountFew",0);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf",1);
             XGUIEng.HighLightButton("SetWorkersAmountFull",0);
-            
-			QuestSystem.Workplace.m_Data.WorkplaceStates[eName] = _state;
-			for j=1,math.ceil(table.getn(worker)/2)do
-				Logic.SetTaskList(worker[j],TaskLists.TL_WORKER_EAT_START);
-			end
-            GUIAction_SetAmountOfWorkers_Orig_WorkplaceMod(_state);
+			
+			local HalfAmount = math.ceil(table.getn(WorkerIDs)/2);
+            MPSync:SnchronizedCall(EventID, BuildingID, HalfAmount, _state, unpack(WorkerIDs));
             
 		elseif _state == "full" then
-			local sel = GUI.GetSelectedEntity();
-			local worker = {Logic.GetAttachedWorkersToBuilding(sel)};
-			local eName = GiveEntityName(sel);
 			XGUIEng.HighLightButton("SetWorkersAmountFew",0);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf",0);
 			XGUIEng.HighLightButton("SetWorkersAmountFull",1);
 			
-			QuestSystem.Workplace.m_Data.WorkplaceStates[eName] = _state;
-			GUIAction_SetAmountOfWorkers_Orig_WorkplaceMod(_state);
+			MPSync:SnchronizedCall(EventID, BuildingID, MaxNumberOfworkers, _state, unpack(WorkerIDs));
 		end
 	end
 end
@@ -112,7 +118,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
         local lang = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
 
 		if a == "MenuBuildingGeneric/setworkerfew" then
-			if not(QuestSystem.Workplace.m_Data.UseMod == true) then
+			if not(QuestSystem.Workplace.UseMod == true) then
 				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden);
 			else
 				if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 0 then
@@ -125,7 +131,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
             XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomShortCut, "");
             
 		elseif a == "MenuBuildingGeneric/setworkerhalf" then
-			if not(QuestSystem.Workplace.m_Data.UseMod == true) then
+			if not(QuestSystem.Workplace.UseMod == true) then
 				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden);
 			else
 				if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 0 then
@@ -138,7 +144,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
             XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomShortCut, "");
             
 		elseif a == "MenuBuildingGeneric/setworkerfull" then
-			if not(QuestSystem.Workplace.m_Data.UseMod == true) then
+			if not(QuestSystem.Workplace.UseMod == true) then
 				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden);
 			else
 				if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 0 then
@@ -221,7 +227,7 @@ function QuestSystem.Workplace:OverrideInterfaceUpdate()
 			XGUIEng.ShowWidget("SetWorkersAmountFull",1);
 			XGUIEng.ShowWidget("WorkersIcon",1);
 			if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 1
-			and QuestSystem.Workplace.m_Data.UseMod == true then
+			and QuestSystem.Workplace.UseMod == true then
 				XGUIEng.DisableButton("SetWorkersAmountFew",0);
 				XGUIEng.DisableButton("SetWorkersAmountHalf",0);
 				XGUIEng.DisableButton("SetWorkersAmountFull",0);
@@ -240,12 +246,12 @@ function QuestSystem.Workplace:OverrideInterfaceUpdate()
 	GameCallback_OnBuildingUpgradeComplete = function(a,b)
 		GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod(a,b);
 		local eName = GiveEntityName(b);
-		if QuestSystem.Workplace.m_Data.WorkplaceStates[eName] then
+		if QuestSystem.Workplace.WorkplaceStates[eName] then
 			local backupSel = {GUI.GetSelectedEntities()};
 			GUI.ClearSelection();
 
 			GUI.SelectEntity(b);
-			GUIAction_SetAmountOfWorkers(QuestSystem.Workplace.m_Data.WorkplaceStates[eName]);
+			GUIAction_SetAmountOfWorkers(QuestSystem.Workplace.WorkplaceStates[eName]);
 			GUI.DeselectEntity(b);
 
 			if table.getn(backupSel) > 0 then
@@ -268,28 +274,28 @@ function QuestSystem.Workplace:UpdateDisplay()
 	local sel = GUI.GetSelectedEntity();
 	if sel then
 		local inTable = false;
-		for k,v in pairs(self.m_Data.WorkplaceStates)do
+		for k,v in pairs(self.WorkplaceStates)do
 			local eName = GiveEntityName(sel);
 			if eName == tostring(k) then
 				inTable = true;
 				if IsExisting(eName)then
-					if self.m_Data.WorkplaceStates[k] == "few" then
+					if self.WorkplaceStates[k] == "few" then
 						XGUIEng.HighLightButton("SetWorkersAmountFew",1);
 						XGUIEng.HighLightButton("SetWorkersAmountHalf",0);
                         XGUIEng.HighLightButton("SetWorkersAmountFull",0);
                         
-                    elseif self.m_Data.WorkplaceStates[k] == "half" then
+                    elseif self.WorkplaceStates[k] == "half" then
 						XGUIEng.HighLightButton("SetWorkersAmountFew",0);
 						XGUIEng.HighLightButton("SetWorkersAmountHalf",1);
                         XGUIEng.HighLightButton("SetWorkersAmountFull",0);
                         
-					elseif self.m_Data.WorkplaceStates[k] == "full" then
+					elseif self.WorkplaceStates[k] == "full" then
 						XGUIEng.HighLightButton("SetWorkersAmountFew",0);
 						XGUIEng.HighLightButton("SetWorkersAmountHalf",0);
 						XGUIEng.HighLightButton("SetWorkersAmountFull",1);
 					end
 				else
-					self.m_Data.WorkplaceStates[k] = nil;
+					self.WorkplaceStates[k] = nil;
 				end
 			end
 		end

@@ -37,17 +37,15 @@ end
 -- Creates an script event and returns the event ID. Use the ID to call the
 -- created event.
 -- @param[type=function] _Function Function to call
--- @param                ...       Optional parameters
 -- @within MPSync
 -- @see MPSync:SnchronizedCall
 --
-function MPSync:CreateScriptEvent(_Function, ...)
+function MPSync:CreateScriptEvent(_Function)
     self.UniqueActionCounter = self.UniqueActionCounter +1;
     local ActionIndex = self.UniqueActionCounter;
 
     self.ScriptEvents[ActionIndex] = {
         Function  = _Function,
-        Arguments = copy(arg or {}),
     }
     return self.UniqueActionCounter;
 end
@@ -55,11 +53,17 @@ end
 ---
 -- Calls the script event synchronous for all players.
 -- @param[type=number] _Function ID of script event
+-- @param              ...       List of Parameters (String or Number)
 -- @within MPSync
 -- @see MPSync:CreateScriptEvent
 --
-function MPSync:SnchronizedCall(_ID)
+function MPSync:SnchronizedCall(_ID, ...)
     local Msg = "___MPSync:" .._ID.. ";";
+    if arg and table.getn(arg) > 0 then
+        for i= 1, table.getn(arg), 1 do
+            Msg = Msg .. tostring(arg[i]) .. ";";
+        end
+    end
     if XNetwork ~= nil and XNetwork.Manager_DoesExist() == 1 then
         XNetwork.Chat_SendMessageToAll(Msg);
         return;
@@ -83,7 +87,28 @@ function MPSync:SyncronizeMessageReceived(_Message)
     if not ActionID then
         return;
     end
-    self.ScriptEvents[ActionID].Function(unpack(self.ScriptEvents[ActionID].Arguments));
+    local Parameter = self:GetParameterFromSyncronizeMessage(string.sub(_Message, e2+1));
+    self.ScriptEvents[ActionID].Function(unpack(Parameter));
+end
+
+---
+-- Gets the parameters from the input string and returns them.
+-- @param[type=string] _String Parameter string
+-- @return[type=table] Parameter
+-- @within MPSync
+-- @local
+--
+function MPSync:GetParameterFromSyncronizeMessage(_String)
+    local String = _String;
+    local Parameter = {};
+    while string.len(String) > 1 do
+        local s, e = string.find(String, ";");
+        local Part = string.sub(String, 1, e-1);
+        local PartNumber = tonumber(Part);
+        table.insert(Parameter, (PartNumber ~= nil and PartNumber) or Part);
+        String = string.sub(String, e+1);
+    end
+    return Parameter;
 end
 
 ---
