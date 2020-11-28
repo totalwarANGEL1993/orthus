@@ -193,42 +193,54 @@ end
 -- Applies the default rewards of the treasure chest.
 --
 -- The amount of each resource inside the chest is printed to screen.
+--
+-- @param[type=number] _PlayerID Receiver
 -- @within TreasureTemplate
 -- @local
 --
-function TreasureTemplate:GiveTreasureReward()
+function TreasureTemplate:GiveTreasureReward(_PlayerID)
+    Tools.GiveResources(_PlayerID, unpack(self.m_Rewards));
+    
     local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-    Tools.GiveResources(gvMission.PlayerID, unpack(self.m_Rewards));
     local RewardString = "";
-
-    -- Gold
-    if self.m_Rewards[1] ~= 0 then
-        RewardString = RewardString .. self.m_Rewards[1] .. ((Language == "de" and " Taler ") or " gold ");
-    end
-    -- Clay
-    if self.m_Rewards[2] ~= 0 then
-        RewardString = RewardString .. self.m_Rewards[2] .. ((Language == "de" and " Lehm ") or " clay ");
-    end
-    -- Wood
-    if self.m_Rewards[3] ~= 0 then
-        RewardString = RewardString .. self.m_Rewards[3] .. ((Language == "de" and " Holz ") or " wood ");
-    end
-    -- Stone
-    if self.m_Rewards[4] ~= 0 then
-        RewardString = RewardString .. self.m_Rewards[4] .. ((Language == "de" and " Stein ") or " stone ");
-    end
-    -- Iron
-    if self.m_Rewards[5] ~= 0 then
-        RewardString = RewardString .. self.m_Rewards[5] .. ((Language == "de" and " Eisen ") or " iron ");
-    end
-    -- Sulfur
-    if self.m_Rewards[6] ~= 0 then
-        RewardString = RewardString .. self.m_Rewards[6] .. ((Language == "de" and " Schwefel ") or " sulfur ");
-    end
-    -- Print text
-    if RewardString ~= "" then
-        RewardString = ((Language == "de" and "Ihr findet: ") or "You received: ") .. RewardString;
-        Message(RewardString);
+    if GUI.GetPlayerID() == _PlayerID then
+        -- Gold
+        if self.m_Rewards[1] ~= 0 then
+            RewardString = RewardString .. self.m_Rewards[1] .. ((Language == "de" and " Taler ") or " gold ");
+        end
+        -- Clay
+        if self.m_Rewards[2] ~= 0 then
+            RewardString = RewardString .. self.m_Rewards[2] .. ((Language == "de" and " Lehm ") or " clay ");
+        end
+        -- Wood
+        if self.m_Rewards[3] ~= 0 then
+            RewardString = RewardString .. self.m_Rewards[3] .. ((Language == "de" and " Holz ") or " wood ");
+        end
+        -- Stone
+        if self.m_Rewards[4] ~= 0 then
+            RewardString = RewardString .. self.m_Rewards[4] .. ((Language == "de" and " Stein ") or " stone ");
+        end
+        -- Iron
+        if self.m_Rewards[5] ~= 0 then
+            RewardString = RewardString .. self.m_Rewards[5] .. ((Language == "de" and " Eisen ") or " iron ");
+        end
+        -- Sulfur
+        if self.m_Rewards[6] ~= 0 then
+            RewardString = RewardString .. self.m_Rewards[6] .. ((Language == "de" and " Schwefel ") or " sulfur ");
+        end
+        -- Print text
+        if RewardString ~= "" then
+            RewardString = ((Language == "de" and "Ihr findet: ") or "You received: ") .. RewardString;
+            Message(RewardString);
+        end
+    else
+        local UserName = UserTool_GetPlayerName(_PlayerID);
+        local R, G, B = GUI.GetPlayerColor(_PlayerID);
+        local Text = {
+            de = "@color:%d,%d,%d %s @color:200,200,200 hat eine Schatztruhe gefunden!",
+            en = "@color:%d,%d,%d %s @color:200,200,200 has found a treasure chest!"
+        }
+        Message(string.format(Text[Language], R, G, B, UserName));
     end
 end
 
@@ -252,16 +264,20 @@ function TreasureTemplate:StartController()
             return;
         end
         local Position = GetPosition(_ScriptName);
-        if Logic.IsPlayerEntityOfCategoryInArea(gvMission.PlayerID, Position.X, Position.Y, 350, "Hero") == 1 then
-            Sound.PlayFeedbackSound(Sounds.VoicesMentor_CHEST_FoundTreasureChest_rnd_01);
-            ReplaceEntity(_ScriptName, Entities.XD_ChestOpen);
-            Chest:Deactivate();
-            Chest:GiveTreasureReward();
-            if Chest.m_Callback then
-                Chest:m_Callback();
+        for i= 1, 8, 1 do
+            if Logic.IsPlayerEntityOfCategoryInArea(i, Position.X, Position.Y, 350, "Hero") == 1 then
+                if GUI.GetPlayerID() == i then
+                    Sound.PlayFeedbackSound(Sounds.VoicesMentor_CHEST_FoundTreasureChest_rnd_01);
+                end
+                ReplaceEntity(_ScriptName, Entities.XD_ChestOpen);
+                Chest:Deactivate();
+                Chest:GiveTreasureReward(i);
+                if Chest.m_Callback then
+                    Chest:m_Callback();
+                end
+                QuestSystemBehavior.Data.Treasure[_ScriptName].JobID = nil;
+                return true;
             end
-            QuestSystemBehavior.Data.Treasure[_ScriptName].JobID = nil;
-            return true;
         end
     end, self.m_ScriptName);
 end
