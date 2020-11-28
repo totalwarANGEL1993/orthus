@@ -41,6 +41,7 @@ function QuestSystem.QuestTimer:ActivateTimer(_QuestID)
     if Quest and Quest.m_Description and Quest.m_Time > 0 then
         table.insert(self.m_Data, {
             QuestID   = _QuestID,
+            Receiver  = Quest.m_Receiver,
             Title     = string.gsub(Quest.m_Description.Title, "@cr", ""),
             StartTime = Quest.m_StartTime,
             Duration  = Quest.m_Time,
@@ -181,9 +182,13 @@ function QuestSystem.QuestTimer:Controller()
     if self.m_TimerJob == nil then
         self.m_TimerJob = StartSimpleJobEx(function()
             QuestSystem.QuestTimer:HideAllTimer();
+            local ShownTimer = 0;
             for i= 1, table.getn(QuestSystem.QuestTimer.m_Data), 1 do
-                if i <= 8 then
-                    QuestSystem.QuestTimer:UpdateTimer(i);
+                if QuestSystem.QuestTimer.m_Data[i].Receiver == GUI.GetPlayerID() then
+                    if ShownTimer < 8 then
+                        QuestSystem.QuestTimer:UpdateTimer(i);
+                        ShownTimer = ShownTimer +1;
+                    end
                 end
             end
         end);
