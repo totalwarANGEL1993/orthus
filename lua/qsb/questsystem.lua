@@ -66,6 +66,11 @@ function QuestSystem:InstallQuestSystem()
     if self.SystemInstalled ~= true then
         self.SystemInstalled = true;
 
+        -- Quest descriptions for all players
+        for i= 1, 8, 1 do
+            self.QuestDescriptions[i] = {};
+        end
+
         -- Real random numbers
         local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
         math.randomseed(tonumber(TimeString));
@@ -330,12 +335,12 @@ end
 -- @within QuestSystem
 -- @local
 --
-function QuestSystem:GetNextFreeJornalID()
+function QuestSystem:GetNextFreeJornalID(_PlayerID)
     if self:GetExtensionNumber() == 3 then
-        return table.getn(self.QuestDescriptions) +1;
+        return table.getn(self.QuestDescriptions[_PlayerID]) +1;
     end
     
-    local NextID = table.getn(self.QuestDescriptions) +1;
+    local NextID = table.getn(self.QuestDescriptions[_PlayerID]) +1;
     if NextID < 9 then
         return NextID;
     end
@@ -343,11 +348,11 @@ function QuestSystem:GetNextFreeJornalID()
     local OldestQuestIdx;
     local OldestQuestTime = Logic.GetTime();
 
-    for i= table.getn(self.QuestDescriptions), 1, -1 do
-        if self.QuestDescriptions[i] ~= nil then
-            local Quest = QuestSystem.Quests[self.QuestDescriptions[i][1]];
+    for i= table.getn(self.QuestDescriptions[_PlayerID]), 1, -1 do
+        if self.QuestDescriptions[_PlayerID][i] ~= nil then
+            local Quest = QuestSystem.Quests[self.QuestDescriptions[_PlayerID][i][1]];
             if Quest == nil then
-                self:InvalidateQuestAtJornalID(i);
+                self:InvalidateQuestAtJornalID(_PlayerID, i);
                 return i;
             else
                 if Quest.m_FinishTime ~= nil and OldestQuestTime >= Quest.m_FinishTime then
@@ -359,7 +364,7 @@ function QuestSystem:GetNextFreeJornalID()
     end
 
     if OldestQuestIdx ~= nil then
-        self:InvalidateQuestAtJornalID(OldestQuestIdx);
+        self:InvalidateQuestAtJornalID(_PlayerID, OldestQuestIdx);
         return OldestQuestIdx;
     end
 end
@@ -373,9 +378,14 @@ end
 -- @local
 --
 function QuestSystem:GetJornalByQuestID(_QuestID)
+    local Quest = self.Quests[_QuestID];
+    if not Quest then
+        return;
+    end
     for i= 1, 8, 1 do
-        if self.QuestDescriptions[i] and self.QuestDescriptions[i][1] == _QuestID then
-            return self.QuestDescriptions[i], i;
+        if  self.QuestDescriptions[Quest.m_Receiver][i] 
+        and self.QuestDescriptions[Quest.m_Receiver][i][1] == _QuestID then
+            return self.QuestDescriptions[Quest.m_Receiver][i], i;
         end
     end
 end
@@ -388,17 +398,22 @@ end
 -- @local
 --
 function QuestSystem:RegisterQuestAtJornalID(_JornalID, _QuestData)
-    self.QuestDescriptions[_JornalID] = copy(_QuestData);
+    local Quest = self.Quests[_QuestData[1]];
+    if not Quest then
+        return;
+    end
+    self.QuestDescriptions[Quest.m_Receiver][_JornalID] = copy(_QuestData);
 end
 
 ---
 -- Removes the registered entry for the quest book slot.
--- @return[type=number] Jornal ID
+-- @param[type=number] _PlayerID ID of Receiver
+-- @param[type=number] _JornalID Jornal ID
 -- @within QuestSystem
 -- @local
 --
-function QuestSystem:InvalidateQuestAtJornalID(_JornalID)
-    self.QuestDescriptions[_JornalID] = nil;
+function QuestSystem:InvalidateQuestAtJornalID(_PlayerID, _JornalID)
+    self.QuestDescriptions[_PlayerID][_JornalID] = nil;
 end
 
 -- -------------------------------------------------------------------------- --
@@ -1355,7 +1370,7 @@ end
 function QuestTemplate:CreateQuest()
     if self.m_Description then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            local QuestID = QuestSystem:GetNextFreeJornalID();
+            local QuestID = QuestSystem:GetNextFreeJornalID(self.m_Receiver);
             if QuestID == nil then
                 GUI.AddStaticNote("ERROR: Too many quests in jornal!");
                 return;
@@ -1393,7 +1408,7 @@ end
 function QuestTemplate:CreateQuestEx()
     if self.m_Description and self.m_Description.Position then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
-            local QuestID = QuestSystem:GetNextFreeJornalID();
+            local QuestID = QuestSystem:GetNextFreeJornalID(self.m_Receiver);
             if QuestID == nil then
                 GUI.AddStaticNote("ERROR: Only 8 entries in quest book allowed!");
                 return;
@@ -1497,7 +1512,7 @@ function QuestTemplate:RemoveQuest()
                 mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, ID);
             else
                 Logic.RemoveQuest(self.m_Receiver, ID);
-                QuestSystem:InvalidateQuestAtJornalID(ID);
+                QuestSystem:InvalidateQuestAtJornalID(self.m_Receiver, ID);
             end
         end
     end

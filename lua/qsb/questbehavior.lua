@@ -55,14 +55,14 @@
 --         Info  = 1
 --     },
 --
---     Goal_DestroyPlayer(2),
+--     Goal_DestroyPlayer(2, "HQ2"),
 --     Reward_Victory(),
 --     Trigger_Time(0)
 -- }
 --
 function CreateQuest(_Data)
     local QuestName   = _Data.Name;
-    local Receiver    = _Data.Receiver;
+    local Receiver    = _Data.Receiver or 1;
     local Time        = _Data.Time;
     local Description = _Data.Description;
 
@@ -4450,7 +4450,7 @@ end
 
 function b_Goal_DestroyPlayer:Debug(_Quest)
     if not IsExisting(self.Data.Headquarter) then
-        dbg(_Quest, self, "Headquarter of player " ..string(self.Data.PlayerID).. " is already destroyed!");
+        dbg(_Quest, self, "Headquarter of player " ..tostring(self.Data.PlayerID).. " is already destroyed!");
         return true;
     end
     if not Logic.IsBuilding(GetID(self.Data.Headquarter)) == 0 then
@@ -4585,7 +4585,7 @@ end
 function b_Reprisal_QuestRestartForceActive:Debug(_Quest)
     local QuestID = GetQuestID(self.Data.QuestName);
     if QuestID == 0 then
-        dbg(_Quest, self, "Quest '" ..string(self.Data.QuestName).. "' does not exist!");
+        dbg(_Quest, self, "Quest '" ..tostring(self.Data.QuestName).. "' does not exist!");
         return true;
     end
     return false;
