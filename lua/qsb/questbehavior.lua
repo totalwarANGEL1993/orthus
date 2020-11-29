@@ -2127,7 +2127,7 @@ function b_Goal_NPC:CustomFunction(_Quest)
         local Info = QuestSystem:ReplacePlaceholders(self.Data.Message);
         self.Data.NPC = new(NonPlayerCharacter, self.Data.Target):SetHero(self.Data.Hero):SetHeroInfo(Info):Activate();
     end
-    if self.Data.NPC:TalkedTo() then
+    if self.Data.NPC:TalkedTo(_Quest.m_Receiver) then
         return true;
     end
 end

@@ -14,8 +14,8 @@
 --     :Activate();</pre>
 --
 -- The system also allows to create special traders based of the merchant
--- widget. Units, resources and custom actions can be traded and all offers
--- can respawn. Example for a merchant:
+-- widget. Units, resources, technologies and custom actions can be traded and
+-- all offers can respawn. Example for a merchant:
 -- <pre>local NPC = new(NonPlayerMerchant, "myMerchant")
 --     :AddResourceOffer(ResourceType.Clay, 300, {Gold = 150}, 15, 2*60)
 --     :Activate();</pre>
@@ -34,6 +34,7 @@
 --
 
 Interaction = {
+    Event = {},
     IO = {},
 }
 
@@ -52,6 +53,7 @@ function Interaction:Install()
     self:OverrideNpcInteraction();
     self:OverrideMerchantOffers();
     self:OverrideBriefing();
+    self:CreateNpcMerchantScriptEvents();
 end
 
 ---
@@ -187,6 +189,54 @@ function Interaction:OverrideMerchantOffers()
 end
 
 ---
+-- Creates the events for buying offers and changing offer values for the
+-- NPC trader.
+-- @within Interaction
+-- @local
+--
+function Interaction:CreateNpcMerchantScriptEvents()
+    -- Buy Units
+    Interaction.Event.BuyUnit = MPSync:CreateScriptEvent(function(_PlayerID, _EntityType, _X, _Y)
+        local Instance = Interaction.IO[_ScriptName]
+        local ID = AI.Entity_CreateFormation(_PlayerID, _EntityType, 0, 0, _X, _Y, 0, 0, 3, 0);
+        if Logic.IsLeader(ID) == 1 then
+            Tools.CreateSoldiersForLeader(ID, 16);
+        end
+    end);
+    -- Buy Resources
+    Interaction.Event.BuyRes = MPSync:CreateScriptEvent(function(_PlayerID, _GoodType, _Amount)
+        Logic.AddToPlayersGlobalResource(_PlayerID, _GoodType, _Amount);
+    end);
+    -- Buy Technology
+    Interaction.Event.BuyTech = MPSync:CreateScriptEvent(function(_PlayerID, _TechType)
+        ResearchTechnology(_TechType, _PlayerID);
+    end);
+    -- Buy Custom
+    Interaction.Event.BuyFunc = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _SlotIndex)
+        local Instance = Interaction.IO[_ScriptName]
+        Instance.m_Offers[_SlotIndex].Good(
+            Instance.m_Offers[_SlotIndex],
+            Instance,
+            _PlayerID
+        );
+    end);
+    -- Pay Offer
+    Interaction.Event.SubRes = MPSync:CreateScriptEvent(function(_PlayerID, _ResType, _Amount)
+        Logic.SubFromPlayersGlobalResource(_PlayerID, _ResType, _Amount);
+    end);
+    -- Update values
+    Interaction.Event.Update = MPSync:CreateScriptEvent(function(_ScriptName, _SlotIndex)
+        local Instance = Interaction.IO[_ScriptName]
+        Instance.m_Offers[_SlotIndex].Volume = Instance.m_Offers[_SlotIndex].Volume +1;
+        Instance.m_Offers[_SlotIndex].Load = Instance.m_Offers[_SlotIndex].Load -1;
+        Instance.m_Offers[_SlotIndex].Inflation = Instance.m_Offers[_SlotIndex].Inflation + 0.05;
+        if Instance.m_Offers[_SlotIndex].Inflation > 1.75 then
+            Instance.m_Offers[_SlotIndex].Inflation = 1.75;
+        end
+    end);
+end
+
+---
 -- Function called when a hero speaks to a normal npc.
 -- @param[type=number] _Hero Entity id of hero
 -- @param[type=table] _NpcInstance of npc
@@ -226,7 +276,8 @@ function Interaction_Npc_Controller(_ScriptName)
     if not Interaction.IO[_ScriptName] and not IsDead(_ScriptName) then
         return true;
     end
-    return Interaction.IO[_ScriptName]:Controller();
+    local PlayerID = Logic.EntityGetPlayer(GetID(_ScriptName));
+    return Interaction.IO[_ScriptName]:Controller(PlayerID);
 end
 
 -- -------------------------------------------------------------------------- --
@@ -249,6 +300,8 @@ function NonPlayerCharacter:construct(_ScriptName)
     self.m_VanishPos   = nil;
     self.m_Hero        = nil;
     self.m_HeroInfo    = nil;
+    self.m_Player      = nil;
+    self.m_PlayerInfo  = nil;
     self.m_Follow      = nil;
     self.m_Target      = nil;
     self.m_WayCallback = nil;
@@ -365,7 +418,7 @@ function NonPlayerCharacter:Activate()
         end
         self.m_Active = true;
         self.m_Arrived = false;
-        self.m_TalkedTo = nil;
+        self.m_TalkedTo = {};
     end
     return self;
 end
@@ -395,11 +448,12 @@ end
 
 ---
 -- Checks, if some hero talked to this npc.
+-- @param[type=number] _PlayerID Player ID
 -- @return[type=boolean] Talked to
 -- @within NonPlayerCharacter
 --
-function NonPlayerCharacter:TalkedTo()
-    return self.m_TalkedTo ~= nil;
+function NonPlayerCharacter:TalkedTo(_PlayerID)
+    return self.m_TalkedTo[_PlayerID] ~= nil;
 end
 
 ---
@@ -414,7 +468,7 @@ function NonPlayerCharacter:SetHero(_Hero)
 end
 
 ---
--- Sets the information text, if the wrong hero talked to the npc
+-- Sets the information text, if the wrong hero talked to the npc.
 -- @param[type=string] _Info Info message
 -- @return self
 -- @within NonPlayerCharacter
@@ -425,11 +479,34 @@ function NonPlayerCharacter:SetHeroInfo(_Info)
 end
 
 ---
+-- Sets the player that can speak with the npc
+-- @param[type=number] _Player Id of Player
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:SetPlayer(_Player)
+    self.m_Player = _Hero;
+    return self;
+end
+
+---
+-- Sets the information text, if the wrong player talked to the npc.
+-- @param[type=string] _Info Info message
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:SetPlayerInfo(_Info)
+    self.m_PlayerInfo = _Info;
+    return self;
+end
+
+---
 -- Controlls the actions of a vanilla NPC if it is active.
+-- @param[type=number] _PlayerID ID of player
 -- @within NonPlayerCharacter
 -- @local
 --
-function NonPlayerCharacter:Controller()
+function NonPlayerCharacter:Controller(_PlayerID)
     if self.m_Active == true then
         -- Follow hero
         if self.m_Follow ~= nil and not self.m_Arrived then
@@ -437,7 +514,7 @@ function NonPlayerCharacter:Controller()
             if type(self.m_Follow) == "string" then
                 FollowID = GetEntityId(self.m_Follow);
             else
-                FollowID = self:GetNearestHero(NPC_FOLLOW_HERO_DISTANCE);
+                FollowID = self:GetNearestHero(_PlayerID, NPC_FOLLOW_HERO_DISTANCE);
             end
             if FollowID ~= nil and IsAlive(FollowID) then
                 if self.m_Target and IsNear(self.m_ScriptName, self.m_Target, self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
@@ -478,7 +555,7 @@ function NonPlayerCharacter:Controller()
             self.m_Wanderer.LastTime = self.m_Wanderer.LastTime or 0;
             self.m_Wanderer.Current = self.m_Wanderer.Current or 1;
 
-            if not self:GetNearestHero(NPC_LOOK_AT_HERO_DISTANCE) then
+            if not self:GetNearestHero(_PlayerID, NPC_LOOK_AT_HERO_DISTANCE) then
                 local CurrentTime = Logic.GetTime();
                 if self.m_Wanderer.LastTime < CurrentTime then
                     self.m_Wanderer.LastTime = CurrentTime + (self.m_Waittime or 5*60);
@@ -502,7 +579,7 @@ function NonPlayerCharacter:Controller()
         end
 
         if self.m_Arrived then
-            local NearestHero = self:GetNearestHero();
+            local NearestHero = self:GetNearestHero(_PlayerID);
             LookAt(self.m_ScriptName, NearestHero);
         end
     end
@@ -510,72 +587,85 @@ end
 
 ---
 -- Controlls how the NPC interacts with the hero if spoken to.
--- @param[type=number] _HeroID ID of hero
+-- @param[type=number] _HeroID     ID of hero
+-- @param[type=number] _MerchantID ID of merchant
 -- @within NonPlayerCharacter
 -- @local
 --
-function NonPlayerCharacter:Interact(_HeroID)
+function NonPlayerCharacter:Interact(_HeroID, _MerchantID)
     GUIAction_MerchantReady();
+    local PlayerID = Logic.EntityGetPlayer(_HeroID);
     if self.m_Follow then
         if self.m_Target then
             if IsNear(self.m_ScriptName, self.m_Target, 1200) then
-                self.m_Callback(self, _HeroID);
-                self.m_TalkedTo = _HeroID;
+                self.m_Callback(self, _HeroID, PlayerID);
+                self.m_TalkedTo[PlayerID] = _HeroID;
                 self:HeroesLookAtNpc();
                 self:Deactivate();
             else
                 if self.m_WayCallback then
-                    self.m_WayCallback(self, _HeroID);
+                    self.m_WayCallback(self, _HeroID, PlayerID);
                 end
             end
         else
             if self.m_WayCallback then
-                self.m_WayCallback(self, _HeroID);
+                self.m_WayCallback(self, _HeroID, PlayerID);
             end
         end
 
     elseif table.getn(self.m_Waypoints) > 0 then
         local LastWaypoint = self.m_Waypoints[table.getn(self.m_Waypoints)];
         if IsNear(self.m_ScriptName, LastWaypoint, 1200) then
-            self.m_Callback(self, _HeroID);
-            self.m_TalkedTo = _HeroID;
+            self.m_Callback(self, _HeroID, PlayerID);
+            self.m_TalkedTo[PlayerID] = _HeroID;
             self:HeroesLookAtNpc();
             self:Deactivate();
         else
             if self.m_WayCallback then
-                self.m_WayCallback(self, _HeroID);
+                self.m_WayCallback(self, _HeroID, PlayerID);
             end
         end
 
     elseif table.getn(self.m_Wanderer) > 0 then
         if self.m_WayCallback then
-            self.m_WayCallback(self, _HeroID);
+            self.m_WayCallback(self, _HeroID, PlayerID);
         end
     else
+        -- Abort if hero is not allowed to speak
         if self.m_Hero then
             if _HeroID ~= GetID(self.m_Hero) then
-                if self.m_HeroInfo then
+                if self.m_HeroInfo and PlayerID == GUI.GetPlayerID() then
                     Message(self.m_HeroInfo);
                 end
                 return;
             end
         end
-        self.m_Callback(self, _HeroID);
-        self.m_TalkedTo = _HeroID;
-        self:HeroesLookAtNpc();
+        -- Abort if player is not allowed to speak
+        if self.m_Player then
+            if PlayerID ~= self.m_Player then
+                if self.m_PlayerInfo and PlayerID == GUI.GetPlayerID() then
+                    Message(self.m_PlayerInfo);
+                end
+                return;
+            end
+        end
+        self.m_Callback(self, _HeroID, PlayerID);
+        self.m_TalkedTo[PlayerID] = _HeroID;
+        self:HeroesLookAtNpc(PlayerID);
         self:Deactivate();
     end
 end
 
 ---
 -- Let all heroes of the player look at the npc.
+-- @param[type=number] _PlayerID ID of Player
 -- @within NonPlayerCharacter
 -- @local
 --
-function NonPlayerCharacter:HeroesLookAtNpc()
+function NonPlayerCharacter:HeroesLookAtNpc(_PlayerID)
     local HeroesTable = {};
-    Logic.GetHeroes(GUI.GetPlayerID(), HeroesTable);
-    LookAt(self.m_ScriptName, self.m_TalkedTo);
+    Logic.GetHeroes(_PlayerID, HeroesTable);
+    LookAt(self.m_ScriptName, self.m_TalkedTo[_PlayerID]);
 
     for k, v in pairs(HeroesTable) do
         if v and IsExisting(v) and IsNear(v, self.m_ScriptName, NPC_LOOK_AT_HERO_DISTANCE) then
@@ -590,9 +680,9 @@ end
 -- @within NonPlayerCharacter
 -- @local
 --
-function NonPlayerCharacter:GetNearestHero(_Distance)
+function NonPlayerCharacter:GetNearestHero(_PlayerID, _Distance)
     local HeroesTable = {};
-    Logic.GetHeroes(GUI.GetPlayerID(), HeroesTable);
+    Logic.GetHeroes(_PlayerID, HeroesTable);
 
     local x1, y1, z1   = Logic.EntityGetPos(GetID(self.m_ScriptName));
     local BestDistance = _Distance or Logic.WorldGetSize();
@@ -625,7 +715,9 @@ MerchantOfferTypes = {
 -- @param[type=string] _ScriptName Script name of merchant
 -- @within Classes
 --
-NonPlayerMerchant = {}
+
+NonPlayerMerchant = {};
+
 function NonPlayerMerchant:construct(_ScriptName)
     self.m_ScriptName = _ScriptName;
     self.m_Spawnpoint = nil;
@@ -720,10 +812,11 @@ end
 
 ---
 -- Controlls the refreshing rate of the merchant offers.
+-- @param[type=number] _PlayerID ID of player
 -- @within NonPlayerMerchant
 -- @local
 --
-function NonPlayerMerchant:Controller()
+function NonPlayerMerchant:Controller(_PlayerID)
     if self.m_Active == true then
         for k, v in pairs(self.m_Offers) do
             if v and v.Refresh > -1 then
@@ -995,49 +1088,60 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
 
         -- Mercenary
         if self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Unit then
-            local Position = GetPosition(self.m_ScriptName);
+            local Position
             if self.m_Spawnpoint then
                 Position = GetPosition(self.m_Spawnpoint);
             else
                 Position = GetPosition(self.m_ScriptName);
             end
-            local ID = AI.Entity_CreateFormation(PlayerID, self.m_Offers[_SlotIndex].Good, 0, 0, Position.X, Position.Y, 0, 0, 3, 0);
-            if Logic.IsLeader(ID) == 1 then
-                Tools.CreateSoldiersForLeader(ID, 16);
-            end
+            MPSync:SnchronizedCall(
+                Interaction.Event.BuyUnit,
+                PlayerID,
+                self.m_Offers[_SlotIndex].Good,
+                Position.X,
+                Position.Y
+            );
 
         -- Resource
         elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
-            Logic.AddToPlayersGlobalResource(PlayerID, self.m_Offers[_SlotIndex].Good +1, self.m_Offers[_SlotIndex].Amount);
+            MPSync:SnchronizedCall(
+                Interaction.Event.BuyRes,
+                PlayerID,
+                self.m_Offers[_SlotIndex].Good +1,
+                self.m_Offers[_SlotIndex].Amount
+            );
 
         -- Technology
         elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then
             if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 1 then
                 return;
             end
-            ResearchTechnology(self.m_Offers[_SlotIndex].Good, PlayerID);
+            MPSync:SnchronizedCall(
+                Interaction.Event.BuyTech,
+                PlayerID,
+                self.m_Offers[_SlotIndex].Good
+            );
 
         -- Custom
         else
-            self.m_Offers[_SlotIndex].Good(self.m_Offers[_SlotIndex], self);
+            MPSync:SnchronizedCall(
+                Interaction.Event.BuyFunc,
+                self.m_ScriptName,
+                PlayerID,
+                _SlotIndex
+            );
         end
 
         -- Remove costs
         for k, v in pairs(Costs) do
-            Logic.SubFromPlayersGlobalResource(PlayerID, k, v);
+            MPSync:SnchronizedCall(Interaction.Event.SubRes, PlayerID, k, v);
         end
-
-        -- Add trading volume
-        self.m_Offers[_SlotIndex].Volume = self.m_Offers[_SlotIndex].Volume +1;
-        -- Remove load
-        self.m_Offers[_SlotIndex].Load = self.m_Offers[_SlotIndex].Load -1;
-
-        -- Handle inflation
-        self.m_Offers[_SlotIndex].Inflation = self.m_Offers[_SlotIndex].Inflation + 0.05;
-        if self.m_Offers[_SlotIndex].Inflation > 1.75 then
-            self.m_Offers[_SlotIndex].Inflation = 1.75;
-        end
-
+        -- Update values
+        MPSync:SnchronizedCall(
+            Interaction.Event.Update,
+            self.m_ScriptName,
+            _SlotIndex
+        );
         GUIUpdate_TroopOffer(_SlotIndex);
     end
 end
