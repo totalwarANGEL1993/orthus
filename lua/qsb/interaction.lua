@@ -21,6 +21,8 @@
 --     :Activate();</pre>
 -- This merchant sells 15x300 clay for 150 gold each. After 2 minutes the
 -- offer is restored by 1. The price will have inflation and deflation.
+-- You should forbid to upgrade storehouses to marketplaces because using
+-- merchant npcs alonside the market is kinda stupid.
 --
 -- Normal settlers can either be npcs or merchants!
 --
@@ -448,11 +450,12 @@ end
 
 ---
 -- Checks, if some hero talked to this npc.
--- @param[type=number] _PlayerID Player ID
+-- @param[type=number] _PlayerID ID of Player (Active Player per default)
 -- @return[type=boolean] Talked to
 -- @within NonPlayerCharacter
 --
 function NonPlayerCharacter:TalkedTo(_PlayerID)
+    _PlayerID = _PlayerID or GUI.GetPlayerID();
     return self.m_TalkedTo[_PlayerID] ~= nil;
 end
 
@@ -588,20 +591,16 @@ end
 ---
 -- Controlls how the NPC interacts with the hero if spoken to.
 -- @param[type=number] _HeroID     ID of hero
--- @param[type=number] _MerchantID ID of merchant
 -- @within NonPlayerCharacter
 -- @local
 --
-function NonPlayerCharacter:Interact(_HeroID, _MerchantID)
+function NonPlayerCharacter:Interact(_HeroID)
     GUIAction_MerchantReady();
     local PlayerID = Logic.EntityGetPlayer(_HeroID);
     if self.m_Follow then
         if self.m_Target then
             if IsNear(self.m_ScriptName, self.m_Target, 1200) then
-                self.m_Callback(self, _HeroID, PlayerID);
-                self.m_TalkedTo[PlayerID] = _HeroID;
-                self:HeroesLookAtNpc();
-                self:Deactivate();
+                self:InteractInternal(_HeroID, PlayerID);
             else
                 if self.m_WayCallback then
                     self.m_WayCallback(self, _HeroID, PlayerID);
@@ -616,10 +615,7 @@ function NonPlayerCharacter:Interact(_HeroID, _MerchantID)
     elseif table.getn(self.m_Waypoints) > 0 then
         local LastWaypoint = self.m_Waypoints[table.getn(self.m_Waypoints)];
         if IsNear(self.m_ScriptName, LastWaypoint, 1200) then
-            self.m_Callback(self, _HeroID, PlayerID);
-            self.m_TalkedTo[PlayerID] = _HeroID;
-            self:HeroesLookAtNpc();
-            self:Deactivate();
+            self:InteractInternal(_HeroID, PlayerID);
         else
             if self.m_WayCallback then
                 self.m_WayCallback(self, _HeroID, PlayerID);
@@ -641,7 +637,8 @@ function NonPlayerCharacter:Interact(_HeroID, _MerchantID)
             end
         end
         -- Abort if player is not allowed to speak
-        if self.m_Player then
+        -- This is only checked in multiplayer
+        if self.m_Player and XNetwork.Manager_DoesExist() == 1 then
             if PlayerID ~= self.m_Player then
                 if self.m_PlayerInfo and PlayerID == GUI.GetPlayerID() then
                     Message(self.m_PlayerInfo);
@@ -649,9 +646,52 @@ function NonPlayerCharacter:Interact(_HeroID, _MerchantID)
                 return;
             end
         end
-        self.m_Callback(self, _HeroID, PlayerID);
-        self.m_TalkedTo[PlayerID] = _HeroID;
-        self:HeroesLookAtNpc(PlayerID);
+        self:InteractInternal(_HeroID, PlayerID);
+    end
+end
+
+---
+-- Executes the interaction for normal NPCs.
+--
+-- If the game is in Singleplayer mode the NPC will simply executes their
+-- action.
+-- 
+-- If it is a Multiplayer game then the NPC will be available for all players
+-- and will be deactivated after every player has talked to them.
+-- If allowed player is set for an NPC in Multiplayer only they count and the
+-- NPC is deactivated after this players interacted with them.
+--
+-- @param[type=number] _HeroID   ID of Hero
+-- @param[type=number] _PlayerID ID of Player
+-- @within NonPlayerCharacter
+-- @local
+--
+function NonPlayerCharacter:InteractInternal(_HeroID, _PlayerID)
+    -- Already talked to info for Multiplayer
+    if self.m_TalkedTo[_PlayerID] then
+        if _PlayerID == GUI.GetPlayerID() then
+            local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+            local Text = {
+                de = "Ihr habt bereits mit diesem Charakter gesprochen!",
+                en = "You have already spoken with this characker!"
+            };
+            Message(Text[Language]);
+        end
+        return;
+    end
+    -- Execute action
+    self.m_TalkedTo[_PlayerID] = _HeroID;
+    self.m_Callback(self, _HeroID, _PlayerID);
+    self:HeroesLookAtNpc(_PlayerID);
+    -- Deactivate the NPC
+    if XNetwork.Manager_DoesExist() == 0 or self.m_Player == _PlayerID then
+        self:Deactivate();
+    else
+        for i= 1, MPSync:GetActivePlayers(), 1 do
+            if not self.m_TalkedTo[i] then
+                return;
+            end
+        end
         self:Deactivate();
     end
 end
@@ -665,8 +705,10 @@ end
 function NonPlayerCharacter:HeroesLookAtNpc(_PlayerID)
     local HeroesTable = {};
     Logic.GetHeroes(_PlayerID, HeroesTable);
-    LookAt(self.m_ScriptName, self.m_TalkedTo[_PlayerID]);
-
+    -- NPC only looking at hero in singleplayer
+    if XNetwork ~= nil and XNetwork.Manager_DoesExist() == 1 then
+        LookAt(self.m_ScriptName, self.m_TalkedTo[_PlayerID]);
+    end
     for k, v in pairs(HeroesTable) do
         if v and IsExisting(v) and IsNear(v, self.m_ScriptName, NPC_LOOK_AT_HERO_DISTANCE) then
             LookAt(v, self.m_ScriptName);
