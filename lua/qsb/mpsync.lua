@@ -132,4 +132,24 @@ function MPSync:OverrideMessageReceived()
     end
 end
 
--- MPSync:SnchronizedCall(TestAction1)
+---
+-- Returns the number of human players. In Singleplayer this will always be 1.
+-- @return[type=number] Amount of humans
+-- @within MPSync
+-- @local
+--
+function MPSync:GetActivePlayers()
+    if XNetwork.Manager_DoesExist() == 1 then
+        local Players = 0;
+        local NetworkPlayers = XNetwork.GameInformation_GetMapMaximumNumberOfHumanPlayer();
+        for i= 1, NetworkPlayers, 1 do
+            if  XNetwork.GameInformation_IsHumanPlayerAttachedToPlayerID(i)
+            and Logic.PlayerGetGameState(i) == 1 then
+                Players = Players +1;
+            end
+        end
+        return Players;
+    end
+    return 1;
+end
+
