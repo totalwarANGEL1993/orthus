@@ -239,6 +239,39 @@ function Interaction:CreateNpcMerchantScriptEvents()
 end
 
 ---
+-- Checks if the hero (or the player the hero belongs to) can interact with
+-- the npc or the merchant.
+-- @param[type=table] _Instance Instance of npc or merchant
+-- @param[type=number] _HeroID  Entity id of hero
+-- @return[type=boolean] Interaction possible
+-- @within Interaction
+-- @local
+--
+function Interaction:IsInteractionPossibleForHeroOrPlayer(_Instance, _HeroID)
+    if not _Instance or not _HeroID then
+        return false;
+    end
+    local PlayerIDOfHero = Logic.EntityGetPlayer(_HeroID);
+    if _Instance.m_Hero then
+        if _HeroID ~= GetID(_Instance.m_Hero) then
+            if _Instance.m_HeroInfo and PlayerIDOfHero == GUI.GetPlayerID() then
+                Message(_Instance.m_HeroInfo);
+            end
+            return true;
+        end
+    end
+    if _Instance.m_Player and XNetwork.Manager_DoesExist() == 1 then
+        if PlayerIDOfHero ~= _Instance.m_Player then
+            if _Instance.m_PlayerInfo and PlayerIDOfHero == GUI.GetPlayerID() then
+                Message(_Instance.m_PlayerInfo);
+            end
+            return false;
+        end
+    end
+    return true;
+end
+
+---
 -- Function called when a hero speaks to a normal npc.
 -- @param[type=number] _Hero Entity id of hero
 -- @param[type=table] _NpcInstance of npc
@@ -482,7 +515,7 @@ function NonPlayerCharacter:SetHeroInfo(_Info)
 end
 
 ---
--- Sets the player that can speak with the npc
+-- Sets the player that can speak with the npc.
 -- @param[type=number] _Player Id of Player
 -- @return self
 -- @within NonPlayerCharacter
@@ -590,7 +623,7 @@ end
 
 ---
 -- Controlls how the NPC interacts with the hero if spoken to.
--- @param[type=number] _HeroID     ID of hero
+-- @param[type=number] _HeroID ID of hero
 -- @within NonPlayerCharacter
 -- @local
 --
@@ -627,26 +660,9 @@ function NonPlayerCharacter:Interact(_HeroID)
             self.m_WayCallback(self, _HeroID, PlayerID);
         end
     else
-        -- Abort if hero is not allowed to speak
-        if self.m_Hero then
-            if _HeroID ~= GetID(self.m_Hero) then
-                if self.m_HeroInfo and PlayerID == GUI.GetPlayerID() then
-                    Message(self.m_HeroInfo);
-                end
-                return;
-            end
+        if Interaction:IsInteractionPossibleForHeroOrPlayer(self, _HeroID) then
+            self:InteractInternal(_HeroID, PlayerID);
         end
-        -- Abort if player is not allowed to speak
-        -- This is only checked in multiplayer
-        if self.m_Player and XNetwork.Manager_DoesExist() == 1 then
-            if PlayerID ~= self.m_Player then
-                if self.m_PlayerInfo and PlayerID == GUI.GetPlayerID() then
-                    Message(self.m_PlayerInfo);
-                end
-                return;
-            end
-        end
-        self:InteractInternal(_HeroID, PlayerID);
     end
 end
 
@@ -821,6 +837,50 @@ function NonPlayerMerchant:Deactivate()
 end
 
 ---
+-- Sets the hero that can use this merchant.
+-- @param[type=string] _Hero Scriptname of hero
+-- @return self
+-- @within NonPlayerMerchant
+--
+function NonPlayerMerchant:SetHero(_Hero)
+    self.m_Hero = _Hero;
+    return self;
+end
+
+---
+-- Sets the information text, if the wrong hero talked to the merchant.
+-- @param[type=string] _Info Info message
+-- @return self
+-- @within NonPlayerMerchant
+--
+function NonPlayerMerchant:SetHeroInfo(_Info)
+    self.m_HeroInfo = _Info;
+    return self;
+end
+
+---
+-- Sets the player that can use this merchant.
+-- @param[type=number] _Player Id of Player
+-- @return self
+-- @within NonPlayerMerchant
+--
+function NonPlayerMerchant:SetPlayer(_Player)
+    self.m_Player = _Hero;
+    return self;
+end
+
+---
+-- Sets the information text, if the wrong player talked to the merchant.
+-- @param[type=string] _Info Info message
+-- @return self
+-- @within NonPlayerMerchant
+--
+function NonPlayerMerchant:SetPlayerInfo(_Info)
+    self.m_PlayerInfo = _Info;
+    return self;
+end
+
+---
 -- Returns true, if the npc is currently active.
 -- @return[type=boolean] NPC is active
 -- @within NonPlayerMerchant
@@ -837,10 +897,12 @@ end
 -- @local
 --
 function NonPlayerMerchant:Interact(_HeroID, _TraderID)
+    if not Interaction:IsInteractionPossibleForHeroOrPlayer(self, _HeroID) then
+        return;
+    end
     local CurrentPlayerID = GUI.GetPlayerID();
-    local HeroOfPlayerID = Logic.EntityGetPlayer(_HeroID);
-
-    if HeroOfPlayerID == CurrentPlayerID then
+    local PlayerIDOfHero = Logic.EntityGetPlayer(_HeroID);
+    if PlayerIDOfHero == CurrentPlayerID then
         GUI.SelectEntity(_HeroID);
         XGUIEng.ShowAllSubWidgets(gvGUI_WidgetID.SelectionView, 0);
         XGUIEng.ShowWidget(gvGUI_WidgetID.SelectionGeneric, 1);
