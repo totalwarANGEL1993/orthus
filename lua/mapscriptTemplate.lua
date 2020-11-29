@@ -50,5 +50,9 @@ function FirstMapAction()
     LoadQuestSystem();
     ActivateDebugMode(true, false, true, true);
     
-    
+    -- Call your code here
 end
+
+-- User script -------------------------------------------------------------- --
+
+
