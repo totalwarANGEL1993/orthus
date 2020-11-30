@@ -169,6 +169,21 @@ function ActivateDebugMode(_CheckQuests, _TraceQuests, _Cheats, _Console)
 end
 
 ---
+-- Checks, if the S5Hook has been installed. Hook might not be installed, if
+-- the player uses the History Edition.
+--
+-- @return[type=boolean] Hook installed
+-- @within Methods
+--
+-- @usage if IsS5HookInstalled() then
+--     -- ...
+-- end
+--
+function IsS5HookInstalled()
+    return QuestSystemBehavior.Data.S5HookInitalized == true;
+end
+
+---
 -- Creates an AI player and sets the technology level.
 --
 -- Use this function or the behavior to initalize the AI. An AI must first be
@@ -526,6 +541,7 @@ QuestSystemBehavior = {
     Data = {
         RegisteredQuestBehaviors = {},
         SystemInitalized = false,
+        S5HookInitalized = false,
         Version = "1.2.0",
 
         SaveLoadedActions = {},
@@ -555,11 +571,15 @@ function QuestSystemBehavior:PrepareQuestSystem()
     if not self.Data.SystemInitalized then
         self.Data.SystemInitalized = true;
 
-        self:AddSaveLoadActions(QuestSystemBehavior.UpdatePlayerColorAssigment);
+        self:AddSaveLoadActions(function()
+            QuestSystemBehavior:UpdatePlayerColorAssigment()
+        end);
         if InstallS5Hook then
             self.Data.CurrentMapName = Framework.GetCurrentMapName();
-            self:AddSaveLoadActions(QuestSystemBehavior.InstallS5Hook);
-            QuestSystemBehavior.InstallS5Hook();
+            self:AddSaveLoadActions(function()
+                QuestSystemBehavior:InstallS5Hook()
+            end);
+            QuestSystemBehavior:InstallS5Hook();
         end
 
         Tools.GiveResources = Tools.GiveResouces;
@@ -570,7 +590,9 @@ function QuestSystemBehavior:PrepareQuestSystem()
         self:CreateBehaviorConstructors();
         self:OverwriteMapClosingFunctions();
 
-        GameCallback_OnQuestSystemLoaded();
+        if GameCallback_OnQuestSystemLoaded then
+            GameCallback_OnQuestSystemLoaded();
+        end
         
         Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
         Mission_OnSaveGameLoaded = function()
@@ -1347,7 +1369,7 @@ end
 
 -- Save Actions --
 
-function QuestSystemBehavior.UpdatePlayerColorAssigment()
+function QuestSystemBehavior:UpdatePlayerColorAssigment()
     for i= 1, table.getn(Score.Player), 1 do
         local Color = QuestSystemBehavior.Data.PlayerColorAssigment[i];
         if Color then
@@ -1356,10 +1378,11 @@ function QuestSystemBehavior.UpdatePlayerColorAssigment()
     end
 end
 
-function QuestSystemBehavior.InstallS5Hook()
-    if not InstallS5Hook() then
+function QuestSystemBehavior:InstallS5Hook()
+    if XNetwork.Manager_IsNATReady or not InstallS5Hook() then
         return;
     end
+    self.Data.S5HookInitalized = true;
 
     local ExtraFolder = "extra1";
     if QuestSystem:GetExtensionNumber() > 1 then
@@ -1370,11 +1393,6 @@ function QuestSystemBehavior.InstallS5Hook()
     end
     S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
     S5Hook.ReloadCutscenes();
-end
-
--- Callbacks --
-
-function GameCallback_OnQuestSystemLoaded()
 end
 
 -- -------------------------------------------------------------------------- --
@@ -5609,7 +5627,7 @@ end
 
 function b_Reward_SetPlayerColor:CustomFunction(_Quest)
     QuestSystemBehavior.Data.PlayerColorAssigment[self.Data.PlayerID] = _G[self.Data.Color] or self.Data.Color;
-    QuestSystemBehavior.UpdatePlayerColorAssigment();
+    QuestSystemBehavior:UpdatePlayerColorAssigment();
 end
 
 function b_Reward_SetPlayerColor:Debug(_Quest)
