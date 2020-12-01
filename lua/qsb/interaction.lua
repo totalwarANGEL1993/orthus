@@ -695,8 +695,8 @@ function NonPlayerCharacter:InteractInternal(_HeroID, _PlayerID)
     if XNetwork.Manager_DoesExist() == 0 or self.m_Player == _PlayerID then
         self:Deactivate();
     else
-        for i= 1, MPSync:GetActivePlayers(), 1 do
-            if not self.m_TalkedTo[i] then
+        for k, v in pairs(MPSync:GetActivePlayers()) do
+            if v and not self.m_TalkedTo[v] then
                 return;
             end
         end
@@ -714,7 +714,7 @@ function NonPlayerCharacter:HeroesLookAtNpc(_PlayerID)
     local HeroesTable = {};
     Logic.GetHeroes(_PlayerID, HeroesTable);
     -- NPC only looking at hero in singleplayer
-    if XNetwork ~= nil and XNetwork.Manager_DoesExist() == 1 then
+    if XNetwork.Manager_DoesExist() == 1 then
         LookAt(self.m_ScriptName, self.m_TalkedTo[_PlayerID]);
     end
     for k, v in pairs(HeroesTable) do

@@ -64,7 +64,7 @@ function MPSync:SnchronizedCall(_ID, ...)
             Msg = Msg .. tostring(arg[i]) .. ";";
         end
     end
-    if XNetwork ~= nil and XNetwork.Manager_DoesExist() == 1 then
+    if XNetwork.Manager_DoesExist() == 1 then
         XNetwork.Chat_SendMessageToAll(Msg);
         return;
     end
@@ -139,17 +139,17 @@ end
 -- @local
 --
 function MPSync:GetActivePlayers()
-    if XNetwork.Manager_DoesExist() == 1 then
-        local Players = 0;
-        local NetworkPlayers = XNetwork.GameInformation_GetMapMaximumNumberOfHumanPlayer();
-        for i= 1, NetworkPlayers, 1 do
+    local Players = {};
+    if  XNetwork.Manager_DoesExist() == 1 then
+        for i= 1, Score.Player, 1 do
             if  XNetwork.GameInformation_IsHumanPlayerAttachedToPlayerID(i)
             and Logic.PlayerGetGameState(i) == 1 then
-                Players = Players +1;
+                table.insert(Players, i);
             end
         end
-        return Players;
+    else
+        table.insert(Players, GUI.GetPlayerID());
     end
-    return 1;
+    return Players;
 end
 
