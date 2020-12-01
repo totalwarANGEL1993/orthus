@@ -102,14 +102,14 @@ function Information:CreateAddPageFunctions()
                     -- Set normal text
                     _page = QuestSystem:ReplacePlaceholders(_page);
                     if _page.title then
-                        if string.sub(_page.title, 1, 1) ~= "@" and string.sub(_page.title, 2, 2) ~= "@" then
+                        if not string.find(string.sub(_page.title, 1, 2), "@") then
                             _page.title = "@center " .. _page.title;
                         end
                     end
 
                     -- Set mc text
                     if _page.mc and _page.mc.title then
-                        if string.sub(_page.mc.title, 1, 1) ~= "@" and string.sub(_page.mc.title, 2, 2) ~= "@" then
+                        if not string.find(string.sub(_page.mc.title, 1, 2), "@") then
                             _page.mc.title = "@center " .. _page.mc.title;
                         end
                     end
@@ -302,10 +302,6 @@ function Information:OverrideEscape()
                 return;
             end
         end
-        -- Escape cutscene
-        if gvCutscene then
-			gvCutscene.Skip = true;
-		end
         GameCallback_Escape_Orig_Information();
 	end
 end

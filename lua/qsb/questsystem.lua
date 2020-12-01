@@ -52,6 +52,7 @@ QuestSystem = {
     InlineJobs = {Counter = 0},
     CustomVariables = {},
 
+    UniqueBriefingID = 0,
     Verbose = false,
 };
 
@@ -89,8 +90,8 @@ function QuestSystem:InstallQuestSystem()
         StartBriefing = function(_Briefing, _ID)
             -- Set briefing id
             if not _ID then
-                gvUniqueBriefingID = (gvUniqueBriefingID or 0) +1;
-                _ID = gvUniqueBriefingID;
+                QuestSystem.UniqueBriefingID = QuestSystem.UniqueBriefingID +1;
+                _ID = QuestSystem.UniqueBriefingID;
             end
             -- Enqueue if briefing active
             if IsBriefingActive() then
@@ -113,26 +114,6 @@ function QuestSystem:InstallQuestSystem()
             if table.getn(QuestSystem.BriefingsQueue) > 0 then
                 local Entry = table.remove(QuestSystem.BriefingsQueue, 1);
                 StartBriefing(Entry[1], Entry[2]);
-            end
-        end
-
-        -- Briefing ID
-        if StartCutscene then
-            StartCutscene_Orig_QuestSystem = StartCutscene;
-            StartCutscene = function(_Cutscene,_SkipCutscene)
-                StartCutscene_Orig_QuestSystem(_Cutscene,_SkipCutscene);
-                gvUniqueBriefingID = (gvUniqueBriefingID or 0) +1;
-                gvCutscene = gvCutscene or {};
-                gvCutscene.BriefingID = gvUniqueBriefingID;
-            end
-        end
-
-        -- Briefing ID
-        if CutsceneDone then
-            CutsceneDone_Orig_QuestSystem = CutsceneDone;
-            CutsceneDone = function()
-                CutsceneDone_Orig_QuestSystem();
-                QuestSystem.Briefings[gvCutscene.BriefingID] = true;
             end
         end
     end

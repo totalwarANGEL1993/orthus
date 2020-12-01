@@ -110,14 +110,6 @@ function Interaction:OverrideBriefing()
         GUIAction_MerchantReady();
         return StartBriefing_Orig_Interaction(_briefing);
     end
-
-    if StartCutscene then
-        StartCutscene_Orig_Interaction = StartCutscene;
-        StartCutscene = function(_Cutscene, _EscapeMode)
-            GUIAction_MerchantReady();
-            return StartCutscene_Orig_Interaction(_Cutscene, _EscapeMode);
-        end
-    end
 end
 
 ---
