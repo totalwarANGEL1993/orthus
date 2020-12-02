@@ -52,7 +52,6 @@ QuestSystem = {
     InlineJobs = {Counter = 0},
     CustomVariables = {},
 
-    UniqueBriefingID = 0,
     Verbose = false,
 };
 
@@ -69,6 +68,15 @@ function QuestSystem:InstallQuestSystem()
         
         -- Initalize syncher
         MPSync:Install();
+        self.BriefingFinishedScriptEvent = MPSync:CreateScriptEvent(function(_ID)
+            -- Register briefing end
+            QuestSystem.Briefings[_ID] = true;
+            -- Dequeue next briefing
+            if table.getn(QuestSystem.BriefingsQueue) > 0 then
+                local Entry = table.remove(QuestSystem.BriefingsQueue, 1);
+                StartBriefing(Entry[1], Entry[2], Entry[3]);
+            end
+        end);
 
         -- Quest descriptions for all players
         for i= 1, table.getn(Score.Player), 1 do
@@ -87,36 +95,38 @@ function QuestSystem:InstallQuestSystem()
             ActivateBriefingExpansion();
         end
 
-        -- Briefing ID
+        -- Briefing Start
         StartBriefing_Orig_QuestSystem = StartBriefing;
-        StartBriefing = function(_Briefing, _ID)
+        StartBriefing = function(_Briefing, _Quest, _ID)
             -- Set briefing id
             if not _ID then
-                QuestSystem.UniqueBriefingID = QuestSystem.UniqueBriefingID +1;
-                _ID = QuestSystem.UniqueBriefingID;
+                _ID = MPSync:RequestNewID();
             end
-            -- Enqueue if briefing active
-            if IsBriefingActive() then
-                table.insert(QuestSystem.BriefingsQueue, {copy(_Briefing), _ID});
-                return _ID;
+            -- initalize briefing id
+            QuestSystem.Briefings[_ID] = false;
+
+            -- Display briefing for receiver
+            if _Quest.m_Receiver == GUI.GetPlayerID() then
+                -- Enqueue if briefing active
+                if IsBriefingActive() then
+                    table.insert(QuestSystem.BriefingsQueue, {copy(_Briefing), _Quest, _ID});
+                    return _ID;
+                end
+                -- Start briefing
+                StartBriefing_Orig_QuestSystem(_Briefing);
+                briefingState.BriefingID = _ID;
             end
-            -- Start briefing
-            StartBriefing_Orig_QuestSystem(_Briefing);
-            briefingState.BriefingID = _ID;
             return _ID;
         end
 
-        -- Briefing ID
+        -- Briefing End
         EndBriefing_Orig_QuestSystem = EndBriefing;
         EndBriefing = function()
+            local ID = briefingState.BriefingID;
             -- End briefing
             EndBriefing_Orig_QuestSystem();
-            QuestSystem.Briefings[briefingState.BriefingID] = true;
-            -- Dequeue next briefing
-            if table.getn(QuestSystem.BriefingsQueue) > 0 then
-                local Entry = table.remove(QuestSystem.BriefingsQueue, 1);
-                StartBriefing(Entry[1], Entry[2]);
-            end
+            -- Send briefing end event
+            MPSync:SnchronizedCall(self.BriefingFinishedScriptEvent, ID);
         end
     end
 end

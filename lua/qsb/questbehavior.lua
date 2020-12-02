@@ -590,9 +590,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
         self:CreateBehaviorConstructors();
         self:OverwriteMapClosingFunctions();
 
-        if GameCallback_OnQuestSystemLoaded then
-            GameCallback_OnQuestSystemLoaded();
-        end
+        GameCallback_OnQuestSystemLoaded();
         
         Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
         Mission_OnSaveGameLoaded = function()
@@ -6330,4 +6328,9 @@ function b_Goal_MultipleChoiceSelection:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_MultipleChoiceSelection);
+
+-- Callbacks ---------------------------------------------------------------- --
+
+GameCallback_OnQuestSystemLoaded = function()
+end
 
