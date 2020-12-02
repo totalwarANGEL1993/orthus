@@ -628,9 +628,9 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
     elseif Behavior[1] == Objectives.Tribute then
         if Behavior[4] == nil then
             local Text = QuestSystem:ReplacePlaceholders(Behavior[3]);
-            g_UniqueTributeCounter = (g_UniqueTributeCounter or 100000000) +1;
-            Logic.AddTribute(self.m_Receiver, g_UniqueTributeCounter, 0, 0, Text, unpack(Behavior[2]));
-            Behavior[4] = g_UniqueTributeCounter;
+            local ID = MPSync:RequestNewID();
+            Logic.AddTribute(self.m_Receiver, ID, 0, 0, Text, unpack(Behavior[2]));
+            Behavior[4] = ID;
         end
         if Behavior[5] then
             Behavior.Completed = true;
