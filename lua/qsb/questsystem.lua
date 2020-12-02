@@ -66,6 +66,9 @@ QuestSystem = {
 function QuestSystem:InstallQuestSystem()
     if self.SystemInstalled ~= true then
         self.SystemInstalled = true;
+        
+        -- Initalize syncher
+        MPSync:Install();
 
         -- Quest descriptions for all players
         for i= 1, table.getn(Score.Player), 1 do
@@ -78,7 +81,6 @@ function QuestSystem:InstallQuestSystem()
         math.random(1, 100);
 
         self:InitalizeQuestEventTrigger();
-        MPSync:Install();
 
         -- Optional briefing expansion
         if ActivateBriefingExpansion then
