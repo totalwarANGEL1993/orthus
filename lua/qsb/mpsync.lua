@@ -22,6 +22,7 @@
 MPSync = {
     ScriptEvents = {},
     UniqueActionCounter = 0,
+    UniqueIdCounter = 0,
 };
 
 ---
@@ -31,6 +32,10 @@ MPSync = {
 --
 function MPSync:Install()
     self:OverrideMessageReceived();
+
+    self.ScriptEventNewIdRequested = MPSync:CreateScriptEvent(function()
+        MPSync.UniqueIdCounter = MPSync.UniqueIdCounter +1;
+    end);
 end
 
 ---
@@ -46,7 +51,19 @@ function MPSync:CreateScriptEvent(_Function)
 
     self.ScriptEvents[ActionIndex] = {
         Function  = _Function,
-    }
+    }    
+    return self.UniqueActionCounter;
+end
+
+---
+-- Sends an event that will create an new ID on every machine and returns
+-- the result.
+-- @return[type=number] New synchronized ID
+-- @within MPSync
+-- @see MPSync:SnchronizedCall
+--
+function MPSync:RequestNewID()
+    MPSync:SnchronizedCall(self.ScriptEventNewIdRequested);
     return self.UniqueActionCounter;
 end
 
@@ -64,7 +81,7 @@ function MPSync:SnchronizedCall(_ID, ...)
             Msg = Msg .. tostring(arg[i]) .. ";";
         end
     end
-    if XNetwork.Manager_DoesExist() == 1 then
+    if self:IsMultiplayerGame() then
         XNetwork.Chat_SendMessageToAll(Msg);
         return;
     end
@@ -133,6 +150,62 @@ function MPSync:OverrideMessageReceived()
 end
 
 ---
+-- Checks if the current mission is running as a Multiplayer game.
+-- @return[type=boolean] Mission runs in multiplayer
+-- @within MPSync
+-- @local
+--
+function MPSync:IsMultiplayerGame()
+    return XNetwork.Manager_DoesExist() == 1;
+end
+
+---
+-- Returns true, if the copy of the game is the History Edition.
+-- @return[type=boolean] Game is History Edition
+-- @within MPSync
+-- @local
+--
+function MPSync:IsHistoryEdition()
+    return XNetwork.Manager_IsNATReady ~= nil;
+end
+
+---
+-- Returns true, if the copy of the game is the Community Edition.
+-- (e.g. Kimichuras Community Server)
+-- @return[type=boolean] Game is Community Edition
+-- @within MPSync
+-- @local
+--
+function MPSync:IsCommunityEdition()
+    return CNetwork ~= nil;
+end
+
+---
+-- Returns true, if the copy of the game is the original version.
+-- @return[type=boolean] Game is Original Edition
+-- @within MPSync
+-- @local
+--
+function MPSync:IsOriginal()
+    return not self:IsHistoryEdition() and not self:IsCommunityEdition();
+end
+
+---
+-- Returns true, if the game is properly patched to version 1.06.0217. If the
+-- copy of the game is not the original than it is assumed that the game has
+-- been patched.
+-- @return[type=boolean] Game has latest patch
+-- @within MPSync
+-- @local
+--
+function MPSync:IsPatched()
+    if not self:IsOriginal() then
+        return true;
+    end
+    return string.find(Framework.GetProgramVersion(), "1.06.0217") ~= nil;
+end
+
+---
 -- Returns the number of human players. In Singleplayer this will always be 1.
 -- @return[type=number] Amount of humans
 -- @within MPSync
@@ -140,8 +213,9 @@ end
 --
 function MPSync:GetActivePlayers()
     local Players = {};
-    if  XNetwork.Manager_DoesExist() == 1 then
-        for i= 1, Score.Player, 1 do
+    if self:IsMultiplayerGame() then
+        -- TODO: Does that fix everything for Community Server?
+        for i= 1, table.getn(Score.Player), 1 do
             if  XNetwork.GameInformation_IsHumanPlayerAttachedToPlayerID(i)
             and Logic.PlayerGetGameState(i) == 1 then
                 table.insert(Players, i);
