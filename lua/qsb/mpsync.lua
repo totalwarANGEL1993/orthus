@@ -216,8 +216,7 @@ function MPSync:GetActivePlayers()
     if self:IsMultiplayerGame() then
         -- TODO: Does that fix everything for Community Server?
         for i= 1, table.getn(Score.Player), 1 do
-            if  XNetwork.GameInformation_IsHumanPlayerAttachedToPlayerID(i)
-            and Logic.PlayerGetGameState(i) == 1 then
+            if Logic.PlayerGetGameState(i) == 1 then
                 table.insert(Players, i);
             end
         end
@@ -225,5 +224,20 @@ function MPSync:GetActivePlayers()
         table.insert(Players, GUI.GetPlayerID());
     end
     return Players;
+end
+
+---
+-- Returns the team the player is in.
+-- @param[type=number] _PlayerID ID of player
+-- @return[type=number] Team of player
+-- @within MPSync
+-- @local
+--
+function MPSync:GetTeamOfPlayer(_PlayerID)
+    if self:IsMultiplayerGame() then
+        return XNetwork.GameInformation_GetPlayerTeam(_PlayerID);
+    else
+        return _PlayerID;
+    end
 end
 

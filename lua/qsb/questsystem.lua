@@ -837,12 +837,20 @@ end
 --
 function QuestTemplate:ApplyCallbacks(_Behavior)
     if _Behavior[1] == Callbacks.Defeat then
-        Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
-        Defeat();
+        if self.m_Receiver == GUI.GetPlayerID() then
+            Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
+        end
+        Logic.PlayerSetGameStateToLost(self.m_Receiver);
+        Trigger.DisableTriggerSystem(1);
 
     elseif _Behavior[1] == Callbacks.Victory then
-        Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
-        Victory();
+        if self.m_Receiver == GUI.GetPlayerID() then
+            Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
+        end
+        Logic.PlayerSetGameStateToWon(self.m_Receiver);
+        if XNetwork.Manager_DoesExist() == 1 then
+            Trigger.DisableTriggerSystem(1);
+        end
 
     elseif _Behavior[1] == Callbacks.MapScriptFunction then
         SaveCall{_Behavior[2][1], _Behavior[2][2], self};
@@ -965,23 +973,27 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         Logic.SetTechnologyState(self.m_Receiver, _Behavior[2], _Behavior[3]);
 
     elseif _Behavior[1] == Callbacks.CreateMarker then
-        if _Behavior[2] == MarkerTypes.StaticFriendly then
-            GUI.CreateMinimapMarker(_Behavior[3].X, _Behavior[3].Y, 0);
-        elseif _Behavior[2] == MarkerTypes.StaticNeutral then
-            GUI.CreateMinimapMarker(_Behavior[3].X, _Behavior[3].Y, 2);
-        elseif _Behavior[2] == MarkerTypes.StaticEnemy then
-            GUI.CreateMinimapMarker(_Behavior[3].X, _Behavior[3].Y, 6);
-        elseif _Behavior[2] == MarkerTypes.PulseFriendly then
-            GUI.CreateMinimapPulse(_Behavior[3].X, _Behavior[3].Y, 0);
-        elseif _Behavior[2] == MarkerTypes.PulseNeutral then
-            GUI.CreateMinimapPulse(_Behavior[3].X, _Behavior[3].Y, 2);
-        else
-            GUI.CreateMinimapPulse(_Behavior[3].X, _Behavior[3].Y, 6);
+        if self.m_Receiver == GUI.GetPlayerID() then
+            if _Behavior[2] == MarkerTypes.StaticFriendly then
+                GUI.CreateMinimapMarker(_Behavior[3].X, _Behavior[3].Y, 0);
+            elseif _Behavior[2] == MarkerTypes.StaticNeutral then
+                GUI.CreateMinimapMarker(_Behavior[3].X, _Behavior[3].Y, 2);
+            elseif _Behavior[2] == MarkerTypes.StaticEnemy then
+                GUI.CreateMinimapMarker(_Behavior[3].X, _Behavior[3].Y, 6);
+            elseif _Behavior[2] == MarkerTypes.PulseFriendly then
+                GUI.CreateMinimapPulse(_Behavior[3].X, _Behavior[3].Y, 0);
+            elseif _Behavior[2] == MarkerTypes.PulseNeutral then
+                GUI.CreateMinimapPulse(_Behavior[3].X, _Behavior[3].Y, 2);
+            else
+                GUI.CreateMinimapPulse(_Behavior[3].X, _Behavior[3].Y, 6);
+            end
         end
 
     elseif _Behavior[1] == Callbacks.DestroyMarker then
-        if _Behavior[2] then
-            GUI.DestroyMinimapPulse(_Behavior[2].X, _Behavior[2].Y);
+        if self.m_Receiver == GUI.GetPlayerID() then
+            if _Behavior[2] then
+                GUI.DestroyMinimapPulse(_Behavior[2].X, _Behavior[2].Y);
+            end
         end
 
     elseif _Behavior[1] == Callbacks.RevealArea then

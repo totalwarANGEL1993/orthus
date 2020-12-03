@@ -8,7 +8,7 @@
 -- TODO: Add History Edition fix
 local Version = Framework.GetProgramVersion();
 gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
-if gvExtensionNumber > 2 then
+if gvExtensionNumber ~= nil and gvExtensionNumber > 2 then
     Script.Load(gvBasePath.. "qsb/information_ex3.lua");
     Script.Load(gvBasePath.. "qsb/timer_ex3.lua");
 else
