@@ -470,7 +470,7 @@ function MPRuleset:LogicEventOnEntityCreated(_Data, _PlayerID, _EntityID)
     if _Data.Commandment.AssociateVillages == 1 then
         if string.find(EntityTypeName, "^PB_VillageCenter") then
             local IsOk = false;
-            for k, v in pairs(GetEntitiesByPrefix("P1VC")) do
+            for k, v in pairs(GetEntitiesByPrefix("P" .._PlayerID.. "VC")) do
                 if GetDistance(_EntityID, v) > 100 then
                     IsOk = true;
                 end
@@ -482,6 +482,17 @@ function MPRuleset:LogicEventOnEntityCreated(_Data, _PlayerID, _EntityID)
                 end
                 Logic.HurtEntity(_EntityID, Logic.GetEntityHealth(_EntityID));
             end
+        end
+    end
+
+    -- Resource heaps amount
+    if _Data.Commandment.ResourceHeapSize > 0 then
+        if EntityTypeName == "XD_Clay1" or EntityTypeName == "XD_Iron1"
+        or EntityTypeName == "XD_Stone1" or EntityTypeName == "XD_Sulfur1" then
+            Logic.SetResourceDoodadGoodAmount(
+                _EntityID,
+                _Data.Commandment.ResourceHeapSize
+            );
         end
     end
 end
@@ -732,6 +743,9 @@ MPRuleset_Default = {
 
         -- Minutes a player must wait between two blesses.
         BlessDelay          = 3,
+
+        -- Amount of Resources in resource heaps
+        ResourceHeapSize    = 2000,
     },
 
     Limits = {
