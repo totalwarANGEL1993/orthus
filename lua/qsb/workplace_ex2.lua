@@ -119,7 +119,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
 
 		if a == "MenuBuildingGeneric/setworkerfew" then
 			if not(QuestSystem.Workplace.UseMod == true) then
-				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden);
+				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden[lang]);
 			else
 				if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 0 then
 					XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.SettingDisabled[lang]);
@@ -132,7 +132,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
             
 		elseif a == "MenuBuildingGeneric/setworkerhalf" then
 			if not(QuestSystem.Workplace.UseMod == true) then
-				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden);
+				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden[lang]);
 			else
 				if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 0 then
 					XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.SettingDisabled[lang]);
@@ -145,7 +145,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
             
 		elseif a == "MenuBuildingGeneric/setworkerfull" then
 			if not(QuestSystem.Workplace.UseMod == true) then
-				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden);
+				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden[lang]);
 			else
 				if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 0 then
 					XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.SettingDisabled[lang]);
