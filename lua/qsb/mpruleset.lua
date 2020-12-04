@@ -21,160 +21,11 @@
 -- @set sort=true
 --
 
----
--- Default Rules. DO NOT CHANGE THEM!!!
---
-MPRuleset_Default = {
-    Basic = {
-        Resources = {
-            Choosen = 1,
-
-            [1] = {
-                Gold            = 1000,
-                Clay            = 1500,
-                Wood            = 1200,
-                Stone           = 800,
-                Iron            = 50,
-                Sulfur          = 50,
-            },
-            [2] = {
-                Gold            = 2000,
-                Clay            = 3500,
-                Wood            = 2400,
-                Stone           = 1600,
-                Iron            = 800,
-                Sulfur          = 800,
-            },
-            [3] = {
-                Gold            = 5000,
-                Clay            = 8000,
-                Wood            = 8000,
-                Stone           = 5000,
-                Iron            = 5000,
-                Sulfur          = 5000,
-            },
-        },
-
-        -- Crush building glitch fixed
-        CrushBuilding       = 1,
-
-        -- Formations will only require GT_StandingArmy and not GT_Tactics 
-        -- to also be allowed.
-        Formaition          = 1,
-
-        -- Peacetime in minutes (0 = off)
-        Peacetime           = 20,
-    },
-
-    Limits = {
-        Hero         =  3,
-
-        Market       = -1,
-        Tower        =  5,
-        University   = -1,
-        Village      = -1,
-
-        Bow          = -1,
-        LightCavalry = -1,
-        HeavyCavalry = -1,
-        Rifle        = -1,
-        Spear        = -1,
-        Serf         = -1,
-        Scout        = -1,
-        Sword        = -1,
-        Thief        = -1,
-
-        Cannon1      = -1,
-        Cannon2      = -1,
-        Cannon3      = -1,
-        Cannon4      = -1,
-    },
-
-    Special = {
-        -- Give sequential names to village centers for each player. Players
-        -- can not build village centers expect there where they allowed to.
-        -- Example: (P1VC1, P1VC2, ..)
-        AssociateVillages   = 0,
-
-        -- Minutes until everyone loses (0 = off)
-        DeathPenalty        = 0,
-
-        -- Cannons and towers inflict damage to allies.
-        FriendlyFire        = 1,
-
-        -- Player HQs can not be damaged until the player has village
-        -- centers left.
-        -- (building plots don't count)
-        HQRushBlock         = 1,
-
-        -- Bridges can not be destroyed (0 = off)
-        InvincibleBridges   = 1,
-    },
-
-    Heroes = {
-        Dario               = 1, -- (0 = forbidden)
-        Pilgrim             = 1, -- (0 = forbidden)
-        Salim               = 1, -- (0 = forbidden)
-        Erec                = 1, -- (0 = forbidden)
-        Ari                 = 1, -- (0 = forbidden)
-        Helias              = 1, -- (0 = forbidden)
-        Drake               = 1, -- (0 = forbidden)
-        Yuki                = 1, -- (0 = forbidden)
-        -- ---------- --
-        Varg                = 1, -- (0 = forbidden)
-        Kerberos            = 1, -- (0 = forbidden)
-        Mary                = 1, -- (0 = forbidden)
-        Kala                = 1, -- (0 = forbidden)
-    },
-
-    Technologies = {
-        -- Gunsmith technologies
-        Gunsmith            = {
-            Rifle           = 2, -- Weapons branch (0 to 2)
-            Armor           = 2, -- Armor branch (0 to 2)
-        },
-
-        -- Laboratory technologies
-        Laboratory          = {
-            Cannon          = 2, -- Cannon branch (0 to 2)
-            Weather         = 2, -- Weather branch (0 to 2)
-        },
-
-        -- Masory technologies
-        Masory              = {
-            Walls           = 1, -- Building defence
-        },
-
-        Sawmill             = {
-            Spearmen        = 2, -- Sear branch (0 to 2)
-            Bowmen          = 2, -- Bow branch (0 to 2)
-        },
-
-        -- Smith technologies
-        Smith               = {
-            Light           = 3, -- Light armor branch (0 to 3)
-            Heavy           = 3, -- Heavy armor branch (0 to 3)
-            Weapons         = 2, -- Weapon branch (0 to 2)
-        },
-
-        -- University technologies
-        University          = {
-            Construction    = 4, -- Construction branch (0 to 4)
-            Civil           = 4, -- Civil branch (0 to 4)
-            Industrial      = 4, -- Industrial branch (0 to 4)
-            Millitary       = 4, -- Millitary branch (0 to 4)
-            Addon           = 4, -- Addon branch (0 to 4)
-        },
-
-        Village             = {
-            Civil           = 3, -- Village center (0 to 3)
-        }
-    },
-};
-
 MPRuleset = {
     Data = {
         GameStartOffset = 0,
+        WeatherChangeTimestamp = 0,
+        BlessTimestamp = {},
 
         Technologies = {
             Gunsmith = {
@@ -334,16 +185,19 @@ MPRuleset = {
         },
     },
 
-    Callback = {
-        PeacetimeOver = function()
-        end,
-    },
-
     Text = {
         Messages = {
             IllegalVillage = {
                 de = "{red}Ihr dürft an dieser Stelle kein Dorfzentrum errichten! Die Rohstoffe wurden konfisziert!",
                 en = "{red}It is not allowed to build a village center here! The resources have been confiscated!",
+            },
+            WeatherChangeDelay = {
+                de = "Es ist noch nicht genug Zeit seit dem letzten Wetterwechsel vergangen!",
+                en = "Not enough time has passed since the last weather change!",
+            },
+            BlessDelay = {
+                de = "Es ist noch nicht genug Zeit seit der letzten Segnung vergangen!",
+                en = "Not enough time has passed since the last blessing!",
             },
         },
         Quests = {
@@ -368,7 +222,7 @@ MPRuleset = {
                 }
             }
         }
-    }
+    },
 };
 
 function MPRuleset:Install()
@@ -383,18 +237,30 @@ function MPRuleset:Install()
             Logic.SetNumberOfBuyableHerosForPlayer(v, Rules.Limits.Hero);
         end
 
+        self:CreateEvents();
         self:CreateQuests(Rules);
         self:GiveResources(Rules);
         self:ForbidTechnologies(Rules);
         self:ActivateLogicEventJobs();
         self:OverrideUIStuff();
         self:AddExtraStuff();
+
+        QuestSystem.Workplace:EnableMod(MPRuleset_Rules.Commandment.Workplace == 1);
+        MPRuleset_Rules.Callbacks.OnMapConfigured();
     end
 end
 
 function MPRuleset:IsUsingEMS()
-    -- TODO: Implement EMS check
-    return false;
+    return EMS ~= nil;
+end
+
+function MPRuleset:CreateEvents()
+    self.Data.ScriptEventWeatherChange = MPSync:CreateScriptEvent(function()
+        MPRuleset.Data.WeatherChangeTimestamp = Logic.GetTime();
+    end);
+    self.Data.ScriptEventBless = MPSync:CreateScriptEvent(function(_PlayerID)
+        MPRuleset.Data.BlessTimestamp[_PlayerID] = Logic.GetTime();
+    end);
 end
 
 function MPRuleset:AddExtraStuff()
@@ -416,11 +282,10 @@ function MPRuleset:AddExtraStuff()
     end
 end
 
---EntityTypeToBuyHeroAvailability
-
 function MPRuleset:OverrideUIStuff()
     BuyHeroWindow_Update_BuyHero_Orig_QSB_MPRuleset = BuyHeroWindow_Update_BuyHero;
     BuyHeroWindow_Update_BuyHero = function(_Type)
+        -- Hero limit
         local LimitName = MPRuleset.Maps.EntityTypeToBuyHeroAvailability[_Type];
         if LimitName and MPRuleset_Rules.Heroes[LimitName] and MPRuleset_Rules.Heroes[LimitName] == 0 then
             XGUIEng.DisableButton(XGUIEng.GetCurrentWidgetID(), 1);
@@ -428,22 +293,129 @@ function MPRuleset:OverrideUIStuff()
         end
         BuyHeroWindow_Update_BuyHero_Orig_QSB_MPRuleset(_Type);
     end
+
+    GUIAction_ToDestroyBuildingWindow_Orig_QSB_MPRuleset = GUIAction_ToDestroyBuildingWindow;
+    GUIAction_ToDestroyBuildingWindow = function()
+        -- Crush building fix
+        if MPRuleset_Rules.Commandment.CrushBuilding == 1 then
+            local BuildingID = GUI.GetSelectedEntity();
+            if IsExisting(BuildingID) then
+                GUI.DeselectEntity(BuildingID);
+                GUI.SellBuilding(BuildingID);
+            end
+            return;
+        end
+        GUIAction_ToDestroyBuildingWindow_Orig_QSB_MPRuleset();
+    end
+
+    GUIUpdate_BuildingButtons_Orig_QSB_MPRuleset = GUIUpdate_BuildingButtons;
+    GUIUpdate_BuildingButtons = function(_Button, _Technology)
+        -- Formation fix
+        if string.find(_Button, "Formation0") and MPRuleset_Rules.Commandment.Formaition == 1 then
+            local PlayerID = GUI.GetPlayerID();
+            local WidgetID = XGUIEng.GetCurrentWidgetID();
+            XGUIEng.ShowWidget(_Button, 1);
+            if Logic.IsTechnologyResearched(PlayerID, Technologies.GT_StandingArmy) == 1 then
+                XGUIEng.DisableButton(WidgetID, 0);
+            else
+                XGUIEng.DisableButton(WidgetID, 1);
+            end
+        else
+            GUIUpdate_BuildingButtons_Orig_QSB_MPRuleset(_Button, _Technology);
+        end
+    end
+
+    GameCallback_GUI_SelectionChanged_Orig_QSB_MPRuleset = GameCallback_GUI_SelectionChanged;
+    GameCallback_GUI_SelectionChanged = function()
+        GameCallback_GUI_SelectionChanged_Orig_QSB_MPRuleset();
+        -- Formation fix
+        if MPRuleset_Rules.Commandment.Formaition == 1 then
+            local EntityID = GUI.GetSelectedEntity();
+            if IsExisting(EntityID) and Logic.IsLeader(EntityID) == 1
+            and Logic.LeaderGetMaxNumberOfSoldiers(EntityID) > 0 then
+                local TypeID = Logic.GetEntityType(EntityID);
+                local TypeName = Logic.GetEntityTypeName(TypeID);
+                if string.find(TypeName, "Scout") or string.find(TypeName, "Scout") 
+                or string.find(TypeName, "Thief") then
+                    for i= 1, 4, 1 do
+                        XGUIEng.ShowWidget("Formation0" ..i, 0);
+                    end
+                else
+                    for i= 1, 4, 1 do
+                        XGUIEng.ShowWidget("Formation0" ..i, 1);
+                    end
+                end
+            end
+        end
+    end
+
+    GUIAction_ChangeWeather = function(_Weathertype)
+        local Waittime = MPRuleset_Rules.Commandment.WeatherChangeDelay * 60;
+        if Waittime > 0 then
+            local LastUsed = MPRuleset.Data.WeatherChangeTimestamp;
+            if LastUsed > 0 and Logic.GetTime() < (LastUsed + Waittime) then
+                GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_WeathermashineNotReady"));
+                return;
+            end
+        end
+
+        if Logic.IsWeatherChangeActive() == true then
+            GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/Note_WeatherIsCurrentlyChanging"));	
+            return;
+        end
+        local PlayerID = GUI.GetPlayerID();
+        local CurrentWeatherEnergy = Logic.GetPlayersGlobalResource( PlayerID, ResourceType.WeatherEnergy );
+        local NeededWeatherEnergy = Logic.GetEnergyRequiredForWeatherChange();
+        if CurrentWeatherEnergy >= NeededWeatherEnergy then		
+            GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_WeathermashineActivated"));
+            GUI.SetWeather(_weathertype);
+            MPSync:SnchronizedCall(self.Data.ScriptEventWeatherChange);
+        else
+            GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_WeathermashineNotReady"));
+        end
+    end
+
+    GUIAction_BlessSettlers = function(_BlessCategory)
+        local PlayerID = GUI.GetPlayerID();
+        local Waittime = MPRuleset_Rules.Commandment.BlessDelay * 60;
+        local LastUsed = MPRuleset.Data.BlessTimestamp[PlayerID] or 0;
+        if Waittime > 0 then
+            if LastUsed > 0 and Logic.GetTime() < (LastUsed + Waittime) then
+                GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_NotEnoughFaith"));
+                Sound.PlayFeedbackSound(Sounds.VoicesMentor_INFO_MonksNeedMoreTime_rnd_01, 0);
+                return;
+            end
+        end
+
+        if InterfaceTool_IsBuildingDoingSomething(GUI.GetSelectedEntity()) == true then		
+            return;
+        end
+        local CurrentFaith = Logic.GetPlayersGlobalResource(PlayerID, ResourceType.Faith)	;
+        local BlessCosts = Logic.GetBlessCostByBlessCategory(_BlessCategory);
+        if BlessCosts <= CurrentFaith then
+            GUI.BlessByBlessCategory(_BlessCategory);
+            MPSync:SnchronizedCall(self.Data.ScriptEventBless, PlayerID);
+        else	
+            GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_NotEnoughFaith"));
+            Sound.PlayFeedbackSound(Sounds.VoicesMentor_INFO_MonksNeedMoreTime_rnd_01, 0);
+        end
+    end
 end
 
 function MPRuleset:GiveResources(_Data)
     for i= 1, table.getn(Score.Player), 1 do
-        local Index = _Data.Basic.Resources.Choosen;
-        if table.getn(_Data.Basic.Resources) < Index then
-            Index = table.getn(_Data.Basic.Resources);
+        local Index = _Data.Resources.Choosen;
+        if table.getn(_Data.Resources) < Index then
+            Index = table.getn(_Data.Resources);
         end
         Tools.GiveResources(
-            i, 
-            _Data.Basic.Resources[Index].Gold, 
-            _Data.Basic.Resources[Index].Clay, 
-            _Data.Basic.Resources[Index].Wood, 
-            _Data.Basic.Resources[Index].Iron, 
-            _Data.Basic.Resources[Index].Stone, 
-            _Data.Basic.Resources[Index].Sulfur
+            i,
+            _Data.Resources[Index].Gold,
+            _Data.Resources[Index].Clay,
+            _Data.Resources[Index].Wood,
+            _Data.Resources[Index].Stone,
+            _Data.Resources[Index].Iron,
+            _Data.Resources[Index].Sulfur
         );
     end
 end
@@ -488,14 +460,14 @@ function MPRuleset:LogicEventOnEntityCreated(_Data, _PlayerID, _EntityID)
     local EntityTypeName = Logic.GetEntityTypeName(EntityType);
     
     -- Invincible bridges
-    if _Data.Special.InvincibleBridges == 1 then
+    if _Data.Commandment.InvincibleBridges == 1 then
         if string.find(EntityTypeName, "^PB_.*Bridge") then
             MakeInvulnerable(_EntityID);
         end
     end
 
     -- Village center placement
-    if _Data.Special.AssociateVillages == 1 then
+    if _Data.Commandment.AssociateVillages == 1 then
         if string.find(EntityTypeName, "^PB_VillageCenter") then
             local IsOk = false;
             for k, v in pairs(GetEntitiesByPrefix("P1VC")) do
@@ -515,9 +487,37 @@ function MPRuleset:LogicEventOnEntityCreated(_Data, _PlayerID, _EntityID)
 end
 
 function MPRuleset:LogicEventOnEntityDestroyed(_Data, _PlayerID, _EntityID)
+    -- For future rules ...
 end
 
 function MPRuleset:LogicEventOnEntityHurtEntity(_Data, _PlayerID, _EntityID, _VictimList)
+    -- For future rules ...
+end
+
+function MPRuleset:HasPlayerVillageCenters(_PlayerID)
+    local Members = {Logic.GetBuildingTypesInUpgradeCategory(UpgradeCategories.Village)};
+    for i= 2, Members[1]+1, 1 do
+        local VillageCenters = {Logic.GetPlayerEntities(_PlayerID, Members[i], 16)};
+        for j= 2, VillageCenters[1]+1, 1 do
+            if Logic.IsConstructionComplete(VillageCenters[j]) == 1 then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+function MPRuleset:GetFirstHQOfPlayer(_PlayerID)
+    local Members = {Logic.GetBuildingTypesInUpgradeCategory(UpgradeCategories.Headquarters)};
+    for i= 2, Members[1]+1, 1 do
+        local Headquarters = {Logic.GetPlayerEntities(_PlayerID, Members[i], 16)};
+        for j= 2, Headquarters[1]+1, 1 do
+            if Logic.IsConstructionComplete(Headquarters[j]) == 1 then
+                return Headquarters[j];
+            end
+        end
+    end
+    return 0;
 end
 
 function MPRuleset:ForbidTechnologies(_Data)
@@ -547,6 +547,18 @@ function MPRuleset:LogicEventOnEveryTurn(_Data)
                     self.Maps.LimitToUpgradeCategory[k],
                     v
                 );
+            end
+        end
+    
+        -- HQ rush
+        if MPRuleset_Rules.Commandment.HQRushBlock == 1 then
+            local ID = self:GetFirstHQOfPlayer(Players[i]);
+            if ID ~= 0 then
+                if self:HasPlayerVillageCenters(Players[i]) then
+                    MakeInvulnerable(Players[i]);
+                else
+                    MakeVulnerable(Players[i]);
+                end
             end
         end
     end
@@ -584,34 +596,35 @@ function MPRuleset:CreateQuests(_Data)
     local Players = MPSync:GetActivePlayers();
     for i= 1, table.getn(Players), 1 do   
         -- Peacetime
-        if _Data.Basic.Peacetime > 0 then
+        if _Data.Timer.Peacetime > 0 then
             CreateQuest {
                 Name        = "MPRuleset_PeacetimeQuest_Player" ..Players[i],
-                Time        = _Data.Basic.Peacetime * 60,
+                Time        = _Data.Timer.Peacetime * 60,
                 Receiver    = Players[i],
                 Description = {
                     Title = self.Text.Quests.Peacetime.Title.de,
-                    Text  = string.format(self.Text.Quests.Peacetime.Text.de, _Data.Basic.Peacetime),
+                    Text  = string.format(self.Text.Quests.Peacetime.Text.de, _Data.Timer.Peacetime),
                     Type  = MAINQUEST_OPEN,
                     Info  = 1
                 },
 
                 Goal_NoChange(),
+                Reward_MapScriptFunction(MPRuleset_Rules.Callbacks.OnPeacetimeOver),
                 Trigger_Time(self.Data.GameStartOffset)
             };
         else
-            self.Callback.PeacetimeOver();
+            MPRuleset_Rules.Callbacks.OnPeacetimeOver();
         end
 
         -- Death Penalty
-        if _Data.Special.DeathPenalty > 0 then
+        if _Data.Timer.DeathPenalty > 0 then
             CreateQuest {
                 Name        = "MPRuleset_DeathPenaltyQuest_Player" ..Players[i],
-                Time        = _Data.Special.DeathPenalty *60,
+                Time        = _Data.Timer.DeathPenalty *60,
                 Receiver    = Players[i],
                 Description = {
                     Title = self.Text.Quests.DeathPenalty.Title.de,
-                    Text  = string.format(self.Text.Quests.DeathPenalty.Text.de, _Data.Special.DeathPenalty),
+                    Text  = string.format(self.Text.Quests.DeathPenalty.Text.de, _Data.Timer.DeathPenalty),
                     Type  = MAINQUEST_OPEN,
                     Info  = 1
                 },
@@ -630,9 +643,194 @@ function MPRuleset:CreateQuests(_Data)
                 end),
                 Reprisal_Defeat(),
                 Reward_Victory(),
-                Trigger_Time(self.Data.GameStartOffset + (_Data.Basic.Peacetime * 60) +1)
+                Trigger_Time(self.Data.GameStartOffset + (_Data.Timer.Peacetime * 60) +2)
             };
         end
     end
 end
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Default Rules. DO NOT CHANGE THEM!!!
+--
+-- Copy this table and rename it to MPRuleset_Rules. Paste it into your
+-- mapscript or load it from an extern file. If you consider using EMS
+-- then you can not use this configuration. Use EMS configuration instead.
+--
+-- @within Rules
+--
+MPRuleset_Default = {
+    Resources = {
+        Choosen = 1,
+
+        [1] = {
+            Gold            = 1000,
+            Clay            = 1500,
+            Wood            = 1200,
+            Stone           = 800,
+            Iron            = 50,
+            Sulfur          = 50,
+        },
+        [2] = {
+            Gold            = 2000,
+            Clay            = 3500,
+            Wood            = 2400,
+            Stone           = 1600,
+            Iron            = 800,
+            Sulfur          = 800,
+        },
+        [3] = {
+            Gold            = 5000,
+            Clay            = 8000,
+            Wood            = 8000,
+            Stone           = 5000,
+            Iron            = 5000,
+            Sulfur          = 5000,
+        },
+    },
+
+    Timer = {
+        -- Peacetime in minutes (0 = off)
+        Peacetime           = 20,
+
+        -- Minutes until everyone loses (0 = off)
+        DeathPenalty        = 0,
+    },
+
+    Commandment = {
+
+        -- Crush building glitch fixed. Buildings will deselect the building
+        -- and then destroy it right away without warning. (0 = off)
+        CrushBuilding       = 1,
+
+        -- Formation tech fix (0 = off)
+        -- Formations will only require GT_StandingArmy researched and not 
+        -- GT_Tactics to also be allowed.
+        Formaition          = 1,
+
+        -- Associate village centers to players (0 = off)
+        -- Give sequential names to village centers for each player. Players
+        -- can not build village centers expect there where they allowed to.
+        -- Example: (P1VC1, P1VC2, ..)
+        AssociateVillages   = 0,
+
+        -- Block HQ rush (0 = off)
+        -- Player HQs can not be damaged until the player has village
+        -- centers left.
+        HQRushBlock         = 1,
+
+        -- Bridges can not be destroyed (0 = off)
+        InvincibleBridges   = 1,
+
+        -- Control worker amount in workplaces (0 = off)
+        Workplace           = 1,
+
+        -- Minutes the weather can not be changed again after a change was
+        -- triggered by the weather tower.
+        WeatherChangeDelay  = 3,
+
+        -- Minutes a player must wait between two blesses.
+        BlessDelay          = 3,
+    },
+
+    Limits = {
+        -- Limit of heroes the player can buy
+        Hero         =  3,
+
+        -- Building Limit  (-1 = off)
+        Market       = 1,
+        Tower        =  5,
+        University   = -1,
+        Village      = -1,
+
+        -- Unit limits (-1 = off)
+        Bow          = -1,
+        LightCavalry = -1,
+        HeavyCavalry = -1,
+        Rifle        = -1,
+        Spear        = -1,
+        Serf         = -1,
+        Scout        = -1,
+        Sword        = -1,
+        Thief        = -1,
+
+        -- vehicle limit (-1 = off)
+        Cannon1      = -1,
+        Cannon2      = -1,
+        Cannon3      = -1,
+        Cannon4      = -1,
+    },
+
+    -- Heroes available (0 = forbidden)
+    Heroes = {
+        Dario               = 1,
+        Pilgrim             = 1,
+        Salim               = 1,
+        Erec                = 1,
+        Ari                 = 1,
+        Helias              = 1,
+        Drake               = 1,
+        Yuki                = 1,
+        -- ---------- --
+        Varg                = 1,
+        Kerberos            = 1,
+        Mary                = 1,
+        Kala                = 1,
+    },
+
+    Technologies = {
+        -- Gunsmith technologies
+        Gunsmith            = {
+            Rifle           = 2, -- Weapons branch (0 to 2)
+            Armor           = 2, -- Armor branch (0 to 2)
+        },
+
+        -- Laboratory technologies
+        Laboratory          = {
+            Cannon          = 2, -- Cannon branch (0 to 2)
+            Weather         = 2, -- Weather branch (0 to 2)
+        },
+
+        -- Masory technologies
+        Masory              = {
+            Walls           = 1, -- Building defence
+        },
+
+        Sawmill             = {
+            Spearmen        = 2, -- Sear branch (0 to 2)
+            Bowmen          = 2, -- Bow branch (0 to 2)
+        },
+
+        -- Smith technologies
+        Smith               = {
+            Light           = 3, -- Light armor branch (0 to 3)
+            Heavy           = 3, -- Heavy armor branch (0 to 3)
+            Weapons         = 2, -- Weapon branch (0 to 2)
+        },
+
+        -- University technologies
+        University          = {
+            Construction    = 4, -- Construction branch (0 to 4)
+            Civil           = 4, -- Civil branch (0 to 4)
+            Industrial      = 4, -- Industrial branch (0 to 4)
+            Millitary       = 4, -- Millitary branch (0 to 4)
+            Addon           = 4, -- Addon branch (0 to 4)
+        },
+
+        Village             = {
+            Civil           = 3, -- Village center (0 to 3)
+        }
+    },
+
+    Callbacks = {
+        -- After configuration has been loaded
+        OnMapConfigured = function()
+        end,
+
+        -- After peacetime ended (no peacetime means immediate execution)
+        OnPeacetimeOver = function()
+        end,
+    },
+};
 
