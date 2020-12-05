@@ -191,14 +191,6 @@ MPRuleset = {
                 de = "{red}Ihr dürft an dieser Stelle kein Dorfzentrum errichten! Die Rohstoffe wurden konfisziert!",
                 en = "{red}It is not allowed to build a village center here! The resources have been confiscated!",
             },
-            WeatherChangeDelay = {
-                de = "Es ist noch nicht genug Zeit seit dem letzten Wetterwechsel vergangen!",
-                en = "Not enough time has passed since the last weather change!",
-            },
-            BlessDelay = {
-                de = "Es ist noch nicht genug Zeit seit der letzten Segnung vergangen!",
-                en = "Not enough time has passed since the last blessing!",
-            },
         },
         Quests = {
             Peacetime = {
@@ -207,8 +199,8 @@ MPRuleset = {
                     en = "Peacetime",
                 },
                 Text  = {
-                    de = "Es herrscht Frieden. Nutzt die Zeit und bereitet euch auf den Kampf vor. Das Gefecht beginnt in %d Minuten!",
-                    en = "There is peace. Use the time and prepare for battle. The engagement starts in %d minutes!"
+                    de = "Es herrscht Frieden.{cr}{cr}Nutzt die Zeit und bereitet euch auf den Kampf vor.{cr}{cr}Das Gefecht beginnt in %d Minuten!",
+                    en = "There is peace.{cr}{cr}Use the time and prepare for battle.{cr}{cr}The engagement starts in %d minutes!"
                 }
             },
             DeathPenalty = {
@@ -217,8 +209,8 @@ MPRuleset = {
                     en = "Death Penalty",
                 },
                 Text  = {
-                    de = "Ihr müsst vor Ablauf der Zeit alle gegnerischen Teams besiegen, sonst droht Euch ein Todesurteil! Ihr habt dafür %d Minuten Zeit!",
-                    en = "You have to defeat all hostile teams. If there is no winner by then, everyone get's the death penalty. You have %d minutes!"
+                    de = "Ihr müsst vor Ablauf der Zeit alle gegnerischen Teams besiegen, sonst droht Euch ein Todesurteil!{cr}{cr}Ihr habt dafür %d Minuten Zeit!",
+                    en = "You have to defeat all hostile teams. If there is no winner by then, everyone get's the death penalty.{cr}{cr}You have %d minutes!"
                 }
             }
         }
@@ -510,7 +502,7 @@ function MPRuleset:LogicEventOnEntityCreated(_Data, _PlayerID, _EntityID)
         if string.find(EntityTypeName, "^PB_VillageCenter") then
             local IsOk = false;
             for k, v in pairs(GetEntitiesByPrefix("P" .._PlayerID.. "VC")) do
-                if GetDistance(_EntityID, v) > 100 then
+                if GetDistance(_EntityID, v) < 100 then
                     IsOk = true;
                 end
             end
@@ -525,12 +517,12 @@ function MPRuleset:LogicEventOnEntityCreated(_Data, _PlayerID, _EntityID)
     end
 
     -- Resource heaps amount
-    if _Data.Commandment.ResourceHeapSize > 0 then
+    if _Data.Resources.ResourceHeapSize > 0 then
         if EntityTypeName == "XD_Clay1" or EntityTypeName == "XD_Iron1"
         or EntityTypeName == "XD_Stone1" or EntityTypeName == "XD_Sulfur1" then
             Logic.SetResourceDoodadGoodAmount(
                 _EntityID,
-                _Data.Commandment.ResourceHeapSize
+                _Data.Resources.ResourceHeapSize
             );
         end
     end
@@ -571,28 +563,28 @@ function MPRuleset:GetFirstHQOfPlayer(_PlayerID)
 end
 
 function MPRuleset:FillResourceHeaps(_Data)
-    if _Data.Commandment.ResourceHeapSize == 0 then
+    if _Data.Resources.ResourceHeapSize == 0 then
         return false;
     end
     -- Clay
     local Heaps = FindAllEntities(0, Entities.XD_Clay1);
     for i= 1, table.getn(Heaps), 1 do
-        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Commandment.ResourceHeapSize);
+        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Resources.ResourceHeapSize);
     end
     -- Iron
     local Heaps = FindAllEntities(0, Entities.XD_Iron1);
     for i= 1, table.getn(Heaps), 1 do
-        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Commandment.ResourceHeapSize);
+        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Resources.ResourceHeapSize);
     end
     -- Stone
     local Heaps = FindAllEntities(0, Entities.XD_Stone1);
     for i= 1, table.getn(Heaps), 1 do
-        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Commandment.ResourceHeapSize);
+        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Resources.ResourceHeapSize);
     end
     -- Sulfur
     local Heaps = FindAllEntities(0, Entities.XD_Sulfur1);
     for i= 1, table.getn(Heaps), 1 do
-        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Commandment.ResourceHeapSize);
+        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Resources.ResourceHeapSize);
     end
 end
 
@@ -645,23 +637,23 @@ function MPRuleset:CheckUnitOrBuildingLimit(_PlayerID, _UpgradeCategory, _Limit)
     local Amount = 0;
     local Members = {Logic.GetBuildingTypesInUpgradeCategory(_UpgradeCategory)};
     if Members[1] > 0 and self.Maps.EntityTypeToTechnologyType[Members[2]] then
-        if _Limit > 0 then
+        if _Limit >= 0 then
             for i= 2, Members[1]+1, 1 do
                 Amount = Amount + Logic.GetNumberOfEntitiesOfTypeOfPlayer(_PlayerID, Members[i]);
             end
-        end
-        if Amount >= _Limit then
-            if Logic.GetTechnologyState(_PlayerID, self.Maps.EntityTypeToTechnologyType[Members[2]]) > 0 then
-                ForbidTechnology(self.Maps.EntityTypeToTechnologyType[Members[2]], _PlayerID);
-                if _PlayerID == GUI.GetPlayerID() then
-                    GameCallback_GUI_SelectionChanged();
+            if Amount >= _Limit then
+                if Logic.GetTechnologyState(_PlayerID, self.Maps.EntityTypeToTechnologyType[Members[2]]) > 0 then
+                    ForbidTechnology(self.Maps.EntityTypeToTechnologyType[Members[2]], _PlayerID);
+                    if _PlayerID == GUI.GetPlayerID() then
+                        GameCallback_GUI_SelectionChanged();
+                    end
                 end
-            end
-        else
-            if Logic.GetTechnologyState(_PlayerID, self.Maps.EntityTypeToTechnologyType[Members[2]]) < 1 then
-                AllowTechnology(self.Maps.EntityTypeToTechnologyType[Members[2]], _PlayerID);
-                if _PlayerID == GUI.GetPlayerID() then
-                    GameCallback_GUI_SelectionChanged();
+            else
+                if Logic.GetTechnologyState(_PlayerID, self.Maps.EntityTypeToTechnologyType[Members[2]]) < 1 then
+                    AllowTechnology(self.Maps.EntityTypeToTechnologyType[Members[2]], _PlayerID);
+                    if _PlayerID == GUI.GetPlayerID() then
+                        GameCallback_GUI_SelectionChanged();
+                    end
                 end
             end
         end
@@ -669,6 +661,7 @@ function MPRuleset:CheckUnitOrBuildingLimit(_PlayerID, _UpgradeCategory, _Limit)
 end
 
 function MPRuleset:CreateQuests(_Data)
+    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
     local Players = MPSync:GetActivePlayers();
     for i= 1, table.getn(Players), 1 do   
         -- Peacetime
@@ -678,8 +671,8 @@ function MPRuleset:CreateQuests(_Data)
                 Time        = _Data.Timer.Peacetime * 60,
                 Receiver    = Players[i],
                 Description = {
-                    Title = self.Text.Quests.Peacetime.Title.de,
-                    Text  = string.format(self.Text.Quests.Peacetime.Text.de, _Data.Timer.Peacetime),
+                    Title = self.Text.Quests.Peacetime.Title[Language],
+                    Text  = string.format(self.Text.Quests.Peacetime.Text[Language], _Data.Timer.Peacetime),
                     Type  = MAINQUEST_OPEN,
                     Info  = 1
                 },
@@ -703,12 +696,16 @@ function MPRuleset:CreateQuests(_Data)
                 Time        = _Data.Timer.DeathPenalty * 60,
                 Receiver    = Players[i],
                 Description = {
-                    Title = self.Text.Quests.DeathPenalty.Title.de,
-                    Text  = string.format(self.Text.Quests.DeathPenalty.Text.de, _Data.Timer.DeathPenalty),
+                    Title = self.Text.Quests.DeathPenalty.Title[Language],
+                    Text  = string.format(self.Text.Quests.DeathPenalty.Text[Language], _Data.Timer.DeathPenalty),
                     Type  = MAINQUEST_OPEN,
                     Info  = 1
                 },
 
+                -- This is a behavior that waits until there is only one player
+                -- or one team left before ending the quest. So if there are
+                -- still more than one team lurking around before death penalty
+                -- is triggered, everyone looses.
                 Goal_MapScriptFunction(function(_Behavior, _Quest)
                     local Team = MPSync:GetTeamOfPlayer(_Quest.m_Receiver)
                     local ActivePlayers = MPSync:GetActivePlayers();
@@ -731,17 +728,18 @@ end
 
 -- -------------------------------------------------------------------------- --
 
----
+--
 -- Default Rules. DO NOT CHANGE THEM!!!
 --
 -- Copy this table and rename it to MPRuleset_Rules. Paste it into your
 -- mapscript or load it from an extern file. If you consider using EMS
 -- then you can not use this configuration. Use EMS configuration instead.
 --
--- @within Rules
---
 MPRuleset_Default = {
     Resources = {
+        -- Amount of resources in resource heaps
+        ResourceHeapSize    = 2000,
+        -- Choosen resource preset
         Choosen = 1,
 
         [1] = {
@@ -811,9 +809,6 @@ MPRuleset_Default = {
 
         -- Minutes a player must wait between two blesses.
         BlessDelay          = 3,
-
-        -- Amount of Resources in resource heaps
-        ResourceHeapSize    = 2000,
     },
 
     Limits = {
@@ -910,7 +905,8 @@ MPRuleset_Default = {
         OnMapConfigured = function()
         end,
 
-        -- After peacetime ended (no peacetime means immediate execution)
+        -- After peacetime ended (no peacetime means immediate execution after
+        -- configuration is loaded)
         OnPeacetimeOver = function()
         end,
     },
