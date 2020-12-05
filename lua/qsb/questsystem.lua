@@ -1793,11 +1793,78 @@ end
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Checks worldwide for doodad entities or player entities.
+--
+-- Be careful: This method is using expensive area checks. Do better not use
+-- it inside of jobs.
+--
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _Type     Type of entity
+-- @param[type=number] _AreaSize (Optional) Area size
+-- @param[type=table]  _Position (Optional) Area center
+-- @return[type=table] Result set
+-- @within Methods
+--
+function FindAllEntities(_PlayerID, _Type, _AreaSize, _Position)
+	local ResultSet = {};
+    
+    _AreaSize = _AreaSize or Logic.WorldGetSize();
+    _Position = _Position or {X = _AreaSize/2, Y = _AreaSize/2};
+    
+    local Data;
+	if _PlayerID == 0 then
+		Data = {Logic.GetEntitiesInArea(_Type, _Position.X, _Position.Y, math.floor(_AreaSize * 0.71), 16)};
+	else
+		Data = {Logic.GetPlayerEntitiesInArea(_PlayerID, _Type, _Position.X, _Position.Y, math.floor(_AreaSize * 0.71), 16)};
+    end
+    
+	if Data[1] >= 16 then
+		local HalfAreaSize = _AreaSize / 2;
+		local PositionX1 = _Position.X - _AreaSize / 4;
+		local PositionX2 = _Position.X + _AreaSize / 4;
+		local PositionY1 = _Position.Y - _AreaSize / 4;
+		local PositionY2 = _Position.Y + _AreaSize / 4;
+		local ResultSetRecursive = FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY1});
+		for i = 1, table.getn(ResultSetRecursive) do
+			if not FindValue(ResultSetRecursive[i], ResultSet) then
+				table.insert(ResultSet, ResultSetRecursive[i]);
+			end
+		end
+		local ResultSetRecursive = FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY2});
+		for i = 1, table.getn(ResultSetRecursive) do
+			if not FindValue(ResultSetRecursive[i], ResultSet) then
+				table.insert(ResultSet, ResultSetRecursive[i]);
+			end
+		end
+		local ResultSetRecursive = FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY1});
+		for i = 1, table.getn(ResultSetRecursive) do
+			if not FindValue(ResultSetRecursive[i], ResultSet) then
+				table.insert(ResultSet, ResultSetRecursive[i]);
+			end
+		end
+		local ResultSetRecursive = FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY2});
+		for i = 1, table.getn(ResultSetRecursive) do
+			if not FindValue(ResultSetRecursive[i], ResultSet) then
+				table.insert(ResultSet, ResultSetRecursive[i]);
+			end
+		end
+	else
+		table.remove(Data, 1);
+		for i = 1, table.getn(Data) do
+			if not FindValue(Data[i], ResultSet) then
+				table.insert(ResultSet, Data[i]);
+			end
+		end
+	end
+	return ResultSet
+end
+
+---
 -- Checks if a value is inside a table.
 --
 -- @param             _Value Value to find
 -- @param[type=table] _Table Table to search
--- @return [boolean] Value found
+-- @return[type=boolean] Value found
 -- @within Methods
 --
 function FindValue(_Value, _Table)
@@ -1816,7 +1883,7 @@ IstDrin = FindValue;
 -- @param[type=number] _player   Player ID
 -- @param[type=table]  _position Area center
 -- @param[type=number] _range    Area size
--- @return [boolean] Enemies near
+-- @return[type=boolean] Enemies near
 -- @within Methods
 --
 function AreEnemiesInArea( _player, _position, _range)
@@ -1829,7 +1896,7 @@ end
 -- @param[type=number] _player   Player ID
 -- @param[type=table]  _position Area center
 -- @param[type=number] _range    Area size
--- @return [boolean] Allies near
+-- @return[type=boolean] Allies near
 -- @within Methods
 --
 function AreAlliesInArea( _player, _position, _range)
@@ -1847,7 +1914,7 @@ end
 -- @param[type=table]  _position Area center
 -- @param[type=number] _range    Area size
 -- @param[type=number] _state    Diplomatic state
--- @return [boolean] Entities near
+-- @return[type=boolean] Entities near
 -- @within Methods
 --
 function AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state)
@@ -2118,8 +2185,8 @@ end
 -- Returns the script name of the entity. If the entity do not have a name a
 -- unique ongoing name is added to the entity and returned
 --
--- @param _eID [number] EntityID
--- @return [string] Script name
+-- @param[type=number] _eID EntityID
+-- @return[type=string] Script name
 --
 function GiveEntityName(_eID)
     if type(_eID) == "string" then
