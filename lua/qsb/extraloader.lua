@@ -16,7 +16,6 @@ else
     Script.Load(gvBasePath.. "qsb/speed_ex2.lua");
     Script.Load(gvBasePath.. "qsb/timer_ex2.lua");
     Script.Load(gvBasePath.. "qsb/workplace_ex2.lua");
-    Script.Load(gvBasePath.. "qsb/s5hook_ex2.lua");
 end
 -- Load allways
 Script.Load(gvBasePath.. "qsb/treasure.lua");

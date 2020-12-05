@@ -11,6 +11,8 @@ Script.Load("data/script/maptools/mapeditortools.lua");
 
 -- Load QSB
 gvBasePath = "data/maps/externalMap/";
+Script.Load(gvBasePath.. "qsb/md5.lua");
+Script.Load(gvBasePath.. "qsb/s5hook_ex2.lua");
 Script.Load(gvBasePath.. "qsb/oop.lua");
 Script.Load(gvBasePath.. "qsb/mpsync.lua");
 Script.Load(gvBasePath.. "qsb/questsystem.lua");
