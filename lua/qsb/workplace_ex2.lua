@@ -41,7 +41,6 @@ end
 
 ---
 -- Enables or disables the mod.
---
 -- @param[type=boolean] _Flag Mod is enabled
 -- @within QuestSystem.Workplace
 -- @local
@@ -52,20 +51,17 @@ end
 
 ---
 -- Creates the event for adjusting the worker amount.
---
 -- @within QuestSystem.Workplace
 -- @local
 --
 function QuestSystem.Workplace:PrepareWorkerAmountEvent()
-	self.ScriptEvent = MPSync:CreateScriptEvent(function(_BuildingID, _Amount, _State, ...)
+	self.ScriptEvent = MPSync:CreateScriptEvent(function(_BuildingID, _State, ...)
 		local ScriptName = GiveEntityName(_BuildingID);
 		local WorkerIDs = {Logic.GetAttachedWorkersToBuilding(_BuildingID)};
 		for j=1,table.getn(WorkerIDs)do
 			Logic.SetTaskList(WorkerIDs[j],TaskLists.TL_WORKER_EAT_START);
 		end
 		QuestSystem.Workplace.WorkplaceStates[ScriptName] = _State;
-		GUI.SetCurrentMaxNumWorkersInBuilding(_BuildingID, _Amount);
-		InterfaceTool_UpdateWorkerAmountButtons();
 	end);
 end
 
@@ -82,28 +78,54 @@ function QuestSystem.Workplace:OverrideInterfaceAction()
 		local MaxNumberOfworkers = Logic.GetMaxNumWorkersInBuilding(BuildingID);
 		local EventID = QuestSystem.Workplace.ScriptEvent;
 		if _state == "few" then
-			XGUIEng.HighLightButton("SetWorkersAmountFew",1);
-			XGUIEng.HighLightButton("SetWorkersAmountHalf",0);
-            XGUIEng.HighLightButton("SetWorkersAmountFull",0);
-            
-			MPSync:SnchronizedCall(EventID, BuildingID, 0, _state, unpack(WorkerIDs));
-            
+			XGUIEng.HighLightButton("SetWorkersAmountFew", 1);
+			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
+            XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
+			MPSync:SnchronizedCall(EventID, BuildingID, _state, unpack(WorkerIDs));
+			GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, 0);
 		elseif _state == "half" then
-			XGUIEng.HighLightButton("SetWorkersAmountFew",0);
-			XGUIEng.HighLightButton("SetWorkersAmountHalf",1);
-            XGUIEng.HighLightButton("SetWorkersAmountFull",0);
-			
-			local HalfAmount = math.ceil(table.getn(WorkerIDs)/2);
-            MPSync:SnchronizedCall(EventID, BuildingID, HalfAmount, _state, unpack(WorkerIDs));
-            
+			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
+			XGUIEng.HighLightButton("SetWorkersAmountHalf", 1);
+            XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
+            MPSync:SnchronizedCall(EventID, BuildingID, _state, unpack(WorkerIDs));
+			GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, math.ceil(MaxNumberOfworkers/2));
 		elseif _state == "full" then
-			XGUIEng.HighLightButton("SetWorkersAmountFew",0);
-			XGUIEng.HighLightButton("SetWorkersAmountHalf",0);
-			XGUIEng.HighLightButton("SetWorkersAmountFull",1);
-			
-			MPSync:SnchronizedCall(EventID, BuildingID, MaxNumberOfworkers, _state, unpack(WorkerIDs));
+			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
+			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
+			XGUIEng.HighLightButton("SetWorkersAmountFull", 1);
+			MPSync:SnchronizedCall(EventID, BuildingID, _state, unpack(WorkerIDs));
+			GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, MaxNumberOfworkers);
 		end
 	end
+
+	InterfaceTool_UpdateWorkerAmountButtons_Orig_WorkplaceMod = InterfaceTool_UpdateWorkerAmountButtons;
+	InterfaceTool_UpdateWorkerAmountButtons = function()
+		local BuildingID = GUI.GetSelectedEntity();
+		local MaxNumberOfworkers = Logic.GetMaxNumWorkersInBuilding(BuildingID);
+		local CurrentMaxNumbersOfWorkers = Logic.GetCurrentMaxNumWorkersInBuilding(BuildingID);
+		local FewAmount = 0;
+		local HalfAmount = math.ceil( MaxNumberOfworkers/2);
+		local FullAmount = MaxNumberOfworkers;
+		--Display current amount in Buttons
+		XGUIEng.SetTextByValue(gvGUI_WidgetID.WorkersAmountFew, FewAmount, 1);
+		XGUIEng.SetTextByValue(gvGUI_WidgetID.WorkersAmountHalf, HalfAmount, 1);
+		XGUIEng.SetTextByValue(gvGUI_WidgetID.WorkersAmountFull, FullAmount, 1);
+		--Unhighlight all buttons
+		XGUIEng.UnHighLightGroup(gvGUI_WidgetID.InGame, "SetWorkersGroup");
+		if CurrentMaxNumbersOfWorkers == FewAmount then
+			XGUIEng.HighLightButton("SetWorkersAmountFew", 1);
+			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
+			XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
+		elseif CurrentMaxNumbersOfWorkers == HalfAmount then
+			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
+			XGUIEng.HighLightButton("SetWorkersAmountHalf", 1);
+			XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
+		else
+			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
+			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
+			XGUIEng.HighLightButton("SetWorkersAmountFull", 1);
+		end
+	end 
 end
 
 ---
@@ -121,7 +143,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
 			if not(QuestSystem.Workplace.UseMod == true) then
 				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden[lang]);
 			else
-				if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 0 then
+				if Logic.IsTechnologyResearched(1, Technologies.GT_Literacy) == 0 then
 					XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.SettingDisabled[lang]);
 				else
 					XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.SettingFew[lang]);
@@ -134,7 +156,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
 			if not(QuestSystem.Workplace.UseMod == true) then
 				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden[lang]);
 			else
-				if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 0 then
+				if Logic.IsTechnologyResearched(1, Technologies.GT_Literacy) == 0 then
 					XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.SettingDisabled[lang]);
 				else
 					XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.SettingHalf[lang]);
@@ -147,7 +169,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
 			if not(QuestSystem.Workplace.UseMod == true) then
 				XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.Literacy.Forbidden[lang]);
 			else
-				if Logic.IsTechnologyResearched( 1, Technologies.GT_Literacy )== 0 then
+				if Logic.IsTechnologyResearched(1, Technologies.GT_Literacy) == 0 then
 					XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.SettingDisabled[lang]);
 				else
 					XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, QuestSystem.Workplace.Text.SettingFull[lang]);
