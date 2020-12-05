@@ -21,6 +21,7 @@
 
 MPSync = {
     ScriptEvents = {},
+    Transactions = {},
     UniqueActionCounter = 0,
     UniqueIdCounter = 0,
 };
@@ -67,6 +68,99 @@ function MPSync:RequestNewID()
     return self.UniqueActionCounter;
 end
 
+function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg)
+    -- Create message
+    _Msg = _Msg or "";
+    local PreHashedMsg = "".._ID..":::" .._PlayerID..":::" .._Time.. ":::" .._Msg;
+    -- local Hash = md5.Calc(PreHashedMsg);
+    local Hash = _ID.. "_" .._PlayerID.. "_" .._Time.. "_" ..math.random(1, 1000);
+    local TransMsg = "___MPTransact:::"..Hash..":::" ..PreHashedMsg;
+    self.Transactions[Hash] = {};
+    -- Send message
+    -- if _PlayerID == GUI.GetPlayerID() then
+    --     Message("DEBUG: Message send: " ..Hash);
+    -- end
+    if self:IsMultiplayerGame() then
+        XNetwork.Chat_SendMessageToAll(TransMsg);
+    else
+        MPGame_ApplicationCallback_ReceivedChatMessage(TransMsg, 0, _PlayerID);
+    end
+    -- Wait for ack
+    while true do
+        local ActivePlayers = self:GetActivePlayers();
+        local AllAcksReceived = true;
+        for i= 1, table.getn(ActivePlayers), 1 do
+            if _PlayerID ~= ActivePlayers[i] and not self.Transactions[Hash][ActivePlayers[i]] then
+                AllAcksReceived = false;
+            end
+        end
+        if AllAcksReceived == true then
+            break;
+        end
+    end
+    -- Send own ack
+    self:TransactionAcknowledge(Hash, _Time);
+    self.Transactions[Hash][_PlayerID] = true;
+end
+
+function MPSync:TransactionAcknowledge(_Hash, _Time)
+    -- Create message
+    local PlayerID = GUI.GetPlayerID();
+    local TransMsg = "___MPAcknowledge:::" .._Hash.. ":::" ..PlayerID.. ":::" .._Time.. ":::";
+    -- Send message
+    if self:IsMultiplayerGame() then
+        XNetwork.Chat_SendMessageToAll(TransMsg);
+    else
+        MPGame_ApplicationCallback_ReceivedChatMessage(TransMsg, 0, PlayerID);
+    end
+end
+
+function MPSync:TransactionManage(_Type, _Msg)
+    -- Handle received request
+    if _Type == 1 then
+        local Parameters      = self:TransactionSplitMessage(_Msg);
+        local Hash            = table.remove(Parameters, 1);
+        local Action          = table.remove(Parameters, 1);
+        local SendingPlayerID = table.remove(Parameters, 1);
+        local Timestamp       = table.remove(Parameters, 1);
+        if SendingPlayerID ~= GUI.GetPlayerID() then
+            self:TransactionAcknowledge(Hash, Timestamp);
+            while true do
+                if not self:IsPlayerActive(SendingPlayerID) then
+                    break;
+                end
+                if self.Transactions[Hash][SendingPlayerID] == true then
+                    break;
+                end
+            end
+            self.ScriptEvents[Action].Function(unpack(Parameters));
+        end
+    -- Handle received client ack
+    elseif _Type == 2 then
+        local Parameters = self:TransactionSplitMessage(_Msg);
+        local Hash       = table.remove(Parameters, 1);
+        local PlayerID   = table.remove(Parameters, 1);
+        local Timestamp  = table.remove(Parameters, 1);
+        -- Message("DEBUG: Acknowledge received from " ..PlayerID);
+        self.Transactions[Hash] = self.Transactions[Hash] or {};
+        self.Transactions[Hash][PlayerID] = true;
+    end
+end
+
+function MPSync:TransactionSplitMessage(_Msg)
+    local MsgParts = {};
+    local Msg = _Msg;
+    repeat
+        local s, e = string.find(Msg, ":::");
+        local PartString = string.sub(Msg, 1, s-1);
+        local PartNumber = tonumber(PartString);
+        local Part = (PartNumber ~= nil and PartNumber) or PartString;
+        table.insert(MsgParts, Part);
+        Msg = string.sub(Msg, e+1);
+    until Msg == "";
+    return MsgParts;
+end
+
 ---
 -- Calls the script event synchronous for all players.
 -- @param[type=number] _Function ID of script event
@@ -75,57 +169,17 @@ end
 -- @see MPSync:CreateScriptEvent
 --
 function MPSync:SnchronizedCall(_ID, ...)
-    local Msg = "___MPSync:" .._ID.. ";";
-    if arg and table.getn(arg) > 0 then
+    arg = arg or {};
+    local Msg = "";
+    if table.getn(arg) > 0 then
         for i= 1, table.getn(arg), 1 do
-            Msg = Msg .. tostring(arg[i]) .. ";";
+            Msg = Msg .. tostring(arg[i]) .. ":::";
         end
     end
-    if self:IsMultiplayerGame() then
-        XNetwork.Chat_SendMessageToAll(Msg);
-        return;
-    end
-    MPGame_ApplicationCallback_ReceivedChatMessage(Msg, 1, GUI.GetPlayerID());
-end
-
----
--- Parses the action to call from the synchronization message.
--- @param[type=string] _Message Synchronization message
--- @within MPSync
--- @local
---
-function MPSync:SyncronizeMessageReceived(_Message)
-    local s1, e1 = string.find(_Message, ":");
-    local s2, e2 = string.find(_Message, ";");
-    if not e1 or not e2 then
-        return;
-    end
-    local ActionID = tonumber(string.sub(_Message, e1+1, e2-1));
-    if not ActionID then
-        return;
-    end
-    local Parameter = self:GetParameterFromSyncronizeMessage(string.sub(_Message, e2+1));
-    self.ScriptEvents[ActionID].Function(unpack(Parameter));
-end
-
----
--- Gets the parameters from the input string and returns them.
--- @param[type=string] _String Parameter string
--- @return[type=table] Parameter
--- @within MPSync
--- @local
---
-function MPSync:GetParameterFromSyncronizeMessage(_String)
-    local String = _String;
-    local Parameter = {};
-    while string.len(String) > 1 do
-        local s, e = string.find(String, ";");
-        local Part = string.sub(String, 1, e-1);
-        local PartNumber = tonumber(Part);
-        table.insert(Parameter, (PartNumber ~= nil and PartNumber) or Part);
-        String = string.sub(String, e+1);
-    end
-    return Parameter;
+    local PlayerID = GUI.GetPlayerID();
+    local Time = Logic.GetTime();
+    self:TransactionSend(_ID, PlayerID, Time, Msg);
+    self.ScriptEvents[_ID].Function(unpack(arg));
 end
 
 ---
@@ -141,10 +195,19 @@ function MPSync:OverrideMessageReceived()
 
     MPGame_ApplicationCallback_ReceivedChatMessage_Orig_MPSync = MPGame_ApplicationCallback_ReceivedChatMessage
     MPGame_ApplicationCallback_ReceivedChatMessage = function(_Message, _AlliedOnly, _SenderPlayerID)
-        if string.find(_Message, "^___MPSync") then
-            MPSync:SyncronizeMessageReceived(_Message);
+        -- Receive transaction
+        local s, e = string.find(_Message, "^___MPTransact:::");
+        if e then
+            MPSync:TransactionManage(1, string.sub(_Message, e+1));
             return;
         end
+        -- Receive ack
+        local s, e = string.find(_Message, "^___MPAcknowledge:::");
+        if e then
+            MPSync:TransactionManage(2, string.sub(_Message, e+1));
+            return;
+        end
+        -- Execute callback
         MPGame_ApplicationCallback_ReceivedChatMessage_Orig_MPSync(_Message, _AlliedOnly, _SenderPlayerID);
     end
 end
@@ -206,6 +269,19 @@ function MPSync:IsPatched()
 end
 
 ---
+-- 
+-- @within MPSync
+-- @local
+--
+function MPSync:IsPlayerActive(_PlayerID)
+    local Players = {};
+    if self:IsMultiplayerGame() then
+        return Logic.PlayerGetGameState(_PlayerID) == 1;
+    end
+    return true;
+end
+
+---
 -- Returns the number of human players. In Singleplayer this will always be 1.
 -- @return[type=number] Amount of humans
 -- @within MPSync
@@ -239,5 +315,52 @@ function MPSync:GetTeamOfPlayer(_PlayerID)
     else
         return _PlayerID;
     end
+end
+
+-- Marked for deletion --
+
+---
+-- DEPRECTATED
+--
+-- Parses the action to call from the synchronization message.
+-- @param[type=string] _Message Synchronization message
+-- @within MPSync
+-- @local
+--
+function MPSync:SyncronizeMessageReceived(_Message)
+    local s1, e1 = string.find(_Message, ":");
+    local s2, e2 = string.find(_Message, ";");
+    if not e1 or not e2 then
+        return;
+    end
+    local ActionID = tonumber(string.sub(_Message, e1+1, e2-1));
+    if not ActionID then
+        return;
+    end
+    local Parameter = self:GetParameterFromSyncronizeMessage(string.sub(_Message, e2+1));
+    -- Message("DEBUG: Received event message: " .._Message);
+    self.ScriptEvents[ActionID].Function(unpack(Parameter));
+end
+
+---
+-- DEPRECTATED
+--
+-- Gets the parameters from the input string and returns them.
+-- @param[type=string] _String Parameter string
+-- @return[type=table] Parameter
+-- @within MPSync
+-- @local
+--
+function MPSync:GetParameterFromSyncronizeMessage(_String)
+    local String = _String;
+    local Parameter = {};
+    while string.len(String) > 1 do
+        local s, e = string.find(String, ";");
+        local Part = string.sub(String, 1, e-1);
+        local PartNumber = tonumber(Part);
+        table.insert(Parameter, (PartNumber ~= nil and PartNumber) or Part);
+        String = string.sub(String, e+1);
+    end
+    return Parameter;
 end
 
