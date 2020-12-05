@@ -77,16 +77,20 @@ function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg)
     local TransMsg = "___MPTransact:::"..Hash..":::" ..PreHashedMsg;
     self.Transactions[Hash] = {};
     -- Send message
-    -- if _PlayerID == GUI.GetPlayerID() then
-    --     Message("DEBUG: Message send: " ..Hash);
-    -- end
+    if _PlayerID == GUI.GetPlayerID() then
+        Message("DEBUG: Message send: " ..Hash);
+    end
     if self:IsMultiplayerGame() then
         XNetwork.Chat_SendMessageToAll(TransMsg);
     else
         MPGame_ApplicationCallback_ReceivedChatMessage(TransMsg, 0, _PlayerID);
     end
     -- Wait for ack
-    while true do
+    StartSimpleHiResJobEx(function(_Hash, _Time)
+        if _Time +2 < Logic.GetTime() then
+            Message("DEBUG: Timeout for " .._Hash);
+            return true;
+        end
         local ActivePlayers = self:GetActivePlayers();
         local AllAcksReceived = true;
         for i= 1, table.getn(ActivePlayers), 1 do
@@ -95,12 +99,12 @@ function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg)
             end
         end
         if AllAcksReceived == true then
-            break;
+            -- Send own ack
+            self:TransactionAcknowledge(Hash, _Time);
+            self.Transactions[Hash][_PlayerID] = true;
+            return true;
         end
-    end
-    -- Send own ack
-    self:TransactionAcknowledge(Hash, _Time);
-    self.Transactions[Hash][_PlayerID] = true;
+    end, Hash, Logic.GetTime());
 end
 
 function MPSync:TransactionAcknowledge(_Hash, _Time)
@@ -125,15 +129,19 @@ function MPSync:TransactionManage(_Type, _Msg)
         local Timestamp       = table.remove(Parameters, 1);
         if SendingPlayerID ~= GUI.GetPlayerID() then
             self:TransactionAcknowledge(Hash, Timestamp);
-            while true do
+            StartSimpleHiResJobEx(function(_Hash, _Time)
+                if _Time +2 < Logic.GetTime() then
+                    Message("DEBUG: Timeout for " .._Hash);
+                    return true;
+                end
                 if not self:IsPlayerActive(SendingPlayerID) then
-                    break;
+                    return true;
                 end
                 if self.Transactions[Hash][SendingPlayerID] == true then
-                    break;
+                    MPSync.ScriptEvents[Action].Function(unpack(Parameters));
+                    return true;
                 end
-            end
-            self.ScriptEvents[Action].Function(unpack(Parameters));
+            end, Hash, Logic.GetTime());
         end
     -- Handle received client ack
     elseif _Type == 2 then
@@ -141,7 +149,7 @@ function MPSync:TransactionManage(_Type, _Msg)
         local Hash       = table.remove(Parameters, 1);
         local PlayerID   = table.remove(Parameters, 1);
         local Timestamp  = table.remove(Parameters, 1);
-        -- Message("DEBUG: Acknowledge received from " ..PlayerID);
+        Message("DEBUG: Acknowledge received from " ..PlayerID);
         self.Transactions[Hash] = self.Transactions[Hash] or {};
         self.Transactions[Hash][PlayerID] = true;
     end
@@ -177,7 +185,7 @@ function MPSync:SnchronizedCall(_ID, ...)
         end
     end
     local PlayerID = GUI.GetPlayerID();
-    local Time = Logic.GetTime();
+    local Time = Logic.GetTimeMs();
     self:TransactionSend(_ID, PlayerID, Time, Msg);
     self.ScriptEvents[_ID].Function(unpack(arg));
 end
@@ -338,7 +346,7 @@ function MPSync:SyncronizeMessageReceived(_Message)
         return;
     end
     local Parameter = self:GetParameterFromSyncronizeMessage(string.sub(_Message, e2+1));
-    -- Message("DEBUG: Received event message: " .._Message);
+    Message("DEBUG: Received event message: " .._Message);
     self.ScriptEvents[ActionID].Function(unpack(Parameter));
 end
 
