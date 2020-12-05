@@ -190,42 +190,46 @@ end
 --
 function Interaction:CreateNpcMerchantScriptEvents()
     -- Buy Units
-    Interaction.Event.BuyUnit = MPSync:CreateScriptEvent(function(_PlayerID, _EntityType, _X, _Y)
-        local Instance = Interaction.IO[_ScriptName]
-        local ID = AI.Entity_CreateFormation(_PlayerID, _EntityType, 0, 0, _X, _Y, 0, 0, 3, 0);
-        if Logic.IsLeader(ID) == 1 then
-            Tools.CreateSoldiersForLeader(ID, 16);
+    Interaction.Event.BuyUnit = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _EntityType, _X, _Y, _SlotIndex, _Costs)
+        local Instance = Interaction.IO[_ScriptName];
+        if Instance then
+            local ID = AI.Entity_CreateFormation(_PlayerID, _EntityType, 0, 0, _X, _Y, 0, 0, 3, 0);
+            if Logic.IsLeader(ID) == 1 then
+                Tools.CreateSoldiersForLeader(ID, 16);
+            end
+            Instance:SubResources(_PlayerID, _SlotIndex);
+            Instance:UpdateValues(_SlotIndex);
         end
     end);
     -- Buy Resources
-    Interaction.Event.BuyRes = MPSync:CreateScriptEvent(function(_PlayerID, _GoodType, _Amount)
-        Logic.AddToPlayersGlobalResource(_PlayerID, _GoodType, _Amount);
+    Interaction.Event.BuyRes = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _GoodType, _Amount, _SlotIndex, _Costs)
+        local Instance = Interaction.IO[_ScriptName];
+        if Instance then
+            Logic.AddToPlayersGlobalResource(_PlayerID, _GoodType, _Amount);
+            Instance:SubResources(_PlayerID, _SlotIndex);
+            Instance:UpdateValues(_SlotIndex);
+        end
     end);
     -- Buy Technology
-    Interaction.Event.BuyTech = MPSync:CreateScriptEvent(function(_PlayerID, _TechType)
-        ResearchTechnology(_TechType, _PlayerID);
+    Interaction.Event.BuyTech = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _TechType, _SlotIndex, _Costs)
+        local Instance = Interaction.IO[_ScriptName];
+        if Instance then
+            ResearchTechnology(_TechType, _PlayerID);
+            Instance:SubResources(_PlayerID, _SlotIndex);
+            Instance:UpdateValues(_SlotIndex);
+        end
     end);
     -- Buy Custom
-    Interaction.Event.BuyFunc = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _SlotIndex)
-        local Instance = Interaction.IO[_ScriptName]
-        Instance.m_Offers[_SlotIndex].Good(
-            Instance.m_Offers[_SlotIndex],
-            Instance,
-            _PlayerID
-        );
-    end);
-    -- Pay Offer
-    Interaction.Event.SubRes = MPSync:CreateScriptEvent(function(_PlayerID, _ResType, _Amount)
-        Logic.SubFromPlayersGlobalResource(_PlayerID, _ResType, _Amount);
-    end);
-    -- Update values
-    Interaction.Event.Update = MPSync:CreateScriptEvent(function(_ScriptName, _SlotIndex)
-        local Instance = Interaction.IO[_ScriptName]
-        Instance.m_Offers[_SlotIndex].Volume = Instance.m_Offers[_SlotIndex].Volume +1;
-        Instance.m_Offers[_SlotIndex].Load = Instance.m_Offers[_SlotIndex].Load -1;
-        Instance.m_Offers[_SlotIndex].Inflation = Instance.m_Offers[_SlotIndex].Inflation + 0.05;
-        if Instance.m_Offers[_SlotIndex].Inflation > 1.75 then
-            Instance.m_Offers[_SlotIndex].Inflation = 1.75;
+    Interaction.Event.BuyFunc = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _SlotIndex, _Costs)
+        local Instance = Interaction.IO[_ScriptName];
+        if Instance then
+            Instance.m_Offers[_SlotIndex].Good(
+                Instance.m_Offers[_SlotIndex],
+                Instance,
+                _PlayerID
+            );
+            Instance:SubResources(_PlayerID, _SlotIndex)
+            Instance:UpdateValues(_SlotIndex);
         end
     end);
 end
@@ -1192,19 +1196,25 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
             end
             MPSync:SnchronizedCall(
                 Interaction.Event.BuyUnit,
+                self.m_ScriptName,
                 PlayerID,
                 self.m_Offers[_SlotIndex].Good,
                 Position.X,
-                Position.Y
+                Position.Y,
+                _SlotIndex,
+                Costs
             );
 
         -- Resource
         elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
             MPSync:SnchronizedCall(
                 Interaction.Event.BuyRes,
+                self.m_ScriptName,
                 PlayerID,
                 self.m_Offers[_SlotIndex].Good +1,
-                self.m_Offers[_SlotIndex].Amount
+                self.m_Offers[_SlotIndex].Amount,
+                _SlotIndex,
+                Costs
             );
 
         -- Technology
@@ -1214,8 +1224,11 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
             end
             MPSync:SnchronizedCall(
                 Interaction.Event.BuyTech,
+                self.m_ScriptName,
                 PlayerID,
-                self.m_Offers[_SlotIndex].Good
+                self.m_Offers[_SlotIndex].Good,
+                _SlotIndex,
+                Costs
             );
 
         -- Custom
@@ -1224,21 +1237,40 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
                 Interaction.Event.BuyFunc,
                 self.m_ScriptName,
                 PlayerID,
-                _SlotIndex
+                _SlotIndex,
+                Costs
             );
         end
-
-        -- Remove costs
-        for k, v in pairs(Costs) do
-            MPSync:SnchronizedCall(Interaction.Event.SubRes, PlayerID, k, v);
-        end
-        -- Update values
-        MPSync:SnchronizedCall(
-            Interaction.Event.Update,
-            self.m_ScriptName,
-            _SlotIndex
-        );
         GUIUpdate_TroopOffer(_SlotIndex);
+    end
+end
+
+---
+-- 
+-- @within NonPlayerMerchant
+-- @local
+--
+function NonPlayerMerchant:SubResources(_PlayerID, _SlotIndex)
+    local Costs = copy(self.m_Offers[_SlotIndex].Costs);
+    for k, v in pairs(Costs) do
+        Costs[k] = math.ceil(v * self.m_Offers[_SlotIndex].Inflation);
+    end
+    for k, v in pairs(Costs) do
+        Logic.SubFromPlayersGlobalResource(_PlayerID, k, v);
+    end
+end
+
+---
+-- 
+-- @within NonPlayerMerchant
+-- @local
+--
+function NonPlayerMerchant:UpdateValues(_SlotIndex)
+    self.m_Offers[_SlotIndex].Volume = self.m_Offers[_SlotIndex].Volume +1;
+    self.m_Offers[_SlotIndex].Load = self.m_Offers[_SlotIndex].Load -1;
+    self.m_Offers[_SlotIndex].Inflation = self.m_Offers[_SlotIndex].Inflation + 0.05;
+    if self.m_Offers[_SlotIndex].Inflation > 1.75 then
+        self.m_Offers[_SlotIndex].Inflation = 1.75;
     end
 end
 
