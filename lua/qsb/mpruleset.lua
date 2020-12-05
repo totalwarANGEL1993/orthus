@@ -233,10 +233,12 @@ function MPRuleset:Install()
             MPRuleset_Rules = MPRuleset_Default;
             Rules = MPRuleset_Rules;
         end
-        for k, v in pairs(MPSync:GetActivePlayers()) do
-            Logic.SetNumberOfBuyableHerosForPlayer(v, Rules.Limits.Hero);
+        local PlayersTable = MPSync:GetActivePlayers();
+        for i= 1, table.getn(PlayersTable), 1 do
+            Logic.SetNumberOfBuyableHerosForPlayer(PlayersTable[i], Rules.Limits.Hero);
         end
 
+        self:SetupDiplomacyForPeacetime();
         self:CreateEvents();
         self:FillResourceHeaps(Rules);
         self:CreateQuests(Rules);
@@ -418,6 +420,42 @@ function MPRuleset:GiveResources(_Data)
             _Data.Resources[Index].Iron,
             _Data.Resources[Index].Sulfur
         );
+    end
+end
+
+function MPRuleset:SetupDiplomacyForPeacetime()
+    local PlayersTable = MPSync:GetActivePlayers();
+    for i= 1, table.getn(PlayersTable), 1 do
+        local Team1 = MPSync:GetTeamOfPlayer(PlayersTable[i]);
+        for j= 1, table.getn(PlayersTable), 1 do
+            local Team2 = MPSync:GetTeamOfPlayer(PlayersTable[j]);
+            if PlayersTable[i] ~= PlayersTable[j] then
+                SetNeutral(PlayersTable[i], PlayersTable[j]);
+                if Team1 == Team2 then
+                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 1);
+		            Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 1);
+                end
+            end
+        end
+    end
+end
+
+function MPRuleset:SetupDiplomacy()
+    local PlayersTable = MPSync:GetActivePlayers();
+    for i= 1, table.getn(PlayersTable), 1 do
+        local Team1 = MPSync:GetTeamOfPlayer(PlayersTable[i]);
+        for j= 1, table.getn(PlayersTable), 1 do
+            local Team2 = MPSync:GetTeamOfPlayer(PlayersTable[j]);
+            if PlayersTable[i] ~= PlayersTable[j] then
+                if Team1 == Team2 then
+                    SetFriendly(PlayersTable[i], PlayersTable[j]);
+                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 1);
+		            Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 1);	
+                else
+                    SetHostile(PlayersTable[i], PlayersTable[j]);
+                end
+            end
+        end
     end
 end
 
@@ -647,10 +685,14 @@ function MPRuleset:CreateQuests(_Data)
                 },
 
                 Goal_NoChange(),
+                Reward_MapScriptFunction(function()
+                    MPRuleset:SetupDiplomacy();
+                end),
                 Reward_MapScriptFunction(MPRuleset_Rules.Callbacks.OnPeacetimeOver),
                 Trigger_Time(self.Data.GameStartOffset)
             };
         else
+            self:SetupDiplomacy();
             MPRuleset_Rules.Callbacks.OnPeacetimeOver();
         end
 
@@ -658,7 +700,7 @@ function MPRuleset:CreateQuests(_Data)
         if _Data.Timer.DeathPenalty > 0 then
             CreateQuest {
                 Name        = "MPRuleset_DeathPenaltyQuest_Player" ..Players[i],
-                Time        = _Data.Timer.DeathPenalty *60,
+                Time        = _Data.Timer.DeathPenalty * 60,
                 Receiver    = Players[i],
                 Description = {
                     Title = self.Text.Quests.DeathPenalty.Title.de,
@@ -737,7 +779,6 @@ MPRuleset_Default = {
     },
 
     Commandment = {
-
         -- Crush building glitch fixed. Buildings will deselect the building
         -- and then destroy it right away without warning. (0 = off)
         CrushBuilding       = 1,
