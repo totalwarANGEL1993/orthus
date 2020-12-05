@@ -238,6 +238,7 @@ function MPRuleset:Install()
         end
 
         self:CreateEvents();
+        self:FillResourceHeaps(Rules);
         self:CreateQuests(Rules);
         self:GiveResources(Rules);
         self:ForbidTechnologies(Rules);
@@ -531,6 +532,32 @@ function MPRuleset:GetFirstHQOfPlayer(_PlayerID)
     return 0;
 end
 
+function MPRuleset:FillResourceHeaps(_Data)
+    if _Data.Commandment.ResourceHeapSize == 0 then
+        return false;
+    end
+    -- Clay
+    local Heaps = FindAllEntities(0, Entities.XD_Clay1);
+    for i= 1, table.getn(Heaps), 1 do
+        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Commandment.ResourceHeapSize);
+    end
+    -- Iron
+    local Heaps = FindAllEntities(0, Entities.XD_Iron1);
+    for i= 1, table.getn(Heaps), 1 do
+        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Commandment.ResourceHeapSize);
+    end
+    -- Stone
+    local Heaps = FindAllEntities(0, Entities.XD_Stone1);
+    for i= 1, table.getn(Heaps), 1 do
+        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Commandment.ResourceHeapSize);
+    end
+    -- Sulfur
+    local Heaps = FindAllEntities(0, Entities.XD_Sulfur1);
+    for i= 1, table.getn(Heaps), 1 do
+        Logic.SetResourceDoodadGoodAmount(Heaps[i], _Data.Commandment.ResourceHeapSize);
+    end
+end
+
 function MPRuleset:ForbidTechnologies(_Data)
     local Players = MPSync:GetActivePlayers();
     for k, v in pairs(self.Data.Technologies) do
@@ -750,11 +777,11 @@ MPRuleset_Default = {
 
     Limits = {
         -- Limit of heroes the player can buy
-        Hero         =  3,
+        Hero         = 3,
 
         -- Building Limit  (-1 = off)
         Market       = 1,
-        Tower        =  5,
+        Tower        = 5,
         University   = -1,
         Village      = -1,
 
