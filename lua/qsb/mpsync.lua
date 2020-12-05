@@ -73,7 +73,7 @@ function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg)
     _Msg = _Msg or "";
     local PreHashedMsg = "".._ID..":::" .._PlayerID..":::" .._Time.. ":::" .._Msg;
     -- local Hash = md5.Calc(PreHashedMsg);
-    local Hash = _ID.. "_" .._PlayerID.. "_" .._Time.. "_" ..math.random(1, 1000);
+    local Hash = _ID.. "_" .._PlayerID.. "_" .._Time;
     local TransMsg = "___MPTransact:::"..Hash..":::" ..PreHashedMsg;
     self.Transactions[Hash] = {};
     -- Send message
