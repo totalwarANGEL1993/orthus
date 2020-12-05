@@ -15,7 +15,7 @@ Script.Load("data/script/maptools/comfort.lua");
 Script.Load("data/script/maptools/mapeditortools.lua");
 
 -- Load QSB
-gvBasePath = "data/maps/externalMap/";
+gvBasePath = "data/maps/externalmap/";
 Script.Load(gvBasePath.. "qsb/oop.lua");
 Script.Load(gvBasePath.. "qsb/mpsync.lua");
 Script.Load(gvBasePath.. "qsb/questsystem.lua");
@@ -55,23 +55,6 @@ function Mission_InitSingleplayer()
     end
 end
 
-function Mission_InitResources()
-    local Gold 	 = 500;
-	local Clay 	 = 800;
-	local Wood 	 = 500;
-	local Stone  = 500;
-	local Iron 	 = 500;
-    local Sulfur = 250;
-    if XNetwork ~= nil and XNetwork.Manager_DoesExist() == 1 then
-        local Players = XNetwork.GameInformation_GetMapMaximumNumberOfHumanPlayer();
-        for i= 1, Players, 1 do
-            Tools.GiveResouces(i, Gold, Clay, Wood, Stone, Iron, Sulfur);
-        end
-    else
-        Tools.GiveResouces(1, Gold, Clay, Wood, Stone, Iron, Sulfur);
-    end
-end
-
 function Mission_StartQuestSystemBehavior()
     Score.Player[0] = {};
 	Score.Player[0]["buildings"] = 0;
@@ -82,10 +65,7 @@ end
 function GameCallback_OnGameStart()
     Mission_InitMap();
     Mission_InitSingleplayer();
-    Mission_InitResources();
     Mission_StartQuestSystemBehavior();
-
-    -- TODO: Call MP rule script here
     
     -- Call your code here
 end
