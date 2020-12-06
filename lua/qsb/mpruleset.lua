@@ -221,10 +221,11 @@ MPRuleset = {
 function MPRuleset:Install()
     -- No MP?
     if not MPSync:IsMultiplayerGame() then
+        GUI.AddStaticNote("Map is running in Singleplayer! Some Features are disabled!");
         return;
     end
     -- Using EMS?
-    if not self:IsUsingEMS() then
+    if self:IsUsingEMS() then
         return;
     end
 
@@ -435,7 +436,10 @@ function MPRuleset:SetupDiplomacyForPeacetime()
                 SetNeutral(PlayersTable[i], PlayersTable[j]);
                 if Team1 == Team2 then
                     Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 1);
-		            Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 1);
+                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 1);
+                else
+                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 0);
+		            Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 0);
                 end
             end
         end
@@ -452,9 +456,11 @@ function MPRuleset:SetupDiplomacy()
                 if Team1 == Team2 then
                     SetFriendly(PlayersTable[i], PlayersTable[j]);
                     Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 1);
-		            Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 1);	
+		            Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 1);
                 else
                     SetHostile(PlayersTable[i], PlayersTable[j]);
+                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 0);
+		            Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 0);
                 end
             end
         end
@@ -714,8 +720,8 @@ function MPRuleset:CreateQuests(_Data)
 
                 -- This is a behavior that waits until there is only one player
                 -- or one team left before ending the quest. So if there are
-                -- still more than one team lurking around before death penalty
-                -- is triggered, everyone looses.
+                -- still more than one team lurking around when death penalty
+                -- is triggered by the quests time limit, everyone looses.
                 Goal_MapScriptFunction(function(_Behavior, _Quest)
                     local Team = MPSync:GetTeamOfPlayer(_Quest.m_Receiver)
                     local ActivePlayers = MPSync:GetActivePlayers();
