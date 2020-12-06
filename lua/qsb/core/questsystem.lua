@@ -1713,10 +1713,12 @@ function QuestSystem:ReplacePlaceholders(_Message)
         _Message = string.gsub(_Message, "{blue}", " @color:0,0,180 ");
         _Message = string.gsub(_Message, "{yellow}", " @color:235,235,0 ");
         _Message = string.gsub(_Message, "{violet}", " @color:180,0,180 ");
+        _Message = string.gsub(_Message, "{orange}", " @color:235,158,52 ");
         _Message = string.gsub(_Message, "{azure}", " @color:0,180,180 ");
         _Message = string.gsub(_Message, "{black}", " @color:40,40,40 ");
         _Message = string.gsub(_Message, "{white}", " @color:255,255,255 ");
         _Message = string.gsub(_Message, "{grey}", " @color:180,180,180 ");
+        _Message = string.gsub(_Message, "{trans}", " @color:0,0,0,0 ");
     end
     return _Message;
 end

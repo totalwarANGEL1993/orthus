@@ -65,6 +65,9 @@ end
 -- Ruleset ------------------------------------------------------------------ --
 
 MPRuleset_Rules = {
+    -- Rules can be changed
+    Changeable = true,
+
     Resources = {
         -- Amount of resources in resource heaps
         ResourceHeapSize    = 2000,
@@ -77,8 +80,8 @@ MPRuleset_Rules = {
             Clay            = 1500,
             Wood            = 1200,
             Stone           = 800,
-            Iron            = 50,
-            Sulfur          = 50,
+            Iron            = 250,
+            Sulfur          = 250,
         },
         [2] = {
             Gold            = 2000,
@@ -128,7 +131,7 @@ MPRuleset_Rules = {
         HQRushBlock         = 1,
 
         -- Bridges can not be destroyed (0 = off)
-        InvincibleBridges   = 1,
+        InvincibleBridges   = 0,
 
         -- Control worker amount in workplaces (0 = off)
         Workplace           = 1,
@@ -138,7 +141,7 @@ MPRuleset_Rules = {
         WeatherChangeDelay  = 3,
 
         -- Minutes a player must wait between two blesses.
-        BlessDelay          = 3,
+        BlessDelay          = 5,
     },
 
     Limits = {

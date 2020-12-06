@@ -606,7 +606,11 @@ function QuestSystemBehavior:PrepareQuestSystem()
         end
 
         if MPRuleset then
-            MPRuleset:Install();
+            -- Delay selection by 1 second
+            StartSimpleJobEx(function()
+                MPRuleset:Install();
+                return true;
+            end);
         end
     end
 end
@@ -1441,7 +1445,8 @@ function b_Goal_MapScriptFunction:CustomFunction(_Quest)
 end
 
 function b_Goal_MapScriptFunction:Debug(_Quest)
-    if type(self.Data.CustomFunction) ~= "string" or _G[self.Data.CustomFunction] == nil then
+    if (type(self.Data.CustomFunction) == "string" and _G[self.Data.CustomFunction] == nil)
+    or (self.Data.CustomFunction) == nil then
         dbg(_Quest, self, "Function ist invalid:" ..tostring(self.Data.CustomFunction));
         return true;
     end
@@ -2489,7 +2494,8 @@ function b_Reprisal_MapScriptFunction:CustomFunction(_Quest)
 end
 
 function b_Reprisal_MapScriptFunction:Debug(_Quest)
-    if type(self.Data.CustomFunction) ~= "string" or _G[self.Data.CustomFunction] == nil then
+    if (type(self.Data.CustomFunction) == "string" and _G[self.Data.CustomFunction] == nil)
+    or (self.Data.CustomFunction) == nil then
         dbg(_Quest, self, "Function ist invalid:" ..tostring(self.Data.CustomFunction));
         return true;
     end
@@ -3076,7 +3082,8 @@ function b_Reward_MapScriptFunction:CustomFunction(_Quest)
 end
 
 function b_Reward_MapScriptFunction:Debug(_Quest)
-    if type(self.Data.CustomFunction) ~= "string" or _G[self.Data.CustomFunction] == nil then
+    if (type(self.Data.CustomFunction) == "string" and _G[self.Data.CustomFunction] == nil)
+    or (self.Data.CustomFunction) == nil then
         dbg(_Quest, self, "Function ist invalid:" ..tostring(self.Data.CustomFunction));
         return true;
     end
@@ -3851,7 +3858,8 @@ function b_Trigger_MapScriptFunction:CustomFunction(_Quest)
 end
 
 function b_Trigger_MapScriptFunction:Debug(_Quest)
-    if type(self.Data.CustomFunction) ~= "string" or _G[self.Data.CustomFunction] == nil then
+    if (type(self.Data.CustomFunction) == "string" and _G[self.Data.CustomFunction] == nil)
+    or (self.Data.CustomFunction) == nil then
         dbg(_Quest, self, "Function ist invalid:" ..tostring(self.Data.CustomFunction));
         return true;
     end

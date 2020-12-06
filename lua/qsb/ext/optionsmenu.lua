@@ -10,7 +10,8 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.oop</li>
+-- <li>qsb.core.oop</li>
+-- <li>qsb.core.questsystem</li>
 -- </ul>
 --
 -- @set sort=true
@@ -35,6 +36,13 @@ function CloseOptionMenu(_Data)
     if OptionMenu:IsShown() then
         OptionMenu:Close();
     end
+end
+
+function GetDefaultOptionText(_Type)
+    if OptionMenu.Texts[_Type] then
+        return OptionMenu.Texts[_Type];
+    end
+    return "ERROR_DEFAULT_NOT_FOUND";
 end
 
 ---
@@ -86,6 +94,16 @@ OptionMenu = {
 --
 function OptionMenu:Install()
     self:OverrideGroupSelection();
+end
+
+---
+-- Displays the prepared option window entering on the given page.
+-- @within OptionMenu
+-- @local
+--
+function OptionMenu:GetLanguage()
+    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+    return Language;
 end
 
 ---
@@ -223,10 +241,10 @@ function OptionMenu:Render()
         return;
     end
 
-    local Title = Page:GetCaption();
+    local Title = QuestSystem:ReplacePlaceholders(Page:GetCaption());
 
     local Text = "";
-    Text = Text .. Page:GetDescription();
+    Text = Text .. QuestSystem:ReplacePlaceholders(Page:GetDescription());
     if table.getn(Page:GetOptions()) > 0 then
         local OptionsList = Page:GetOptions();
         Text = Text .. " @color:255,255,255 @cr @cr ";
@@ -235,7 +253,7 @@ function OptionMenu:Render()
                 if OptionsList[i]:GetKey() ~= -1 then
                     Text = Text .. OptionsList[i]:GetKey();
                     Text = Text .. " @color:0,0,0,0 ___ @color:255,255,255 ";
-                    Text = Text .. OptionsList[i]:GetText() .. " @cr ";
+                    Text = Text .. QuestSystem:ReplacePlaceholders(OptionsList[i]:GetText()) .. " @cr ";
                 else
                     Text = Text .. " @cr ";
                 end
@@ -247,8 +265,8 @@ function OptionMenu:Render()
         if table.getn(Page:GetOptions()) == 0 then
             Text = Text .. " @cr ";
         end
-        Text = Text .. Page:GetBackOption():GetKey() .. "   ";
-        Text = Text .. Page:GetBackOption():GetText();
+        Text = Text .. Page:GetBackOption():GetKey() .. " @color:0,0,0,0 ___ @color:255,255,255 ";
+        Text = Text .. QuestSystem:ReplacePlaceholders(Page:GetBackOption():GetText());
     end
     self:DisplayCreditsWindow(Title, Text);
 end
@@ -360,15 +378,15 @@ function OptionMenuPage:GetIdentifier()
 end
 
 function OptionMenuPage:GetCaption(...)
-    if table.getn(arg) > 0 then
-        return string.format(self.m_Caption, unpack(arg));
+    if type(self.m_Caption) == "function" then
+        return self.m_Caption(unpack(arg or {}));
     end
     return self.m_Caption;
 end
 
 function OptionMenuPage:GetDescription(...)
-    if table.getn(arg) > 0 then
-        return string.format(self.m_Description, unpack(arg));
+    if type(self.m_Description) == "function" then
+        return self.m_Description(unpack(arg or {}));
     end
     return self.m_Description;
 end

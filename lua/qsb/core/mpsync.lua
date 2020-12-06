@@ -382,6 +382,22 @@ function MPSync:IsPlayerActive(_PlayerID)
 end
 
 ---
+-- Returns true, if the player is the host.
+-- @param[type=number] _PlayerID ID of player
+-- @return[type=boolean] Player is host
+-- @within MPSync
+-- @local
+--
+function MPSync:IsPlayerHost(_PlayerID)
+    if self:IsMultiplayerGame() then
+        local HostNetworkAddress   = XNetwork.Host_UserInSession_GetHostNetworkAddress();
+        local PlayerNetworkAddress = XNetwork.GameInformation_GetNetworkAddressByPlayerID(_PlayerID);
+        return HostNetworkAddress == PlayerNetworkAddress;
+    end
+    return true;
+end
+
+---
 -- Returns the number of human players. In Singleplayer this will always be 1.
 -- @return[type=number] Amount of humans
 -- @within MPSync

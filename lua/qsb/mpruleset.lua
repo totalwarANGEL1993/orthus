@@ -28,7 +28,7 @@ MPRuleset = {
         GameStartOffset = 0,
         WeatherChangeTimestamp = 0,
         BlessTimestamp = {},
-        RuleChangeAllowed = false;
+        RuleSelectionActive = false,
 
         Technologies = {
             Gunsmith = {
@@ -188,11 +188,587 @@ MPRuleset = {
         },
     },
 
+    Menu = {
+        -- Main page
+        {
+            Identifier  = "Main",
+            Parent      = nil,
+            OnClose     = function()
+                if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
+                    MPSync:SnchronizedCall(MPRuleset.EventApplyRules);
+                end
+            end,
+            Title       = {
+                de = "Regeleinstellungen", en = "Rule settings"
+            },
+            Description = {
+                de = "Bitte wählt in den folgenden Kategorien die Regeln aus."..
+                     " Wenn Ihr fertig seid, bestätigt und das Spiel beginnt.",
+                en = "Please select the rules for this game. After you have"..
+                     " finished confirm your settings and the game starts."
+            },
+            Options     = {
+                {Text   = {de = "Rohstoffe", en = "Resources"},
+                 Target = function()
+                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
+                    return "Rule_Resources";
+                 end},
+                {Text   = {de = "Zähler", en = "Counters"},
+                 Target = function()
+                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
+                    return "Rule_Timers";
+                 end},
+                {Text   = {de = "Gebote", en = "Commandments"},
+                 Target = function()
+                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
+                    return "Rule_Commandments";
+                 end},
+                {Text   = {de = "Beschränkungen", en = "Limits"},
+                 Target = function()
+                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
+                    return "Rule_Limits";
+                 end},
+                {Text   = {de = "Helden", en = "Heroes"},
+                 Target = function()
+                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
+                    return "Rule_Heroes";
+                 end},
+            }
+        },
+
+        -- Resources
+        {
+            Identifier  = "Rule_Resources",
+            Parent      = "Main",
+            Title       = {
+                de = "Rohstoffe", en = "Resources"
+            },
+            Description = function()
+                local Text = {
+                    de = "Wählt Startrohstoffe und Haufengröße aus.",
+                    en = "Choose start resources and heap size.",
+                }
+                return string.format(
+                    Text[OptionMenu:GetLanguage()],
+                    (MPRuleset_Rules.Resources.Choosen == 2 and ((OptionMenu:GetLanguage() == "de" and "viel") or "plenty") or
+                     MPRuleset_Rules.Resources.Choosen == 3 and ((OptionMenu:GetLanguage() == "de" and "absurd") or "insane") or
+                     "normal"),
+                    MPRuleset_Rules.Resources.ResourceHeapSize
+                );
+            end,
+            Options     = {
+                {Text   = function()
+                    return ((OptionMenu:GetLanguage() == "de" and "Rohstoffe: ") or "Resources: ") ..
+                           (MPRuleset_Rules.Resources.Choosen == 2 and ((OptionMenu:GetLanguage() == "de" and "{yellow}viel") or "{yellow}plenty") or
+                            MPRuleset_Rules.Resources.Choosen == 3 and ((OptionMenu:GetLanguage() == "de" and "{orange}absurd") or "{orange}insane") or
+                            "{grey}normal") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Resources", "Choosen", 1, 1, 3);
+                    return "Rule_Resources";
+                 end},
+                {Text   = function()
+                    return ((OptionMenu:GetLanguage() == "de" and "Haufengröße:{grey}") or "Heap size:{grey}") ..
+                           (MPRuleset_Rules.Resources.ResourceHeapSize.. "{white}");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Resources", "ResourceHeapSize", 100, 400, 5000);
+                    return "Rule_Resources";
+                 end},
+            }
+        },
+
+        -- Timers
+        {
+            Identifier  = "Rule_Timers",
+            Parent      = "Main",
+            Title       = {
+                de = "Zähler", en = "Counters"
+            },
+            Description = {
+                de = "Wählt Friedenszeit und Todeststrafe aus.",
+                en = "Choose peacetime and death penalty.",
+            },
+            Options     = {
+                {Text   = function()
+                    return ((OptionMenu:GetLanguage() == "de" and "Friedenszeit: ") or "Peacetime: ") ..
+                           ((MPRuleset_Rules.Timer.Peacetime == 0 and "-") or MPRuleset_Rules.Timer.Peacetime .. " min");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Timer", "Peacetime", 5, 0, 50);
+                    return "Rule_Timers";
+                 end},
+                {Text   = function()
+                    return ((OptionMenu:GetLanguage() == "de" and "Todesstrafe: ") or "Death penalty: ") ..
+                           ((MPRuleset_Rules.Timer.DeathPenalty == 0 and "-") or MPRuleset_Rules.Timer.DeathPenalty .. " min");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Timer", "DeathPenalty", 5, 0, 50);
+                    return "Rule_Timers";
+                 end},
+            }
+        },
+
+        -- Commandments
+        {
+            Identifier  = "Rule_Commandments",
+            Parent      = "Main",
+            Title       = {
+                de = "Gebote", en = "Commandments"
+            },
+            Description = {
+                de = "Wählt spezielle Gebote für dieses Spiel aus.",
+                en = "Choos special commandments for this game.",
+            },
+            Options     = {
+                {Text   = function()
+                    return ((MPRuleset_Rules.Commandment.CrushBuilding == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Abrissfix") or "Demolish fix") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Commandment", "CrushBuilding", 1);
+                    return "Rule_Commandments";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Commandment.Formaition == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Formationsfix") or "Formation fix") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Commandment", "Formaition", 1);
+                    return "Rule_Commandments";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Commandment.AssociateVillages == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Dorfzentren binden") or "Bind villages") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Commandment", "AssociateVillages", 1);
+                    return "Rule_Commandments";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Commandment.HQRushBlock == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Anti-Rush") or "Anti rush") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Commandment", "HQRushBlock", 1);
+                    return "Rule_Commandments";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Commandment.InvincibleBridges == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Brücken unzerstörbar") or "Indescrutable bridges") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Commandment", "InvincibleBridges", 1);
+                    return "Rule_Commandments";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Commandment.Workplace == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Arbeiterzahl ändern") or "Change worker amount") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Commandment", "Workplace", 1);
+                     return "Rule_Commandments";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Commandment.WeatherChangeDelay == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Wetterwechsellimit") or "Weather change limit") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Commandment", "WeatherChangeDelay", 5);
+                    return "Rule_Commandments";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Commandment.BlessDelay == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Segenlimit") or "Bless limit") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Commandment", "BlessDelay", 3);
+                    return "Rule_Commandments";
+                 end},
+            }
+        },
+
+        -- Limits
+        {
+            Identifier  = "Rule_Limits",
+            Parent      = "Main",
+            Title       = {
+                de = "Beschränkungen", en = "Limits"
+            },
+            Description = {
+                de = "In den unten stehenden Kategorien könnt Ihr Einheiten,"..
+                     " Gebäude, Kanonen und Spezialeinheiten limitieren.",
+                en = "In the categories below you are able to limit the amount"..
+                     " of buildings, units, cannons and special units."
+            },
+            Options     = {
+                {Text   = {de = "Gebäude", en = "Buildings"},
+                 Target = function()
+                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
+                    return "Rule_Limits_Buildings"
+                 end},
+                {Text   = {de = "Kanonen", en = "Cannons"},
+                 Target = function()
+                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
+                    return "Rule_Limits_Cannons"
+                 end},
+                {Text   = {de = "Militär", en = "Military"},
+                 Target = function()
+                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
+                    return "Rule_Limits_Units"
+                 end},
+                {Text   = {de = "Spezial", en = "Special"},
+                  Target = function()
+                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
+                    return "Rule_Limits_Special"
+                 end},
+            }
+        },
+        {
+            Identifier  = "Rule_Limits_Buildings",
+            Parent      = "Rule_Limits",
+            Title       = {
+                de = "Gebäude", en = "Buildings"
+            },
+            Description = {
+                de = "Wählt die Menge der erlaubten Gebäude aus.",
+                en = "Choose the max amount for these buildings.",
+            },
+            Options     = {
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Market ~= 0 and "{green}") or "{red}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Lagerhäuser") or "Warehouses") ..
+                           ((MPRuleset_Rules.Limits.Market > 0 and "{white}(" ..MPRuleset_Rules.Limits.Market.. "/3)") or "{white}");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Market", 1, -1, 3);
+                    return "Rule_Limits_Buildings";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Tower ~= 0 and "{green}") or "{red}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Türme") or "Towers") ..
+                           ((MPRuleset_Rules.Limits.Tower > 0 and "{white}(" ..MPRuleset_Rules.Limits.Tower.. "/10)") or "{white}");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Tower", 1, -1, 10);
+                    return "Rule_Limits_Buildings";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.University ~= 0 and "{green}") or "{red}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Schulen") or "Collages") ..
+                           ((MPRuleset_Rules.Limits.University > 0 and "{white}(" ..MPRuleset_Rules.Limits.University.. "/5)") or "{white}");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "University", 1, -1, 5);
+                    return "Rule_Limits_Buildings";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Village ~= 0 and "{green}") or "{red}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Dorfzentren") or "Villages") ..
+                           ((MPRuleset_Rules.Limits.Village > 0 and "{white}(" ..MPRuleset_Rules.Limits.Village.. "/5)") or "{white}");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Village", 1, -1, 5);
+                    return "Rule_Limits_Buildings";
+                 end},
+            }
+        },
+        {
+            Identifier  = "Rule_Limits_Cannons",
+            Parent      = "Rule_Limits",
+            Title       = {
+                de = "Kanonen", en = "Cannons"
+            },
+            Description = {
+                de = "Wählt aus, welche Kannonen erlaubt sind.",
+                en = "Choose which cannon types you want to allow.",
+            },
+            Options     = {
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Cannon1 == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Bombarde") or "Bombard") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Cannon1", -1, -1, 0);
+                    return "Rule_Limits_Cannons";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Cannon2 == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Bronzekanone") or "Bronze cannon") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Cannon2", -1, -1, 0);
+                    return "Rule_Limits_Cannons";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Cannon3 == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Eisenkanone") or "Iron cannon") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Cannon3", -1, -1, 0);
+                    return "Rule_Limits_Cannons";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Cannon4 == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Belagerungskanone") or "Siege cannon") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Cannon4", -1, -1, 0);
+                    return "Rule_Limits_Cannons";
+                 end},
+            }
+        },
+        {
+            Identifier  = "Rule_Limits_Units",
+            Parent      = "Rule_Limits",
+            Title       = {
+                de = "Millitär", en = "Military"
+            },
+            Description = {
+                de = "Wählt aus, welche Einheiten erlaubt sind.",
+                en = "Choose which unit types you want to allow.",
+            },
+            Options     = {
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Bow == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Bogenschützen") or "Archer") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Bow", -1, -1, 0);
+                    return "Rule_Limits_Units";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.LightCavalry == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Leichte Kavalerie") or "Light Cavalry") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "LightCavalry", -1, -1, 0);
+                    return "Rule_Limits_Units";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.HeavyCavalry == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Schwere Kavalerie") or "Heavy Cavalry") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "HeavyCavalry", -1, -1, 0);
+                    return "Rule_Limits_Units";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Rifle == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Scharfschützen") or "Marksmen") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Rifle", -1, -1, 0);
+                    return "Rule_Limits_Units";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Spear == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Speerträger") or "Spearmen") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Spear", -1, -1, 0);
+                    return "Rule_Limits_Units";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Sword == 0 and "{red}") or "{green}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Schwertkämpfer") or "Swordsmen") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Sword", -1, -1, 0);
+                    return "Rule_Limits_Units";
+                 end},
+            }
+        },
+        {
+            Identifier  = "Rule_Limits_Special",
+            Parent      = "Rule_Limits",
+            Title       = {
+                de = "Spezial", en = "Special"
+            },
+            Description = {
+                de = "Wählt die Menge der erlaubten Spezialisten aus.",
+                en = "Choose the max amount for the special units.",
+            },
+            Options     = {
+                {Text   = function()
+                     return ((MPRuleset_Rules.Limits.Hero == 0 and "{red}") or "{green}") ..
+                            ((OptionMenu:GetLanguage() == "de" and "Helden") or "Heroes") ..
+                            ((MPRuleset_Rules.Limits.Hero > 0 and "{white}(" ..MPRuleset_Rules.Limits.Hero.. "/6)") or "{white}");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Hero", 1, 0, 6);
+                    return "Rule_Limits_Special";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Thief ~= 0 and "{green}") or "{red}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Diebe") or "Thieves") ..
+                           ((MPRuleset_Rules.Limits.Thief > 0 and "{white}(" ..MPRuleset_Rules.Limits.Thief.. "/10)") or "{white}");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Thief", 1, -1, 10);
+                    return "Rule_Limits_Special";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Limits.Scout ~= 0 and "{green}") or "{red}") ..
+                           ((OptionMenu:GetLanguage() == "de" and "Kundschafter") or "Scouts") ..
+                           ((MPRuleset_Rules.Limits.Scout > 0 and "{white}(" ..MPRuleset_Rules.Limits.Scout.. "/10)") or "{white}");
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeAlterValue("Limits", "Scout", 1, -1, 10);
+                    return "Rule_Limits_Special";
+                 end},
+            }
+        },
+
+        -- Heroes
+        {
+            Identifier  = "Rule_Heroes",
+            Parent      = "Main",
+            Title       = {
+                de = "Helden", en = "Heroes"
+            },
+            Description = {
+                de = "Wechselt in die entsprechende Kategorie, um die Helden"..
+                     " zu erlaben oder zu verbieten.",
+                en = "Enter the corresponding category to toggle hero"..
+                     " availability."
+            },
+            Options     = {
+                {Text   = {de = "Gute Helden", en = "Good heroes"},
+                 Target = "Rule_Heroes_Good"},
+                {Text   = {de = "Böse Helden", en = "Evil heroes"},
+                 Target = "Rule_Heroes_Evil"},
+            }
+        },
+        {
+            Identifier  = "Rule_Heroes_Good",
+            Parent      = "Rule_Heroes",
+            Title       = {
+                de = "Böse Helden", en = "Good heroes"
+            },
+            Description = {
+                de = "Wählt die Helden aus, welche verfügbar sind.",
+                en = "Choos which heroes should be available.",
+            },
+            Options     = {
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Ari == 0 and "{red}") or "{green}") .. "Ari{white}"
+                 end,
+                 Target = function()
+                     MPRuleset:RuleChangeToggleRule("Heroes", "Ari", 1);
+                     return "Rule_Heroes_Good";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Dario == 0 and "{red}") or "{green}") .. "Dario{white}"
+                 end,
+                 Target = function()
+                     MPRuleset:RuleChangeToggleRule("Heroes", "Dario", 1);
+                     return "Rule_Heroes_Good";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Drake == 0 and "{red}") or "{green}") .. "Drake{white}"
+                 end,
+                 Target = function()
+                     MPRuleset:RuleChangeToggleRule("Heroes", "Drake", 1);
+                     return "Rule_Heroes_Good";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Erec == 0 and "{red}") or "{green}") .. "Erec{white}"
+                 end,
+                 Target = function()
+                     MPRuleset:RuleChangeToggleRule("Heroes", "Erec", 1);
+                     return "Rule_Heroes_Good";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Helias == 0 and "{red}") or "{green}") .. "Helias{white}"
+                 end,
+                 Target = function()
+                     MPRuleset:RuleChangeToggleRule("Heroes", "Helias", 1);
+                     return "Rule_Heroes_Good";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Pilgrim == 0 and "{red}") or "{green}") .. "Pilgrim{white}"
+                 end,
+                 Target = function()
+                     MPRuleset:RuleChangeToggleRule("Heroes", "Pilgrim", 1);
+                     return "Rule_Heroes_Good";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Salim == 0 and "{red}") or "{green}") .. "Salim{white}"
+                 end,
+                 Target = function()
+                     MPRuleset:RuleChangeToggleRule("Heroes", "Salim", 1);
+                     return "Rule_Heroes_Good";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Yuki == 0 and "{red}") or "{green}") .. "Yuki{white}"
+                 end,
+                 Target = function()
+                     MPRuleset:RuleChangeToggleRule("Heroes", "Yuki", 1);
+                     return "Rule_Heroes_Good";
+                 end},
+            }
+        },
+        {
+            Identifier  = "Rule_Heroes_Evil",
+            Parent      = "Rule_Heroes",
+            Title       = {
+                de = "Böse Helden", en = "Evil heroes"
+            },
+            Description = {
+                de = "Wählt die Helden aus, welche verfügbar sind.",
+                en = "Choos which heroes should be available.",
+            },
+            Options     = {
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Kala == 0 and "{red}") or "{green}") .. "Kala{white}"
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Heroes", "Kala", 1);
+                    return "Rule_Heroes_Evil";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Kerberos == 0 and "{red}") or "{green}") .. "Kerberos{white}"
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Heroes", "Kerberos", 1);
+                    return "Rule_Heroes_Evil";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Mary == 0 and "{red}") or "{green}") .. "Mary de Mortfichet{white}"
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Heroes", "Mary", 1);
+                    return "Rule_Heroes_Evil";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Heroes.Varg == 0 and "{red}") or "{green}") .. "Varg{white}"
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Heroes", "Varg", 1);
+                    return "Rule_Heroes_Evil";
+                 end},
+            }
+        },
+    },
+
     Text = {
         Messages = {
             IllegalVillage = {
-                de = "{red}Ihr dürft an dieser Stelle kein Dorfzentrum errichten! Die Rohstoffe wurden konfisziert!",
-                en = "{red}It is not allowed to build a village center here! The resources have been confiscated!",
+                de = "Ihr dürft an dieser Stelle kein Dorfzentrum errichten! Die Rohstoffe wurden konfisziert!",
+                en = "It is not allowed to build a village center here! The resources have been confiscated!",
+            },
+            RulesDefined = {
+                de = "{green}Die Regeln wurden festgelegt! Das Spiel beginnt!",
+                en = "{green}Rules have been defined! The game starts!",
+            },
+            PeacetimeOver = {
+                de = "{orange}Die Friedenszeit ist vorrüber! Nun beginnt das Gemetzel!",
+                en = "{orange}The peacetime is over! Let the slaughter begin!",
+            },
+            ImpendingDeath = {
+                de = "{red}Euch bleibt nicht viel Zeit, bis das Urteil gesprochen wird!",
+                en = "{red}There isn't much time left until judgement fall upon you!",
             },
         },
         Quests = {
@@ -223,8 +799,8 @@ MPRuleset = {
 function MPRuleset:Install()
     -- No MP?
     if not MPSync:IsMultiplayerGame() then
-        GUI.AddStaticNote("Map is running in Singleplayer! Ruleset has ben deactivated!");
-        return;
+        -- GUI.AddStaticNote("Map is running in Singleplayer! Ruleset has ben deactivated!");
+        -- return;
     end
     -- Using EMS?
     if self:IsUsingEMS() then
@@ -237,8 +813,11 @@ function MPRuleset:Install()
         Rules = MPRuleset_Rules;
     end
     -- Select the rules
-    if self.Data.RuleChangeAllowed then
-        -- TODO: implements
+    self:OverrideUIStuff();
+    if MPRuleset_Rules.Changeable then
+        self.Data.RuleSelectionActive = true;
+        self:RuleChangeInit();
+        ShowOptionMenu(self.Menu);
         return;
     end
     self:ConfigurationFinished();
@@ -247,22 +826,24 @@ end
 function MPRuleset:ConfigurationFinished()
     local PlayersTable = MPSync:GetActivePlayers();
     for i= 1, table.getn(PlayersTable), 1 do
-        Logic.SetNumberOfBuyableHerosForPlayer(PlayersTable[i], Rules.Limits.Hero);
+        Logic.SetNumberOfBuyableHerosForPlayer(PlayersTable[i], MPRuleset_Rules.Limits.Hero);
     end
+    self.Data.GameStartOffset = math.floor(Logic.GetTime() + 0.5);
+    
+    Message(ReplacePlacholders(self.Text.Messages.RulesDefined[OptionMenu:GetLanguage()]));
 
     self:SetupDiplomacyForPeacetime();
     self:CreateEvents();
-    self:FillResourceHeaps(Rules);
-    self:CreateQuests(Rules);
-    self:GiveResources(Rules);
-    self:ForbidTechnologies(Rules);
+    self:FillResourceHeaps(MPRuleset_Rules);
+    self:CreateQuests(MPRuleset_Rules);
+    self:GiveResources(MPRuleset_Rules);
+    self:ForbidTechnologies(MPRuleset_Rules);
     self:ActivateLogicEventJobs();
-    self:OverrideUIStuff();
     self:AddExtraStuff();
-
     if QuestSystem.Workplace then
         QuestSystem.Workplace:EnableMod(MPRuleset_Rules.Commandment.Workplace == 1);
     end
+
     MPRuleset_Rules.Callbacks.OnMapConfigured();
 end
 
@@ -344,6 +925,12 @@ function MPRuleset:OverrideUIStuff()
     GameCallback_GUI_SelectionChanged_Orig_QSB_MPRuleset = GameCallback_GUI_SelectionChanged;
     GameCallback_GUI_SelectionChanged = function()
         GameCallback_GUI_SelectionChanged_Orig_QSB_MPRuleset();
+        -- Rule selection
+        if MPRuleset.Data.RuleSelectionActive then
+            for k, v in pairs{GUI.GetSelectedEntities()} do
+                GUI.DeselectEntity(v);
+            end
+        end
         -- Formation fix
         if MPRuleset_Rules.Commandment.Formaition == 1 then
             local EntityID = GUI.GetSelectedEntity();
@@ -406,7 +993,7 @@ function MPRuleset:OverrideUIStuff()
         if InterfaceTool_IsBuildingDoingSomething(GUI.GetSelectedEntity()) == true then		
             return;
         end
-        local CurrentFaith = Logic.GetPlayersGlobalResource(PlayerID, ResourceType.Faith)	;
+        local CurrentFaith = Logic.GetPlayersGlobalResource(PlayerID, ResourceType.Faith);
         local BlessCosts = Logic.GetBlessCostByBlessCategory(_BlessCategory);
         if BlessCosts <= CurrentFaith then
             GUI.BlessByBlessCategory(_BlessCategory);
@@ -712,6 +1299,11 @@ function MPRuleset:CreateQuests(_Data)
             };
         else
             self:SetupDiplomacy();
+            Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[OptionMenu:GetLanguage()]));
+            if _Data.Timer.DeathPenalty > 0 then
+                Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[OptionMenu:GetLanguage()]));
+            end
+            Sound.PlayGUISound(Sounds.OnKlick_Select_kerberos, 127);
             MPRuleset_Rules.Callbacks.OnPeacetimeOver();
         end
 
@@ -754,6 +1346,61 @@ end
 
 -- -------------------------------------------------------------------------- --
 
+function MPRuleset:RuleChangeInit()
+    -- Apply rules
+    self.EventApplyRules = MPSync:CreateScriptEvent(function()
+        MPRuleset.Data.RuleSelectionActive = false;
+        MPRuleset:ConfigurationFinished();
+    end);
+
+    -- Render window
+    self.EventRenderWindow = MPSync:CreateScriptEvent(function()
+        OptionMenu:Render();
+    end);
+
+    -- Allow/Forbid value
+    self.EventToggleValue = MPSync:CreateScriptEvent(function(_Group, _Subject, _Value)
+        if MPRuleset_Rules[_Group] then
+            if MPRuleset_Rules[_Group][_Subject] then
+                MPRuleset_Rules[_Group][_Subject] = (MPRuleset_Rules[_Group][_Subject] == _Value and 0) or _Value;
+            end
+        end
+        OptionMenu:Render();
+    end);
+
+    -- Increase/Decrease value
+    self.EventChangeValue = MPSync:CreateScriptEvent(function(_Group, _Subject, _Value, _Min, _Max)
+        _Min = _Min or 0;
+        _Max = _Max or 1000000;
+        if MPRuleset_Rules[_Group] then
+            if MPRuleset_Rules[_Group][_Subject] then
+                MPRuleset_Rules[_Group][_Subject] = MPRuleset_Rules[_Group][_Subject] + _Value;
+                if MPRuleset_Rules[_Group][_Subject] < _Min then
+                    MPRuleset_Rules[_Group][_Subject] = _Max;
+                end
+                if MPRuleset_Rules[_Group][_Subject] > _Max then
+                    MPRuleset_Rules[_Group][_Subject] = _Min;
+                end
+            end
+        end
+        OptionMenu:Render();
+    end);
+end
+
+function MPRuleset:RuleChangeToggleRule(_Group, _Subject, _Value)
+    if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
+        MPSync:SnchronizedCall(self.EventToggleValue, _Group, _Subject, _Value);
+    end
+end
+
+function MPRuleset:RuleChangeAlterValue(_Group, _Subject, _Value, _Min, _Max)
+    if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
+        MPSync:SnchronizedCall(self.EventChangeValue, _Group, _Subject, _Value, _Min, _Max);
+    end
+end
+
+-- -------------------------------------------------------------------------- --
+
 --
 -- Default Rules. DO NOT CHANGE THEM!!!
 --
@@ -762,6 +1409,9 @@ end
 -- then you can not use this configuration. Use EMS configuration instead.
 --
 MPRuleset_Default = {
+    -- Rules can be changed
+    Changeable = true,
+
     Resources = {
         -- Amount of resources in resource heaps
         ResourceHeapSize    = 2000,
@@ -773,8 +1423,8 @@ MPRuleset_Default = {
             Clay            = 1500,
             Wood            = 1200,
             Stone           = 800,
-            Iron            = 50,
-            Sulfur          = 50,
+            Iron            = 250,
+            Sulfur          = 250,
         },
         [2] = {
             Gold            = 2000,
@@ -824,16 +1474,16 @@ MPRuleset_Default = {
         HQRushBlock         = 1,
 
         -- Bridges can not be destroyed (0 = off)
-        InvincibleBridges   = 1,
+        InvincibleBridges   = 0,
 
         -- Control worker amount in workplaces (0 = off)
         Workplace           = 1,
 
         -- Minutes the weather can not be changed again after a change was
-        -- triggered by the weather tower.
-        WeatherChangeDelay  = 3,
+        -- triggered by the weather tower. (0 = off)
+        WeatherChangeDelay  = 5,
 
-        -- Minutes a player must wait between two blesses.
+        -- Minutes a player must wait between two blesses. (0 = off)
         BlessDelay          = 3,
     },
 
