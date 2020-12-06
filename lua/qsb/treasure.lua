@@ -237,8 +237,8 @@ function TreasureTemplate:GiveTreasureReward(_PlayerID)
         local UserName = UserTool_GetPlayerName(_PlayerID);
         local R, G, B = GUI.GetPlayerColor(_PlayerID);
         local Text = {
-            de = "@color:%d,%d,%d %s @color:200,200,200 hat eine Schatztruhe gefunden!",
-            en = "@color:%d,%d,%d %s @color:200,200,200 has found a treasure chest!"
+            de = "@color:%d,%d,%d %s @color:233,214,180 hat eine Schatztruhe gefunden!",
+            en = "@color:%d,%d,%d %s @color:233,214,180 has found a treasure chest!"
         }
         Message(string.format(Text[Language], R, G, B, UserName));
     end
