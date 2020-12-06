@@ -26,9 +26,9 @@ Script.Load(gvBasePath.. "core/interaction.lua");
 Script.Load(gvBasePath.. "lib/libloader.lua");
 Script.Load(gvBasePath.. "ext/extraloader.lua");
 
+Script.Load(gvBasePath.. "mpruleset.lua");
 Script.Load(gvBasePath.. "questbehavior.lua");
 Script.Load(gvBasePath.. "treasure.lua");
-Script.Load(gvBasePath.. "mpruleset.lua");
 
 -- Settings ----------------------------------------------------------------- --
 
@@ -45,13 +45,14 @@ function GameCallback_OnGameStart()
     MultiplayerTools.SetUpGameLogicOnMPGameConfig();
     
     -- Singleplayer
-    if XNetwork.Manager_DoesExist() == 0 then
+    if not MPSync or not MPSync:IsMultiplayerGame() then
 		for i=1, 8, 1 do
 			MultiplayerTools.DeleteFastGameStuff(i);
 		end
 		local PlayerID = GUI.GetPlayerID();
 		Logic.PlayerSetIsHumanFlag(PlayerID, 1);
         Logic.PlayerSetGameStateToPlaying(PlayerID);
+        Tools.GiveResouces(PlayerID, 1500, 1800, 1500, 500, 500, 250);
     end
 
     -- Load quest system
