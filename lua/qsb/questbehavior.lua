@@ -592,6 +592,9 @@ function QuestSystemBehavior:PrepareQuestSystem()
         if QuestSystem.Workplace then
             QuestSystem.Workplace:Install();
         end
+        if OptionMenu then
+            OptionMenu:Install();
+        end
 
         GameCallback_OnQuestSystemLoaded();
         

@@ -16,6 +16,7 @@
 -- <li>qsb.lib.oop</li>
 -- <li>qsb.core.mpsync</li>
 -- <li>qsb.questbehavior</li>
+-- <li>qsb.ext.optionsmenu</li>
 -- <li>qsb.ext.timer</li>
 -- </ul>
 --
@@ -27,6 +28,7 @@ MPRuleset = {
         GameStartOffset = 0,
         WeatherChangeTimestamp = 0,
         BlessTimestamp = {},
+        RuleChangeAllowed = false;
 
         Technologies = {
             Gunsmith = {
@@ -221,20 +223,28 @@ MPRuleset = {
 function MPRuleset:Install()
     -- No MP?
     if not MPSync:IsMultiplayerGame() then
-        GUI.AddStaticNote("Map is running in Singleplayer! Some Features are disabled!");
+        GUI.AddStaticNote("Map is running in Singleplayer! Ruleset has ben deactivated!");
         return;
     end
     -- Using EMS?
     if self:IsUsingEMS() then
         return;
     end
-
-    -- TODO: Rule selection
+    -- Load default
     local Rules = MPRuleset_Rules;
     if not Rules then
         MPRuleset_Rules = MPRuleset_Default;
         Rules = MPRuleset_Rules;
     end
+    -- Select the rules
+    if self.Data.RuleChangeAllowed then
+        -- TODO: implements
+        return;
+    end
+    self:ConfigurationFinished();
+end
+
+function MPRuleset:ConfigurationFinished()
     local PlayersTable = MPSync:GetActivePlayers();
     for i= 1, table.getn(PlayersTable), 1 do
         Logic.SetNumberOfBuyableHerosForPlayer(PlayersTable[i], Rules.Limits.Hero);
