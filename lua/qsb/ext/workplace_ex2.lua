@@ -55,13 +55,22 @@ end
 -- @local
 --
 function QuestSystem.Workplace:PrepareWorkerAmountEvent()
-	self.ScriptEvent = MPSync:CreateScriptEvent(function(_BuildingID, _State, ...)
+	self.ScriptEvent = MPSync:CreateScriptEvent(function(_BuildingID, _Amount, _State, ...)
 		local ScriptName = GiveEntityName(_BuildingID);
+		local PlayerID   = Logic.EntityGetPlayer(_BuildingID);
 		local WorkerIDs = {Logic.GetAttachedWorkersToBuilding(_BuildingID)};
 		for j=1,table.getn(WorkerIDs)do
 			Logic.SetTaskList(WorkerIDs[j],TaskLists.TL_WORKER_EAT_START);
 		end
 		QuestSystem.Workplace.WorkplaceStates[ScriptName] = _State;
+		if MPSync:IsCNetwork() then
+			-- FIXME: Why does this still not work?
+			SendEvent.SetCurrentMaxNumWorkersInBuilding(BuildingID, _Amount);
+		else
+			if GUI.GetPlayerID() == PlayerID then
+				GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, _Amount);
+			end
+		end
 	end);
 end
 
@@ -81,20 +90,17 @@ function QuestSystem.Workplace:OverrideInterfaceAction()
 			XGUIEng.HighLightButton("SetWorkersAmountFew", 1);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
             XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
-			MPSync:SnchronizedCall(EventID, BuildingID, _state, unpack(WorkerIDs));
-			GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, 0);
+			MPSync:SnchronizedCall(EventID, BuildingID, 0, _state, unpack(WorkerIDs));
 		elseif _state == "half" then
 			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf", 1);
             XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
-            MPSync:SnchronizedCall(EventID, BuildingID, _state, unpack(WorkerIDs));
-			GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, math.ceil(MaxNumberOfworkers/2));
+            MPSync:SnchronizedCall(EventID, BuildingID, math.ceil(MaxNumberOfworkers/2), _state, unpack(WorkerIDs));
 		elseif _state == "full" then
 			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
 			XGUIEng.HighLightButton("SetWorkersAmountFull", 1);
-			MPSync:SnchronizedCall(EventID, BuildingID, _state, unpack(WorkerIDs));
-			GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, MaxNumberOfworkers);
+			MPSync:SnchronizedCall(EventID, BuildingID, MaxNumberOfworkers, _state, unpack(WorkerIDs));
 		end
 	end
 
