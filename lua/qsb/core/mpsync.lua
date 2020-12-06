@@ -37,9 +37,12 @@ function MPSync:Install()
     self:ActivateTributePaidTrigger();
 
     if CNetwork then
-        CNetwork.SetNetworkHandler("MPSync_CNetwork_SnchronizedCall", function(_Name, _PlayerID, ...)
+        CNetwork.SetNetworkHandler("MPSync_CNetwork_SnchronizedCall", function(_Name, _PlayerID, _ID, ...)
             if CNetwork.IsAllowedToManipulatePlayer(_Name, _PlayerID) then
-
+                if self.ScriptEvents[_ID] then
+                    arg = arg or {};
+                    self.ScriptEvents[_ID].Function(unpack(arg));
+                end
             end;
         end);
     end
@@ -91,10 +94,21 @@ function MPSync:SnchronizedCall(_ID, ...)
         self:TransactionSend(_ID, PlayerID, Time, Msg, arg);
     end
 end
-function MPSync_CNetwork_SnchronizedCall(_ID, ...)
-
+-- This is a dummy function needed to be called only on the community server.
+function MPSync_CNetwork_SnchronizedCall(_PlayerID, _ID, ...)
 end
 
+---
+-- 
+-- passed time.
+-- @param[type=number] _ID        ID of sync action
+-- @param[type=number] _PlayerID  ID of player
+-- @param[type=number] _Time      Time in ms
+-- @param[type=string] _Msg       Message to send
+-- @param[type=table]  _Parameter Parameter table
+-- @within MPSync
+-- @local
+--
 function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
     -- Create message
     _Msg = _Msg or "";
@@ -129,6 +143,14 @@ function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
     end, _PlayerID, Hash, Logic.GetTime(), unpack(_Parameter));
 end
 
+---
+-- Sends an acknowledgement for the transaction with the hash and the
+-- passed time.
+-- @param[type=string] _Hash Identifying hash
+-- @param[type=number] _Time Time in ms
+-- @within MPSync
+-- @local
+--
 function MPSync:TransactionAcknowledge(_Hash, _Time)
     -- Create message
     local PlayerID = GUI.GetPlayerID();
@@ -141,6 +163,18 @@ function MPSync:TransactionAcknowledge(_Hash, _Time)
     end
 end
 
+---
+-- Manages the received transaction message depending on the type.
+--
+-- <ul>
+-- <li>Type 1: Start of transaction has been requested from one client.</li>
+-- <li>Type 2: Acknowledgement is send from other clients.</li>
+-- </ul>
+-- @param[type=number] _Type  Message to parse
+-- @param[type=string] _Msg   Transaction message
+-- @within MPSync
+-- @local
+--
 function MPSync:TransactionManage(_Type, _Msg)
     -- Handle received request
     if _Type == 1 then
@@ -152,19 +186,6 @@ function MPSync:TransactionManage(_Type, _Msg)
         if SendingPlayerID ~= GUI.GetPlayerID() then
             self:TransactionAcknowledge(Hash, Timestamp);
             MPSync:CreateTribute(SendingPlayerID, Action, unpack(Parameters));
-            -- StartSimpleHiResJobEx(function(_Hash, _Time)
-            --     if _Time +2 < Logic.GetTime() then
-            --         -- Message("DEBUG: Timeout for " .._Hash);
-            --         return true;
-            --     end
-            --     if not MPSync:IsPlayerActive(SendingPlayerID) then
-            --         return true;
-            --     end
-            --     if self.Transactions[Hash][SendingPlayerID] == true then
-            --         MPSync.ScriptEvents[Action].Function(unpack(Parameters));
-            --         return true;
-            --     end
-            -- end, Hash, Logic.GetTime());
         end
     -- Handle received client ack
     elseif _Type == 2 then
@@ -177,6 +198,13 @@ function MPSync:TransactionManage(_Type, _Msg)
     end
 end
 
+---
+-- Parses a message and returns all arguments.
+-- @param[type=string] _Msg  Message to parse
+-- @return[type=table] Message parameters
+-- @within MPSync
+-- @local
+--
 function MPSync:TransactionSplitMessage(_Msg)
     local MsgParts = {};
     local Msg = _Msg;
@@ -192,7 +220,11 @@ function MPSync:TransactionSplitMessage(_Msg)
 end
 
 ---
--- 
+-- Creates an tribute and connects it to the passed action ID.
+-- @param[type=number] _PlayerID  ID of player
+-- @param[type=number] _ID        ID of action
+-- @param              ...        ID of action
+-- @return[type=number] ID of generated tribute
 -- @within MPSync
 -- @local
 --
@@ -207,16 +239,19 @@ function MPSync:CreateTribute(_PlayerID, _ID, ...)
 end
 
 ---
--- 
+-- Pays the tribute with the ID for the player. The tribute sould cost 0 gold
+-- so that it can be payed by script on evenry moment.
+-- @param[type=number] _PlayerID  ID of player
+-- @param[type=number] _TributeID ID of tribute
 -- @within MPSync
 -- @local
 --
-function MPSync:PayTribute(_PlayerID, _ID)
-    GUI.PayTribute(_PlayerID, _ID);
+function MPSync:PayTribute(_PlayerID, _TributeID)
+    GUI.PayTribute(_PlayerID, _TributeID);
 end
 
 ---
--- 
+-- Creates a trigger to hook on payed tributes.
 -- @within MPSync
 -- @local
 --
@@ -230,7 +265,8 @@ function MPSync:ActivateTributePaidTrigger()
 end
 
 ---
--- 
+-- Calls the action associated to the tribute ID.
+-- @param[type=number] _ID ID of tribute
 -- @within MPSync
 -- @local
 --
@@ -301,7 +337,7 @@ end
 -- @within MPSync
 -- @local
 --
-function MPSync:IsCommunityEdition()
+function MPSync:IsCNetwork()
     return CNetwork ~= nil;
 end
 
@@ -312,7 +348,7 @@ end
 -- @local
 --
 function MPSync:IsOriginal()
-    return not self:IsHistoryEdition() and not self:IsCommunityEdition();
+    return not self:IsHistoryEdition() and not self:IsCNetwork();
 end
 
 ---
@@ -331,7 +367,9 @@ function MPSync:IsPatched()
 end
 
 ---
--- 
+-- Returns true, if the player on this ID is active.
+-- @param[type=number] _PlayerID ID of player
+-- @return[type=boolean] Player is active
 -- @within MPSync
 -- @local
 --
@@ -378,18 +416,4 @@ function MPSync:GetTeamOfPlayer(_PlayerID)
         return _PlayerID;
     end
 end
-
--- CNetwork.SetNetworkHandler("CreateHaybale", function(name, _playerId, _x, _y)
---     if CNetwork.IsAllowedToManipulatePlayer(name, _playerId) then
---         local time = Logic.GetTimeMs();
---         if time - SheepWar.Cooldowns[_playerId] >= 4000 then
---             Logic.CreateEntity(Entities.XD_MiscHaybale2, _x, _y, 0, 1);
---             SheepWar.Cooldowns[_playerId] = time;
---         end;
---     end;
--- end);
-
-
--- -- aufrufen durch gui o. ä.
--- CNetwork.SendCommand("CreateHaybale", GUI.GetPlayerID(), GUI.Debug_GetMapPositionUnderMouse());
 
