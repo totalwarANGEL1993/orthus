@@ -589,6 +589,9 @@ function QuestSystemBehavior:PrepareQuestSystem()
         Information:Install();
         self:CreateBehaviorConstructors();
         self:OverwriteMapClosingFunctions();
+        if QuestSystem.Workplace then
+            QuestSystem.Workplace:Install();
+        end
 
         GameCallback_OnQuestSystemLoaded();
         
