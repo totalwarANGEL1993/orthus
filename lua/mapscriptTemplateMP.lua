@@ -15,17 +15,20 @@ Script.Load("data/script/maptools/comfort.lua");
 Script.Load("data/script/maptools/mapeditortools.lua");
 
 -- Load QSB
-gvBasePath = "data/maps/externalmap/";
-Script.Load(gvBasePath.. "qsb/md5.lua");
-Script.Load(gvBasePath.. "qsb/s5hook_ex2.lua");
-Script.Load(gvBasePath.. "qsb/oop.lua");
-Script.Load(gvBasePath.. "qsb/mpsync.lua");
-Script.Load(gvBasePath.. "qsb/questsystem.lua");
-Script.Load(gvBasePath.. "qsb/questdebug.lua");
-Script.Load(gvBasePath.. "qsb/interaction.lua");
-Script.Load(gvBasePath.. "qsb/questbehavior.lua");
-Script.Load(gvBasePath.. "qsb/mpruleset.lua");
-Script.Load(gvBasePath.. "qsb/extraloader.lua");
+gvBasePath = "data/maps/externalmap/qsb/";
+
+Script.Load(gvBasePath.. "core/oop.lua");
+Script.Load(gvBasePath.. "core/mpsync.lua");
+Script.Load(gvBasePath.. "core/questsystem.lua");
+Script.Load(gvBasePath.. "core/questdebug.lua");
+Script.Load(gvBasePath.. "core/interaction.lua");
+
+Script.Load(gvBasePath.. "lib/libloader.lua");
+Script.Load(gvBasePath.. "ext/extraloader.lua");
+
+Script.Load(gvBasePath.. "questbehavior.lua");
+Script.Load(gvBasePath.. "treasure.lua");
+Script.Load(gvBasePath.. "mpruleset.lua");
 
 -- Settings ----------------------------------------------------------------- --
 

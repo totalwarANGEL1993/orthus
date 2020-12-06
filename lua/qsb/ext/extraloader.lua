@@ -9,13 +9,13 @@
 local Version = Framework.GetProgramVersion();
 gvExtensionNumber = tonumber(string.sub(Version, string.len(Version)));
 if gvExtensionNumber ~= nil and gvExtensionNumber > 2 then
-    Script.Load(gvBasePath.. "qsb/information_ex3.lua");
-    Script.Load(gvBasePath.. "qsb/timer_ex3.lua");
+    Script.Load(gvBasePath.. "ext/timer_ex3.lua");
+    Script.Load(gvBasePath.. "ext/information_ex3.lua");
 else
-    Script.Load(gvBasePath.. "qsb/information_ex2.lua");
-    Script.Load(gvBasePath.. "qsb/speed_ex2.lua");
-    Script.Load(gvBasePath.. "qsb/timer_ex2.lua");
-    Script.Load(gvBasePath.. "qsb/workplace_ex2.lua");
+    Script.Load(gvBasePath.. "ext/speed_ex2.lua");
+    Script.Load(gvBasePath.. "ext/timer_ex2.lua");
+    Script.Load(gvBasePath.. "ext/workplace_ex2.lua");
+    Script.Load(gvBasePath.. "ext/information_ex2.lua");
 end
 -- Load allways
-Script.Load(gvBasePath.. "qsb/treasure.lua");
+Script.Load(gvBasePath.. "ext/treasure.lua");

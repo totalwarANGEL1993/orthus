@@ -13,7 +13,7 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.oop</li>
+-- <li>qsb.core.oop</li>
 -- </ul>
 --
 -- @set sort=true
@@ -22,8 +22,9 @@
 MPSync = {
     ScriptEvents = {},
     Transactions = {},
-    UniqueActionCounter = 0,
-    UniqueIdCounter = 0,
+    TransactionParameter = {},
+    UniqueActionCounter = 1,
+    UniqueTributeCounter = 100000,
 };
 
 ---
@@ -33,10 +34,15 @@ MPSync = {
 --
 function MPSync:Install()
     self:OverrideMessageReceived();
+    self:ActivateTributePaidTrigger();
 
-    self.ScriptEventNewIdRequested = MPSync:CreateScriptEvent(function()
-        MPSync.UniqueIdCounter = MPSync.UniqueIdCounter +1;
-    end);
+    if CNetwork then
+        CNetwork.SetNetworkHandler("MPSync_CNetwork_SnchronizedCall", function(_Name, _PlayerID, ...)
+            if CNetwork.IsAllowedToManipulatePlayer(_Name, _PlayerID) then
+
+            end;
+        end);
+    end
 end
 
 ---
@@ -57,54 +63,70 @@ function MPSync:CreateScriptEvent(_Function)
 end
 
 ---
--- Sends an event that will create an new ID on every machine and returns
--- the result.
--- @return[type=number] New synchronized ID
+-- Calls the script event synchronous for all players.
+-- @param[type=number] _Function ID of script event
+-- @param              ...       List of Parameters (String or Number)
 -- @within MPSync
--- @see MPSync:SnchronizedCall
+-- @see MPSync:CreateScriptEvent
 --
-function MPSync:RequestNewID()
-    MPSync:SnchronizedCall(self.ScriptEventNewIdRequested);
-    return self.UniqueActionCounter;
+function MPSync:SnchronizedCall(_ID, ...)
+    arg = arg or {};
+    local Msg = "";
+    if table.getn(arg) > 0 then
+        for i= 1, table.getn(arg), 1 do
+            Msg = Msg .. tostring(arg[i]) .. ":::";
+        end
+    end
+    local PlayerID = GUI.GetPlayerID();
+    local Time = Logic.GetTimeMs();
+    
+    if CNetwork then
+        CNetwork.SendCommand(
+            "MPSync_CNetwork_SnchronizedCall",
+            GUI.GetPlayerID(),
+            _ID,
+            unpack(arg)
+        );
+    else
+        self:TransactionSend(_ID, PlayerID, Time, Msg, arg);
+    end
+end
+function MPSync_CNetwork_SnchronizedCall(_ID, ...)
+
 end
 
-function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg)
+function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
     -- Create message
     _Msg = _Msg or "";
     local PreHashedMsg = "".._ID..":::" .._PlayerID..":::" .._Time.. ":::" .._Msg;
-    -- local Hash = md5.Calc(PreHashedMsg);
     local Hash = _ID.. "_" .._PlayerID.. "_" .._Time;
     local TransMsg = "___MPTransact:::"..Hash..":::" ..PreHashedMsg;
     self.Transactions[Hash] = {};
     -- Send message
-    if _PlayerID == GUI.GetPlayerID() then
-        Message("DEBUG: Message send: " ..Hash);
-    end
     if self:IsMultiplayerGame() then
         XNetwork.Chat_SendMessageToAll(TransMsg);
     else
         MPGame_ApplicationCallback_ReceivedChatMessage(TransMsg, 0, _PlayerID);
     end
     -- Wait for ack
-    StartSimpleHiResJobEx(function(_Hash, _Time)
+    StartSimpleHiResJobEx(function(_PlayerID, _Hash, _Time, ...)
         if _Time +2 < Logic.GetTime() then
-            Message("DEBUG: Timeout for " .._Hash);
+            -- Message("DEBUG: Timeout for " .._Hash);
             return true;
         end
-        local ActivePlayers = self:GetActivePlayers();
+        local ActivePlayers = MPSync:GetActivePlayers();
         local AllAcksReceived = true;
         for i= 1, table.getn(ActivePlayers), 1 do
-            if _PlayerID ~= ActivePlayers[i] and not self.Transactions[Hash][ActivePlayers[i]] then
+            if _PlayerID ~= ActivePlayers[i] and not MPSync.Transactions[Hash][ActivePlayers[i]] then
                 AllAcksReceived = false;
             end
         end
         if AllAcksReceived == true then
-            -- Send own ack
-            self:TransactionAcknowledge(Hash, _Time);
-            self.Transactions[Hash][_PlayerID] = true;
+            local ID = MPSync:CreateTribute(_PlayerID, _ID, unpack(_Parameter));
+            MPSync:PayTribute(_PlayerID, ID);
             return true;
         end
-    end, Hash, Logic.GetTime());
+    end, _PlayerID, Hash, Logic.GetTime(), unpack(_Parameter));
 end
 
 function MPSync:TransactionAcknowledge(_Hash, _Time)
@@ -129,19 +151,20 @@ function MPSync:TransactionManage(_Type, _Msg)
         local Timestamp       = table.remove(Parameters, 1);
         if SendingPlayerID ~= GUI.GetPlayerID() then
             self:TransactionAcknowledge(Hash, Timestamp);
-            StartSimpleHiResJobEx(function(_Hash, _Time)
-                if _Time +2 < Logic.GetTime() then
-                    Message("DEBUG: Timeout for " .._Hash);
-                    return true;
-                end
-                if not self:IsPlayerActive(SendingPlayerID) then
-                    return true;
-                end
-                if self.Transactions[Hash][SendingPlayerID] == true then
-                    MPSync.ScriptEvents[Action].Function(unpack(Parameters));
-                    return true;
-                end
-            end, Hash, Logic.GetTime());
+            MPSync:CreateTribute(SendingPlayerID, Action, unpack(Parameters));
+            -- StartSimpleHiResJobEx(function(_Hash, _Time)
+            --     if _Time +2 < Logic.GetTime() then
+            --         -- Message("DEBUG: Timeout for " .._Hash);
+            --         return true;
+            --     end
+            --     if not MPSync:IsPlayerActive(SendingPlayerID) then
+            --         return true;
+            --     end
+            --     if self.Transactions[Hash][SendingPlayerID] == true then
+            --         MPSync.ScriptEvents[Action].Function(unpack(Parameters));
+            --         return true;
+            --     end
+            -- end, Hash, Logic.GetTime());
         end
     -- Handle received client ack
     elseif _Type == 2 then
@@ -149,7 +172,6 @@ function MPSync:TransactionManage(_Type, _Msg)
         local Hash       = table.remove(Parameters, 1);
         local PlayerID   = table.remove(Parameters, 1);
         local Timestamp  = table.remove(Parameters, 1);
-        Message("DEBUG: Acknowledge received from " ..PlayerID);
         self.Transactions[Hash] = self.Transactions[Hash] or {};
         self.Transactions[Hash][PlayerID] = true;
     end
@@ -170,24 +192,56 @@ function MPSync:TransactionSplitMessage(_Msg)
 end
 
 ---
--- Calls the script event synchronous for all players.
--- @param[type=number] _Function ID of script event
--- @param              ...       List of Parameters (String or Number)
+-- 
 -- @within MPSync
--- @see MPSync:CreateScriptEvent
+-- @local
 --
-function MPSync:SnchronizedCall(_ID, ...)
-    arg = arg or {};
-    local Msg = "";
-    if table.getn(arg) > 0 then
-        for i= 1, table.getn(arg), 1 do
-            Msg = Msg .. tostring(arg[i]) .. ":::";
+function MPSync:CreateTribute(_PlayerID, _ID, ...)
+    self.UniqueTributeCounter = self.UniqueTributeCounter +1;
+    Logic.AddTribute(_PlayerID, self.UniqueTributeCounter, 0, 0, "", {[ResourceType.Gold] = 0});
+    self.TransactionParameter[self.UniqueTributeCounter] = {
+        Action    = _ID,
+        Parameter = copy(arg),
+    };
+    return self.UniqueTributeCounter;
+end
+
+---
+-- 
+-- @within MPSync
+-- @local
+--
+function MPSync:PayTribute(_PlayerID, _ID)
+    GUI.PayTribute(_PlayerID, _ID);
+end
+
+---
+-- 
+-- @within MPSync
+-- @local
+--
+function MPSync:ActivateTributePaidTrigger()
+    QuestSystem:StartInlineJob(
+        Events.LOGIC_EVENT_TRIBUTE_PAID,
+        function()
+            MPSync:OnTributePaidTrigger(Event.GetTributeUniqueID());
+        end
+    );
+end
+
+---
+-- 
+-- @within MPSync
+-- @local
+--
+function MPSync:OnTributePaidTrigger(_ID)
+    if self.TransactionParameter[_ID] then
+        local ActionID  = self.TransactionParameter[_ID].Action;
+        local Parameter = self.TransactionParameter[_ID].Parameter;
+        if self.ScriptEvents[ActionID] then
+            self.ScriptEvents[ActionID].Function(unpack(Parameter));
         end
     end
-    local PlayerID = GUI.GetPlayerID();
-    local Time = Logic.GetTimeMs();
-    self:TransactionSend(_ID, PlayerID, Time, Msg);
-    self.ScriptEvents[_ID].Function(unpack(arg));
 end
 
 ---
@@ -204,13 +258,13 @@ function MPSync:OverrideMessageReceived()
     MPGame_ApplicationCallback_ReceivedChatMessage_Orig_MPSync = MPGame_ApplicationCallback_ReceivedChatMessage
     MPGame_ApplicationCallback_ReceivedChatMessage = function(_Message, _AlliedOnly, _SenderPlayerID)
         -- Receive transaction
-        local s, e = string.find(_Message, "^___MPTransact:::");
+        local s, e = string.find(_Message, "___MPTransact:::");
         if e then
             MPSync:TransactionManage(1, string.sub(_Message, e+1));
             return;
         end
         -- Receive ack
-        local s, e = string.find(_Message, "^___MPAcknowledge:::");
+        local s, e = string.find(_Message, "___MPAcknowledge:::");
         if e then
             MPSync:TransactionManage(2, string.sub(_Message, e+1));
             return;
@@ -325,50 +379,17 @@ function MPSync:GetTeamOfPlayer(_PlayerID)
     end
 end
 
--- Marked for deletion --
+-- CNetwork.SetNetworkHandler("CreateHaybale", function(name, _playerId, _x, _y)
+--     if CNetwork.IsAllowedToManipulatePlayer(name, _playerId) then
+--         local time = Logic.GetTimeMs();
+--         if time - SheepWar.Cooldowns[_playerId] >= 4000 then
+--             Logic.CreateEntity(Entities.XD_MiscHaybale2, _x, _y, 0, 1);
+--             SheepWar.Cooldowns[_playerId] = time;
+--         end;
+--     end;
+-- end);
 
----
--- DEPRECTATED
---
--- Parses the action to call from the synchronization message.
--- @param[type=string] _Message Synchronization message
--- @within MPSync
--- @local
---
-function MPSync:SyncronizeMessageReceived(_Message)
-    local s1, e1 = string.find(_Message, ":");
-    local s2, e2 = string.find(_Message, ";");
-    if not e1 or not e2 then
-        return;
-    end
-    local ActionID = tonumber(string.sub(_Message, e1+1, e2-1));
-    if not ActionID then
-        return;
-    end
-    local Parameter = self:GetParameterFromSyncronizeMessage(string.sub(_Message, e2+1));
-    Message("DEBUG: Received event message: " .._Message);
-    self.ScriptEvents[ActionID].Function(unpack(Parameter));
-end
 
----
--- DEPRECTATED
---
--- Gets the parameters from the input string and returns them.
--- @param[type=string] _String Parameter string
--- @return[type=table] Parameter
--- @within MPSync
--- @local
---
-function MPSync:GetParameterFromSyncronizeMessage(_String)
-    local String = _String;
-    local Parameter = {};
-    while string.len(String) > 1 do
-        local s, e = string.find(String, ";");
-        local Part = string.sub(String, 1, e-1);
-        local PartNumber = tonumber(Part);
-        table.insert(Parameter, (PartNumber ~= nil and PartNumber) or Part);
-        String = string.sub(String, e+1);
-    end
-    return Parameter;
-end
+-- -- aufrufen durch gui o. ä.
+-- CNetwork.SendCommand("CreateHaybale", GUI.GetPlayerID(), GUI.Debug_GetMapPositionUnderMouse());
 

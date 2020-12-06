@@ -30,8 +30,8 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.oop</li>
--- <li>qsb.mpsync</li>
+-- <li>qsb.core.oop</li>
+-- <li>qsb.core.mpsync</li>
 -- </ul>
 --
 -- @set sort=true
@@ -52,6 +52,8 @@ QuestSystem = {
     InlineJobs = {Counter = 0},
     CustomVariables = {},
 
+    UniqueTributeID = 0,
+    UniqueBriefingID = 0,
     Verbose = false,
 };
 
@@ -67,6 +69,7 @@ function QuestSystem:InstallQuestSystem()
         self.SystemInstalled = true;
         
         -- Initalize syncher
+        EndJob(tributeJingleTriggerId);
         MPSync:Install();
         self.BriefingFinishedScriptEvent = MPSync:CreateScriptEvent(function(_ID)
             -- Register briefing end
@@ -100,7 +103,8 @@ function QuestSystem:InstallQuestSystem()
         StartBriefing = function(_Briefing, _Quest, _ID)
             -- Set briefing id
             if not _ID then
-                _ID = MPSync:RequestNewID();
+                QuestSystem.UniqueBriefingID = QuestSystem.UniqueBriefingID +1;
+                _ID = QuestSystem.UniqueBriefingID;
             end
             -- initalize briefing id
             QuestSystem.Briefings[_ID] = false;
@@ -638,9 +642,9 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
     elseif Behavior[1] == Objectives.Tribute then
         if Behavior[4] == nil then
             local Text = QuestSystem:ReplacePlaceholders(Behavior[3]);
-            local ID = MPSync:RequestNewID();
-            Logic.AddTribute(self.m_Receiver, ID, 0, 0, Text, unpack(Behavior[2]));
-            Behavior[4] = ID;
+            QuestSystem.UniqueTributeID = QuestSystem.UniqueTributeID +1;
+            Logic.AddTribute(self.m_Receiver, QuestSystem.UniqueTributeID, 0, 0, Text, unpack(Behavior[2]));
+            Behavior[4] = QuestSystem.UniqueTributeID;
         end
         if Behavior[5] then
             Behavior.Completed = true;
@@ -1617,6 +1621,9 @@ function QuestSystem:QuestTributePayed(_TributeID)
             for j= 1, table.getn(Quest.m_Objectives), 1 do
                 if Quest.m_Objectives[j][1] == Objectives.Tribute then
                     if _TributeID == Quest.m_Objectives[j][4] then
+                        if Quest.m_Receiver == GUI.GetPlayerID() then
+                            Sound.PlayGUISound(Sounds.OnKlick_Select_helias, 127);
+                        end
                         Quest.m_Objectives[j][5] = true;
                     end
                 end

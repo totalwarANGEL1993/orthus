@@ -11,11 +11,11 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.oop</li>
--- <li>qsb.questsystem</li>
--- <li>qsb.questdebug</li>
--- <li>qsb.interaction</li>
--- <li>qsb.information</li>
+-- <li>qsb.lib.oop</li>
+-- <li>qsb.core.questsystem</li>
+-- <li>qsb.core.questdebug</li>
+-- <li>qsb.core.interaction</li>
+-- <li>qsb.ext.information</li>
 -- </ul>
 --
 -- @set sort=true

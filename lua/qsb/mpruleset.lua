@@ -13,9 +13,10 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.oop</li>
--- <li>qsb.mpsync</li>
+-- <li>qsb.lib.oop</li>
+-- <li>qsb.core.mpsync</li>
 -- <li>qsb.questbehavior</li>
+-- <li>qsb.ext.timer</li>
 -- </ul>
 --
 -- @set sort=true
@@ -218,31 +219,40 @@ MPRuleset = {
 };
 
 function MPRuleset:Install()
-    if not self:IsUsingEMS() then
-        -- TODO: Rule selection
-        local Rules = MPRuleset_Rules;
-        if not Rules then
-            MPRuleset_Rules = MPRuleset_Default;
-            Rules = MPRuleset_Rules;
-        end
-        local PlayersTable = MPSync:GetActivePlayers();
-        for i= 1, table.getn(PlayersTable), 1 do
-            Logic.SetNumberOfBuyableHerosForPlayer(PlayersTable[i], Rules.Limits.Hero);
-        end
-
-        self:SetupDiplomacyForPeacetime();
-        self:CreateEvents();
-        self:FillResourceHeaps(Rules);
-        self:CreateQuests(Rules);
-        self:GiveResources(Rules);
-        self:ForbidTechnologies(Rules);
-        self:ActivateLogicEventJobs();
-        self:OverrideUIStuff();
-        self:AddExtraStuff();
-
-        QuestSystem.Workplace:EnableMod(MPRuleset_Rules.Commandment.Workplace == 1);
-        MPRuleset_Rules.Callbacks.OnMapConfigured();
+    -- No MP?
+    if not MPSync:IsMultiplayerGame() then
+        return;
     end
+    -- Using EMS?
+    if not self:IsUsingEMS() then
+        return;
+    end
+
+    -- TODO: Rule selection
+    local Rules = MPRuleset_Rules;
+    if not Rules then
+        MPRuleset_Rules = MPRuleset_Default;
+        Rules = MPRuleset_Rules;
+    end
+    local PlayersTable = MPSync:GetActivePlayers();
+    for i= 1, table.getn(PlayersTable), 1 do
+        Logic.SetNumberOfBuyableHerosForPlayer(PlayersTable[i], Rules.Limits.Hero);
+    end
+
+    self:SetupDiplomacyForPeacetime();
+    self:CreateEvents();
+    self:FillResourceHeaps(Rules);
+    self:CreateQuests(Rules);
+    self:GiveResources(Rules);
+    self:ForbidTechnologies(Rules);
+    self:ActivateLogicEventJobs();
+    self:OverrideUIStuff();
+    self:AddExtraStuff();
+
+    if QuestSystem.Workplace then
+        QuestSystem.Workplace:EnableMod(MPRuleset_Rules.Commandment.Workplace == 1);
+    end
+    MPRuleset_Rules.Callbacks.OnMapConfigured();
 end
 
 function MPRuleset:IsUsingEMS()

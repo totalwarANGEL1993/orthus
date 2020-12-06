@@ -28,8 +28,8 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.oop</li>
--- <li>qsb.mpsync</li>
+-- <li>qsb.core.oop</li>
+-- <li>qsb.core.mpsync</li>
 -- </ul>
 --
 -- @set sort=true
