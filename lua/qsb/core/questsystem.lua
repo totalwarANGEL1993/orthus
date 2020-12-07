@@ -51,18 +51,38 @@ QuestSystem = {
     NamedEntityNames = {},
     InlineJobs = {Counter = 0},
     CustomVariables = {},
+    CarringThieves = {},
 
     UniqueTributeID = 0,
     UniqueBriefingID = 0,
     Verbose = false,
+
+    Text = {
+        Resource = {
+            [ResourceType.Gold]   = {de = "Taler", en = "Money"},
+            [ResourceType.Clay]   = {de = "Lehm", en = "Clay"},
+            [ResourceType.Wood]   = {de = "Holz", en = "Wood"},
+            [ResourceType.Stone]  = {de = "Stein", en = "Stone"},
+            [ResourceType.Iron]   = {de = "Eisen", en = "Iron"},
+            [ResourceType.Sulfur] = {de = "Schwefel", en = "Sulfur"},
+        },
+        Queststate = {
+            Failed  = {de = "{red}GESCHEITERT:{white}", en = "{red}FAILED:{white}"},
+            Succeed = {de = "{green}ERFOLGREICH:{white}", en = "{green}SUCCESSFUL:{white}"},
+        }
+    }
 };
+
+gvLastInteractionHero = 0;
+gvLastInteractionHeroName = "null";
+gvLastInteractionNpc = 0;
+gvLastInteractionNpcName = "null";
 
 -- -------------------------------------------------------------------------- --
 
 ---
 -- This function initalizes the quest system.
 -- @within QuestSystem
--- @local
 --
 function QuestSystem:InstallQuestSystem()
     if self.SystemInstalled ~= true then
@@ -100,7 +120,12 @@ function QuestSystem:InstallQuestSystem()
 
         -- Briefing Start
         StartBriefing_Orig_QuestSystem = StartBriefing;
-        StartBriefing = function(_Briefing, _Quest, _ID)
+        StartBriefing = function(_Briefing, _ID, _Quest)
+            -- Convinience
+            if type(_ID) == "table" and _Quest == nil then
+                _Quest = _ID;
+                _ID = nil;
+            end
             -- Set briefing id
             if not _ID then
                 QuestSystem.UniqueBriefingID = QuestSystem.UniqueBriefingID +1;
@@ -110,10 +135,10 @@ function QuestSystem:InstallQuestSystem()
             QuestSystem.Briefings[_ID] = false;
 
             -- Display briefing for receiver
-            if _Quest.m_Receiver == GUI.GetPlayerID() then
+            if _Quest == nil or _Quest.m_Receiver == GUI.GetPlayerID() then
                 -- Enqueue if briefing active
                 if IsBriefingActive() then
-                    table.insert(QuestSystem.BriefingsQueue, {copy(_Briefing), _Quest, _ID});
+                    table.insert(QuestSystem.BriefingsQueue, {copy(_Briefing), _ID, _Quest});
                     return _ID;
                 end
                 -- Start briefing
@@ -136,10 +161,27 @@ function QuestSystem:InstallQuestSystem()
 end
 
 ---
--- Enables the triggers for quests.
+-- Returns the short name of the game language.
+-- @return[type=string] Short name
 -- @within QuestSystem
--- @local
 --
+function QuestSystem:GetLanguage()
+    return (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+end
+
+---
+-- Returns the localized text from the input.
+-- @param _Text Text to translate
+-- @return[type=string] 
+-- @within QuestSystem
+--
+function QuestSystem:GetLocalizedText(_Text)
+    if type(_Text) == "table" then
+        return _Text[self:GetLanguage()] or " ERROR_TEXT_INVALID ";
+    end
+    return _Text;
+end
+
 function QuestSystem:InitalizeQuestEventTrigger()
     function QuestSystem_DestroyedEntities_TagParticipants()
         local Attacker  = Event.GetEntityID1();
@@ -245,6 +287,38 @@ function QuestSystem:InitalizeQuestEventTrigger()
 
     -- ---------------------------------------------------------------------- --
 
+    function QuestSystem_Steal_CheckThieves()
+        for k, v in pairs(MPSync:GetActivePlayers()) do
+            QuestSystem:ObjectiveStealHandler(v);
+        end
+    end
+
+    Trigger.RequestTrigger(
+        Events.LOGIC_EVENT_EVERY_SECOND,
+        "",
+        "QuestSystem_Steal_CheckThieves",
+        1
+    );
+
+    -- ---------------------------------------------------------------------- --
+
+    GameCallback_NPCInteraction_Orig_Questsystem = GameCallback_NPCInteraction;
+    GameCallback_NPCInteraction = function(_Hero, _NPC)
+        if IsBriefingActive() then
+            return;
+        end
+        GameCallback_NPCInteraction_Orig_Questsystem(_Hero, _Hero);
+
+        gvLastInteractionHero = _Hero;
+        gvLastInteractionHeroName = Logic.GetEntityName(_Hero);
+        gvLastInteractionNpc = _NPC;
+        gvLastInteractionNpcName = Logic.GetEntityName(_NPC);
+
+        QuestSystem:ObjectiveNPCHandler(_Hero, _NPC);
+    end
+
+    -- ---------------------------------------------------------------------- --
+
     function QuestSystem_QuestControllerJob(_QuestID)
         local Quest = QuestSystem.Quests[_QuestID];
 
@@ -291,11 +365,11 @@ function QuestSystem:InitalizeQuestEventTrigger()
         if Quest.m_State == QuestStates.Over then
             if Quest.m_Result == QuestResults.Success then
                 for i = 1, table.getn(Quest.m_Rewards) do
-                    Quest:ApplyCallbacks(Quest.m_Rewards[i]);
+                    Quest:ApplyCallbacks(Quest.m_Rewards[i], Quest.m_Result);
                 end
             elseif Quest.m_Result == QuestResults.Failure then
                 for i = 1, table.getn(Quest.m_Reprisals) do
-                    Quest:ApplyCallbacks(Quest.m_Reprisals[i]);
+                    Quest:ApplyCallbacks(Quest.m_Reprisals[i], Quest.m_Result);
                 end
             end
             return true;
@@ -308,7 +382,6 @@ end
 -- current expansion of the game.
 -- @return[type=number] Extension
 -- @within QuestSystem
--- @local
 --
 function QuestSystem:GetExtensionNumber()
     local Version = Framework.GetProgramVersion();
@@ -316,22 +389,6 @@ function QuestSystem:GetExtensionNumber()
     return extensionNumber;
 end
 
----
--- Returns the next free slot in the quest book.
---
--- If the game is in ISAM mode then the next free slot is always the amount
--- of entries +1.
---
--- If the game is in vanilla mode then the next free slot is the next index
--- up to 8. If there is a finished quest in the jornal then it's slot is
--- returned and the old data is invalidated.
---
--- If no free slot can be found then nil is returned.
---
--- @return[type=number] Journal ID
--- @within QuestSystem
--- @local
---
 function QuestSystem:GetNextFreeJornalID(_PlayerID)
     if self:GetExtensionNumber() == 3 then
         return table.getn(self.QuestDescriptions[_PlayerID]) +1;
@@ -366,14 +423,6 @@ function QuestSystem:GetNextFreeJornalID(_PlayerID)
     end
 end
 
----
--- Returns the next free slot in the quest book.
--- @param[type=number] _QuestID Id of quest
--- @return[type=table] Journal entry
--- @return[type=number] Jornal ID
--- @within QuestSystem
--- @local
---
 function QuestSystem:GetJornalByQuestID(_QuestID)
     local Quest = self.Quests[_QuestID];
     if not Quest then
@@ -387,13 +436,6 @@ function QuestSystem:GetJornalByQuestID(_QuestID)
     end
 end
 
----
--- Registers a quest from the quest system for the quest book slot.
--- @return[type=number] Jornal ID
--- @return[type=table] Quest data
--- @within QuestSystem
--- @local
---
 function QuestSystem:RegisterQuestAtJornalID(_JornalID, _QuestData)
     local Quest = self.Quests[_QuestData[1]];
     if not Quest then
@@ -402,13 +444,6 @@ function QuestSystem:RegisterQuestAtJornalID(_JornalID, _QuestData)
     self.QuestDescriptions[Quest.m_Receiver][_JornalID] = copy(_QuestData);
 end
 
----
--- Removes the registered entry for the quest book slot.
--- @param[type=number] _PlayerID ID of Receiver
--- @param[type=number] _JornalID Jornal ID
--- @within QuestSystem
--- @local
---
 function QuestSystem:InvalidateQuestAtJornalID(_PlayerID, _JornalID)
     self.QuestDescriptions[_PlayerID][_JornalID] = nil;
 end
@@ -463,12 +498,6 @@ end
 
 class(QuestTemplate);
 
----
--- Displays a debug message if the verbose flag is set.
--- @param[type=string] _Text Displayed message
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:verbose(_Text)
     if QuestSystem.Verbose then
         Message(_Text);
@@ -477,13 +506,6 @@ end
 
 -- -------------------------------------------------------------------------- --
 
----
--- Checks, if the objective of the quest is fullfilled, failed or undecided.
---
--- @param[type=number] _Index Index of behavior
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:IsObjectiveCompleted(_Index)
     local Behavior = self.m_Objectives[_Index];
     -- Dont evaluate if already done
@@ -691,18 +713,21 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
                 end
             end
         end
+
+    elseif Behavior[1] == Objectives.NPC then
+        if Behavior[3] ~= nil then
+            Behavior.Completed = true;
+        end
+
+    elseif Behavior[1] == Objectives.Steal then
+        if (Behavior[4] or 0) >= Behavior[3] then
+            Behavior.Completed = true;
+        end
     end
 
     return Behavior.Completed;
 end
 
----
--- Checks the trigger condition for the quest.
---
--- @param[type=number] _Index Index of behavior
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:IsConditionFulfilled(_Index)
     local Behavior = self.m_Conditions[_Index];
 
@@ -725,9 +750,13 @@ function QuestTemplate:IsConditionFulfilled(_Index)
         return Behavior[2][1](Behavior[2][2], self);
 
     elseif Behavior[1] == Conditions.Briefing then
-        local Quest = QuestSystem.Quests[GetQuestID(Behavior[2])];
-        if Quest and Quest.m_Briefing then
-            return QuestSystem.Briefings[Quest.m_Briefing] == true;
+        local Quest  = QuestSystem.Quests[GetQuestID(Behavior[2])];
+        if Quest then
+            if Behavior[3] == QuestResults.Success and Quest.m_SuccessBriefing then
+                return QuestSystem.Briefings[Quest.m_SuccessBriefing] == true;
+            elseif Behavior[3] == QuestResults.Failure and Quest.m_FailureBriefing then
+                return QuestSystem.Briefings[Quest.m_FailureBriefing] == true;
+            end
         end
 
     elseif Behavior[1] == Conditions.Diplomacy then
@@ -832,14 +861,7 @@ function QuestTemplate:IsConditionFulfilled(_Index)
     return false;
 end
 
----
--- Calls the callback behavior for the quest.
---
--- @param[type=table] _Behavior Table of behavior
--- @within QuestTemplate
--- @local
---
-function QuestTemplate:ApplyCallbacks(_Behavior)
+function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
     if _Behavior[1] == Callbacks.Defeat then
         if self.m_Receiver == GUI.GetPlayerID() then
             Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
@@ -860,7 +882,11 @@ function QuestTemplate:ApplyCallbacks(_Behavior)
         SaveCall{_Behavior[2][1], _Behavior[2][2], self};
 
     elseif _Behavior[1] == Callbacks.Briefing then
-        self.m_Briefing = _Behavior[2][1](_Behavior[2][2], self);
+        if _ResultType == QuestResults.Success then
+            self.m_SuccessBriefing = _Behavior[2](self);
+        elseif _ResultType == QuestResults.Failure then
+            self.m_FailureBriefing = _Behavior[2](self);
+        end
 
     elseif _Behavior[1] == Callbacks.ChangePlayer then
         SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
@@ -1025,7 +1051,6 @@ end
 ---
 -- Calls :Reset first and then triggers the quest.
 -- @within QuestTemplate
--- @local
 --
 function QuestTemplate:Trigger()
     self:verbose("DEBUG: Trigger quest '" ..self.m_QuestName.. "'");
@@ -1055,7 +1080,6 @@ end
 ---
 -- Let the quest end successfully.
 -- @within QuestTemplate
--- @local
 --
 function QuestTemplate:Success()
     self:verbose("DEBUG: Succeed quest '" ..self.m_QuestName.. "'");
@@ -1081,7 +1105,6 @@ end
 ---
 -- Let the quest end in failure.
 -- @within QuestTemplate
--- @local
 --
 function QuestTemplate:Fail()
     self:verbose("DEBUG: Fail quest '" ..self.m_QuestName.. "'");
@@ -1107,7 +1130,6 @@ end
 ---
 -- Interrupts the quest.
 -- @within QuestTemplate
--- @local
 --
 function QuestTemplate:Interrupt()
     self:verbose("DEBUG: Interrupt quest '" ..self.m_QuestName.. "'");
@@ -1131,7 +1153,6 @@ end
 -- method will be called.
 -- @param[type=boolean] _VanillaSpareDescription Do not delete description
 -- @within QuestTemplate
--- @local
 --
 function QuestTemplate:Reset(_VanillaSpareDescription)
     -- Remove quest
@@ -1161,6 +1182,12 @@ function QuestTemplate:Reset(_VanillaSpareDescription)
                 Logic.RemoveTribute(self.m_Receiver, self.m_Objectives[i][4]);
             end
             self.m_Objectives[i][5] = nil;
+
+        elseif self.m_Objectives[i][1] == Objectives.NPC then
+            self.m_Objectives[i][3] = nil;
+
+        elseif self.m_Objectives[i][1] == Objectives.Steal then
+            self.m_Objectives[i][4] = nil;
         end
     end
 
@@ -1195,12 +1222,6 @@ end
 
 -- -------------------------------------------------------------------------- --
 
----
--- When the state of the quest changes trigger the :PullFragments method of
--- all master quests to make them update their description.
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:PushFragment()
     if self.m_Description and self.m_Description.Type == FRAGMENTQUEST_OPEN then
         for k, v in pairs(QuestSystem.Quests) do
@@ -1215,11 +1236,6 @@ function QuestTemplate:PushFragment()
     end
 end
 
----
--- Pulls the descriptions of all fragments attached to the quest.
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:PullFragments()
     if self.m_Description and (self.m_Description.Type == SUBQUEST_OPEN or self.m_Description.Type == MAINQUEST_OPEN) then
         self.m_Fragments = {{}, {}, 0};
@@ -1230,12 +1246,6 @@ function QuestTemplate:PullFragments()
     end
 end
 
----
--- Returns true, if the quest contains at least 1 objective of the type.
--- @param[type=number] _Objective Type of objective
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:ContainsObjective(_Objective)
     for i= 1, table.getn(self.m_Objectives), 1 do
         self.m_Objectives[i].Completed = nil;
@@ -1246,12 +1256,6 @@ function QuestTemplate:ContainsObjective(_Objective)
     return false;
 end
 
----
--- Updates the fragment connected to the objective.
--- @param[type=number] _Objective Index of objective
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:UpdateFragment(_Objective)
     local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
     if Jornal == nil then
@@ -1311,14 +1315,6 @@ function QuestTemplate:UpdateFragment(_Objective)
     end
 end
 
----
--- Updates the fragments in the quest description.
---
--- <b>Hint</b>: Currently extra 3 will not be supported.
---
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:AttachFragments()
     local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
     if Jornal == nil or ID == nil then
@@ -1347,7 +1343,6 @@ function QuestTemplate:AttachFragments()
             if self.m_Description.Type == MAINQUEST_OPEN or self.m_Description.Type == SUBQUEST_OPEN then
                 Logic.RemoveQuest(self.m_Receiver, ID);
 
-                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
                 local ResultText = "";
                 local ResultType = Jornal[3] + ((self.m_State == QuestStates.Over and 1) or 0);
                 NewQuestText = QuestSystem:ReplacePlaceholders(
@@ -1355,9 +1350,9 @@ function QuestTemplate:AttachFragments()
                 );
 
                 if self.m_Result == QuestResults.Failure then
-                    ResultText = "{red}" ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. "{white}";
+                    ResultText = QuestSystem:GetLocalizedText(QuestSystem.Text.Queststate.Failed);
                 elseif self.m_Result == QuestResults.Success then
-                    ResultText = "{green}" ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. "{white}";
+                    ResultText = QuestSystem:GetLocalizedText(QuestSystem.Text.Queststate.Succeed);
                 end
                 ResultText = QuestSystem:ReplacePlaceholders(ResultText);
 
@@ -1371,11 +1366,6 @@ function QuestTemplate:AttachFragments()
     end
 end
 
----
--- Creates a normal quest in the quest book.
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:CreateQuest()
     if self.m_Description then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
@@ -1409,11 +1399,6 @@ function QuestTemplate:CreateQuest()
     end
 end
 
----
--- Creates a quest with an attached position in the quest book.
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:CreateQuestEx()
     if self.m_Description and self.m_Description.Position then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
@@ -1449,12 +1434,6 @@ function QuestTemplate:CreateQuestEx()
     end
 end
 
----
--- Marks the quest as failed in the quest book. In vanilla game the quest
--- is just removed.
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:QuestSetFailed()
     if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
@@ -1464,9 +1443,8 @@ function QuestTemplate:QuestSetFailed()
             else
                 Logic.RemoveQuest(self.m_Receiver, ID);
 
-                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
                 local ResultText = QuestSystem:ReplacePlaceholders(
-                    "{red}" ..((Language == "de" and "GESCHEITERT: ") or "FAILED: ").. "{white}"
+                    QuestSystem:GetLocalizedText(QuestSystem.Text.Queststate.Failed)
                 );
 
                 if Jornal[7] == nil then
@@ -1479,11 +1457,6 @@ function QuestTemplate:QuestSetFailed()
     end
 end
 
----
--- Marks the quest as successfull in the quest book.
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:QuestSetSuccessfull()
     if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
@@ -1493,9 +1466,8 @@ function QuestTemplate:QuestSetSuccessfull()
             else
                 Logic.RemoveQuest(self.m_Receiver, ID);
 
-                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
                 local ResultText = QuestSystem:ReplacePlaceholders(
-                    "{green}" ..((Language == "de" and "ERFOLGREICH: ") or "SUCCESSFUL: ").. "{white}"
+                    QuestSystem:GetLocalizedText(QuestSystem.Text.Queststate.Succeed)
                 );
 
                 if Jornal[7] == nil then
@@ -1508,11 +1480,6 @@ function QuestTemplate:QuestSetSuccessfull()
     end
 end
 
----
--- Removes a Quest from the quest book.
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:RemoveQuest()
     if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
@@ -1529,11 +1496,6 @@ end
 
 -- -------------------------------------------------------------------------- --
 
----
--- Displays all quest markers of the behaviors.
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:ShowQuestMarkers()
     self:verbose("DEBUG: Show Markers of quest '" ..self.m_QuestName.. "'");
 
@@ -1544,16 +1506,17 @@ function QuestTemplate:ShowQuestMarkers()
                     local Position = (type(self.m_Objectives[i][3]) == "table" and self.m_Objectives[i][3]) or GetPosition(self.m_Objectives[i][3]);
                     self.m_Objectives[i][8] = Logic.CreateEffect(GGL_Effects.FXTerrainPointer, Position.X, Position.Y, 1);
                 end
+            elseif self.m_Objectives[i][1] == Objectives.NPC then
+                if not IsNpcInUseByAnyOtherActiveQuest(self.m_Objectives[i][2]) then
+                    if IsExisting(self.m_Objectives[i][2]) then
+                        EnableNpcMarker(GetID(self.m_Objectives[i][2]));
+                    end
+                end
             end
         end
     end
 end
 
----
--- Removes all quest markers of the behaviors.
--- @within QuestTemplate
--- @local
---
 function QuestTemplate:RemoveQuestMarkers()
     self:verbose("DEBUG: Hide Markers of quest '" ..self.m_QuestName.. "'");
 
@@ -1563,23 +1526,37 @@ function QuestTemplate:RemoveQuestMarkers()
                 if self.m_Objectives[i][8] then
                     Logic.DestroyEffect(self.m_Objectives[i][8]);
                 end
+            elseif self.m_Objectives[i][1] == Objectives.NPC then
+                if not IsNpcInUseByAnyOtherActiveQuest(self.m_Objectives[i][2]) then
+                    if IsExisting(self.m_Objectives[i][2]) then
+                        DisableNpcMarker(GetID(self.m_Objectives[i][2]));
+                    end
+                end
             end
         end
     end
 end
 
+function QuestTemplate:IsNpcInUseByAnyOtherActiveQuest(_NPC)
+    for i= 1, table.getn(QuestSystem.Quests) do
+        local Other = QuestSystem.Quests[i];
+        if self.m_QuestName ~= Other.m_QuestName then
+            if Other.m_State == QuestStates.Active then
+                for j= 1, table.getn(Other.m_Objectives), 1 do
+                    if Other.m_Objectives[i][1] == Objectives.NPC then
+                        if GetID(Other.m_Objectives[i][2]) == GetID(_NPC) then
+                            return true;
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return false;
+end
+
 -- -------------------------------------------------------------------------- --
 
----
--- Handels the event when a player is destroying an entity.
---
--- @param[type=number] _AttackingPlayer Player id of attacker
--- @param[type=number] _AttackingID     Entity id of attacker
--- @param[type=number] _DefendingPlayer Player id of defender
--- @param[type=number] _DefendingID     Entity of defender
--- @within QuestSystem
--- @local
---
 function QuestSystem:ObjectiveDestroyedEntitiesHandler(_AttackingPlayer, _AttackingID, _DefendingPlayer, _DefendingID)
     for i= 1, table.getn(self.Quests), 1 do
         local Quest = self.Quests[i];
@@ -1607,13 +1584,6 @@ function QuestSystem:ObjectiveDestroyedEntitiesHandler(_AttackingPlayer, _Attack
     end
 end
 
----
--- Handels the event when a player has paid a tribute.
---
--- @param[type=number] _TributeID ID of Tribute
--- @within QuestSystem
--- @local
---
 function QuestSystem:QuestTributePayed(_TributeID)
     for i= 1, table.getn(self.Quests), 1 do
         local Quest = self.Quests[i];
@@ -1632,13 +1602,6 @@ function QuestSystem:QuestTributePayed(_TributeID)
     end
 end
 
----
--- Handles the payday event for all quests.
---
--- @param[type=number] _PlayerID ID of player
--- @within QuestSystem
--- @local
---
 function QuestSystem:QuestPaydayEvent(_PlayerID)
     for i= 1, table.getn(self.Quests), 1 do
         local Quest = self.Quests[i];
@@ -1648,6 +1611,97 @@ function QuestSystem:QuestPaydayEvent(_PlayerID)
                     Quest.m_Conditions[j][2] = true;
                 end
             end
+        end
+    end
+end
+
+function QuestSystem:ObjectiveNPCHandler(_Hero, _NPC)
+    for i= 1, table.getn(self.Quests), 1 do
+        local Quest = self.Quests[i];
+        if Quest.m_State == QuestStates.Active and Quest.m_Result == QuestResults.Undecided then
+            local HeroPlayerID = Logic.EntityGetPlayer(_Hero);
+            if HeroPlayerID == Quest.m_Receiver then
+                for j= 1, table.getn(Quest.m_Objectives), 1 do
+                    if Quest.m_Objectives[j][1] == Objectives.NPC then
+                        if GetID(Quest.m_Objectives[j][2]) == _NPC then
+                            Quest.m_Objectives[j][3] = _Hero;
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+function QuestSystem:ObjectiveStealHandler(_PlayerID)
+    local HeadquartersID = self:GetFirstHQOfPlayer(_PlayerID);
+    if HeadquartersID ~= 0 then
+        local x, y, z = Logic.EntityGetPos(HeadquartersID);
+        local ThiefIDs = {Logic.GetPlayerEntitiesInArea(_PlayerID, Entities.PU_Thief, x, y, 2000, 16)};
+        for i= 2, ThiefIDs[1]+1, 1 do
+            local RessouceID, RessourceAmount = Logic.GetStolenResourceInfo(ThiefIDs[i]);
+            if RessouceID ~= 0 then
+                if self.CarringThieves[ThiefIDs[i]] == nil then
+                    self.CarringThieves[ThiefIDs[i]] = {RessouceID, RessourceAmount};
+                end
+            else
+                if self.CarringThieves[ThiefIDs[i]] ~= nil then
+                    local StohlenGood = self.CarringThieves[ThiefIDs[i]][1];
+                    local StohlenAmount = self.CarringThieves[ThiefIDs[i]][2];
+                    for j= 1, table.getn(self.Quests) do
+                        if self.Quests[j].m_Receiver == _PlayerID then
+                            for k= 1, table.getn(self.Quests[j].m_Objectives), 1 do
+                                if self.Quests[j].m_Objectives[k][1] == Objectives.Steal then
+                                    if self.Quests[j].m_Objectives[k][2] == StohlenGood or self.Quests[j].m_Objectives[k][2] +1 == StohlenGood then
+                                        self.Quests[j].m_Objectives[k][4] = (self.Quests[j].m_Objectives[k][4] or 0) + StohlenAmount;
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    self.CarringThieves[ThiefIDs[i]] = nil;
+                end
+            end
+        end
+    end
+end
+
+function QuestSystem:GetFirstHQOfPlayer(_PlayerID)
+    local HQ1List = {Logic.GetPlayerEntities(1, Entities.PB_Headquarters1, 1)};
+    if HQ1List[1] > 0 then
+        return HQ1List[2];
+    end
+    local HQ2List = {Logic.GetPlayerEntities(1, Entities.PB_Headquarters2, 1)};
+    if HQ2List[1] > 0 then
+        return HQ2List[2];
+    end
+    local HQ3List = {Logic.GetPlayerEntities(1, Entities.PB_Headquarters3, 1)};
+    if HQ3List[1] > 0 then
+        return HQ3List[2];
+    end
+    return 0;
+end
+
+function QuestSystem:GetResourceNameInGUI(_ResourceType)
+    local GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameMoney");
+    if _ResourceType == ResourceType.Clay or _ResourceType == ResourceType.ClayRaw then
+        GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameClay");
+    elseif _ResourceType == ResourceType.Wood or _ResourceType == ResourceType.WoodRaw then
+        GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameWood");
+    elseif _ResourceType == ResourceType.Stone or _ResourceType == ResourceType.StoneRaw then
+        GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameStone");
+    elseif _ResourceType == ResourceType.Iron or _ResourceType == ResourceType.IronRaw then
+        GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameIron");
+    elseif _ResourceType == ResourceType.Sulfur or _ResourceType == ResourceType.Sulfur then
+        GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameSulfur");
+    end
+    return GoodName;
+end
+
+function QuestSystem:GetKeyInTable(_Table, _Value)
+    for k, v in pairs(_Table) do
+        if v == _Value then
+            return k;
         end
     end
 end
@@ -1663,7 +1717,6 @@ end
 -- @param ...            Optional arguments
 -- @return[type=number] ID of started job
 -- @within QuestSystem
--- @local
 --
 function QuestSystem:StartInlineJob(_EventType, _Function, ...)
     -- Who needs a trigger fix. :D
@@ -1684,7 +1737,6 @@ end
 -- @param[type=string] _Message Text to parse
 -- @return[type=string] New text
 -- @within QuestSystem
--- @local
 --
 function QuestSystem:ReplacePlaceholders(_Message)
     if type(_Message) == "table" then
@@ -1723,14 +1775,6 @@ function QuestSystem:ReplacePlaceholders(_Message)
     return _Message;
 end
 
----
--- Replaces all valued placeholders in the message with their value.
---
--- @param[type=string] _Message Text to parse
--- @return[type=string] New text
--- @within QuestSystem
--- @local
---
 function QuestSystem:ReplaceKeyValuePlaceholders(_Message)
     local s, e = string.find(_Message, "{", 1);
     while (s) do
@@ -1765,14 +1809,6 @@ function QuestSystem:ReplaceKeyValuePlaceholders(_Message)
     return _Message;
 end
 
----
--- Removes all formating placeholders from the message.
---
--- @param[type=string] _Message Text to parse
--- @return[type=string] New text
--- @within QuestSystem
--- @local
---
 function QuestSystem:RemoveFormattingPlaceholders(_Message)
     if type(_Message) == "table" then
         for k, v in pairs(_Message) do
@@ -2321,7 +2357,7 @@ QuestResults = {
 --
 -- @field Briefing
 -- Starts the quest, after a briefing of another is finished.
--- <pre>{Conditions.Briefing, _QuestName}</pre>
+-- <pre>{Conditions.Briefing, _QuestName, _ResultType}</pre>
 --
 -- @field QuestSuccess
 -- Starts a quest when another quest is finished successfully.
@@ -2495,6 +2531,14 @@ Conditions = {
 -- their script names often, use a XD_ScriptEntity instead of the site.
 -- <pre>{Objectives.Bridge, _AreaCenter, _AreaSize}</pre>
 --
+-- @field NPC
+-- The player must interact with an NPC.
+-- <pre>{Objectives.NPC, _NPC}</pre>
+--
+-- @field Steal
+-- The player must steal the amount of the required resource.
+-- <pre>{Objectives.Steal, _ResourceType, _Amount}</pre>
+--
 Objectives = {
     MapScriptFunction = 1,
     InstantFailure = 2,
@@ -2511,12 +2555,14 @@ Objectives = {
     Units = 13,
     Technology = 14,
     Headquarter = 15,
+    NPC = 16,
     DestroyType = 17,
     DestroyCategory = 18,
     Tribute = 19,
     Settlers = 20,
     Soldiers = 21,
     WeatherState = 22,
+    Steal = 23,
     DestroyAllPlayerUnits = 24,
     Quest = 25,
     Bridge = 26,
