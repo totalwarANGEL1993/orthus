@@ -582,8 +582,6 @@ function QuestSystemBehavior:PrepareQuestSystem()
             QuestSystemBehavior:InstallS5Hook();
         end
 
-        Tools.GiveResources = Tools.GiveResouces;
-
         QuestSystem:InstallQuestSystem();
         Interaction:Install();
         Information:Install();
@@ -2411,7 +2409,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyAllPlayerUnits);
 ---
 -- The plaver must eliminate all of his enemies in a distinct area.
 -- @param[type=string] _Position Area center
--- @param[type=number] _Position Area size
+-- @param[type=number] _AreaSize Area size
 -- @within Goals
 --
 function Goal_DestroyEnemiesInArea(...)
@@ -2456,6 +2454,39 @@ function b_Goal_DestroyEnemiesInArea:Debug(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyEnemiesInArea);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- 
+-- @param[type=string] _Good   Area center
+-- @param[type=number] _Amount Area size
+-- @within Goals
+--
+function Goal_Steal(...)
+    return b_Goal_Steal:New(unpack(arg));
+end
+
+b_Goal_Steal = {
+    Data = {
+        Name = "Goal_Steal",
+        Type = Objectives.Steal
+    },
+};
+
+function b_Goal_Steal:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.Good = ResourceType[_Parameter];
+    elseif _Index == 2 then
+        self.Data.Amount = _Parameter;
+    end
+end
+
+function b_Goal_Steal:GetGoalTable()
+    return {self.Data.Type, self.Data.Good, self.Data.Amount};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Goal_Steal);
 
 -- -------------------------------------------------------------------------- --
 

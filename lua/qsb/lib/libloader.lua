@@ -12,7 +12,7 @@ end
 if bit_logic_rshift == nil then
     Script.Load(gvBasePath.. "lib/luabit50.lua");
 end
--- Load MD% hash generator lib
+-- Load MD5 hash generator lib
 if md5 == nil then
     Script.Load(gvBasePath.. "lib/md5.lua");
 end
