@@ -320,9 +320,9 @@ end
 --
 function Information:OverrideCinematic()
     StartBriefing_Orig_Information = StartBriefing;
-    StartBriefing = function(_briefing, _ID)
+    StartBriefing = function(_briefing, _ID, _Quest)
         assert(type(_briefing) == "table");
-        local ID = StartBriefing_Orig_Information(_briefing, _ID);
+        local ID = StartBriefing_Orig_Information(_briefing, _ID, _Quest);
         if _briefing.noEscape then
             Information.ForbidEscaping = true;
         end
