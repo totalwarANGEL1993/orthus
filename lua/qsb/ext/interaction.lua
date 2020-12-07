@@ -30,6 +30,7 @@
 -- <ul>
 -- <li>qsb.core.oop</li>
 -- <li>qsb.core.mpsync</li>
+-- <li>qsb.core.questsystem</li>
 -- </ul>
 --
 -- @set sort=true
@@ -39,11 +40,6 @@ Interaction = {
     Event = {},
     IO = {},
 }
-
-gvLastInteractionHero = 0;
-gvLastInteractionHeroName = "null";
-gvLastInteractionNpc = 0;
-gvLastInteractionNpcName = "null";
 
 ---
 -- Installs the interaction mod.
@@ -66,14 +62,10 @@ end
 function Interaction:OverrideNpcInteraction()
     GameCallback_NPCInteraction_Orig_Interaction = GameCallback_NPCInteraction;
     GameCallback_NPCInteraction = function(_Hero, _NPC)
+        GameCallback_NPCInteraction_Orig_Interaction(_Hero, _NPC);
         if IsBriefingActive() then
             return;
         end
-
-        gvLastInteractionHero = _Hero;
-        gvLastInteractionHeroName = Logic.GetEntityName(_Hero);
-        gvLastInteractionNpc = _NPC;
-        gvLastInteractionNpcName = Logic.GetEntityName(_NPC);
 
         local EntityName = Logic.GetEntityName(_NPC);
         local ID = Logic.GetMerchantBuildingId(_NPC);
@@ -94,7 +86,6 @@ function Interaction:OverrideNpcInteraction()
             end
             return;
         end
-        GameCallback_NPCInteraction_Orig_Interaction(_Hero, _Hero);
     end
 end
 
@@ -1302,19 +1293,7 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
 
     -- Resource
     elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
-        local GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameMoney");
-        if self.m_Offers[_SlotIndex].Good == ResourceType.Clay or self.m_Offers[_SlotIndex].Good == ResourceType.ClayRaw then
-            GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameClay");
-        elseif self.m_Offers[_SlotIndex].Good == ResourceType.Wood or self.m_Offers[_SlotIndex].Good == ResourceType.WoodRaw then
-            GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameWood");
-        elseif self.m_Offers[_SlotIndex].Good == ResourceType.Stone or self.m_Offers[_SlotIndex].Good == ResourceType.StoneRaw then
-            GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameStone");
-        elseif self.m_Offers[_SlotIndex].Good == ResourceType.Iron or self.m_Offers[_SlotIndex].Good == ResourceType.IronRaw then
-            GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameIron");
-        elseif self.m_Offers[_SlotIndex].Good == ResourceType.Sulfur or self.m_Offers[_SlotIndex].Good == ResourceType.Sulfur then
-            GoodName = XGUIEng.GetStringTableText("InGameMessages/GUI_NameSulfur");
-        end
-
+        local GoodName = QuestSystem:GetResourceNameInGUI(self.m_Offers[_SlotIndex].Good);
         local Title = GoodName.. " kaufen";
         if Language ~= "de" then
             Title = "Buy " ..GoodName;
@@ -1327,10 +1306,11 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
 
     -- Technology
     elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then        
-        local Title = "Wissen erwerben";
-        if Language ~= "de" then
-            Title = "Buy technology";
+        local TechnologyKey = QuestSystem:GetKeyInTable(Technologies, self.m_Offers[_SlotIndex].Type);
+        if TechnologyKey == nil then
+            return;
         end
+        local Title = XGUIEng.GetStringTableText("names/" ..TechnologyKey);
         local Text = "Eignet Euch das Wissen über diese Technologie an.";
         if Language ~= "de" then
             Title = "Get the knowledge about this technology.";
@@ -1338,10 +1318,6 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
 
         local PlayerID = GUI.GetPlayerID();
         if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 1 then
-            Title = "Heureka!";
-            if Language ~= "de" then
-                Title = "Eureka!";
-            end
             Text = "Ihr habt diese Technologie bereits erforscht, Milord!";
             if Language ~= "de" then
                 Title = "You have already researched this technology, your majesty!";
@@ -1367,3 +1343,4 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
     XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomCosts, CostString);
     XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomShortCut, "");
 end
+
