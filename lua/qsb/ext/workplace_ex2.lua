@@ -221,8 +221,8 @@ function QuestSystem.Workplace:OverrideInterfaceUpdate()
 		local pID = GUI.GetPlayerID();
 
 		XGUIEng.SetWidgetPositionAndSize(XGUIEng.GetWidgetID("Details_Generic"),452,70,100,90);
-		XGUIEng.SetWidgetPositionAndSize(XGUIEng.GetWidgetID("DetailsArmor"),4,30,70,15);
-		XGUIEng.SetWidgetPositionAndSize(XGUIEng.GetWidgetID("DetailsDamage"),4,45,72,15);
+		XGUIEng.SetWidgetPosition(XGUIEng.GetWidgetID("DetailsArmor"),2,25);
+		XGUIEng.SetWidgetPosition(XGUIEng.GetWidgetID("DetailsDamage"),2,40);
 		XGUIEng.SetWidgetPositionAndSize(XGUIEng.GetWidgetID("DetailsExperience"),4,64,80,20);
 		XGUIEng.SetWidgetPositionAndSize(XGUIEng.GetWidgetID("DetailsGroupStrength"),7,82,80,10);
 		XGUIEng.SetWidgetPositionAndSize(XGUIEng.GetWidgetID("DetailsGroupStrength_Soldier01"),0,0,13,13);
@@ -234,8 +234,8 @@ function QuestSystem.Workplace:OverrideInterfaceUpdate()
 		XGUIEng.SetWidgetPositionAndSize(XGUIEng.GetWidgetID("DetailsGroupStrength_Soldier07"),54,0,13,13);
 		XGUIEng.SetWidgetPositionAndSize(XGUIEng.GetWidgetID("DetailsGroupStrength_Soldier08"),63,0,13,13);
 		XGUIEng.SetWidgetPositionAndSize(XGUIEng.GetWidgetID("Details_Workers"),455,135,100,55);
-		XGUIEng.SetWidgetPosition(XGUIEng.GetWidgetID("Thief_StolenRessourceAmount"),470,82);
-		XGUIEng.SetWidgetPosition(XGUIEng.GetWidgetID("Thief_StolenRessourceType"),455,64);
+		XGUIEng.SetWidgetPosition(XGUIEng.GetWidgetID("Thief_StolenRessourceAmount"),469,85);
+		XGUIEng.SetWidgetPosition(XGUIEng.GetWidgetID("Thief_StolenRessourceType"),455,78);
 		XGUIEng.SetWidgetPosition(XGUIEng.GetWidgetID("DetailsHealth"),11,5);
 
 		if Logic.IsEntityInCategory( sel, EntityCategories.Workplace )== 1
@@ -244,9 +244,9 @@ function QuestSystem.Workplace:OverrideInterfaceUpdate()
 			XGUIEng.SetWidgetPosition("SetWorkersAmountFew",4,25);
 			XGUIEng.SetWidgetPosition("SetWorkersAmountHalf",30,25);
 			XGUIEng.SetWidgetPosition("SetWorkersAmountFull",54,25);
-			XGUIEng.SetWidgetPosition("WorkersAmountFew",2,45);
-			XGUIEng.SetWidgetPosition("WorkersAmountHalf",28,45);
-			XGUIEng.SetWidgetPosition("WorkersAmountFull",52,45);
+			XGUIEng.SetWidgetPosition("WorkersAmountFew",1,45);
+			XGUIEng.SetWidgetPosition("WorkersAmountHalf",27,45);
+			XGUIEng.SetWidgetPosition("WorkersAmountFull",51,45);
 			XGUIEng.SetWidgetPosition("WorkersIcon",27,0);
 			XGUIEng.ShowWidget("Details_Workers",1);
 			XGUIEng.ShowWidget("WorkersAmountFew",1);
