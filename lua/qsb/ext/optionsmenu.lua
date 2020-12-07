@@ -17,6 +17,9 @@
 -- @set sort=true
 --
 
+---
+--
+--
 function ShowOptionMenu(_Data)
     if OptionMenu:IsShown() then
         return false;
@@ -32,12 +35,18 @@ function ShowOptionMenu(_Data)
     return true;
 end
 
+---
+--
+--
 function CloseOptionMenu(_Data)
     if OptionMenu:IsShown() then
         OptionMenu:Close();
     end
 end
 
+---
+--
+--
 function GetDefaultOptionText(_Type)
     if OptionMenu.Texts[_Type] then
         return OptionMenu.Texts[_Type];
@@ -45,9 +54,8 @@ function GetDefaultOptionText(_Type)
     return "ERROR_DEFAULT_NOT_FOUND";
 end
 
----
--- Option menu class
---
+-- -------------------------------------------------------------------------- --
+
 OptionMenu = {
     Menu = {
         Pages = {},
@@ -90,7 +98,6 @@ OptionMenu = {
 ---
 -- Installs the option menu.
 -- @within OptionMenu
--- @local
 --
 function OptionMenu:Install()
     self:OverrideGroupSelection();
@@ -99,7 +106,6 @@ end
 ---
 -- Displays the prepared option window entering on the given page.
 -- @within OptionMenu
--- @local
 --
 function OptionMenu:GetLanguage()
     local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
@@ -109,7 +115,6 @@ end
 ---
 -- Displays the prepared option window entering on the given page.
 -- @within OptionMenu
--- @local
 --
 function OptionMenu:Show(_StartPage)
     self.Menu.Active = true;
@@ -118,9 +123,26 @@ function OptionMenu:Show(_StartPage)
 end
 
 ---
+-- Returns the identifier of the current page.
+-- @return[type=string] Name of current page
+-- @within OptionMenu
+--
+function OptionMenu:GetCurrentPage()
+    return self.Menu.CurrentPage;
+end
+
+---
+-- Sets the identifier of the current page.
+-- @param[type=string] _CurrentPage Name of current page
+-- @within OptionMenu
+--
+function OptionMenu:SetCurrentPage(_CurrentPage)
+    self.Menu.CurrentPage = _CurrentPage;
+end
+
+---
 -- Closes the option window
 -- @within OptionMenu
--- @local
 --
 function OptionMenu:Close()
     self.Menu.Active = false;
@@ -131,7 +153,6 @@ end
 -- Displays the prepared option window entering on the given page.
 -- @return[type=boolean] Option window shown
 -- @within OptionMenu
--- @local
 --
 function OptionMenu:IsShown()
     return self.Menu.Active == true;
@@ -140,7 +161,6 @@ end
 ---
 -- Removes all data from the option window.
 -- @within OptionMenu
--- @local
 --
 function OptionMenu:Clear()
     self.Menu.Pages = {};
@@ -151,7 +171,6 @@ end
 -- Adds the configured page to the option window.
 -- @param[type=table] _Page Page data
 -- @within OptionMenu
--- @local
 --
 function OptionMenu:AddPage(_Page)
     local Page = new(
@@ -172,17 +191,11 @@ end
 -- @param[type=string] _Identifier Name of page
 -- @return[type=table] Page data
 -- @within OptionMenu
--- @local
 --
 function OptionMenu:GetPage(_Identifier)
     return self.Menu.Pages[_Identifier];
 end
 
----
--- Overrides the group selection to be used as a menu.
--- @within OptionMenu
--- @local
---
 function OptionMenu:OverrideGroupSelection()
     if not GroupSelection_SelectTroops_Orig_OptionMenu then
         GroupSelection_SelectTroops_Orig_OptionMenu = GroupSelection_SelectTroops
@@ -196,12 +209,6 @@ function OptionMenu:OverrideGroupSelection()
     end
 end
 
----
--- Reacts to the pressed group key if the option menu is shown.
--- @param[type=number] _Count Selected group
--- @within OptionMenu
--- @local
---
 function OptionMenu:OnOptionSelected(_Count)
     local Page = self:GetPage(self.Menu.CurrentPage);
     if not Page then
@@ -229,11 +236,6 @@ function OptionMenu:OnOptionSelected(_Count)
     end
 end
 
----
--- Displays the current page of the option menu.
--- @within OptionMenu
--- @local
---
 function OptionMenu:Render()
     local Page = self:GetPage(self.Menu.CurrentPage);
     if not Page then
@@ -271,14 +273,6 @@ function OptionMenu:Render()
     self:DisplayCreditsWindow(Title, Text);
 end
 
----
--- Prints the text from the current page to the screen by using the
--- credits window.
--- @param[type=string] _Title Title of credits window
--- @param[type=string] _Text  Content of credits window
--- @within OptionMenu
--- @local
---
 function OptionMenu:DisplayCreditsWindow(_Title, _Text)
 	XGUIEng.ShowWidget( XGUIEng.GetWidgetID("Movie"), 1)
 	XGUIEng.ShowWidget( XGUIEng.GetWidgetID("Cinematic_Text"), 0)
@@ -290,11 +284,6 @@ function OptionMenu:DisplayCreditsWindow(_Title, _Text)
 	XGUIEng.SetText( XGUIEng.GetWidgetID("CreditsWindowText"), _Text)
 end
 
----
--- Hides the credits window.
--- @within OptionMenu
--- @local
---
 function OptionMenu:HideCreditsWindow()
 	XGUIEng.ShowWidget(XGUIEng.GetWidgetID("Movie"), 0);
 end
