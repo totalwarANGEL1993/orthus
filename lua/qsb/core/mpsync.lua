@@ -52,7 +52,6 @@ end
 -- Creates an script event and returns the event ID. Use the ID to call the
 -- created event.
 -- @param[type=function] _Function Function to call
--- @within MPSync
 -- @see MPSync:SnchronizedCall
 --
 function MPSync:CreateScriptEvent(_Function)
@@ -69,7 +68,6 @@ end
 -- Calls the script event synchronous for all players.
 -- @param[type=number] _Function ID of script event
 -- @param              ...       List of Parameters (String or Number)
--- @within MPSync
 -- @see MPSync:CreateScriptEvent
 --
 function MPSync:SnchronizedCall(_ID, ...)
@@ -98,17 +96,6 @@ end
 function MPSync_CNetwork_SnchronizedCall(_PlayerID, _ID, ...)
 end
 
----
--- 
--- passed time.
--- @param[type=number] _ID        ID of sync action
--- @param[type=number] _PlayerID  ID of player
--- @param[type=number] _Time      Time in ms
--- @param[type=string] _Msg       Message to send
--- @param[type=table]  _Parameter Parameter table
--- @within MPSync
--- @local
---
 function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
     -- Create message
     _Msg = _Msg or "";
@@ -143,14 +130,6 @@ function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
     end, _PlayerID, Hash, Logic.GetTime(), unpack(_Parameter));
 end
 
----
--- Sends an acknowledgement for the transaction with the hash and the
--- passed time.
--- @param[type=string] _Hash Identifying hash
--- @param[type=number] _Time Time in ms
--- @within MPSync
--- @local
---
 function MPSync:TransactionAcknowledge(_Hash, _Time)
     -- Create message
     local PlayerID = GUI.GetPlayerID();
@@ -163,18 +142,6 @@ function MPSync:TransactionAcknowledge(_Hash, _Time)
     end
 end
 
----
--- Manages the received transaction message depending on the type.
---
--- <ul>
--- <li>Type 1: Start of transaction has been requested from one client.</li>
--- <li>Type 2: Acknowledgement is send from other clients.</li>
--- </ul>
--- @param[type=number] _Type  Message to parse
--- @param[type=string] _Msg   Transaction message
--- @within MPSync
--- @local
---
 function MPSync:TransactionManage(_Type, _Msg)
     -- Handle received request
     if _Type == 1 then
@@ -198,13 +165,6 @@ function MPSync:TransactionManage(_Type, _Msg)
     end
 end
 
----
--- Parses a message and returns all arguments.
--- @param[type=string] _Msg  Message to parse
--- @return[type=table] Message parameters
--- @within MPSync
--- @local
---
 function MPSync:TransactionSplitMessage(_Msg)
     local MsgParts = {};
     local Msg = _Msg;
@@ -219,15 +179,6 @@ function MPSync:TransactionSplitMessage(_Msg)
     return MsgParts;
 end
 
----
--- Creates an tribute and connects it to the passed action ID.
--- @param[type=number] _PlayerID  ID of player
--- @param[type=number] _ID        ID of action
--- @param              ...        ID of action
--- @return[type=number] ID of generated tribute
--- @within MPSync
--- @local
---
 function MPSync:CreateTribute(_PlayerID, _ID, ...)
     self.UniqueTributeCounter = self.UniqueTributeCounter +1;
     Logic.AddTribute(_PlayerID, self.UniqueTributeCounter, 0, 0, "", {[ResourceType.Gold] = 0});
@@ -238,23 +189,10 @@ function MPSync:CreateTribute(_PlayerID, _ID, ...)
     return self.UniqueTributeCounter;
 end
 
----
--- Pays the tribute with the ID for the player. The tribute sould cost 0 gold
--- so that it can be payed by script on evenry moment.
--- @param[type=number] _PlayerID  ID of player
--- @param[type=number] _TributeID ID of tribute
--- @within MPSync
--- @local
---
 function MPSync:PayTribute(_PlayerID, _TributeID)
     GUI.PayTribute(_PlayerID, _TributeID);
 end
 
----
--- Creates a trigger to hook on payed tributes.
--- @within MPSync
--- @local
---
 function MPSync:ActivateTributePaidTrigger()
     QuestSystem:StartInlineJob(
         Events.LOGIC_EVENT_TRIBUTE_PAID,
@@ -264,12 +202,6 @@ function MPSync:ActivateTributePaidTrigger()
     );
 end
 
----
--- Calls the action associated to the tribute ID.
--- @param[type=number] _ID ID of tribute
--- @within MPSync
--- @local
---
 function MPSync:OnTributePaidTrigger(_ID)
     if self.TransactionParameter[_ID] then
         local ActionID  = self.TransactionParameter[_ID].Action;
@@ -280,11 +212,6 @@ function MPSync:OnTributePaidTrigger(_ID)
     end
 end
 
----
--- Overrides the internal message callback.
--- @within MPSync
--- @local
---
 function MPSync:OverrideMessageReceived()
     if self.IsActive then
         return true;
@@ -313,7 +240,6 @@ end
 ---
 -- Checks if the current mission is running as a Multiplayer game.
 -- @return[type=boolean] Mission runs in multiplayer
--- @within MPSync
 -- @local
 --
 function MPSync:IsMultiplayerGame()
@@ -323,7 +249,6 @@ end
 ---
 -- Returns true, if the copy of the game is the History Edition.
 -- @return[type=boolean] Game is History Edition
--- @within MPSync
 -- @local
 --
 function MPSync:IsHistoryEdition()
@@ -334,7 +259,6 @@ end
 -- Returns true, if the copy of the game is the Community Edition.
 -- (e.g. Kimichuras Community Server)
 -- @return[type=boolean] Game is Community Edition
--- @within MPSync
 -- @local
 --
 function MPSync:IsCNetwork()
@@ -344,7 +268,6 @@ end
 ---
 -- Returns true, if the copy of the game is the original version.
 -- @return[type=boolean] Game is Original Edition
--- @within MPSync
 -- @local
 --
 function MPSync:IsOriginal()
@@ -356,7 +279,6 @@ end
 -- copy of the game is not the original than it is assumed that the game has
 -- been patched.
 -- @return[type=boolean] Game has latest patch
--- @within MPSync
 -- @local
 --
 function MPSync:IsPatched()
@@ -370,7 +292,6 @@ end
 -- Returns true, if the player on this ID is active.
 -- @param[type=number] _PlayerID ID of player
 -- @return[type=boolean] Player is active
--- @within MPSync
 -- @local
 --
 function MPSync:IsPlayerActive(_PlayerID)
@@ -385,7 +306,6 @@ end
 -- Returns true, if the player is the host.
 -- @param[type=number] _PlayerID ID of player
 -- @return[type=boolean] Player is host
--- @within MPSync
 -- @local
 --
 function MPSync:IsPlayerHost(_PlayerID)
@@ -401,7 +321,6 @@ end
 -- Returns the number of human players. In Singleplayer this will always be 1.
 -- @return[type=number] Amount of humans
 -- @within MPSync
--- @local
 --
 function MPSync:GetActivePlayers()
     local Players = {};
@@ -423,7 +342,6 @@ end
 -- @param[type=number] _PlayerID ID of player
 -- @return[type=number] Team of player
 -- @within MPSync
--- @local
 --
 function MPSync:GetTeamOfPlayer(_PlayerID)
     if self:IsMultiplayerGame() then

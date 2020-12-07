@@ -43,12 +43,6 @@ function QuestSystemDebug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _Quest
     self:OverrideQuestSystemTriggerQuest();
 end
 
----
--- Overrides the trigger methods of the quests to activate or deactivate the
--- check of custom behavior with the debug method.
--- @within QuestSystemDebug
--- @local
---
 function QuestSystemDebug:OverrideQuestSystemTriggerQuest()
     QuestTemplate.TriggerOriginal = QuestTemplate.Trigger;
     QuestTemplate.Trigger = function(self)
@@ -91,17 +85,6 @@ function QuestSystemDebug:OverrideQuestSystemTriggerQuest()
     end
 end
 
----
--- Displays a status change of a quest, but only if quest trace is active.
---
--- This function is called by GameCallback_OnQuestStatusChanged.
---
--- @param[type=number] _QuestID ID of quest
--- @param[type=number] _State   Quest state
--- @param[type=number] _Result  Result state
--- @within QuestSystemDebug
--- @local
---
 function QuestSystemDebug:PrintQuestStatus(_QuestID, _State, _Result)
     if self.m_QuestTrace then 
         local QuestState = self:GetKeyByValue(QuestStates, _State);
@@ -111,17 +94,6 @@ function QuestSystemDebug:PrintQuestStatus(_QuestID, _State, _Result)
     end
 end
 
----
--- Activates the cheat console if the debug shell flag is set.
---
--- Entered commands will be parsed and evaluated. You can seperate multiple
--- commands with && and multiple inputs for a single command with &.
---
--- To use the commands with the LuaDebugger call them with eval(_CmdString).
---
--- @within QuestSystemDebug
--- @local
---
 function QuestSystemDebug:ActivateConsole()
     if self.m_DebugShell then
         Input.KeyBindDown(Keys.OemPipe, "XGUIEng.ShowWidget('ChatInput',1)", 2);
@@ -142,12 +114,6 @@ function eval(_Input)
     return QuestSystemDebug:EvaluateCommand(QuestSystemDebug:TokenizeCommand(_Input));
 end
 
----
--- Receives the message from the chat input and split it into tokens.
--- @param[type=string] _Message Message to tokenize
--- @within QuestSystemDebug
--- @local
---
 function QuestSystemDebug:TokenizeCommand(_Message)
     local Commands = {};
     local DAmberCommands = {_Message};
@@ -213,12 +179,6 @@ function QuestSystemDebug:TokenizeCommand(_Message)
     return Commands;
 end
 
----
--- Takes a table with command tokens and executes the commands if possible.
--- @param[type=table] _Tokens List of tokens
--- @within QuestSystemDebug
--- @local
---
 function QuestSystemDebug:EvaluateCommand(_Tokens)
     local CommandExecuted = false;
     for _, command in pairs(_Tokens) do
@@ -397,12 +357,6 @@ function QuestSystemDebug:EvaluateCommand(_Tokens)
     return CommandExecuted;
 end
 
----
--- Activates the cheat hotkeys. This function is automatically called when
--- a save is loaded.
--- @within QuestSystemDebug
--- @local
---
 function QuestSystemDebug:CreateCheats()
     if self.m_DebugKeys then
         -- Open quest shell
@@ -472,11 +426,6 @@ function QuestSystemDebug:CreateCheats()
     end
 end
 
----
--- Defines some functions used by the cheats.
--- @within QuestSystemDebug
--- @local
---
 function QuestSystemDebug:CreateCheatMethods()
     -- Changing entity owner
     function Cheats_ChangePlayer(_player)
@@ -541,11 +490,6 @@ function QuestSystemDebug:CreateCheatMethods()
     end
 end
 
----
--- Overrides the save loaded callback to restore the debug functionallity.
--- @within QuestSystemDebug
--- @local
---
 function QuestSystemDebug:OverrideSaveGameLoaded()
     Mission_OnSaveGameLoaded_Orig_QuestSystemDebug = Mission_OnSaveGameLoaded;
     Mission_OnSaveGameLoaded = function()
@@ -555,15 +499,6 @@ function QuestSystemDebug:OverrideSaveGameLoaded()
     end
 end
 
----
--- A helper for finding a key to a value in a table.
--- @local
---
--- @param[type=table] _Table Questioned table
--- @param             _Value Value to find
--- @return[type=string] Key of value
--- @within QuestSystemDebug
---
 function QuestSystemDebug:GetKeyByValue(_Table, _Value)
     for k, v in pairs(_Table) do 
         if v == _Value then
