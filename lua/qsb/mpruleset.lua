@@ -846,9 +846,9 @@ function MPRuleset:ConfigurationFinished()
     ActivateCrushBuildingBugfix(MPRuleset_Rules.Commandment.CrushBuilding == 1);
     ActivateFormationBugfix(MPRuleset_Rules.Commandment.Formaition == 1);
     ActivateBlessLimitBugfix(MPRuleset_Rules.Commandment.BlessDelay > 0);
-    SetBlessDelay(MPRuleset_Rules.Commandment.BlessDelay * 60);
+    SetBlessDelay(MPRuleset_Rules.Commandment.BlessDelay);
     ActivateWeatherChangeLimitBugfix(MPRuleset_Rules.Commandment.WeatherChangeDelay > 0);
-    SetWeatherChangeDelay(MPRuleset_Rules.Commandment.WeatherChangeDelay * 0);
+    SetWeatherChangeDelay(MPRuleset_Rules.Commandment.WeatherChangeDelay);
     if QuestSystem.Workplace then
         QuestSystem.Workplace:EnableMod(MPRuleset_Rules.Commandment.Workplace == 1);
     end
@@ -1385,7 +1385,7 @@ MPRuleset_Default = {
         WeatherChangeDelay  = 5 * 60,
 
         -- Seconds a player must wait between two blesses. (0 = off)
-        BlessDelay          = 90,
+        BlessDelay          = 120,
     },
 
     Limits = {

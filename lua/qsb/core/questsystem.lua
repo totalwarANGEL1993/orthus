@@ -32,6 +32,7 @@
 -- <ul>
 -- <li>qsb.core.oop</li>
 -- <li>qsb.core.mpsync</li>
+-- <li>qsb.core.bugfix</li>
 -- </ul>
 --
 -- @set sort=true
@@ -91,6 +92,7 @@ function QuestSystem:InstallQuestSystem()
         -- Initalize syncher
         EndJob(tributeJingleTriggerId);
         MPSync:Install();
+        Bugfixes:Install();
         self.BriefingFinishedScriptEvent = MPSync:CreateScriptEvent(function(_ID)
             -- Register briefing end
             QuestSystem.Briefings[_ID] = true;
