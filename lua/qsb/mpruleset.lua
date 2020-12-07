@@ -192,9 +192,7 @@ MPRuleset = {
             Identifier  = "Main",
             Parent      = nil,
             OnClose     = function()
-                if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
-                    MPSync:SnchronizedCall(MPRuleset.EventApplyRules, OptionMenu:GetCurrentPage());
-                end
+                MPRuleset:RuleChangeSubmit(OptionMenu:GetCurrentPage());
             end,
             Title       = {
                 de = "Regeleinstellungen", en = "Rule settings"
@@ -208,27 +206,22 @@ MPRuleset = {
             Options     = {
                 {Text   = {de = "Rohstoffe", en = "Resources"},
                  Target = function()
-                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
                     return "Rule_Resources";
                  end},
                 {Text   = {de = "Zähler", en = "Counters"},
                  Target = function()
-                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
                     return "Rule_Timers";
                  end},
                 {Text   = {de = "Gebote", en = "Commandments"},
                  Target = function()
-                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
                     return "Rule_Commandments";
                  end},
                 {Text   = {de = "Beschränkungen", en = "Limits"},
                  Target = function()
-                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
                     return "Rule_Limits";
                  end},
                 {Text   = {de = "Helden", en = "Heroes"},
                  Target = function()
-                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
                     return "Rule_Heroes";
                  end},
             }
@@ -241,24 +234,15 @@ MPRuleset = {
             Title       = {
                 de = "Rohstoffe", en = "Resources"
             },
-            Description = function()
-                local Text = {
-                    de = "Wählt Startrohstoffe und Haufengröße aus.",
-                    en = "Choose start resources and heap size.",
-                }
-                return string.format(
-                    Text[OptionMenu:GetLanguage()],
-                    (MPRuleset_Rules.Resources.Choosen == 2 and ((OptionMenu:GetLanguage() == "de" and "viel") or "plenty") or
-                     MPRuleset_Rules.Resources.Choosen == 3 and ((OptionMenu:GetLanguage() == "de" and "absurd") or "insane") or
-                     "normal"),
-                    MPRuleset_Rules.Resources.ResourceHeapSize
-                );
-            end,
+            Description = {
+                de = "Wählt Startrohstoffe und Haufengröße aus.",
+                en = "Choose start resources and heap size.",
+            },
             Options     = {
                 {Text   = function()
-                    return ((OptionMenu:GetLanguage() == "de" and "Rohstoffe: ") or "Resources: ") ..
-                           (MPRuleset_Rules.Resources.Choosen == 2 and ((OptionMenu:GetLanguage() == "de" and "{yellow}viel") or "{yellow}plenty") or
-                            MPRuleset_Rules.Resources.Choosen == 3 and ((OptionMenu:GetLanguage() == "de" and "{orange}absurd") or "{orange}insane") or
+                    return ((QuestSystem:GetLanguage() == "de" and "Rohstoffe: ") or "Resources: ") ..
+                           (MPRuleset_Rules.Resources.Choosen == 2 and ((QuestSystem:GetLanguage() == "de" and "{yellow}viel") or "{yellow}plenty") or
+                            MPRuleset_Rules.Resources.Choosen == 3 and ((QuestSystem:GetLanguage() == "de" and "{orange}absurd") or "{orange}insane") or
                             "{grey}normal") .. "{white}";
                  end,
                  Target = function()
@@ -266,7 +250,7 @@ MPRuleset = {
                     return "Rule_Resources";
                  end},
                 {Text   = function()
-                    return ((OptionMenu:GetLanguage() == "de" and "Haufengröße:{grey}") or "Heap size:{grey}") ..
+                    return ((QuestSystem:GetLanguage() == "de" and "Haufengröße:{grey}") or "Heap size:{grey}") ..
                            (MPRuleset_Rules.Resources.ResourceHeapSize.. "{white}");
                  end,
                  Target = function()
@@ -289,7 +273,7 @@ MPRuleset = {
             },
             Options     = {
                 {Text   = function()
-                    return ((OptionMenu:GetLanguage() == "de" and "Friedenszeit: ") or "Peacetime: ") ..
+                    return ((QuestSystem:GetLanguage() == "de" and "Friedenszeit: ") or "Peacetime: ") ..
                            ((MPRuleset_Rules.Timer.Peacetime == 0 and "-") or MPRuleset_Rules.Timer.Peacetime .. " min");
                  end,
                  Target = function()
@@ -297,7 +281,7 @@ MPRuleset = {
                     return "Rule_Timers";
                  end},
                 {Text   = function()
-                    return ((OptionMenu:GetLanguage() == "de" and "Todesstrafe: ") or "Death penalty: ") ..
+                    return ((QuestSystem:GetLanguage() == "de" and "Todesstrafe: ") or "Death penalty: ") ..
                            ((MPRuleset_Rules.Timer.DeathPenalty == 0 and "-") or MPRuleset_Rules.Timer.DeathPenalty .. " min");
                  end,
                  Target = function()
@@ -321,7 +305,7 @@ MPRuleset = {
             Options     = {
                 {Text   = function()
                     return ((MPRuleset_Rules.Commandment.CrushBuilding == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Abrissfix") or "Demolish fix") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Abrissfix") or "Demolish fix") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeToggleRule("Commandment", "CrushBuilding", 1);
@@ -329,7 +313,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Commandment.Formaition == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Formationsfix") or "Formation fix") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Formationsfix") or "Formation fix") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeToggleRule("Commandment", "Formaition", 1);
@@ -337,7 +321,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Commandment.AssociateVillages == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Dorfzentren binden") or "Bind villages") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Dorfzentren binden") or "Bind villages") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeToggleRule("Commandment", "AssociateVillages", 1);
@@ -345,7 +329,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Commandment.HQRushBlock == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Anti-Rush") or "Anti rush") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Anti-Rush") or "Anti rush") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeToggleRule("Commandment", "HQRushBlock", 1);
@@ -353,7 +337,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Commandment.InvincibleBridges == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Brücken unzerstörbar") or "Indescrutable bridges") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Brücken unzerstörbar") or "Indescrutable bridges") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeToggleRule("Commandment", "InvincibleBridges", 1);
@@ -361,7 +345,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Commandment.Workplace == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Arbeiterzahl ändern") or "Change worker amount") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Arbeiterzahl ändern") or "Change worker amount") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeToggleRule("Commandment", "Workplace", 1);
@@ -369,7 +353,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Commandment.WeatherChangeDelay == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Wetterwechsellimit") or "Weather change limit") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Wetterwechsellimit") or "Weather change limit") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeToggleRule("Commandment", "WeatherChangeDelay", 5 * 60);
@@ -377,7 +361,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Commandment.BlessDelay == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Segenlimit") or "Bless limit") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Segenlimit") or "Bless limit") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeToggleRule("Commandment", "BlessDelay", 90);
@@ -402,22 +386,18 @@ MPRuleset = {
             Options     = {
                 {Text   = {de = "Gebäude", en = "Buildings"},
                  Target = function()
-                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
                     return "Rule_Limits_Buildings"
                  end},
                 {Text   = {de = "Kanonen", en = "Cannons"},
                  Target = function()
-                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
                     return "Rule_Limits_Cannons"
                  end},
                 {Text   = {de = "Militär", en = "Military"},
                  Target = function()
-                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
                     return "Rule_Limits_Units"
                  end},
                 {Text   = {de = "Spezial", en = "Special"},
                   Target = function()
-                    MPSync:SnchronizedCall(MPRuleset.EventRenderWindow);
                     return "Rule_Limits_Special"
                  end},
             }
@@ -435,7 +415,7 @@ MPRuleset = {
             Options     = {
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Market ~= 0 and "{green}") or "{red}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Lagerhäuser") or "Warehouses") ..
+                           ((QuestSystem:GetLanguage() == "de" and "Lagerhäuser") or "Warehouses") ..
                            ((MPRuleset_Rules.Limits.Market > 0 and "{white}(" ..MPRuleset_Rules.Limits.Market.. "/3)") or "{white}");
                  end,
                  Target = function()
@@ -444,7 +424,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Tower ~= 0 and "{green}") or "{red}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Türme") or "Towers") ..
+                           ((QuestSystem:GetLanguage() == "de" and "Türme") or "Towers") ..
                            ((MPRuleset_Rules.Limits.Tower > 0 and "{white}(" ..MPRuleset_Rules.Limits.Tower.. "/10)") or "{white}");
                  end,
                  Target = function()
@@ -453,7 +433,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.University ~= 0 and "{green}") or "{red}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Schulen") or "Collages") ..
+                           ((QuestSystem:GetLanguage() == "de" and "Schulen") or "Collages") ..
                            ((MPRuleset_Rules.Limits.University > 0 and "{white}(" ..MPRuleset_Rules.Limits.University.. "/5)") or "{white}");
                  end,
                  Target = function()
@@ -462,7 +442,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Village ~= 0 and "{green}") or "{red}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Dorfzentren") or "Villages") ..
+                           ((QuestSystem:GetLanguage() == "de" and "Dorfzentren") or "Villages") ..
                            ((MPRuleset_Rules.Limits.Village > 0 and "{white}(" ..MPRuleset_Rules.Limits.Village.. "/5)") or "{white}");
                  end,
                  Target = function()
@@ -484,7 +464,7 @@ MPRuleset = {
             Options     = {
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Cannon1 == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Bombarde") or "Bombard") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Bombarde") or "Bombard") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "Cannon1", -1, -1, 0);
@@ -492,7 +472,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Cannon2 == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Bronzekanone") or "Bronze cannon") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Bronzekanone") or "Bronze cannon") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "Cannon2", -1, -1, 0);
@@ -500,7 +480,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Cannon3 == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Eisenkanone") or "Iron cannon") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Eisenkanone") or "Iron cannon") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "Cannon3", -1, -1, 0);
@@ -508,7 +488,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Cannon4 == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Belagerungskanone") or "Siege cannon") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Belagerungskanone") or "Siege cannon") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "Cannon4", -1, -1, 0);
@@ -529,7 +509,7 @@ MPRuleset = {
             Options     = {
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Bow == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Bogenschützen") or "Archer") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Bogenschützen") or "Archer") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "Bow", -1, -1, 0);
@@ -537,7 +517,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.LightCavalry == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Leichte Kavalerie") or "Light Cavalry") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Leichte Kavalerie") or "Light Cavalry") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "LightCavalry", -1, -1, 0);
@@ -545,7 +525,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.HeavyCavalry == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Schwere Kavalerie") or "Heavy Cavalry") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Schwere Kavalerie") or "Heavy Cavalry") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "HeavyCavalry", -1, -1, 0);
@@ -553,7 +533,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Rifle == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Scharfschützen") or "Marksmen") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Scharfschützen") or "Marksmen") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "Rifle", -1, -1, 0);
@@ -561,7 +541,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Spear == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Speerträger") or "Spearmen") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Speerträger") or "Spearmen") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "Spear", -1, -1, 0);
@@ -569,7 +549,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Sword == 0 and "{red}") or "{green}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Schwertkämpfer") or "Swordsmen") .. "{white}";
+                           ((QuestSystem:GetLanguage() == "de" and "Schwertkämpfer") or "Swordsmen") .. "{white}";
                  end,
                  Target = function()
                     MPRuleset:RuleChangeAlterValue("Limits", "Sword", -1, -1, 0);
@@ -590,7 +570,7 @@ MPRuleset = {
             Options     = {
                 {Text   = function()
                      return ((MPRuleset_Rules.Limits.Hero == 0 and "{red}") or "{green}") ..
-                            ((OptionMenu:GetLanguage() == "de" and "Helden") or "Heroes") ..
+                            ((QuestSystem:GetLanguage() == "de" and "Helden") or "Heroes") ..
                             ((MPRuleset_Rules.Limits.Hero > 0 and "{white}(" ..MPRuleset_Rules.Limits.Hero.. "/6)") or "{white}");
                  end,
                  Target = function()
@@ -599,7 +579,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Thief ~= 0 and "{green}") or "{red}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Diebe") or "Thieves") ..
+                           ((QuestSystem:GetLanguage() == "de" and "Diebe") or "Thieves") ..
                            ((MPRuleset_Rules.Limits.Thief > 0 and "{white}(" ..MPRuleset_Rules.Limits.Thief.. "/10)") or "{white}");
                  end,
                  Target = function()
@@ -608,7 +588,7 @@ MPRuleset = {
                  end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Limits.Scout ~= 0 and "{green}") or "{red}") ..
-                           ((OptionMenu:GetLanguage() == "de" and "Kundschafter") or "Scouts") ..
+                           ((QuestSystem:GetLanguage() == "de" and "Kundschafter") or "Scouts") ..
                            ((MPRuleset_Rules.Limits.Scout > 0 and "{white}(" ..MPRuleset_Rules.Limits.Scout.. "/10)") or "{white}");
                  end,
                  Target = function()
@@ -802,8 +782,8 @@ MPRuleset = {
 function MPRuleset:Install()
     -- No MP?
     if not MPSync:IsMultiplayerGame() then
-        GUI.AddStaticNote("Map is running in Singleplayer! Ruleset has ben deactivated!");
-        return;
+        --GUI.AddStaticNote("Map is running in Singleplayer! Ruleset has ben deactivated!");
+        --return;
     end
     -- Using EMS?
     if self:IsUsingEMS() then
@@ -819,7 +799,6 @@ function MPRuleset:Install()
     self:OverrideUIStuff();
     if MPRuleset_Rules.Changeable then
         self.Data.RuleSelectionActive = true;
-        self:RuleChangeInit();
         ShowOptionMenu(self.Menu);
         return;
     end
@@ -833,7 +812,7 @@ function MPRuleset:ConfigurationFinished()
     end
     self.Data.GameStartOffset = math.floor(Logic.GetTime() + 0.5);
     
-    Message(ReplacePlacholders(self.Text.Messages.RulesDefined[OptionMenu:GetLanguage()]));
+    Message(ReplacePlacholders(self.Text.Messages.RulesDefined[QuestSystem:GetLanguage()]));
 
     self:SetupDiplomacyForPeacetime();
     self:FillResourceHeaps(MPRuleset_Rules);
@@ -1197,9 +1176,9 @@ function MPRuleset:CreateQuests(_Data)
             };
         else
             self:SetupDiplomacy();
-            Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[OptionMenu:GetLanguage()]));
+            Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[QuestSystem:GetLanguage()]));
             if _Data.Timer.DeathPenalty > 0 then
-                Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[OptionMenu:GetLanguage()]));
+                Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[QuestSystem:GetLanguage()]));
             end
             Sound.PlayGUISound(Sounds.OnKlick_Select_kerberos, 127);
             MPRuleset_Rules.Callbacks.OnPeacetimeOver();
@@ -1244,32 +1223,27 @@ end
 
 -- -------------------------------------------------------------------------- --
 
-function MPRuleset:RuleChangeInit()
-    -- Apply rules
-    self.EventApplyRules = MPSync:CreateScriptEvent(function(_Current)
+function MPRuleset:RuleChangeSubmit(_Current)
+    if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
         MPRuleset.Data.RuleSelectionActive = false;
         OptionMenu:SetCurrentPage(_Current);
         OptionMenu:Render();
         MPRuleset:ConfigurationFinished();
-    end);
+    end
+end
 
-    -- Render window
-    self.EventRenderWindow = MPSync:CreateScriptEvent(function(_Current)
-        OptionMenu:SetCurrentPage(_Current);
-        OptionMenu:Render();
-    end);
-
-    -- Allow/Forbid value
-    self.EventToggleValue = MPSync:CreateScriptEvent(function(_Group, _Subject, _Value)
+function MPRuleset:RuleChangeToggleRule(_Group, _Subject, _Value)
+    if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
         if MPRuleset_Rules[_Group] then
             if MPRuleset_Rules[_Group][_Subject] then
                 MPRuleset_Rules[_Group][_Subject] = (MPRuleset_Rules[_Group][_Subject] == _Value and 0) or _Value;
             end
         end
-    end);
+    end
+end
 
-    -- Increase/Decrease value
-    self.EventChangeValue = MPSync:CreateScriptEvent(function(_Group, _Subject, _Value, _Min, _Max)
+function MPRuleset:RuleChangeAlterValue(_Group, _Subject, _Value, _Min, _Max)
+    if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
         _Min = _Min or 0;
         _Max = _Max or 1000000;
         if MPRuleset_Rules[_Group] then
@@ -1283,21 +1257,7 @@ function MPRuleset:RuleChangeInit()
                 end
             end
         end
-    end);
-end
-
-function MPRuleset:RuleChangeToggleRule(_Group, _Subject, _Value)
-    if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
-        MPSync:SnchronizedCall(self.EventToggleValue, _Group, _Subject, _Value);
     end
-    MPSync:SnchronizedCall(self.EventRenderWindow, OptionMenu:GetCurrentPage());
-end
-
-function MPRuleset:RuleChangeAlterValue(_Group, _Subject, _Value, _Min, _Max)
-    if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
-        MPSync:SnchronizedCall(self.EventChangeValue, _Group, _Subject, _Value, _Min, _Max);
-    end
-    MPSync:SnchronizedCall(self.EventRenderWindow, OptionMenu:GetCurrentPage());
 end
 
 -- -------------------------------------------------------------------------- --

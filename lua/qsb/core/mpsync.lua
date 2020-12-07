@@ -24,7 +24,7 @@ MPSync = {
     Transactions = {},
     TransactionParameter = {},
     UniqueActionCounter = 1,
-    UniqueTributeCounter = 100000,
+    UniqueTributeCounter = 999,
 };
 
 ---

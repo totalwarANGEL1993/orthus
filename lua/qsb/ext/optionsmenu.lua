@@ -28,6 +28,7 @@ function ShowOptionMenu(_Data)
     assert(table.getn(_Data) > 0);
     assert(_Data[1].Parent == nil);
     OptionMenu:Clear();
+    OptionMenu:SetControllingPlayerID(_Data.PlayerID);
     for i= 1, table.getn(_Data), 1 do
         OptionMenu:AddPage(_Data[i]);
     end
@@ -62,6 +63,8 @@ OptionMenu = {
         CurrentPage = nil,
         Active = false,
     },
+
+    Events = {},
 
     Texts = {
         Back = {
@@ -100,16 +103,17 @@ OptionMenu = {
 -- @within OptionMenu
 --
 function OptionMenu:Install()
+    self:CreateScriptEvents();
     self:OverrideGroupSelection();
 end
 
----
--- Displays the prepared option window entering on the given page.
--- @within OptionMenu
---
-function OptionMenu:GetLanguage()
-    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-    return Language;
+function OptionMenu:CreateScriptEvents()
+    self.Events.OptionConfirmed = MPSync:CreateScriptEvent(function(_Count, _PlayerID, _ControllingPlayerID)
+        if _ControllingPlayerID and _ControllingPlayerID ~= _PlayerID then
+            return;
+        end
+        OptionMenu:OnOptionSelected(_Count);
+    end);
 end
 
 ---
@@ -120,6 +124,16 @@ function OptionMenu:Show(_StartPage)
     self.Menu.Active = true;
     self.Menu.CurrentPage = _StartPage;
     self:Render();
+end
+
+---
+-- Sets the controlling player ID of the option window. The player ID is only
+-- checked in Multiplayer.
+-- @return[type=number] _PlayerID ID of controlling player
+-- @within OptionMenu
+--
+function OptionMenu:SetControllingPlayerID(_PlayerID)
+    self.Menu.ControllingPlayer = _PlayerID;
 end
 
 ---
@@ -165,6 +179,7 @@ end
 function OptionMenu:Clear()
     self.Menu.Pages = {};
     self.Menu.CurrentPage = nil;
+    self.Menu.ControllingPlayer = nil;
 end
 
 ---
@@ -204,7 +219,12 @@ function OptionMenu:OverrideGroupSelection()
                 GroupSelection_SelectTroops_Orig_OptionMenu(_Count);
                 return;
             end
-            self:OnOptionSelected(_Count);
+            MPSync:SnchronizedCall(
+                OptionMenu.Events.OptionConfirmed,
+                _Count,
+                GUI.GetPlayerID(),
+                OptionMenu.Menu.ControllingPlayer
+            );
         end
     end
 end
