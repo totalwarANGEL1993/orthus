@@ -26,8 +26,6 @@
 MPRuleset = {
     Data = {
         GameStartOffset = 0,
-        WeatherChangeTimestamp = 0,
-        BlessTimestamp = {},
         RuleSelectionActive = false,
 
         Technologies = {
@@ -195,7 +193,7 @@ MPRuleset = {
             Parent      = nil,
             OnClose     = function()
                 if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
-                    MPSync:SnchronizedCall(MPRuleset.EventApplyRules);
+                    MPSync:SnchronizedCall(MPRuleset.EventApplyRules, OptionMenu:GetCurrentPage());
                 end
             end,
             Title       = {
@@ -374,7 +372,7 @@ MPRuleset = {
                            ((OptionMenu:GetLanguage() == "de" and "Wetterwechsellimit") or "Weather change limit") .. "{white}";
                  end,
                  Target = function()
-                    MPRuleset:RuleChangeToggleRule("Commandment", "WeatherChangeDelay", 5);
+                    MPRuleset:RuleChangeToggleRule("Commandment", "WeatherChangeDelay", 5 * 60);
                     return "Rule_Commandments";
                  end},
                 {Text   = function()
@@ -382,7 +380,7 @@ MPRuleset = {
                            ((OptionMenu:GetLanguage() == "de" and "Segenlimit") or "Bless limit") .. "{white}";
                  end,
                  Target = function()
-                    MPRuleset:RuleChangeToggleRule("Commandment", "BlessDelay", 3);
+                    MPRuleset:RuleChangeToggleRule("Commandment", "BlessDelay", 90);
                     return "Rule_Commandments";
                  end},
             }
@@ -796,11 +794,16 @@ MPRuleset = {
     },
 };
 
+---
+-- Installs the module.
+-- @within MPRuleset
+-- @local
+--
 function MPRuleset:Install()
     -- No MP?
     if not MPSync:IsMultiplayerGame() then
-        -- GUI.AddStaticNote("Map is running in Singleplayer! Ruleset has ben deactivated!");
-        -- return;
+        GUI.AddStaticNote("Map is running in Singleplayer! Ruleset has ben deactivated!");
+        return;
     end
     -- Using EMS?
     if self:IsUsingEMS() then
@@ -833,13 +836,19 @@ function MPRuleset:ConfigurationFinished()
     Message(ReplacePlacholders(self.Text.Messages.RulesDefined[OptionMenu:GetLanguage()]));
 
     self:SetupDiplomacyForPeacetime();
-    self:CreateEvents();
     self:FillResourceHeaps(MPRuleset_Rules);
     self:CreateQuests(MPRuleset_Rules);
     self:GiveResources(MPRuleset_Rules);
     self:ForbidTechnologies(MPRuleset_Rules);
     self:ActivateLogicEventJobs();
     self:AddExtraStuff();
+
+    ActivateCrushBuildingBugfix(MPRuleset_Rules.Commandment.CrushBuilding == 1);
+    ActivateFormationBugfix(MPRuleset_Rules.Commandment.Formaition == 1);
+    ActivateBlessLimitBugfix(MPRuleset_Rules.Commandment.BlessDelay > 0);
+    SetBlessDelay(MPRuleset_Rules.Commandment.BlessDelay * 60);
+    ActivateWeatherChangeLimitBugfix(MPRuleset_Rules.Commandment.WeatherChangeDelay > 0);
+    SetWeatherChangeDelay(MPRuleset_Rules.Commandment.WeatherChangeDelay * 0);
     if QuestSystem.Workplace then
         QuestSystem.Workplace:EnableMod(MPRuleset_Rules.Commandment.Workplace == 1);
     end
@@ -849,15 +858,6 @@ end
 
 function MPRuleset:IsUsingEMS()
     return EMS ~= nil;
-end
-
-function MPRuleset:CreateEvents()
-    self.Data.ScriptEventWeatherChange = MPSync:CreateScriptEvent(function()
-        MPRuleset.Data.WeatherChangeTimestamp = Logic.GetTime();
-    end);
-    self.Data.ScriptEventBless = MPSync:CreateScriptEvent(function(_PlayerID)
-        MPRuleset.Data.BlessTimestamp[_PlayerID] = Logic.GetTime();
-    end);
 end
 
 function MPRuleset:AddExtraStuff()
@@ -891,37 +891,6 @@ function MPRuleset:OverrideUIStuff()
         BuyHeroWindow_Update_BuyHero_Orig_QSB_MPRuleset(_Type);
     end
 
-    GUIAction_ToDestroyBuildingWindow_Orig_QSB_MPRuleset = GUIAction_ToDestroyBuildingWindow;
-    GUIAction_ToDestroyBuildingWindow = function()
-        -- Crush building fix
-        if MPRuleset_Rules.Commandment.CrushBuilding == 1 then
-            local BuildingID = GUI.GetSelectedEntity();
-            if IsExisting(BuildingID) then
-                GUI.DeselectEntity(BuildingID);
-                GUI.SellBuilding(BuildingID);
-            end
-            return;
-        end
-        GUIAction_ToDestroyBuildingWindow_Orig_QSB_MPRuleset();
-    end
-
-    GUIUpdate_BuildingButtons_Orig_QSB_MPRuleset = GUIUpdate_BuildingButtons;
-    GUIUpdate_BuildingButtons = function(_Button, _Technology)
-        -- Formation fix
-        if string.find(_Button, "Formation0") and MPRuleset_Rules.Commandment.Formaition == 1 then
-            local PlayerID = GUI.GetPlayerID();
-            local WidgetID = XGUIEng.GetCurrentWidgetID();
-            XGUIEng.ShowWidget(_Button, 1);
-            if Logic.IsTechnologyResearched(PlayerID, Technologies.GT_StandingArmy) == 1 then
-                XGUIEng.DisableButton(WidgetID, 0);
-            else
-                XGUIEng.DisableButton(WidgetID, 1);
-            end
-        else
-            GUIUpdate_BuildingButtons_Orig_QSB_MPRuleset(_Button, _Technology);
-        end
-    end
-
     GameCallback_GUI_SelectionChanged_Orig_QSB_MPRuleset = GameCallback_GUI_SelectionChanged;
     GameCallback_GUI_SelectionChanged = function()
         GameCallback_GUI_SelectionChanged_Orig_QSB_MPRuleset();
@@ -930,77 +899,6 @@ function MPRuleset:OverrideUIStuff()
             for k, v in pairs{GUI.GetSelectedEntities()} do
                 GUI.DeselectEntity(v);
             end
-        end
-        -- Formation fix
-        if MPRuleset_Rules.Commandment.Formaition == 1 then
-            local EntityID = GUI.GetSelectedEntity();
-            if IsExisting(EntityID) and Logic.IsLeader(EntityID) == 1
-            and Logic.LeaderGetMaxNumberOfSoldiers(EntityID) > 0 then
-                local TypeID = Logic.GetEntityType(EntityID);
-                local TypeName = Logic.GetEntityTypeName(TypeID);
-                if string.find(TypeName, "Scout") or string.find(TypeName, "Scout") 
-                or string.find(TypeName, "Thief") then
-                    for i= 1, 4, 1 do
-                        XGUIEng.ShowWidget("Formation0" ..i, 0);
-                    end
-                else
-                    for i= 1, 4, 1 do
-                        XGUIEng.ShowWidget("Formation0" ..i, 1);
-                    end
-                end
-            end
-        end
-    end
-
-    GUIAction_ChangeWeather = function(_Weathertype)
-        local Waittime = MPRuleset_Rules.Commandment.WeatherChangeDelay * 60;
-        if Waittime > 0 then
-            local LastUsed = MPRuleset.Data.WeatherChangeTimestamp;
-            if LastUsed > 0 and Logic.GetTime() < (LastUsed + Waittime) then
-                GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_WeathermashineNotReady"));
-                return;
-            end
-        end
-
-        if Logic.IsWeatherChangeActive() == true then
-            GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/Note_WeatherIsCurrentlyChanging"));	
-            return;
-        end
-        local PlayerID = GUI.GetPlayerID();
-        local CurrentWeatherEnergy = Logic.GetPlayersGlobalResource( PlayerID, ResourceType.WeatherEnergy );
-        local NeededWeatherEnergy = Logic.GetEnergyRequiredForWeatherChange();
-        if CurrentWeatherEnergy >= NeededWeatherEnergy then		
-            GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_WeathermashineActivated"));
-            GUI.SetWeather(_weathertype);
-            MPSync:SnchronizedCall(self.Data.ScriptEventWeatherChange);
-        else
-            GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_WeathermashineNotReady"));
-        end
-    end
-
-    GUIAction_BlessSettlers = function(_BlessCategory)
-        local PlayerID = GUI.GetPlayerID();
-        local Waittime = MPRuleset_Rules.Commandment.BlessDelay * 60;
-        local LastUsed = MPRuleset.Data.BlessTimestamp[PlayerID] or 0;
-        if Waittime > 0 then
-            if LastUsed > 0 and Logic.GetTime() < (LastUsed + Waittime) then
-                GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_NotEnoughFaith"));
-                Sound.PlayFeedbackSound(Sounds.VoicesMentor_INFO_MonksNeedMoreTime_rnd_01, 0);
-                return;
-            end
-        end
-
-        if InterfaceTool_IsBuildingDoingSomething(GUI.GetSelectedEntity()) == true then		
-            return;
-        end
-        local CurrentFaith = Logic.GetPlayersGlobalResource(PlayerID, ResourceType.Faith);
-        local BlessCosts = Logic.GetBlessCostByBlessCategory(_BlessCategory);
-        if BlessCosts <= CurrentFaith then
-            GUI.BlessByBlessCategory(_BlessCategory);
-            MPSync:SnchronizedCall(self.Data.ScriptEventBless, PlayerID);
-        else	
-            GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_NotEnoughFaith"));
-            Sound.PlayFeedbackSound(Sounds.VoicesMentor_INFO_MonksNeedMoreTime_rnd_01, 0);
         end
     end
 end
@@ -1348,13 +1246,16 @@ end
 
 function MPRuleset:RuleChangeInit()
     -- Apply rules
-    self.EventApplyRules = MPSync:CreateScriptEvent(function()
+    self.EventApplyRules = MPSync:CreateScriptEvent(function(_Current)
         MPRuleset.Data.RuleSelectionActive = false;
+        OptionMenu:SetCurrentPage(_Current);
+        OptionMenu:Render();
         MPRuleset:ConfigurationFinished();
     end);
 
     -- Render window
-    self.EventRenderWindow = MPSync:CreateScriptEvent(function()
+    self.EventRenderWindow = MPSync:CreateScriptEvent(function(_Current)
+        OptionMenu:SetCurrentPage(_Current);
         OptionMenu:Render();
     end);
 
@@ -1365,7 +1266,6 @@ function MPRuleset:RuleChangeInit()
                 MPRuleset_Rules[_Group][_Subject] = (MPRuleset_Rules[_Group][_Subject] == _Value and 0) or _Value;
             end
         end
-        OptionMenu:Render();
     end);
 
     -- Increase/Decrease value
@@ -1383,7 +1283,6 @@ function MPRuleset:RuleChangeInit()
                 end
             end
         end
-        OptionMenu:Render();
     end);
 end
 
@@ -1391,12 +1290,14 @@ function MPRuleset:RuleChangeToggleRule(_Group, _Subject, _Value)
     if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
         MPSync:SnchronizedCall(self.EventToggleValue, _Group, _Subject, _Value);
     end
+    MPSync:SnchronizedCall(self.EventRenderWindow, OptionMenu:GetCurrentPage());
 end
 
 function MPRuleset:RuleChangeAlterValue(_Group, _Subject, _Value, _Min, _Max)
     if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
         MPSync:SnchronizedCall(self.EventChangeValue, _Group, _Subject, _Value, _Min, _Max);
     end
+    MPSync:SnchronizedCall(self.EventRenderWindow, OptionMenu:GetCurrentPage());
 end
 
 -- -------------------------------------------------------------------------- --
@@ -1479,12 +1380,12 @@ MPRuleset_Default = {
         -- Control worker amount in workplaces (0 = off)
         Workplace           = 1,
 
-        -- Minutes the weather can not be changed again after a change was
+        -- Seconds the weather can not be changed again after a change was
         -- triggered by the weather tower. (0 = off)
-        WeatherChangeDelay  = 5,
+        WeatherChangeDelay  = 5 * 60,
 
-        -- Minutes a player must wait between two blesses. (0 = off)
-        BlessDelay          = 3,
+        -- Seconds a player must wait between two blesses. (0 = off)
+        BlessDelay          = 90,
     },
 
     Limits = {
