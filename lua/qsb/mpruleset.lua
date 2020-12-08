@@ -198,10 +198,10 @@ MPRuleset = {
                 de = "Regeleinstellungen", en = "Rule settings"
             },
             Description = {
-                de = "Bitte wählt in den folgenden Kategorien die Regeln aus."..
-                     " Wenn Ihr fertig seid, bestätigt und das Spiel beginnt.",
-                en = "Please select the rules for this game. After you have"..
-                     " finished confirm your settings and the game starts."
+                de = "Wählt in den Kategorien die Regeln aus. Bestätigt, um"..
+                     " das Spiel zu beginnen.",
+                en = "Select the rules for this game. Confirm your settings"..
+                     " once you have finished."
             },
             Options     = {
                 {Text   = {de = "Rohstoffe", en = "Resources"},
@@ -212,10 +212,6 @@ MPRuleset = {
                  Target = function()
                     return "Rule_Timers";
                  end},
-                {Text   = {de = "Gebote", en = "Commandments"},
-                 Target = function()
-                    return "Rule_Commandments";
-                 end},
                 {Text   = {de = "Beschränkungen", en = "Limits"},
                  Target = function()
                     return "Rule_Limits";
@@ -223,6 +219,14 @@ MPRuleset = {
                 {Text   = {de = "Helden", en = "Heroes"},
                  Target = function()
                     return "Rule_Heroes";
+                 end},
+                {Text   = {de = "Dekrete", en = "Commandments"},
+                 Target = function()
+                    return "Rule_Commandments";
+                 end},
+                {Text   = {de = "Fehlerbehebung", en = "Bug Fixes"},
+                 Target = function()
+                     return "Rule_Fixes";
                  end},
             }
         },
@@ -291,6 +295,45 @@ MPRuleset = {
             }
         },
 
+        -- Fixes
+        {
+            Identifier  = "Rule_Fixes",
+            Parent      = "Main",
+            Title       = {
+                de = "Fehlerbehebung", en = "Bug Fixes"
+            },
+            Description = {
+                de = "Schaltet Patches für Fehler im Spiel hinzu oder deaktiviert sie.",
+                en = "Activat or deactivate serveral bugfixes to improve game experience.",
+            },
+            Options     = {
+                {Text   = function()
+                    return ((MPRuleset_Rules.Fixes.CrushBuilding == 0 and "{red}") or "{green}") ..
+                           ((QSBTools.GetLanguage() == "de" and "Abrissfix") or "Demolish fix") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Fixes", "CrushBuilding", 1);
+                    return "Rule_Fixes";
+                 end},
+                {Text   = function()
+                    return ((MPRuleset_Rules.Fixes.Formaition == 0 and "{red}") or "{green}") ..
+                           ((QSBTools.GetLanguage() == "de" and "Formationsfix") or "Formation fix") .. "{white}";
+                 end,
+                 Target = function()
+                    MPRuleset:RuleChangeToggleRule("Fixes", "Formaition", 1);
+                    return "Rule_Fixes";
+                 end},
+                {Text   = function()
+                     return ((MPRuleset_Rules.Fixes.FindView == 0 and "{red}") or "{green}") ..
+                            ((QSBTools.GetLanguage() == "de" and "Einheiten finden Fix") or "Find button fix") .. "{white}";
+                 end,
+                 Target = function()
+                     MPRuleset:RuleChangeToggleRule("Fixes", "FindView", 1);
+                     return "Rule_Fixes";
+                 end},
+            }
+        },
+
         -- Commandments
         {
             Identifier  = "Rule_Commandments",
@@ -299,26 +342,10 @@ MPRuleset = {
                 de = "Gebote", en = "Commandments"
             },
             Description = {
-                de = "Wählt spezielle Gebote für dieses Spiel aus.",
+                de = "Wählt spezielle Dekrete für dieses Spiel aus.",
                 en = "Choos special commandments for this game.",
             },
             Options     = {
-                {Text   = function()
-                    return ((MPRuleset_Rules.Commandment.CrushBuilding == 0 and "{red}") or "{green}") ..
-                           ((QSBTools.GetLanguage() == "de" and "Abrissfix") or "Demolish fix") .. "{white}";
-                 end,
-                 Target = function()
-                    MPRuleset:RuleChangeToggleRule("Commandment", "CrushBuilding", 1);
-                    return "Rule_Commandments";
-                 end},
-                {Text   = function()
-                    return ((MPRuleset_Rules.Commandment.Formaition == 0 and "{red}") or "{green}") ..
-                           ((QSBTools.GetLanguage() == "de" and "Formationsfix") or "Formation fix") .. "{white}";
-                 end,
-                 Target = function()
-                    MPRuleset:RuleChangeToggleRule("Commandment", "Formaition", 1);
-                    return "Rule_Commandments";
-                 end},
                 {Text   = function()
                     return ((MPRuleset_Rules.Commandment.AssociateVillages == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Dorfzentren binden") or "Bind villages") .. "{white}";
@@ -822,8 +849,9 @@ function MPRuleset:ConfigurationFinished()
     self:ActivateLogicEventJobs();
     self:AddExtraStuff();
 
-    ActivateCrushBuildingBugfix(MPRuleset_Rules.Commandment.CrushBuilding == 1);
-    ActivateFormationBugfix(MPRuleset_Rules.Commandment.Formaition == 1);
+    ActivateCrushBuildingBugfix(MPRuleset_Rules.Fixes.CrushBuilding == 1);
+    ActivateFormationBugfix(MPRuleset_Rules.Fixes.Formaition == 1);
+    ActivateFindViewBugfix(MPRuleset_Rules.Fixes.FindView == 1);
     ActivateBlessLimitBugfix(MPRuleset_Rules.Commandment.BlessDelay > 0);
     SetBlessDelay(MPRuleset_Rules.Commandment.BlessDelay);
     ActivateWeatherChangeLimitBugfix(MPRuleset_Rules.Commandment.WeatherChangeDelay > 0);
@@ -1313,7 +1341,7 @@ MPRuleset_Default = {
         DeathPenalty        = 0,
     },
 
-    Commandment = {
+    Fixes = {
         -- Crush building glitch fixed. Buildings will deselect the building
         -- and then destroy it right away without warning. (0 = off)
         CrushBuilding       = 1,
@@ -1322,6 +1350,14 @@ MPRuleset_Default = {
         -- Formations will only require GT_StandingArmy researched and not 
         -- GT_Tactics to also be allowed.
         Formaition          = 1,
+
+        -- Find View fix (0 = off)
+        -- Buttons in find view appear always for an unit type. Not maching
+        -- upgrade levels don't matter anymore.
+        FindView            = 1,
+    },
+
+    Commandment = {
 
         -- Associate village centers to players (0 = off)
         -- Give sequential names to village centers for each player. Players

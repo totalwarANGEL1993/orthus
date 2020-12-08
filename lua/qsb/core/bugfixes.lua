@@ -275,9 +275,13 @@ function Bugfixes:OverrideGUIUpdate()
     GUIUpdate_FindView = function()
         local PlayerID = GUI.GetPlayerID();
         local EntityID = GUI.GetSelectedEntity();
-
+        
         -- Find view fix
-        Bugfixes:UpdateFindViewButtons();
+        if not Bugfixes.UseFindViewFix then
+            GUIUpdate_FindView_Orig_QSB_Bugfix();
+        else
+            Bugfixes:UpdateFindViewButtons();
+        end
         -- Find View
         Bugfixes:UpdateFormationButtons();
         -- Bless limit
