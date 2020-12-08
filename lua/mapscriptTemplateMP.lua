@@ -1,72 +1,45 @@
--- ########################################################################## --
--- #  Map name: ???                                                         # --
--- #  --------------------------------------------------------------------  # --
--- #    Author:   ???                                                       # --
--- #    Version:  ???                                                       # --
--- ########################################################################## --
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
+-- ~~~                                                                    ~~~ --
+-- ~~~                                                                    ~~~ --
+-- ~~~                    MULTIPLAYER CONFIGURATION                       ~~~ --
+-- ~~~                                                                    ~~~ --
+-- ~~~                                                                    ~~~ --
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 
--- Include globals
-Script.Load("data/script/maptools/main.lua");
-Script.Load("data/script/maptools/ai/support.lua");
-Script.Load("data/script/maptools/multiplayer/multiplayertools.lua");
-Script.Load("data/script/maptools/tools.lua");
-Script.Load("data/script/maptools/weathersets.lua");
-Script.Load("data/script/maptools/comfort.lua");
-Script.Load("data/script/maptools/mapeditortools.lua");
-
--- Load QSB
 gvBasePath = "data/maps/externalmap/qsb/";
+Script.Load(gvBasePath.. "mploader.lua");
 
-Script.Load(gvBasePath.. "core/oop.lua");
-Script.Load(gvBasePath.. "core/mpsync.lua");
-Script.Load(gvBasePath.. "core/bugfixes.lua");
-Script.Load(gvBasePath.. "core/questsystem.lua");
-Script.Load(gvBasePath.. "core/questdebug.lua");
-
-Script.Load(gvBasePath.. "lib/libloader.lua");
-Script.Load(gvBasePath.. "ext/extraloader.lua");
-
-Script.Load(gvBasePath.. "mpruleset.lua");
-Script.Load(gvBasePath.. "questbehavior.lua");
-Script.Load(gvBasePath.. "treasure.lua");
-
--- Settings ----------------------------------------------------------------- --
-
-function GameCallback_OnGameStart()
-    -- Weather
-    SetupHighlandWeatherGfxSet();
-    AddPeriodicSummer(10);
-
-    -- Music 
-    LocalMusic.UseSet = HIGHLANDMUSIC;
-
-    -- Multiplayer stuff
-    MultiplayerTools.InitCameraPositionsForPlayers();	
-    MultiplayerTools.SetUpGameLogicOnMPGameConfig();
-    
-    -- Singleplayer
-    if not MPSync or not MPSync:IsMultiplayerGame() then
-		for i=1, 8, 1 do
-			MultiplayerTools.DeleteFastGameStuff(i);
-		end
-		local PlayerID = GUI.GetPlayerID();
-		Logic.PlayerSetIsHumanFlag(PlayerID, 1);
-        Logic.PlayerSetGameStateToPlaying(PlayerID);
-        Tools.GiveResouces(PlayerID, 1500, 1800, 1500, 500, 500, 250);
-    end
-
-    -- Load quest system
-    Score.Player[0] = {};
-	Score.Player[0]["buildings"] = 0;
-	Score.Player[0]["all"] = 0;
-    LoadQuestSystem();
-end
-
--- Ruleset ------------------------------------------------------------------ --
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
+-- ~~~                            Ruleset                                 ~~~ --
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 
 MPRuleset_Rules = {
+    --~~ Initalisation
+    --~~ Choose if rules should be changeable.
+    --~~ You can also call your scripts in the callback functions below.
+    
     -- Rules can be changed
     Changeable = true,
+
+    Callbacks = {
+        -- After the map has been loaded on all machines.
+        OnMapLoaded = function()
+        end,
+
+        -- After configuration has been loaded
+        OnMapConfigured = function()
+        end,
+
+        -- After peacetime ended (no peacetime means immediate execution after
+        -- configuration is loaded)
+        OnPeacetimeOver = function()
+        end,
+    },
+
+    --~~ Resources
+    --~~ Set the amount of starting resources for the three presets "normal",
+    --~~ "plenty" and "insane".
+    --~~ You can also define how much resources shoult be in the heaps.
 
     Resources = {
         -- Amount of resources in resource heaps
@@ -101,6 +74,15 @@ MPRuleset_Rules = {
         },
     },
 
+    --~~ Timers
+    --~~ Configure the timers for this game.
+    --~~ Peacetime means that players can not attack each other until the time
+    --~~ bar is full.
+    --~~ DeathPenalty is a timer that indicates how much time is left until
+    --~~ the objective must be reached. Per default the objectie is to kill
+    --~~ all members of different teams. But you can easily add more quests
+    --~~ that might add other objectives.
+
     Timer = {
         -- Peacetime in minutes (0 = off)
         Peacetime           = 20,
@@ -108,6 +90,10 @@ MPRuleset_Rules = {
         -- Minutes until everyone loses (0 = off)
         DeathPenalty        = 0,
     },
+
+    --~~ Commandment
+    --~~ The commandments are a list of special rules that you can choose to
+    --~~ activate or deacivate. They might make the game more enjoyable.
 
     Commandment = {
         -- Crush building glitch fixed. Buildings will deselect the building
@@ -144,6 +130,11 @@ MPRuleset_Rules = {
         BlessDelay          = 120,
     },
 
+    --~~ Limits
+    --~~ In this section you can set a limit to different units. Heroes can be
+    --~~ limited between 0 and 6. Everything else is unlimited if set to -1,
+    --~~ forbidden if 0 and limited to the amount if greater than 0.
+
     Limits = {
         -- Limit of heroes the player can buy
         Hero         = 3,
@@ -172,6 +163,9 @@ MPRuleset_Rules = {
         Cannon4      = -1,
     },
 
+    --~~ Heroes
+    --~~ Sets the heroes that are allowed in the game.
+
     -- Heroes available (0 = forbidden)
     Heroes = {
         Dario               = 1,
@@ -188,6 +182,11 @@ MPRuleset_Rules = {
         Mary                = 1,
         Kala                = 1,
     },
+
+    --~~ Technologies
+    --~~ Limit the technologies for the game. Each branch is red from left
+    --~~ to right. If the value is 0 then the branch is completly forbidden.
+    --~~ For each number greater than 0 a technology in the branch is allowed.
 
     Technologies = {
         -- Gunsmith technologies
@@ -232,19 +231,10 @@ MPRuleset_Rules = {
             Civil           = 3, -- Village center (0 to 3)
         }
     },
-
-    Callbacks = {
-        -- After configuration has been loaded
-        OnMapConfigured = function()
-        end,
-
-        -- After peacetime ended (no peacetime means immediate execution after
-        -- configuration is loaded)
-        OnPeacetimeOver = function()
-        end,
-    },
 };
 
--- User script -------------------------------------------------------------- --
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
+-- ~~~                          User Script                               ~~~ --
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 
 

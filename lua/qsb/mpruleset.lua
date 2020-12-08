@@ -6,7 +6,8 @@
 
 ---
 -- This module aims to create a ruleset for multiplayer for the vanilla game
--- but also be able to use the EMS ruleset from the community server.
+-- and the History Edition but also be able to use the EMS ruleset from the
+-- community server if the map is published there.
 --
 -- Just copy the content of MPRuleset_Default into your mapscript and rename
 -- the table there to MPRuleset_Rules.
@@ -807,11 +808,6 @@ MPRuleset = {
 -- @local
 --
 function MPRuleset:Install()
-    -- No MP?
-    if not MPSync:IsMultiplayerGame() then
-        --GUI.AddStaticNote("Map is running in Singleplayer! Ruleset has ben deactivated!");
-        --return;
-    end
     -- Using EMS?
     if self:IsUsingEMS() then
         return;
@@ -826,15 +822,29 @@ function MPRuleset:Install()
     self:OverrideUIStuff();
     if MPRuleset_Rules.Changeable then
         self.Data.RuleSelectionActive = true;
-        ShowOptionMenu(self.Menu);
+        StartSimpleJobEx(function()
+            if Logic.GetTime() > 1 then
+                MPRuleset_Rules.Callbacks.OnMapLoaded();
+                ShowOptionMenu(MPRuleset.Menu);
+                return true;
+            end
+        end);
+            
         return;
     end
+    MPRuleset_Rules.Callbacks.OnMapLoaded();
     self:ConfigurationFinished();
 end
 
 function MPRuleset:ConfigurationFinished()
     local PlayersTable = MPSync:GetActivePlayers();
     for i= 1, table.getn(PlayersTable), 1 do
+        if MPRuleset_Rules.Limits.Hero < 0 then
+            MPRuleset_Rules.Limits.Hero = 0;
+        end
+        if MPRuleset_Rules.Limits.Hero > 6 then
+            MPRuleset_Rules.Limits.Hero = 6;
+        end
         Logic.SetNumberOfBuyableHerosForPlayer(PlayersTable[i], MPRuleset_Rules.Limits.Hero);
     end
     self.Data.GameStartOffset = math.floor(Logic.GetTime() + 0.5);
@@ -843,7 +853,6 @@ function MPRuleset:ConfigurationFinished()
 
     self:SetupDiplomacyForPeacetime();
     self:FillResourceHeaps(MPRuleset_Rules);
-    self:CreateQuests(MPRuleset_Rules);
     self:GiveResources(MPRuleset_Rules);
     self:ForbidTechnologies(MPRuleset_Rules);
     self:ActivateLogicEventJobs();
@@ -861,6 +870,7 @@ function MPRuleset:ConfigurationFinished()
     end
 
     MPRuleset_Rules.Callbacks.OnMapConfigured();
+    self:CreateQuests(MPRuleset_Rules);
 end
 
 function MPRuleset:IsUsingEMS()
@@ -1301,6 +1311,21 @@ MPRuleset_Default = {
     -- Rules can be changed
     Changeable = true,
 
+    Callbacks = {
+        -- After the map has been loaded on all machines.
+        OnMapLoaded = function()
+        end,
+
+        -- After configuration has been loaded
+        OnMapConfigured = function()
+        end,
+
+        -- After peacetime ended (no peacetime means immediate execution after
+        -- configuration is loaded)
+        OnPeacetimeOver = function()
+        end,
+    },
+
     Resources = {
         -- Amount of resources in resource heaps
         ResourceHeapSize    = 2000,
@@ -1471,17 +1496,6 @@ MPRuleset_Default = {
         Village             = {
             Civil           = 3, -- Village center (0 to 3)
         }
-    },
-
-    Callbacks = {
-        -- After configuration has been loaded
-        OnMapConfigured = function()
-        end,
-
-        -- After peacetime ended (no peacetime means immediate execution after
-        -- configuration is loaded)
-        OnPeacetimeOver = function()
-        end,
     },
 };
 
