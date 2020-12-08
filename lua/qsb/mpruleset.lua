@@ -26,6 +26,26 @@
 
 MPRuleset = {
     Data = {
+        GameStartEntities = {},
+        GameStartEntitiesBlacklist = {
+            Entities.XD_BuildBlockScriptEntity,
+            Entities.XD_Explore10,
+            Entities.XD_ScriptEntity,
+            Entities.XD_StandardLarge,
+            Entities.XD_StandartePlayerColor,
+            Entities.XD_DarkWallCorner,
+            Entities.XD_DarkWallDistorted,
+            Entities.XD_DarkWallStraight,
+            Entities.XD_DarkWallStraightGate,
+            Entities.XD_DarkWallStraightGate_Closed,
+            Entities.XD_WallCorner,
+            Entities.XD_WallDistorted,
+            Entities.XD_WallStraight,
+            Entities.XD_WallStraightGate,
+            Entities.XD_WallStraightGate_Closed,
+            Entities.XS_Ambient,
+        },
+
         GameStartOffset = 0,
         RuleSelectionActive = false,
 
@@ -188,6 +208,8 @@ MPRuleset = {
     },
 
     Menu = {
+        PlayerID = 1,
+
         -- Main page
         {
             Identifier  = "Main",
@@ -822,9 +844,11 @@ function MPRuleset:Install()
     self:OverrideUIStuff();
     if MPRuleset_Rules.Changeable then
         self.Data.RuleSelectionActive = true;
+        self:SuspendEverythingAtGameStart();
         StartSimpleJobEx(function()
             if Logic.GetTime() > 1 then
                 MPRuleset_Rules.Callbacks.OnMapLoaded();
+                MPRuleset.Menu.PlayerID = MPSync:GetHostPlayerID();
                 ShowOptionMenu(MPRuleset.Menu);
                 return true;
             end
@@ -869,6 +893,7 @@ function MPRuleset:ConfigurationFinished()
         QuestSystem.Workplace:EnableMod(MPRuleset_Rules.Commandment.Workplace == 1);
     end
 
+    self:ResumeEverythingAtGameStart();
     MPRuleset_Rules.Callbacks.OnMapConfigured();
     self:CreateQuests(MPRuleset_Rules);
 end
@@ -893,6 +918,43 @@ function MPRuleset:AddExtraStuff()
         self.Maps.LimitToUpgradeCategory.Rifle = UpgradeCategories.LeaderRifle;
         self.Maps.LimitToUpgradeCategory.Scout = UpgradeCategories.Scout;
         self.Maps.LimitToUpgradeCategory.Thief = UpgradeCategories.Thief;
+    end
+end
+
+function MPRuleset:SuspendEverythingAtGameStart()
+    for k, v in pairs(MPSync:GetActivePlayers()) do
+        self.Data.GameStartEntities[v] = {};
+        local PlayerEntities = QSBTools.GetPlayerEntities(v, 0);
+        for i= 1, table.getn(PlayerEntities), 1 do
+            local EntityType = Logic.GetEntityType(PlayerEntities[i]);
+            if Logic.IsEntityInCategory(PlayerEntities[i], EntityCategories.Headquarters) == 0 then
+                if not QSBTools.FindValue(EntityType, self.Data.GameStartEntitiesBlacklist) then
+                    local IsLeader = Logic.IsLeader(PlayerEntities[i]) == 1;
+                    local Soldiers = {0};
+                    if IsLeader then
+                        Soldiers = {Logic.GetSoldiersAttachedToLeader(PlayerEntities[i])};
+                        for j= 2, Soldiers[1]+1, 1 do
+                            DestroyEntity(Soldiers[j]);
+                        end
+                    end
+                    local ID = ReplaceEntity(PlayerEntities[i], Entities.XD_ScriptEntity);
+                    table.insert(self.Data.GameStartEntities[v], {ID, EntityType, IsLeader, Soldiers[1]});
+                end
+            end
+        end
+    end
+end
+
+function MPRuleset:ResumeEverythingAtGameStart()
+    for k, v in pairs(MPSync:GetActivePlayers()) do
+        for i= 1, table.getn(self.Data.GameStartEntities[v]), 1 do
+            local Entry = self.Data.GameStartEntities[v][i];
+            local ID = ReplaceEntity(Entry[1], Entry[2]);
+            if Entry[3] then
+                Tools.CreateSoldiersForLeader(ID, Entry[4]);
+            end
+        end
+        self.Data.GameStartEntities[v] = {};
     end
 end
 

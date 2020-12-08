@@ -109,10 +109,11 @@ end
 
 function OptionMenu:CreateScriptEvents()
     self.Events.OptionConfirmed = MPSync:CreateScriptEvent(function(_Count, _PlayerID, _ControllingPlayerID)
+        local ReadOnlyFlag = false;
         if _ControllingPlayerID and _ControllingPlayerID ~= _PlayerID then
-            return;
+            ReadOnlyFlag = true;
         end
-        OptionMenu:OnOptionSelected(_Count);
+        OptionMenu:OnOptionSelected(_Count, ReadOnlyFlag);
     end);
 end
 
@@ -219,6 +220,9 @@ function OptionMenu:OverrideGroupSelection()
                 GroupSelection_SelectTroops_Orig_OptionMenu(_Count);
                 return;
             end
+            if OptionMenu.Menu.ControllingPlayer ~= GUI.GetPlayerID() then
+                return;
+            end
             MPSync:SnchronizedCall(
                 OptionMenu.Events.OptionConfirmed,
                 _Count,
@@ -229,7 +233,7 @@ function OptionMenu:OverrideGroupSelection()
     end
 end
 
-function OptionMenu:OnOptionSelected(_Count)
+function OptionMenu:OnOptionSelected(_Count, _)
     local Page = self:GetPage(self.Menu.CurrentPage);
     if not Page then
         return;
@@ -340,8 +344,7 @@ function OptionMenuPage:construct(_Identifier, _Parent, _Title, _Description, _O
                 0,
                 0,
                 OptionMenu.Texts.Back[Language],
-                _Parent,
-                nil
+                _Parent
             );
         end
     else
@@ -351,7 +354,6 @@ function OptionMenuPage:construct(_Identifier, _Parent, _Title, _Description, _O
                 0,
                 0,
                 OptionMenu.Texts.Submit[Language],
-                nil,
                 nil
             );
         end
@@ -364,7 +366,7 @@ function OptionMenuPage:construct(_Identifier, _Parent, _Title, _Description, _O
     for i= 1, 8, 1 do
         if _Options[i] then
             if _Options[i] == -1 then
-                local Option = new(OptionMenuOption, i, -1, "", self.m_Identifier, nil);
+                local Option = new(OptionMenuOption, i, -1, "", self.m_Identifier);
                 self.m_Options[i] = Option;
             else
                 local Option = new(
@@ -372,8 +374,7 @@ function OptionMenuPage:construct(_Identifier, _Parent, _Title, _Description, _O
                     i,
                     i,
                     _Options[i].Text,
-                    _Options[i].Target,
-                    _Options[i]
+                    _Options[i].Target
                 );
                 self.m_Options[i] = Option;
             end
@@ -442,16 +443,16 @@ function OptionMenuOption:GetKey()
     return self.m_Key or self:GetIndex();
 end
 
-function OptionMenuOption:GetText()
+function OptionMenuOption:GetText(...)
     if type(self.m_Text) == "function" then
-        return self.m_Text(self.m_Data);
+        return self.m_Text(unpack(arg or {}));
     end
     return self.m_Text;
 end
 
-function OptionMenuOption:GetTarget()
+function OptionMenuOption:GetTarget(...)
     if type(self.m_Target) == "function" then
-        return self.m_Target(unpack(self.m_Data));
+        return self.m_Target(unpack(arg or {}));
     end
     return self.m_Target;
 end

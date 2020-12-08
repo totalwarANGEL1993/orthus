@@ -304,6 +304,22 @@ function MPSync:IsPlayerActive(_PlayerID)
 end
 
 ---
+-- Returns the player ID of the host
+-- @return[type=number] ID of Player
+-- @local
+--
+function MPSync:GetHostPlayerID()
+    if self:IsMultiplayerGame() then
+        for k, v in pairs(self:GetActivePlayers()) do
+            local HostNetworkAddress   = XNetwork.Host_UserInSession_GetHostNetworkAddress();
+            local PlayerNetworkAddress = XNetwork.GameInformation_GetNetworkAddressByPlayerID(v);
+            return v;
+        end
+    end
+    return GUI.GetPlayerID();
+end
+
+---
 -- Returns true, if the player is the host.
 -- @param[type=number] _PlayerID ID of player
 -- @return[type=boolean] Player is host
