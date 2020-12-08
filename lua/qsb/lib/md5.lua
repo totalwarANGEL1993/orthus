@@ -25,7 +25,7 @@ md5={ff=tonumber('ffffffff',16),consts={}}
     "(%w+)",
     function (s) table.insert(md5.consts, tonumber(s,16)) end
     )
-    --67452301 efcdab89 98badcfe 10325476 ]],"(%w+)", function (s) tinsert(md5.consts,tonumber(s,16)) end)
+    -- 67452301 efcdab89 98badcfe 10325476 ]],"(%w+)", function (s) tinsert(md5.consts,tonumber(s,16)) end)
    
 function md5.transform(A,B,C,D,X)
     local f=function (x,y,z) return bit_or(bit_and(x,y),bit_and(-x-1,z)) end

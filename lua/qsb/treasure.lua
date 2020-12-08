@@ -251,7 +251,7 @@ end
 -- @local
 --
 function TreasureTemplate:StartController()
-    return StartSimpleJobEx(function(_ScriptName)
+    return QSBTools.StartSimpleJobEx(function(_ScriptName)
         local Chest = QuestSystemBehavior.Data.Treasure[_ScriptName];
         if not Chest then
             return true;

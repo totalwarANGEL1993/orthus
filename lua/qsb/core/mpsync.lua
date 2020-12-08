@@ -14,6 +14,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
+-- <li>qsb.lib.qsbtools</li>
 -- </ul>
 --
 -- @set sort=true
@@ -110,7 +111,7 @@ function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
         MPGame_ApplicationCallback_ReceivedChatMessage(TransMsg, 0, _PlayerID);
     end
     -- Wait for ack
-    StartSimpleHiResJobEx(function(_PlayerID, _Hash, _Time, ...)
+    QSBTools.StartSimpleHiResJobEx(function(_PlayerID, _Hash, _Time, ...)
         if _Time +2 < Logic.GetTime() then
             -- Message("DEBUG: Timeout for " .._Hash);
             return true;
@@ -194,7 +195,7 @@ function MPSync:PayTribute(_PlayerID, _TributeID)
 end
 
 function MPSync:ActivateTributePaidTrigger()
-    QuestSystem:StartInlineJob(
+    QSBTools.StartInlineJob(
         Events.LOGIC_EVENT_TRIBUTE_PAID,
         function()
             MPSync:OnTributePaidTrigger(Event.GetTributeUniqueID());

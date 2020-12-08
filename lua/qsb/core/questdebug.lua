@@ -435,7 +435,7 @@ function QuestSystemDebug:CreateCheatMethods()
                 Tools.ChangeGroupPlayerID(eID,_player);
             else
                 if Logic.IsEntityInCategory(eID,EntityCategories.Soldier) == 1 then
-                    Tools.ChangeGroupPlayerID(SoldierGetLeaderEntityID(eID),_player);
+                    Tools.ChangeGroupPlayerID(QSBTools.SoldierGetLeader(eID),_player);
                 else
                     ChangePlayer(eID,_player);
                 end
@@ -467,7 +467,7 @@ function QuestSystemDebug:CreateCheatMethods()
     function Cheats_CreateUnitUnderMouse(_flag)
         local mouse = {GUI.Debug_GetMapPositionUnderMouse()};
         local pos = {X= mouse[1], Y= mouse[2]};
-        if IsValidPosition(pos) then
+        if QSBTools.IsValidPosition(pos) then
             if _flag == 1 then
                 Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderSword4, 8, pos.X , pos.Y ,0 );
                 Message("cheating unit PU_LeaderSword4!");

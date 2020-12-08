@@ -12,6 +12,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.lib.oop</li>
+-- <li>qsb.lib.qsbtools</li>
 -- <li>qsb.core.questsystem</li>
 -- <li>qsb.core.questdebug</li>
 -- <li>qsb.core.interaction</li>
@@ -383,86 +384,6 @@ function dbg(_Quest, _Behavior, _Message)
 end
 
 ---
--- Finds all entities numbered from 1 to n with a common prefix.
--- @param[type=string] _Prefix Prefix of scriptnames
--- @return[type=table] List of entities
--- @within Methods
---
-function GetEntitiesByPrefix(_Prefix)
-    local list = {};
-    local i = 1;
-    local bFound = true;
-    while (bFound) do
-        local entity = GetID(_Prefix ..i);
-        if entity ~= 0 then
-            table.insert(list, entity);
-        else
-            bFound = false;
-        end
-        i = i + 1;
-    end
-    return list;
-end
-
----
--- Finds all entities of the player that have the type.
--- @param[type=number] _PlayerID   ID of player
--- @param[type=number] _EntityType Type to search
--- @return[type=table] List of entities
--- @within Methods
---
-function GetPlayerEntities(_PlayerID, _EntityType)
-    local PlayerEntities = {}
-    if _EntityType ~= 0 then
-        local n,eID = Logic.GetPlayerEntities(_PlayerID, _EntityType, 1);
-        if (n > 0) then
-            local firstEntity = eID;
-            repeat
-                table.insert(PlayerEntities,eID)
-                eID = Logic.GetNextEntityOfPlayerOfType(eID);
-            until (firstEntity == eID);
-        end
-    elseif _EntityType == 0 then
-        for k,v in pairs(Entities) do
-            if string.find(k, "PU_") or string.find(k, "PB_") or string.find(k, "CU_") or string.find(k, "CB_")
-            or string.find(k, "XD_DarkWall") or string.find(k, "XD_Wall") or string.find(k, "PV_") then
-                local n,eID = Logic.GetPlayerEntities(_PlayerID, v, 1);
-                if (n > 0) then
-                local firstEntity = eID;
-                repeat
-                    table.insert(PlayerEntities,eID)
-                    eID = Logic.GetNextEntityOfPlayerOfType(eID);
-                until (firstEntity == eID);
-                end
-            end
-        end
-    end
-    return PlayerEntities
-end
-
----
--- Creates an inline job that is executed every second.
--- @param[type=function] _Function Lua function reference
--- @param                ... Optional arguments
--- @return[type=number] Job ID
--- @within Methods
---
-function StartSimpleJobEx(_Function, ...)
-    return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, _Function, unpack(arg));
-end
-
----
--- Creates an inline job that is executed ten times per second.
--- @param[type=function] _Function Lua function reference
--- @param                ... Optional arguments
--- @return[type=number] Job ID
--- @within Methods
---
-function StartSimpleHiResJobEx(_Function, ...)
-    return QuestSystem:StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, _Function, unpack(arg));
-end
-
----
 -- Registers a behavior
 -- @param[type=table] _Behavior Behavior pseudo class
 -- @within Methods
@@ -599,13 +520,12 @@ function QuestSystemBehavior:PrepareQuestSystem()
         Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
         Mission_OnSaveGameLoaded = function()
             Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior();
-            Tools.GiveResources = Tools.GiveResouces;
             QuestSystemBehavior:CallSaveLoadActions();
         end
 
         if MPRuleset then
             -- Delay selection by 1 second
-            StartSimpleJobEx(function()
+            QSBTools.StartSimpleJobEx(function()
                 MPRuleset:Install();
                 return true;
             end);
@@ -640,7 +560,7 @@ end
 -- @local
 --
 function QuestSystemBehavior:OverwriteMapClosingFunctions()
-    if QuestSystem:GetExtensionNumber() <= 2 then
+    if QSBTools.GetExtensionNumber() <= 2 then
         GUIAction_RestartMap_Orig_QuestSystemBehavior = GUIAction_RestartMap;
         GUIAction_RestartMap = function()
             QuestSystemBehavior:UnloadS5Hook();
@@ -679,7 +599,7 @@ end
 -- @local
 --
 function QuestSystemBehavior:UnloadS5Hook()
-    if QuestSystem:GetExtensionNumber() <= 2 and S5Hook then
+    if QSBTools.GetExtensionNumber() <= 2 and S5Hook then
         S5Hook.RemoveArchive();
         Trigger.DisableTriggerSystem(1);
     end
@@ -788,10 +708,10 @@ function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Const
     self.Data.AiPlayerPatrolPoints[_PlayerID] = {};
 
     -- Find default target and patrol points
-    for k, v in pairs(GetEntitiesByPrefix("Player" .._PlayerID.. "_AttackTarget")) do
+    for k, v in pairs(QSBTools.GetEntitiesByPrefix("Player" .._PlayerID.. "_AttackTarget")) do
         self:CreateAIPlayerAttackTarget(_PlayerID, v);
     end
-    for k, v in pairs(GetEntitiesByPrefix("Player" .._PlayerID.. "_PatrolPoint")) do
+    for k, v in pairs(QSBTools.GetEntitiesByPrefix("Player" .._PlayerID.. "_PatrolPoint")) do
         self:CreateAIPlayerPatrolPoint(_PlayerID, v);
     end
 end
@@ -1157,7 +1077,9 @@ function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area
 
     table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
     SetupAITroopGenerator("QuestSystemBehavior_AiArmies_" .._PlayerID.. "_" ..ArmyID, self.Data.CreatedAiArmies[_PlayerID][ArmyID]);
-    Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", "QuestSystemBehavior_AiArmiesController", 1, 0, {_PlayerID, ArmyID});
+    QSBTools.StartSimpleJobEx(function(_PlayerID, _ArmyID)
+        QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID);
+    end, _PlayerID, ArmyID);
 
     -- Default values
     AI.Army_BeAlwaysAggressive(_PlayerID, ArmyID);
@@ -1229,7 +1151,9 @@ function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, 
 
     table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
     SetupAITroopSpawnGenerator("QuestSystemBehavior_AiArmies_" .._PlayerID.. "_" ..ArmyID, self.Data.CreatedAiArmies[_PlayerID][ArmyID]);
-    Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", "QuestSystemBehavior_AiArmiesController", 1, 0, {_PlayerID, ArmyID});
+    QSBTools.StartSimpleJobEx(function(_PlayerID, _ArmyID)
+        QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID);
+    end, _PlayerID, ArmyID);
 
     -- Default values
     AI.Army_BeAlwaysAggressive(_PlayerID, ArmyID);
@@ -1248,7 +1172,7 @@ QuestSystemBehavior.ArmyState.Attack   = 4;
 QuestSystemBehavior.ArmyState.Fallback = 5;
 QuestSystemBehavior.ArmyState.Patrol   = 6;
 
-function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
+function QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID)
     local army = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID][_ArmyID];
     local all  = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID];
 
@@ -1280,9 +1204,9 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
             if army.Advanced.AttackDisabled ~= true and army.Advanced.attackPosition then
                 for i=1,table.getn(army.Advanced.attackPosition),1 do
                     local atkPos = army.Advanced.attackPosition[i];
-                    if  AreEnemiesInArea(army.player, GetPosition(atkPos), army.rodeLength)
+                    if  QSBTools.AreEnemiesInArea(army.player, GetPosition(atkPos), army.rodeLength)
                     and army.Advanced.Target == nil and not IstDrin(atkPos, underProcessing)
-                    and SameSector(atkPos, army.position) then
+                    and QSBTools.SameSector(atkPos, army.position) then
                         Redeploy(army, GetPosition(atkPos));
                         army.Advanced.Target = atkPos;
                         army.Advanced.State = QuestSystemBehavior.ArmyState.Attack;
@@ -1309,7 +1233,7 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
                     Redeploy(army, army.position);
                 else
                     -- All enemies dead? Wait for command
-                    if not AreEnemiesInArea(army.player, GetPosition(army.Advanced.Target), army.rodeLength) then
+                    if not QSBTools.AreEnemiesInArea(army.player, GetPosition(army.Advanced.Target), army.rodeLength) then
                         army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
                         army.Advanced.Target = nil;
                     end
@@ -1359,7 +1283,7 @@ function QuestSystemBehavior_AiArmiesController(_PlayerID, _ArmyID)
         -- Army is weak and returns
         elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Fallback then
             -- Army needs to be refreshed
-            if IsDeadWrapper(army) or IsArmyNear(army, army.position) then
+            if QSBTools.IsDead(army) or QSBTools.IsArmyNear(army, army.position) then
                 army.Advanced.State = QuestSystemBehavior.ArmyState.Refresh;
             end
 
@@ -1395,10 +1319,10 @@ function QuestSystemBehavior:InstallS5Hook()
     self.Data.S5HookInitalized = true;
 
     local ExtraFolder = "extra1";
-    if QuestSystem:GetExtensionNumber() > 1 then
+    if QSBTools.GetExtensionNumber() > 1 then
         ExtraFolder = "extra2";
     end
-    if QuestSystem:GetExtensionNumber() > 2 then
+    if QSBTools.GetExtensionNumber() > 2 then
         ExtraFolder = "extra3";
     end
     S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
@@ -2436,7 +2360,7 @@ function b_Goal_DestroyEnemiesInArea:GetGoalTable()
 end
 
 function b_Goal_DestroyEnemiesInArea:CustomFunction(_Quest)
-    if not AreEnemiesInArea(_Quest.m_Receiver, GetPosition(self.Data.Position), self.Data.AreaSize) then
+    if not QSBTools.AreEnemiesInArea(_Quest.m_Receiver, GetPosition(self.Data.Position), self.Data.AreaSize) then
         return true;
     end
 end
@@ -3809,7 +3733,7 @@ end
 function b_Reward_MoveAndVanish:CustomFunction(_Quest)
     Move(self.Data.Entity, self.Data.Target);
 
-    self.Data.JobID = StartSimpleJobEx(function(_EntityID, _Target, _LookingPlayerID)
+    self.Data.JobID = QSBTools.StartSimpleJobEx(function(_EntityID, _Target, _LookingPlayerID)
         if not IsExisting(_EntityID) then
             return true;
         end
@@ -4514,7 +4438,7 @@ function b_Goal_DestroyPlayer:CustomFunction(_Quest)
             QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] = nil;
         end
 
-        local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
+        local PlayerEntities = QSBTools.GetPlayerEntities(self.Data.PlayerID, 0);
         for i= 1, table.getn(PlayerEntities), 1 do 
             if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
                 if Logic.GetEntityHealth(PlayerEntities[i]) > 0 then
@@ -4588,7 +4512,7 @@ function b_Goal_DestroyArmy:CustomFunction(_Quest)
                 return true;
             end
         elseif Army.AllowedTypes ~= nil then
-            local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
+            local PlayerEntities = QSBTools.GetPlayerEntities(self.Data.PlayerID, 0);
             for i= 1, table.getn(PlayerEntities), 1 do 
                 if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
                     return;
@@ -5298,7 +5222,7 @@ function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
     end
 
     -- Most expensive check last
-    local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
+    local PlayerEntities = QSBTools.GetPlayerEntities(self.Data.PlayerID, 0);
     for i= 1, table.getn(PlayerEntities), 1 do
         if Logic.IsBuilding(PlayerEntities[i]) == 1 then
             return false;

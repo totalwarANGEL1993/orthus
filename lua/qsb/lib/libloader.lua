@@ -8,6 +8,10 @@
 if inherit == nil then
     Script.Load(gvBasePath.. "lib/oop.lua");
 end
+-- Load qsb comforts
+if QSBTools == nil then
+    Script.Load(gvBasePath.. "lib/qsbtools.lua");
+end
 -- Load luabit implementation for lua 5.0
 if bit_logic_rshift == nil then
     Script.Load(gvBasePath.. "lib/luabit50.lua");

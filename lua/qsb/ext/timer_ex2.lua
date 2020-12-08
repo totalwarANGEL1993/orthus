@@ -180,7 +180,7 @@ end
 --
 function QuestSystem.QuestTimer:Controller()
     if self.m_TimerJob == nil then
-        self.m_TimerJob = StartSimpleJobEx(function()
+        self.m_TimerJob = QSBTools.StartSimpleJobEx(function()
             QuestSystem.QuestTimer:HideAllTimer();
             local ShownTimer = 0;
             for i= 1, table.getn(QuestSystem.QuestTimer.m_Data), 1 do
