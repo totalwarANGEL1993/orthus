@@ -523,10 +523,10 @@ function QuestSystemBehavior:PrepareQuestSystem()
             QuestSystemBehavior:CallSaveLoadActions();
         end
 
-        if MPRuleset then
+        if MultiplayerSystem then
             -- Delay selection by 1 second
             QSBTools.StartSimpleJobEx(function()
-                MPRuleset:Install();
+                MultiplayerSystem:Install();
                 return true;
             end);
         end

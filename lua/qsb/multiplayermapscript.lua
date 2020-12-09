@@ -20,7 +20,7 @@ Script.Load(gvBasePath.. "lib/libloader.lua");
 Script.Load(gvBasePath.. "ext/extraloader.lua");
 
 Script.Load(gvBasePath.. "questbehavior.lua");
-Script.Load(gvBasePath.. "mpruleset.lua");
+Script.Load(gvBasePath.. "multiplayersystem.lua");
 Script.Load(gvBasePath.. "treasure.lua");
 
 -- Settings ----------------------------------------------------------------- --
