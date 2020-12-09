@@ -108,12 +108,8 @@ function OptionMenu:Install()
 end
 
 function OptionMenu:CreateScriptEvents()
-    self.Events.OptionConfirmed = MPSync:CreateScriptEvent(function(_Count, _PlayerID, _ControllingPlayerID)
-        local ReadOnlyFlag = false;
-        if _ControllingPlayerID and _ControllingPlayerID ~= _PlayerID then
-            ReadOnlyFlag = true;
-        end
-        OptionMenu:OnOptionSelected(_Count, ReadOnlyFlag);
+    self.Events.OptionConfirmed = MPSync:CreateScriptEvent(function(_Count)
+        OptionMenu:OnOptionSelected(_Count);
     end);
 end
 
@@ -223,17 +219,12 @@ function OptionMenu:OverrideGroupSelection()
             if OptionMenu.Menu.ControllingPlayer ~= GUI.GetPlayerID() then
                 return;
             end
-            MPSync:SnchronizedCall(
-                OptionMenu.Events.OptionConfirmed,
-                _Count,
-                GUI.GetPlayerID(),
-                OptionMenu.Menu.ControllingPlayer
-            );
+            MPSync:SnchronizedCall(OptionMenu.Events.OptionConfirmed, _Count);
         end
     end
 end
 
-function OptionMenu:OnOptionSelected(_Count, _)
+function OptionMenu:OnOptionSelected(_Count)
     local Page = self:GetPage(self.Menu.CurrentPage);
     if not Page then
         return;
