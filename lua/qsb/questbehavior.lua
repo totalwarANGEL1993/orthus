@@ -2050,7 +2050,7 @@ end
 b_Goal_NPC = {
     Data = {
         Name = "Goal_NPC",
-        Type = Objectives.MapScriptFunction
+        Type = Objectives.NPC
     },
 };
 
@@ -2071,44 +2071,7 @@ function b_Goal_NPC:AddParameter(_Index, _Parameter)
 end
 
 function b_Goal_NPC:GetGoalTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
-end
-
-function b_Goal_NPC:CustomFunction(_Quest)
-    if not IsExisting(self.Data.Target) then
-        return false;
-    end
-    if not self.Data.NPC then
-        local Hero = (self.Data.Hero == "INVALID_SCRIPTNAME" and nil) or self.Data.Hero;
-        local Info = QuestSystem:ReplacePlaceholders(self.Data.Message);
-        self.Data.NPC = new(NonPlayerCharacter, self.Data.Target):SetHero(self.Data.Hero):SetHeroInfo(Info):Activate();
-    end
-    if self.Data.NPC:TalkedTo(_Quest.m_Receiver) then
-        return true;
-    end
-end
-
-function b_Goal_NPC:Debug(_Quest)
-    if Logic.IsSettler(GetID(self.Data.Target)) == 0 then
-        dbg(_Quest, self, "NPCs must be settlers!");
-        return true;
-    end
-    if self.Data.Hero and self.Data.Hero ~= "INVALID_SCRIPTNAME" and (IsExisting(self.Data.Hero) == false or Logic.IsHero(GetID(self.Data.Hero)) == 0) then
-        dbg(_Quest, self, "Hero '" ..tostring(self.Data.Hero).. "' is invalid!");
-        return true;
-    end
-    if self.Data.Hero and self.Data.Hero ~= "INVALID_SCRIPTNAME" and self.Data.Message == nil then
-        dbg(_Quest, self, "Message is missing!");
-        return true;
-    end
-    return false;
-end
-
-function b_Goal_NPC:Reset(_Quest)
-    if self.Data.NPC then
-        self.Data.NPC:Deactivate();
-    end
-    self.Data.NPC = nil;
+    return {self.Data.Type, self.Data.Target, self.Data.Hero, self.Data.Message};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_NPC);

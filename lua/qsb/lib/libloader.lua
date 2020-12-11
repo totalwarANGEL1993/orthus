@@ -6,7 +6,7 @@
 
 -- Load oop lib
 if inherit == nil then
-    Script.Load(gvBasePath.. "lib/oop.lua");
+    Script.Load(gvBasePath.. "core/oop.lua");
 end
 -- Load qsb comforts
 if QSBTools == nil then

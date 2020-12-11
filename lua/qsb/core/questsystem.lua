@@ -631,7 +631,11 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
 
     elseif Behavior[1] == Objectives.Tribute then
         if Behavior[4] == nil then
-            local Text = QuestSystem:ReplacePlaceholders(Behavior[3]);
+            local Text = Behavior[3];
+            if type(Text) == "table" then
+                Text = Text[QSBTools.GetLanguage()];
+            end
+            Text = QuestSystem:ReplacePlaceholders(Text);
             QuestSystem.UniqueTributeID = QuestSystem.UniqueTributeID +1;
             Logic.AddTribute(self.m_Receiver, QuestSystem.UniqueTributeID, 0, 0, Text, unpack(Behavior[2]));
             Behavior[4] = QuestSystem.UniqueTributeID;
@@ -683,7 +687,7 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         end
 
     elseif Behavior[1] == Objectives.NPC then
-        if Behavior[3] ~= nil then
+        if Behavior[5] ~= nil then
             Behavior.Completed = true;
         end
 
@@ -860,7 +864,11 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         QSBTools.SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.Message then
-        QSBTools.SaveCall{Message, QuestSystem:ReplacePlaceholders(_Behavior[2])};
+        local Text = _Behavior[2];
+        if type(Text) == "table" then
+            Text = Text[QSBTools.GetLanguage()];
+        end
+        QSBTools.SaveCall{Message, QuestSystem:ReplacePlaceholders(Text)};
 
     elseif _Behavior[1] == Callbacks.DestroyEntity then
         if IsExisting(_Behavior[2]) then
@@ -1152,7 +1160,7 @@ function QuestTemplate:Reset(_VanillaSpareDescription)
             self.m_Objectives[i][5] = nil;
 
         elseif self.m_Objectives[i][1] == Objectives.NPC then
-            self.m_Objectives[i][3] = nil;
+            self.m_Objectives[i][5] = nil;
 
         elseif self.m_Objectives[i][1] == Objectives.Steal then
             self.m_Objectives[i][4] = nil;
@@ -1344,15 +1352,19 @@ function QuestTemplate:CreateQuest()
             end
 
             local Title = self.m_Description.Title;
+            if type(Title) == "table" then
+                Title = QuestSystem:ReplacePlaceholders(Title[QSBTools.GetLanguage()]);
+            end
             local Text  = self.m_Description.Text;
+            if type(Text) == "table" then
+                Text = QuestSystem:ReplacePlaceholders(Text[QSBTools.GetLanguage()]);
+            end
 
             if QSBTools.GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicAddQuest(
                     self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.Info or 1
                 );
             else
-                Title = QuestSystem:ReplacePlaceholders(self.m_Description.Title);
-                Text  = QuestSystem:ReplacePlaceholders(self.m_Description.Text);
                 Logic.AddQuest(
                     self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.Info or 1
                 );
@@ -1377,7 +1389,13 @@ function QuestTemplate:CreateQuestEx()
             end
 
             local Title = self.m_Description.Title;
+            if type(Title) == "table" then
+                Title = QuestSystem:ReplacePlaceholders(Title[QSBTools.GetLanguage()]);
+            end
             local Text  = self.m_Description.Text;
+            if type(Text) == "table" then
+                Text = QuestSystem:ReplacePlaceholders(Text[QSBTools.GetLanguage()]);
+            end
 
             if QSBTools.GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicAddQuestEx(
@@ -1385,8 +1403,6 @@ function QuestTemplate:CreateQuestEx()
                     self.m_Description.Y, self.m_Description.Info or 1
                 );
             else
-                Title = QuestSystem:ReplacePlaceholders(self.m_Description.Title);
-                Text  = QuestSystem:ReplacePlaceholders(self.m_Description.Text);
                 Logic.AddQuestEx(
                     self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.X, 
                     self.m_Description.Y, self.m_Description.Info or 1
@@ -1475,7 +1491,7 @@ function QuestTemplate:ShowQuestMarkers()
                     self.m_Objectives[i][8] = Logic.CreateEffect(GGL_Effects.FXTerrainPointer, Position.X, Position.Y, 1);
                 end
             elseif self.m_Objectives[i][1] == Objectives.NPC then
-                if not IsNpcInUseByAnyOtherActiveQuest(self.m_Objectives[i][2]) then
+                if not self:IsNpcInUseByAnyOtherActiveQuest(self.m_Objectives[i][2]) then
                     if IsExisting(self.m_Objectives[i][2]) then
                         EnableNpcMarker(GetID(self.m_Objectives[i][2]));
                     end
@@ -1495,7 +1511,7 @@ function QuestTemplate:RemoveQuestMarkers()
                     Logic.DestroyEffect(self.m_Objectives[i][8]);
                 end
             elseif self.m_Objectives[i][1] == Objectives.NPC then
-                if not IsNpcInUseByAnyOtherActiveQuest(self.m_Objectives[i][2]) then
+                if not self:IsNpcInUseByAnyOtherActiveQuest(self.m_Objectives[i][2]) then
                     if IsExisting(self.m_Objectives[i][2]) then
                         DisableNpcMarker(GetID(self.m_Objectives[i][2]));
                     end
@@ -1592,10 +1608,40 @@ function QuestSystem:ObjectiveNPCHandler(_Hero, _NPC)
                 for j= 1, table.getn(Quest.m_Objectives), 1 do
                     if Quest.m_Objectives[j][1] == Objectives.NPC then
                         if GetID(Quest.m_Objectives[j][2]) == _NPC then
-                            Quest.m_Objectives[j][3] = _Hero;
+                            if Quest.m_Objectives[j][3] then
+                                if GetID(Quest.m_Objectives[j][3]) ~= _Hero then
+                                    if Quest.m_Objectives[j][4] then
+                                        local Text = Quest.m_Objectives[j][4];
+                                        if type(Text) == "table" then
+                                            Text = Text[QSBTools.GetLanguage()];
+                                        end
+                                        Message(QuestSystem:ReplacePlaceholders(Text));
+                                    end
+                                else
+                                    self:NpcAndHeroLookAtTasks(_NPC, _Hero);
+                                    Quest.m_Objectives[j][5] = _Hero;
+                                end
+                            else
+                                self:NpcAndHeroLookAtTasks(_NPC, _Hero);
+                                Quest.m_Objectives[j][5] = _Hero;
+                            end
                         end
                     end
                 end
+            end
+        end
+    end
+end
+
+function QuestSystem:NpcAndHeroLookAtTasks(_NPC, _Hero)
+    LookAt(_NPC, _Hero);
+    LookAt(_Hero, _NPC);
+    local HeroesTable = {};
+    Logic.GetHeroes(Logic.EntityGetPlayer(_PlayerID), HeroesTable);
+    for i= 1, table.getn(HeroesTable), 1 do
+        if QSBTools.GetDistance(_NPC, HeroesTable[i]) < 5000 then
+            if Logic.GetCurrentTaskList(HeroesTable[i]) == "TL_NPC_INTERACTION" then
+                GUI.SettlerStand(HeroesTable[i]);
             end
         end
     end
@@ -2092,7 +2138,7 @@ Conditions = {
 --
 -- @field NPC
 -- The player must interact with an NPC.
--- <pre>{Objectives.NPC, _NPC}</pre>
+-- <pre>{Objectives.NPC, _NPC, _Hero, _WrongHeroMessage}</pre>
 --
 -- @field Steal
 -- The player must steal the amount of the required resource.
@@ -2158,11 +2204,11 @@ Objectives = {
 --
 -- @field DestroyEntity
 -- Replace a named entity or millitary group with a script entity.
--- <pre>{Callbacks.Message, _ScriptName}</pre>
+-- <pre>{Callbacks.DestroyEntity, _ScriptName}</pre>
 --
 -- @field DestroyEffect
 -- Destroy a named graphic effect.
--- <pre>{Callbacks.Message, _EffectName}</pre>
+-- <pre>{Callbacks.DestroyEffect, _EffectName}</pre>
 --
 -- @field CreateEntity
 -- Replaces a script entity with a new entity. The new entity will have the

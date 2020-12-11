@@ -10,7 +10,7 @@
 -- community server if the map is published there.
 --
 -- Just copy the content of MultiplayerRules_Default into your mapscript and rename
--- the table there to MultiplayerRules_Rules.
+-- the table there to MPRuleset_Rules.
 --
 -- <b>Required modules:</b>
 -- <ul>
@@ -268,8 +268,8 @@ MultiplayerSystem = {
             Options     = {
                 {Text   = function()
                     return ((QSBTools.GetLanguage() == "de" and "Rohstoffe: ") or "Resources: ") ..
-                           (MultiplayerRules_Rules.Resources.Choosen == 2 and ((QSBTools.GetLanguage() == "de" and "{yellow}viel") or "{yellow}plenty") or
-                            MultiplayerRules_Rules.Resources.Choosen == 3 and ((QSBTools.GetLanguage() == "de" and "{orange}absurd") or "{orange}insane") or
+                           (MPRuleset_Rules.Resources.Choosen == 2 and ((QSBTools.GetLanguage() == "de" and "{yellow}viel") or "{yellow}plenty") or
+                            MPRuleset_Rules.Resources.Choosen == 3 and ((QSBTools.GetLanguage() == "de" and "{orange}absurd") or "{orange}insane") or
                             "{grey}normal") .. "{white}";
                  end,
                  Target = function()
@@ -278,7 +278,7 @@ MultiplayerSystem = {
                  end},
                 {Text   = function()
                     return ((QSBTools.GetLanguage() == "de" and "Haufengröße:{grey}") or "Heap size:{grey}") ..
-                           (MultiplayerRules_Rules.Resources.ResourceHeapSize.. "{white}");
+                           (MPRuleset_Rules.Resources.ResourceHeapSize.. "{white}");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Resources", "ResourceHeapSize", 100, 400, 5000);
@@ -301,7 +301,7 @@ MultiplayerSystem = {
             Options     = {
                 {Text   = function()
                     return ((QSBTools.GetLanguage() == "de" and "Friedenszeit: ") or "Peacetime: ") ..
-                           ((MultiplayerRules_Rules.Timer.Peacetime == 0 and "-") or MultiplayerRules_Rules.Timer.Peacetime .. " min");
+                           ((MPRuleset_Rules.Timer.Peacetime == 0 and "-") or MPRuleset_Rules.Timer.Peacetime .. " min");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Timer", "Peacetime", 5, 0, 50);
@@ -309,7 +309,7 @@ MultiplayerSystem = {
                  end},
                 {Text   = function()
                     return ((QSBTools.GetLanguage() == "de" and "Todesstrafe: ") or "Death penalty: ") ..
-                           ((MultiplayerRules_Rules.Timer.DeathPenalty == 0 and "-") or MultiplayerRules_Rules.Timer.DeathPenalty .. " min");
+                           ((MPRuleset_Rules.Timer.DeathPenalty == 0 and "-") or MPRuleset_Rules.Timer.DeathPenalty .. " min");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Timer", "DeathPenalty", 5, 0, 50);
@@ -331,7 +331,7 @@ MultiplayerSystem = {
             },
             Options     = {
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Fixes.CrushBuilding == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Fixes.CrushBuilding == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Abrissfix") or "Demolish fix") .. "{white}";
                  end,
                  Target = function()
@@ -339,7 +339,7 @@ MultiplayerSystem = {
                     return "Rule_Fixes";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Fixes.Formaition == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Fixes.Formaition == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Formationsfix") or "Formation fix") .. "{white}";
                  end,
                  Target = function()
@@ -347,7 +347,7 @@ MultiplayerSystem = {
                     return "Rule_Fixes";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Fixes.FindView == 0 and "{red}") or "{green}") ..
+                     return ((MPRuleset_Rules.Fixes.FindView == 0 and "{red}") or "{green}") ..
                             ((QSBTools.GetLanguage() == "de" and "Einheiten finden Fix") or "Find button fix") .. "{white}";
                  end,
                  Target = function()
@@ -370,7 +370,7 @@ MultiplayerSystem = {
             },
             Options     = {
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Commandment.AssociateVillages == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Commandment.AssociateVillages == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Dorfzentren binden") or "Bind villages") .. "{white}";
                  end,
                  Target = function()
@@ -378,7 +378,7 @@ MultiplayerSystem = {
                     return "Rule_Commandments";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Commandment.HQRushBlock == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Commandment.HQRushBlock == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Anti-Rush") or "Anti rush") .. "{white}";
                  end,
                  Target = function()
@@ -386,7 +386,7 @@ MultiplayerSystem = {
                     return "Rule_Commandments";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Commandment.InvincibleBridges == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Commandment.InvincibleBridges == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Brücken unzerstörbar") or "Indescrutable bridges") .. "{white}";
                  end,
                  Target = function()
@@ -394,7 +394,7 @@ MultiplayerSystem = {
                     return "Rule_Commandments";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Commandment.Workplace == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Commandment.Workplace == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Arbeiterzahl ändern") or "Change worker amount") .. "{white}";
                  end,
                  Target = function()
@@ -402,7 +402,7 @@ MultiplayerSystem = {
                      return "Rule_Commandments";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Commandment.WeatherChangeDelay == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Commandment.WeatherChangeDelay == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Wetterwechsellimit") or "Weather change limit") .. "{white}";
                  end,
                  Target = function()
@@ -410,7 +410,7 @@ MultiplayerSystem = {
                     return "Rule_Commandments";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Commandment.BlessDelay == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Commandment.BlessDelay == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Segenlimit") or "Bless limit") .. "{white}";
                  end,
                  Target = function()
@@ -464,36 +464,36 @@ MultiplayerSystem = {
             },
             Options     = {
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Market ~= 0 and "{green}") or "{red}") ..
+                    return ((MPRuleset_Rules.Limits.Market ~= 0 and "{green}") or "{red}") ..
                            ((QSBTools.GetLanguage() == "de" and "Lagerhäuser") or "Warehouses") ..
-                           ((MultiplayerRules_Rules.Limits.Market > 0 and "{white}(" ..MultiplayerRules_Rules.Limits.Market.. "/3)") or "{white}");
+                           ((MPRuleset_Rules.Limits.Market > 0 and "{white}(" ..MPRuleset_Rules.Limits.Market.. "/3)") or "{white}");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Limits", "Market", 1, -1, 3);
                     return "Rule_Limits_Buildings";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Tower ~= 0 and "{green}") or "{red}") ..
+                    return ((MPRuleset_Rules.Limits.Tower ~= 0 and "{green}") or "{red}") ..
                            ((QSBTools.GetLanguage() == "de" and "Türme") or "Towers") ..
-                           ((MultiplayerRules_Rules.Limits.Tower > 0 and "{white}(" ..MultiplayerRules_Rules.Limits.Tower.. "/10)") or "{white}");
+                           ((MPRuleset_Rules.Limits.Tower > 0 and "{white}(" ..MPRuleset_Rules.Limits.Tower.. "/10)") or "{white}");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Limits", "Tower", 1, -1, 10);
                     return "Rule_Limits_Buildings";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.University ~= 0 and "{green}") or "{red}") ..
+                    return ((MPRuleset_Rules.Limits.University ~= 0 and "{green}") or "{red}") ..
                            ((QSBTools.GetLanguage() == "de" and "Schulen") or "Collages") ..
-                           ((MultiplayerRules_Rules.Limits.University > 0 and "{white}(" ..MultiplayerRules_Rules.Limits.University.. "/5)") or "{white}");
+                           ((MPRuleset_Rules.Limits.University > 0 and "{white}(" ..MPRuleset_Rules.Limits.University.. "/5)") or "{white}");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Limits", "University", 1, -1, 5);
                     return "Rule_Limits_Buildings";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Village ~= 0 and "{green}") or "{red}") ..
+                    return ((MPRuleset_Rules.Limits.Village ~= 0 and "{green}") or "{red}") ..
                            ((QSBTools.GetLanguage() == "de" and "Dorfzentren") or "Villages") ..
-                           ((MultiplayerRules_Rules.Limits.Village > 0 and "{white}(" ..MultiplayerRules_Rules.Limits.Village.. "/5)") or "{white}");
+                           ((MPRuleset_Rules.Limits.Village > 0 and "{white}(" ..MPRuleset_Rules.Limits.Village.. "/5)") or "{white}");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Limits", "Village", 1, -1, 5);
@@ -513,7 +513,7 @@ MultiplayerSystem = {
             },
             Options     = {
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Cannon1 == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.Cannon1 == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Bombarde") or "Bombard") .. "{white}";
                  end,
                  Target = function()
@@ -521,7 +521,7 @@ MultiplayerSystem = {
                     return "Rule_Limits_Cannons";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Cannon2 == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.Cannon2 == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Bronzekanone") or "Bronze cannon") .. "{white}";
                  end,
                  Target = function()
@@ -529,7 +529,7 @@ MultiplayerSystem = {
                     return "Rule_Limits_Cannons";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Cannon3 == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.Cannon3 == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Eisenkanone") or "Iron cannon") .. "{white}";
                  end,
                  Target = function()
@@ -537,7 +537,7 @@ MultiplayerSystem = {
                     return "Rule_Limits_Cannons";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Cannon4 == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.Cannon4 == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Belagerungskanone") or "Siege cannon") .. "{white}";
                  end,
                  Target = function()
@@ -558,7 +558,7 @@ MultiplayerSystem = {
             },
             Options     = {
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Bow == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.Bow == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Bogenschützen") or "Archer") .. "{white}";
                  end,
                  Target = function()
@@ -566,7 +566,7 @@ MultiplayerSystem = {
                     return "Rule_Limits_Units";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.LightCavalry == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.LightCavalry == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Leichte Kavalerie") or "Light Cavalry") .. "{white}";
                  end,
                  Target = function()
@@ -574,7 +574,7 @@ MultiplayerSystem = {
                     return "Rule_Limits_Units";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.HeavyCavalry == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.HeavyCavalry == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Schwere Kavalerie") or "Heavy Cavalry") .. "{white}";
                  end,
                  Target = function()
@@ -582,7 +582,7 @@ MultiplayerSystem = {
                     return "Rule_Limits_Units";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Rifle == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.Rifle == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Scharfschützen") or "Marksmen") .. "{white}";
                  end,
                  Target = function()
@@ -590,7 +590,7 @@ MultiplayerSystem = {
                     return "Rule_Limits_Units";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Spear == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.Spear == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Speerträger") or "Spearmen") .. "{white}";
                  end,
                  Target = function()
@@ -598,7 +598,7 @@ MultiplayerSystem = {
                     return "Rule_Limits_Units";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Sword == 0 and "{red}") or "{green}") ..
+                    return ((MPRuleset_Rules.Limits.Sword == 0 and "{red}") or "{green}") ..
                            ((QSBTools.GetLanguage() == "de" and "Schwertkämpfer") or "Swordsmen") .. "{white}";
                  end,
                  Target = function()
@@ -619,27 +619,27 @@ MultiplayerSystem = {
             },
             Options     = {
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Limits.Hero == 0 and "{red}") or "{green}") ..
+                     return ((MPRuleset_Rules.Limits.Hero == 0 and "{red}") or "{green}") ..
                             ((QSBTools.GetLanguage() == "de" and "Helden") or "Heroes") ..
-                            ((MultiplayerRules_Rules.Limits.Hero > 0 and "{white}(" ..MultiplayerRules_Rules.Limits.Hero.. "/6)") or "{white}");
+                            ((MPRuleset_Rules.Limits.Hero > 0 and "{white}(" ..MPRuleset_Rules.Limits.Hero.. "/6)") or "{white}");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Limits", "Hero", 1, 0, 6);
                     return "Rule_Limits_Special";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Thief ~= 0 and "{green}") or "{red}") ..
+                    return ((MPRuleset_Rules.Limits.Thief ~= 0 and "{green}") or "{red}") ..
                            ((QSBTools.GetLanguage() == "de" and "Diebe") or "Thieves") ..
-                           ((MultiplayerRules_Rules.Limits.Thief > 0 and "{white}(" ..MultiplayerRules_Rules.Limits.Thief.. "/10)") or "{white}");
+                           ((MPRuleset_Rules.Limits.Thief > 0 and "{white}(" ..MPRuleset_Rules.Limits.Thief.. "/10)") or "{white}");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Limits", "Thief", 1, -1, 10);
                     return "Rule_Limits_Special";
                  end},
                 {Text   = function()
-                    return ((MultiplayerRules_Rules.Limits.Scout ~= 0 and "{green}") or "{red}") ..
+                    return ((MPRuleset_Rules.Limits.Scout ~= 0 and "{green}") or "{red}") ..
                            ((QSBTools.GetLanguage() == "de" and "Kundschafter") or "Scouts") ..
-                           ((MultiplayerRules_Rules.Limits.Scout > 0 and "{white}(" ..MultiplayerRules_Rules.Limits.Scout.. "/10)") or "{white}");
+                           ((MPRuleset_Rules.Limits.Scout > 0 and "{white}(" ..MPRuleset_Rules.Limits.Scout.. "/10)") or "{white}");
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Limits", "Scout", 1, -1, 10);
@@ -680,56 +680,56 @@ MultiplayerSystem = {
             },
             Options     = {
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Ari == 0 and "{red}") or "{green}") .. "Ari{white}"
+                     return ((MPRuleset_Rules.Heroes.Ari == 0 and "{red}") or "{green}") .. "Ari{white}"
                  end,
                  Target = function()
                      MultiplayerSystem:RuleChangeToggleRule("Heroes", "Ari", 1);
                      return "Rule_Heroes_Good";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Dario == 0 and "{red}") or "{green}") .. "Dario{white}"
+                     return ((MPRuleset_Rules.Heroes.Dario == 0 and "{red}") or "{green}") .. "Dario{white}"
                  end,
                  Target = function()
                      MultiplayerSystem:RuleChangeToggleRule("Heroes", "Dario", 1);
                      return "Rule_Heroes_Good";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Drake == 0 and "{red}") or "{green}") .. "Drake{white}"
+                     return ((MPRuleset_Rules.Heroes.Drake == 0 and "{red}") or "{green}") .. "Drake{white}"
                  end,
                  Target = function()
                      MultiplayerSystem:RuleChangeToggleRule("Heroes", "Drake", 1);
                      return "Rule_Heroes_Good";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Erec == 0 and "{red}") or "{green}") .. "Erec{white}"
+                     return ((MPRuleset_Rules.Heroes.Erec == 0 and "{red}") or "{green}") .. "Erec{white}"
                  end,
                  Target = function()
                      MultiplayerSystem:RuleChangeToggleRule("Heroes", "Erec", 1);
                      return "Rule_Heroes_Good";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Helias == 0 and "{red}") or "{green}") .. "Helias{white}"
+                     return ((MPRuleset_Rules.Heroes.Helias == 0 and "{red}") or "{green}") .. "Helias{white}"
                  end,
                  Target = function()
                      MultiplayerSystem:RuleChangeToggleRule("Heroes", "Helias", 1);
                      return "Rule_Heroes_Good";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Pilgrim == 0 and "{red}") or "{green}") .. "Pilgrim{white}"
+                     return ((MPRuleset_Rules.Heroes.Pilgrim == 0 and "{red}") or "{green}") .. "Pilgrim{white}"
                  end,
                  Target = function()
                      MultiplayerSystem:RuleChangeToggleRule("Heroes", "Pilgrim", 1);
                      return "Rule_Heroes_Good";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Salim == 0 and "{red}") or "{green}") .. "Salim{white}"
+                     return ((MPRuleset_Rules.Heroes.Salim == 0 and "{red}") or "{green}") .. "Salim{white}"
                  end,
                  Target = function()
                      MultiplayerSystem:RuleChangeToggleRule("Heroes", "Salim", 1);
                      return "Rule_Heroes_Good";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Yuki == 0 and "{red}") or "{green}") .. "Yuki{white}"
+                     return ((MPRuleset_Rules.Heroes.Yuki == 0 and "{red}") or "{green}") .. "Yuki{white}"
                  end,
                  Target = function()
                      MultiplayerSystem:RuleChangeToggleRule("Heroes", "Yuki", 1);
@@ -749,28 +749,28 @@ MultiplayerSystem = {
             },
             Options     = {
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Kala == 0 and "{red}") or "{green}") .. "Kala{white}"
+                     return ((MPRuleset_Rules.Heroes.Kala == 0 and "{red}") or "{green}") .. "Kala{white}"
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeToggleRule("Heroes", "Kala", 1);
                     return "Rule_Heroes_Evil";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Kerberos == 0 and "{red}") or "{green}") .. "Kerberos{white}"
+                     return ((MPRuleset_Rules.Heroes.Kerberos == 0 and "{red}") or "{green}") .. "Kerberos{white}"
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeToggleRule("Heroes", "Kerberos", 1);
                     return "Rule_Heroes_Evil";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Mary == 0 and "{red}") or "{green}") .. "Mary de Mortfichet{white}"
+                     return ((MPRuleset_Rules.Heroes.Mary == 0 and "{red}") or "{green}") .. "Mary de Mortfichet{white}"
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeToggleRule("Heroes", "Mary", 1);
                     return "Rule_Heroes_Evil";
                  end},
                 {Text   = function()
-                     return ((MultiplayerRules_Rules.Heroes.Varg == 0 and "{red}") or "{green}") .. "Varg{white}"
+                     return ((MPRuleset_Rules.Heroes.Varg == 0 and "{red}") or "{green}") .. "Varg{white}"
                  end,
                  Target = function()
                     MultiplayerSystem:RuleChangeToggleRule("Heroes", "Varg", 1);
@@ -835,19 +835,19 @@ function MultiplayerSystem:Install()
         return;
     end
     -- Load default
-    local Rules = MultiplayerRules_Rules;
+    local Rules = MPRuleset_Rules;
     if not Rules then
-        MultiplayerRules_Rules = MultiplayerRules_Default;
-        Rules = MultiplayerRules_Rules;
+        MPRuleset_Rules = MultiplayerRules_Default;
+        Rules = MPRuleset_Rules;
     end
     -- Select the rules
     self:OverrideUIStuff();
-    if MultiplayerRules_Rules.Changeable then
+    if MPRuleset_Rules.Changeable then
         self.Data.RuleSelectionActive = true;
         self:SuspendEverythingAtGameStart();
         StartSimpleJobEx(function()
             if Logic.GetTime() > 1 then
-                MultiplayerRules_Rules.Callbacks.OnMapLoaded();
+                MPRuleset_Rules.Callbacks.OnMapLoaded();
                 MultiplayerSystem.Menu.PlayerID = MPSync:GetHostPlayerID();
                 ShowOptionMenu(MultiplayerSystem.Menu);
                 return true;
@@ -856,46 +856,46 @@ function MultiplayerSystem:Install()
             
         return;
     end
-    MultiplayerRules_Rules.Callbacks.OnMapLoaded();
+    MPRuleset_Rules.Callbacks.OnMapLoaded();
     self:ConfigurationFinished();
 end
 
 function MultiplayerSystem:ConfigurationFinished()
     local PlayersTable = MPSync:GetActivePlayers();
     for i= 1, table.getn(PlayersTable), 1 do
-        if MultiplayerRules_Rules.Limits.Hero < 0 then
-            MultiplayerRules_Rules.Limits.Hero = 0;
+        if MPRuleset_Rules.Limits.Hero < 0 then
+            MPRuleset_Rules.Limits.Hero = 0;
         end
-        if MultiplayerRules_Rules.Limits.Hero > 6 then
-            MultiplayerRules_Rules.Limits.Hero = 6;
+        if MPRuleset_Rules.Limits.Hero > 6 then
+            MPRuleset_Rules.Limits.Hero = 6;
         end
-        Logic.SetNumberOfBuyableHerosForPlayer(PlayersTable[i], MultiplayerRules_Rules.Limits.Hero);
+        Logic.SetNumberOfBuyableHerosForPlayer(PlayersTable[i], MPRuleset_Rules.Limits.Hero);
     end
     self.Data.GameStartOffset = math.floor(Logic.GetTime() + 0.5);
     
     Message(ReplacePlacholders(self.Text.Messages.RulesDefined[QSBTools.GetLanguage()]));
 
     self:SetupDiplomacyForPeacetime();
-    self:FillResourceHeaps(MultiplayerRules_Rules);
-    self:GiveResources(MultiplayerRules_Rules);
-    self:ForbidTechnologies(MultiplayerRules_Rules);
+    self:FillResourceHeaps(MPRuleset_Rules);
+    self:GiveResources(MPRuleset_Rules);
+    self:ForbidTechnologies(MPRuleset_Rules);
     self:ActivateLogicEventJobs();
     self:AddExtraStuff();
 
-    ActivateCrushBuildingBugfix(MultiplayerRules_Rules.Fixes.CrushBuilding == 1);
-    ActivateFormationBugfix(MultiplayerRules_Rules.Fixes.Formaition == 1);
-    ActivateFindViewBugfix(MultiplayerRules_Rules.Fixes.FindView == 1);
-    ActivateBlessLimitBugfix(MultiplayerRules_Rules.Commandment.BlessDelay > 0);
-    SetBlessDelay(MultiplayerRules_Rules.Commandment.BlessDelay);
-    ActivateWeatherChangeLimitBugfix(MultiplayerRules_Rules.Commandment.WeatherChangeDelay > 0);
-    SetWeatherChangeDelay(MultiplayerRules_Rules.Commandment.WeatherChangeDelay);
+    ActivateCrushBuildingBugfix(MPRuleset_Rules.Fixes.CrushBuilding == 1);
+    ActivateFormationBugfix(MPRuleset_Rules.Fixes.Formaition == 1);
+    ActivateFindViewBugfix(MPRuleset_Rules.Fixes.FindView == 1);
+    ActivateBlessLimitBugfix(MPRuleset_Rules.Commandment.BlessDelay > 0);
+    SetBlessDelay(MPRuleset_Rules.Commandment.BlessDelay);
+    ActivateWeatherChangeLimitBugfix(MPRuleset_Rules.Commandment.WeatherChangeDelay > 0);
+    SetWeatherChangeDelay(MPRuleset_Rules.Commandment.WeatherChangeDelay);
     if QuestSystem.Workplace then
-        QuestSystem.Workplace:EnableMod(MultiplayerRules_Rules.Commandment.Workplace == 1);
+        QuestSystem.Workplace:EnableMod(MPRuleset_Rules.Commandment.Workplace == 1);
     end
 
     self:ResumeEverythingAtGameStart();
-    MultiplayerRules_Rules.Callbacks.OnMapConfigured();
-    self:CreateQuests(MultiplayerRules_Rules);
+    MPRuleset_Rules.Callbacks.OnMapConfigured();
+    self:CreateQuests(MPRuleset_Rules);
 end
 
 function MultiplayerSystem:IsUsingEMS()
@@ -963,7 +963,7 @@ function MultiplayerSystem:OverrideUIStuff()
     BuyHeroWindow_Update_BuyHero = function(_Type)
         -- Hero limit
         local LimitName = MultiplayerSystem.Maps.EntityTypeToBuyHeroAvailability[_Type];
-        if LimitName and MultiplayerRules_Rules.Heroes[LimitName] and MultiplayerRules_Rules.Heroes[LimitName] == 0 then
+        if LimitName and MPRuleset_Rules.Heroes[LimitName] and MPRuleset_Rules.Heroes[LimitName] == 0 then
             XGUIEng.DisableButton(XGUIEng.GetCurrentWidgetID(), 1);
             return;
         end
@@ -1046,7 +1046,7 @@ function MultiplayerSystem:ActivateLogicEventJobs()
         Events.LOGIC_EVENT_ENTITY_CREATED,
         function()
             local EntityID = Event.GetEntityID();
-            MultiplayerSystem:LogicEventOnEntityCreated(MultiplayerRules_Rules, Logic.EntityGetPlayer(EntityID), EntityID);
+            MultiplayerSystem:LogicEventOnEntityCreated(MPRuleset_Rules, Logic.EntityGetPlayer(EntityID), EntityID);
         end
     );
 
@@ -1054,7 +1054,7 @@ function MultiplayerSystem:ActivateLogicEventJobs()
         Events.LOGIC_EVENT_ENTITY_DESTROYED,
         function()
             local EntityID = Event.GetEntityID();
-            MultiplayerSystem:LogicEventOnEntityDestroyed(MultiplayerRules_Rules, Logic.EntityGetPlayer(EntityID), EntityID);
+            MultiplayerSystem:LogicEventOnEntityDestroyed(MPRuleset_Rules, Logic.EntityGetPlayer(EntityID), EntityID);
         end
     );
 
@@ -1064,14 +1064,14 @@ function MultiplayerSystem:ActivateLogicEventJobs()
             local PlayerID = Event.GetPlayerID1();
             local EntityID = Event.GetEntityID1();
             local VictimList = {Event.GetEntityID2()};
-            MultiplayerSystem:LogicEventOnEntityHurtEntity(MultiplayerRules_Rules, PlayerID, EntityID, VictimList);
+            MultiplayerSystem:LogicEventOnEntityHurtEntity(MPRuleset_Rules, PlayerID, EntityID, VictimList);
         end
     );
 
     QSBTools.StartInlineJob(
         Events.LOGIC_EVENT_EVERY_TURN,
         function()
-            MultiplayerSystem:LogicEventOnEveryTurn(MultiplayerRules_Rules);
+            MultiplayerSystem:LogicEventOnEveryTurn(MPRuleset_Rules);
         end
     );
 end
@@ -1209,7 +1209,7 @@ function MultiplayerSystem:LogicEventOnEveryTurn(_Data)
         end
     
         -- HQ rush
-        if MultiplayerRules_Rules.Commandment.HQRushBlock == 1 then
+        if MPRuleset_Rules.Commandment.HQRushBlock == 1 then
             local ID = self:GetFirstHQOfPlayer(Players[i]);
             if ID ~= 0 then
                 if self:HasPlayerVillageCenters(Players[i]) then
@@ -1250,6 +1250,14 @@ function MultiplayerSystem:CheckUnitOrBuildingLimit(_PlayerID, _UpgradeCategory,
     end
 end
 
+function MultiplayerSystem:PeacetimeOverMessage()
+    Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[QSBTools.GetLanguage()]));
+    if MPRuleset_Rules.Timer.DeathPenalty > 0 then
+        Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[QSBTools.GetLanguage()]));
+    end
+    Sound.PlayGUISound(Sounds.OnKlick_Select_kerberos, 127);
+end
+
 function MultiplayerSystem:CreateQuests(_Data)
     local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
     local Players = MPSync:GetActivePlayers();
@@ -1270,18 +1278,15 @@ function MultiplayerSystem:CreateQuests(_Data)
                 Goal_NoChange(),
                 Reward_MapScriptFunction(function()
                     MultiplayerSystem:SetupDiplomacy();
+                    MultiplayerSystem:PeacetimeOverMessage();
                 end),
-                Reward_MapScriptFunction(MultiplayerRules_Rules.Callbacks.OnPeacetimeOver),
+                Reward_MapScriptFunction(_Data.Callbacks.OnPeacetimeOver),
                 Trigger_Time(self.Data.GameStartOffset)
             };
         else
             self:SetupDiplomacy();
-            Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[QSBTools.GetLanguage()]));
-            if _Data.Timer.DeathPenalty > 0 then
-                Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[QSBTools.GetLanguage()]));
-            end
-            Sound.PlayGUISound(Sounds.OnKlick_Select_kerberos, 127);
-            MultiplayerRules_Rules.Callbacks.OnPeacetimeOver();
+            self:PeacetimeOverMessage();
+            _Data.Callbacks.OnPeacetimeOver();
         end
 
         -- Death Penalty
@@ -1331,9 +1336,9 @@ function MultiplayerSystem:RuleChangeSubmit(_Current)
 end
 
 function MultiplayerSystem:RuleChangeToggleRule(_Group, _Subject, _Value)
-    if MultiplayerRules_Rules[_Group] then
-        if MultiplayerRules_Rules[_Group][_Subject] then
-            MultiplayerRules_Rules[_Group][_Subject] = (MultiplayerRules_Rules[_Group][_Subject] == _Value and 0) or _Value;
+    if MPRuleset_Rules[_Group] then
+        if MPRuleset_Rules[_Group][_Subject] then
+            MPRuleset_Rules[_Group][_Subject] = (MPRuleset_Rules[_Group][_Subject] == _Value and 0) or _Value;
         end
     end
 end
@@ -1341,14 +1346,14 @@ end
 function MultiplayerSystem:RuleChangeAlterValue(_Group, _Subject, _Value, _Min, _Max)
     _Min = _Min or 0;
     _Max = _Max or 1000000;
-    if MultiplayerRules_Rules[_Group] then
-        if MultiplayerRules_Rules[_Group][_Subject] then
-            MultiplayerRules_Rules[_Group][_Subject] = MultiplayerRules_Rules[_Group][_Subject] + _Value;
-            if MultiplayerRules_Rules[_Group][_Subject] < _Min then
-                MultiplayerRules_Rules[_Group][_Subject] = _Max;
+    if MPRuleset_Rules[_Group] then
+        if MPRuleset_Rules[_Group][_Subject] then
+            MPRuleset_Rules[_Group][_Subject] = MPRuleset_Rules[_Group][_Subject] + _Value;
+            if MPRuleset_Rules[_Group][_Subject] < _Min then
+                MPRuleset_Rules[_Group][_Subject] = _Max;
             end
-            if MultiplayerRules_Rules[_Group][_Subject] > _Max then
-                MultiplayerRules_Rules[_Group][_Subject] = _Min;
+            if MPRuleset_Rules[_Group][_Subject] > _Max then
+                MPRuleset_Rules[_Group][_Subject] = _Min;
             end
         end
     end
@@ -1359,7 +1364,7 @@ end
 --
 -- Default Rules. DO NOT CHANGE THEM!!!
 --
--- Copy this table and rename it to MultiplayerRules_Rules. Paste it into your
+-- Copy this table and rename it to MPRuleset_Rules. Paste it into your
 -- mapscript or load it from an extern file. If you consider using EMS
 -- then you can not use this configuration. Use EMS configuration instead.
 --

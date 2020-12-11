@@ -77,9 +77,9 @@ function QuestSystem.QuestTimer:UpdateTimer(_Index)
     local Limit   = self.m_Data[_Index].Duration;
 
     local Progress = Current/Limit;
-    local R =  35 + math.floor(215 * Progress);
-    local G = 150 - math.floor(70 * Progress);
-    local B = 255 - math.floor(220 * Progress);
+    local R = 50 + math.floor(100 * Progress);
+    local G = 150 - math.floor(108 * Progress);
+    local B = 45;
 
     self:Show(_Index, self.m_Data[_Index].Title, Current, Limit, R, G, B, 255);
 end
@@ -119,20 +119,22 @@ end
 -- @local
 --
 function QuestSystem.QuestTimer:Show(_Index, _title, _Current, _Limit, _r, _g, _b, _a)
-    local ProgressBar = math.floor((200 * (_Current/_Limit)) + 0.5);
-    ProgressBar = (ProgressBar > 200 and 200) or ProgressBar;
+    local ProgressBar = math.floor((180 * (_Current/_Limit)) + 0.5);
+    ProgressBar = (ProgressBar > 180 and 180) or ProgressBar;
     ProgressBar = (ProgressBar < 0 and 0) or ProgressBar;
 
 	XGUIEng.ShowWidget("VCMP_Team".._Index, 1);
-	XGUIEng.SetWidgetSize("VCMP_Team".._Index, 200, 10);
+	XGUIEng.SetWidgetSize("VCMP_Team".._Index, 180, 10);
 	XGUIEng.SetText("VCMP_Team".._Index.."Points", _title);
 	XGUIEng.SetText("VCMP_Team".._Index.."Name", "");
 	XGUIEng.ShowWidget("VCMP_Team".._Index.."PointGame", 1);
 	XGUIEng.ShowWidget("VCMP_Team".._Index.."_Shade", 1);
 
-	XGUIEng.SetWidgetSize("VCMP_Team".._Index.."Name", ProgressBar, 6);
-	XGUIEng.SetWidgetSize("VCMP_Team".._Index.."_Shade", 200, 8);
+	XGUIEng.SetWidgetSize("VCMP_Team".._Index.."Name", ProgressBar, 8);
+	XGUIEng.SetWidgetSize("VCMP_Team".._Index.."_Shade", 180, 10);
+	XGUIEng.SetWidgetPosition("VCMP_Team".._Index.."Points", 0, 10);
 	XGUIEng.SetMaterialColor("VCMP_Team".._Index.."Name",0, _r, _g, _b, _a);
+	XGUIEng.SetMaterialColor("VCMP_Team".._Index.."_Shade",0, 0, 0, 0, 80);
 end
 
 ---
@@ -180,7 +182,7 @@ end
 --
 function QuestSystem.QuestTimer:Controller()
     if self.m_TimerJob == nil then
-        self.m_TimerJob = QSBTools.StartSimpleJobEx(function()
+        self.m_TimerJob = QSBTools.StartSimpleHiResJobEx(function()
             QuestSystem.QuestTimer:HideAllTimer();
             local ShownTimer = 0;
             for i= 1, table.getn(QuestSystem.QuestTimer.m_Data), 1 do

@@ -102,15 +102,31 @@ function Information:CreateAddPageFunctions()
                     -- Set normal text
                     _page = QuestSystem:ReplacePlaceholders(_page);
                     if _page.title then
+                        if type(_page.title) == "table" then
+                            _page.title = _page.title[QSBTools.GetLanguage()];
+                        end
                         if not string.find(string.sub(_page.title, 1, 2), "@") then
                             _page.title = "@center " .. _page.title;
+                        end
+                    end
+                    if _page.text then
+                        if type(_page.text) == "table" then
+                            _page.text = _page.text[QSBTools.GetLanguage()];
                         end
                     end
 
                     -- Set mc text
                     if _page.mc and _page.mc.title then
+                        if type(_page.mc.title) == "table" then
+                            _page.mc.title = _page.mc.title[QSBTools.GetLanguage()];
+                        end
                         if not string.find(string.sub(_page.mc.title, 1, 2), "@") then
                             _page.mc.title = "@center " .. _page.mc.title;
+                        end
+                    end
+                    if _page.mc and _page.mc.text then
+                        if type(_page.mc.text) == "table" then
+                            _page.mc.text = _page.mc.text[QSBTools.GetLanguage()];
                         end
                     end
 
@@ -435,9 +451,9 @@ function Information:OverrideMultipleChoice()
         -- Display multiple choice
 		if _page.mc ~= nil then
 			if _page.mc.text ~= nil then
-				assert(_page.mc.title~=nil);
+				assert(_page.mc.title ~= nil);
 				PrintBriefingHeadline(_page.mc.title);
-				PrintBriefingText(_page.mc.text);
+                PrintBriefingText(_page.mc.text);
 
 				assert(_page.mc.firstText~=nil);
 				assert(_page.mc.secondText~=nil);
