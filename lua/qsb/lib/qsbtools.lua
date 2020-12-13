@@ -342,6 +342,65 @@ end
 GetDistance = QSBTools.GetDistance;
 
 ---
+-- Returns the geometric focus of the passed positions.
+--
+-- The geometric focus is a average position somewhere between the given
+-- coordinates.
+--
+-- @param _pos1 ... Positions (string, number oder table)
+-- @return[type=table] Average position
+-- @within Entities
+--
+function QSBTools.GetGeometricFocus(...)
+    local SumX = 0;
+    local SumY = 0;
+    local SumZ = 0;
+    for i= 1, table.getn(arg), 1 do
+        local Position = arg[i];
+        if type(arg[i]) ~= "table" then
+            Position = GetPosition(arg[i]);
+        end
+        SumX = SumX + Position.X;
+        SumY = SumY + Position.Y;
+        if Position.Z then
+            SumZ = SumZ + Position.Z;
+        end
+    end
+    return {
+        X= 1/table.getn(arg) * SumX,
+        Y= 1/table.getn(arg) * SumY,
+        Z= 1/table.getn(arg) * SumZ
+    };
+end
+
+---
+-- Returns a reachable position for the entity or nil if no position was found.
+--
+-- @param _Entity Entity (string, number)
+-- @param _Target Target position (string, number oder table)
+-- @return[type=number] Erreichbare Position
+-- @within Entities
+--
+function QSBTools.GetReachablePosition(_Entity, _Target)
+    local PlayerID = Logic.EntityGetPlayer(GetID(_Entity));
+    local Position1 = GetPosition(_Entity);
+    local Position2 =_Target;
+    if (type(Position2) == "string") or (type(Position2) == "number") then
+        Position2 = GetPosition(_Target);
+    end
+	assert(type(Position1) == "table");
+    assert(type(Position2) == "table");
+
+    local ID = AI.Entity_CreateFormation(PlayerID, Entities.XD_ScriptEntity, 0, 0, Position2.X, Position2.Y, 0, 0, 0, 0);
+    local NewPosition = GetPosition(ID);
+    DestroyEntity(ID);
+    if QSBTools.SameSector(_Entity, NewPosition) then
+        return NewPosition;
+    end
+    return nil;
+end
+
+---
 -- Checks if an army or entity is dead. If an army has not been created yet
 -- then it will not falsely assumed to be dead.
 --
@@ -378,6 +437,23 @@ function QSBTools.IsValidPosition(_pos)
 	return false;
 end
 IsValidPosition = QSBTools.IsValidPosition;
+
+---
+-- Checks if a building is currently being upgraded.
+--
+-- @param _pos Schriptname or id of building
+-- @return[type=boolean] Building is being upgraded
+-- @within Entities
+--
+function QSBTools.IsBuildingBeingUpgraded(_Entity)
+    local BuildingID = GetID(_Entity);
+    if Logic.IsBuilding(BuildingID) == 0 then
+        return false;
+    end
+    local Value = Logic.GetRemainingUpgradeTimeForBuilding(BuildingID);
+    local Limit = Logic.GetTotalUpgradeTimeForBuilding(BuildingID);
+    return Limit - Value > 0;
+end
 
 ---
 -- Returns the leader entity ID of the soldier.
