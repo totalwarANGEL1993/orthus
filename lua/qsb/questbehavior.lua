@@ -3570,7 +3570,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_QuestRestart);
 ---
 -- Changes the state of a technology.
 -- @param[type=string] _Technology Technology name
--- @param[type=string] _StateTechnology state name
+-- @param[type=string] _State Technology state name
 -- @within Rewards
 --
 function Reward_Technology(...)

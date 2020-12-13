@@ -877,11 +877,13 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         QSBTools.SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.Message then
-        local Text = _Behavior[2];
-        if type(Text) == "table" then
-            Text = Text[QSBTools.GetLanguage()];
+        if self.m_Receiver == GUI.GetPlayerID() then
+            local Text = _Behavior[2];
+            if type(Text) == "table" then
+                Text = Text[QSBTools.GetLanguage()];
+            end
+            QSBTools.SaveCall{Message, QuestSystem:ReplacePlaceholders(Text)};
         end
-        QSBTools.SaveCall{Message, QuestSystem:ReplacePlaceholders(Text)};
 
     elseif _Behavior[1] == Callbacks.DestroyEntity then
         if IsExisting(_Behavior[2]) then
