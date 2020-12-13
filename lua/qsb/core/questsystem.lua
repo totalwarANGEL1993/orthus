@@ -1546,8 +1546,8 @@ function QuestTemplate:IsNpcInUseByAnyOtherActiveQuest(_NPC)
         if self.m_QuestName ~= Other.m_QuestName then
             if Other.m_State == QuestStates.Active then
                 for j= 1, table.getn(Other.m_Objectives), 1 do
-                    if Other.m_Objectives[i][1] == Objectives.NPC then
-                        if GetID(Other.m_Objectives[i][2]) == GetID(_NPC) then
+                    if Other.m_Objectives[j][1] == Objectives.NPC then
+                        if GetID(Other.m_Objectives[j][2]) == GetID(_NPC) then
                             return true;
                         end
                     end
@@ -1656,7 +1656,7 @@ function QuestSystem:NpcAndHeroLookAtTasks(_NPC, _Hero)
     LookAt(_NPC, _Hero);
     LookAt(_Hero, _NPC);
     local HeroesTable = {};
-    Logic.GetHeroes(Logic.EntityGetPlayer(_PlayerID), HeroesTable);
+    Logic.GetHeroes(Logic.EntityGetPlayer(_Hero), HeroesTable);
     for i= 1, table.getn(HeroesTable), 1 do
         if QSBTools.GetDistance(_NPC, HeroesTable[i]) < 5000 then
             if Logic.GetCurrentTaskList(HeroesTable[i]) == "TL_NPC_INTERACTION" then

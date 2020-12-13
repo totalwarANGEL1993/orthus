@@ -91,11 +91,10 @@ MPRuleset_Rules = {
         DeathPenalty        = 0,
     },
 
-    --~~ Commandment
-    --~~ The commandments are a list of special rules that you can choose to
-    --~~ activate or deacivate. They might make the game more enjoyable.
+    --~~ Bugfixes
+    --~~ Fixes some bugs in the game.
 
-    Commandment = {
+    Fixes = {
         -- Crush building glitch fixed. Buildings will deselect the building
         -- and then destroy it right away without warning. (0 = off)
         CrushBuilding       = 1,
@@ -104,6 +103,18 @@ MPRuleset_Rules = {
         -- Formations will only require GT_StandingArmy researched and not 
         -- GT_Tactics to also be allowed.
         Formaition          = 1,
+
+        -- Find View fix (0 = off)
+        -- Buttons in find view appear always for an unit type. Not maching
+        -- upgrade levels don't matter anymore.
+        FindView            = 1,
+    },
+
+    --~~ Commandment
+    --~~ The commandments are a list of special rules that you can choose to
+    --~~ activate or deacivate. They might make the game more enjoyable.
+
+    Commandment = {
 
         -- Associate village centers to players (0 = off)
         -- Give sequential names to village centers for each player. Players
@@ -122,11 +133,11 @@ MPRuleset_Rules = {
         -- Control worker amount in workplaces (0 = off)
         Workplace           = 1,
 
-        -- Minutes the weather can not be changed again after a change was
-        -- triggered by the weather tower.
-        WeatherChangeDelay  = 5 * 30,
+        -- Seconds the weather can not be changed again after a change was
+        -- triggered by the weather tower. (0 = off)
+        WeatherChangeDelay  = 5 * 60,
 
-        -- Minutes a player must wait between two blesses.
+        -- Seconds a player must wait between two blesses. (0 = off)
         BlessDelay          = 120,
     },
 
