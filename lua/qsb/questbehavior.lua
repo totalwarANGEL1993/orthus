@@ -327,6 +327,21 @@ function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Sp
 end
 
 ---
+-- Hides an Entity from the AI or makes it visible again.
+--
+-- Hidden entities will under no circumstances be added to armies created with
+-- code from this library.
+--
+-- @param[type=number]  _PlayerID ID of player
+-- @param               _Entity Entity to hide (Scriptname or ID)
+-- @param[type=boolean] _HiddenFlag Entity is hidden
+-- @within Methods
+--
+function HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag)
+    QuestSystemBehavior:HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag);
+end
+
+---
 -- Registers an attack target position for the player.
 --
 -- Already generated armies will also add this position to the list of their
@@ -678,8 +693,23 @@ function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Const
         extracting	  	= false,
         repairing	  	= true,
         constructing  	= _Construct == true,
-        resources	  	= {gold = 30000, clay = 3000, wood = 9000, stone = 3000, iron = 9000, sulfur = 9000},
-        refresh   	  	= {gold = 800,   clay =   40, wood =   40, stone =   40, iron =  400, sulfur =  400, updateTime	= 15},
+        resources = {
+            gold   = 30000,
+            clay   = 3000,
+            wood   = 9000,
+            stone  = 3000,
+            iron   = 9000,
+            sulfur = 9000
+        },
+        refresh	= {
+            gold       = 1500,
+            clay       = 40,
+            wood       = 400,
+            stone      = 40,
+            iron       = 400,
+            sulfur     = 400,
+            updateTime = 15
+        },
     }
     if _Rebuild then
         description.rebuild	= {delay = 2*60};
@@ -703,6 +733,7 @@ function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Const
     self.Data.CreatedAiPlayers[_PlayerID] = {
         TechnologyLevel = _TechLevel,
         CannonType = Entities["PV_Cannon".._TechLevel],
+        Blacklist = {},
     };
     self.Data.AiPlayerAttackTargets[_PlayerID] = {};
     self.Data.AiPlayerPatrolPoints[_PlayerID] = {};
@@ -1048,7 +1079,7 @@ function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area
 
     -- Get army ID
     local ArmyID = table.getn(self.Data.CreatedAiArmies[_PlayerID]) +1;
-    if ArmyID > 10 then
+    if ArmyID > 9 then
         return;
     end
 
@@ -1067,24 +1098,26 @@ function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area
     army.position			     = GetPosition(_Position);
     army.rodeLength			     = _Area;
     army.retreatStrength	     = math.ceil(_Strength/3);
-    army.baseDefenseRange	     = _Area * 0.7;
-    army.outerDefenseRange	     = _Area * 1.5;
     army.AllowedTypes		     = _TroopTypes;
 
     army.Advanced                = {};
     army.Advanced.attackPosition = copy(self.Data.AiPlayerAttackTargets[_PlayerID]);
     army.Advanced.patrolPoints   = copy(self.Data.AiPlayerPatrolPoints[_PlayerID]);
+    army.Advanced.scatteredArea  = _Area * 0.9;
+    army.Advanced.gatheredArea   = _Area * 0.5;
 
     table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
-    SetupAITroopGenerator("QuestSystemBehavior_AiArmies_" .._PlayerID.. "_" ..ArmyID, self.Data.CreatedAiArmies[_PlayerID][ArmyID]);
+    -- Recruit controller
+    QSBTools.StartSimpleJobEx(function(_PlayerID, _ArmyID)
+        QuestSystemBehavior:ArmyRecriutController(_PlayerID, _ArmyID);
+    end, _PlayerID, ArmyID);
+    -- Army controller
     QSBTools.StartSimpleJobEx(function(_PlayerID, _ArmyID)
         QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID);
     end, _PlayerID, ArmyID);
 
     -- Default values
     AI.Army_BeAlwaysAggressive(_PlayerID, ArmyID);
-    AI.Army_SetScatterTolerance(_PlayerID, ArmyID, 4);
-
     return ArmyID;
 end
 
@@ -1112,7 +1145,7 @@ function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, 
 
     -- Get army ID
     local ArmyID = table.getn(self.Data.CreatedAiArmies[_PlayerID]) +1;
-    if ArmyID > 10 then
+    if ArmyID > 9 then
         assert(false, "To many armies");
         return;
     end
@@ -1133,8 +1166,6 @@ function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, 
     army.rodeLength			     = _Area;
     army.refresh 			     = true;
     army.retreatStrength	     = math.ceil(_Strength/3);
-    army.baseDefenseRange	     = _Area * 0.7;
-    army.outerDefenseRange	     = _Area * 1.5;
 
     army.spawnPos 		 	     = GetPosition(_Position);
     army.spawnGenerator 		 = _Spawner;
@@ -1148,6 +1179,8 @@ function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, 
     army.Advanced                = {};
     army.Advanced.attackPosition = copy(self.Data.AiPlayerAttackTargets[_PlayerID]);
     army.Advanced.patrolPoints   = copy(self.Data.AiPlayerPatrolPoints[_PlayerID]);
+    army.Advanced.scatteredArea  = _Area * 0.9;
+    army.Advanced.gatheredArea   = _Area * 0.5;
 
     table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
     SetupAITroopSpawnGenerator("QuestSystemBehavior_AiArmies_" .._PlayerID.. "_" ..ArmyID, self.Data.CreatedAiArmies[_PlayerID][ArmyID]);
@@ -1157,12 +1190,152 @@ function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, 
 
     -- Default values
     AI.Army_BeAlwaysAggressive(_PlayerID, ArmyID);
-    AI.Army_SetScatterTolerance(_PlayerID, ArmyID, 4);
-
     return ArmyID;
 end
 
--- Controller --
+function QuestSystemBehavior:HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag)
+    if self.Data.CreatedAiPlayers[_PlayerID] then
+        if _HiddenFlag then
+            if not QSBTools.FindValue(_Entity, self.Data.CreatedAiPlayers[_PlayerID].Blacklist) then
+                table.insert(self.Data.CreatedAiPlayers[_PlayerID], _Entity);
+            end
+        else
+            for i= table.getn(self.Data.CreatedAiPlayers[_PlayerID].Blacklist), 1, -1 do
+                table.remove(self.Data.CreatedAiPlayers[_PlayerID].Blacklist, i);
+            end
+        end
+    end
+end
+
+function QuestSystemBehavior:FindUnemployedLeader(_PlayerID)
+    if self.Data.CreatedAiPlayers[_PlayerID] then
+        local Leader = {};
+        Leader = copy(QSBTools.GetAllCannons(_PlayerID), Leader);
+        Leader = copy(QSBTools.GetAllLeader(_PlayerID), Leader);
+        for i= table.getn(Leader), 1, -1 do
+            local ScriptName = Logic.GetEntityName(Leader[i]);
+            if QSBTools.FindValue(Leader[i], self.Data.CreatedAiPlayers[_PlayerID].Blacklist)
+            or QSBTools.FindValue(ScriptName, self.Data.CreatedAiPlayers[_PlayerID].Blacklist) then
+                table.remove(Leader, i);
+            elseif AI.Entity_GetConnectedArmy(Leader[i]) ~= -1 then
+                table.remove(Leader, i);
+            end
+        end
+        if table.getn(Leader) > 0 then
+            return Leader[1];
+        end
+    end
+    return 0;
+end
+
+function QuestSystemBehavior:GetLeadersConnectedToArmy(_PlayerID, _ArmyID)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
+            local Leader = {};
+            Leader = copy(QSBTools.GetAllLeader(_PlayerID), Leader);
+            Leader = copy(QSBTools.GetAllCannons(_PlayerID), Leader);
+            for i= table.getn(Leader), 1, -1 do
+                if AI.Entity_GetConnectedArmy(Leader[i]) ~= _ArmyID then
+                    table.remove(Leader, i);
+                end
+            end
+            return Leader;
+        end
+    end
+    return {};
+end
+
+function QuestSystemBehavior:IsArmyFighting(_PlayerID, _ArmyID)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
+            local Army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
+            local Leader = self:GetLeadersConnectedToArmy(_PlayerID, _ArmyID);
+            if table.getn(Leader) > 0 then
+                for i= 1, table.getn(Leader), 1 do
+                    local Task = Logic.GetCurrentTaskList(Leader[i]);
+                    if Task and string.find(Task, "BATTLE") then
+                        return true;
+                    end
+                end
+            end
+        end
+    end
+    return false;
+end
+
+function QuestSystemBehavior:IsArmyScattered(_PlayerID, _ArmyID)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
+            if self:IsArmyFighting(_PlayerID, _ArmyID) then
+                return false;
+            end
+            local Army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
+            local Leader = self:GetLeadersConnectedToArmy(_PlayerID, _ArmyID);
+            if table.getn(Leader) > 0 then
+                local Center = QSBTools.GetGeometricFocus(unpack(Leader));
+                return not self:AreAllArmyMembersCloseToPosition(_PlayerID, _ArmyID, Center, Army.Advanced.scatteredArea);
+            end
+        end
+    end
+    return false;
+end
+
+function QuestSystemBehavior:IsArmyGathered(_PlayerID, _ArmyID)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
+            if self:IsArmyFighting(_PlayerID, _ArmyID) then
+                return true;
+            end
+            local Army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
+            local Leader = self:GetLeadersConnectedToArmy(_PlayerID, _ArmyID);
+            if table.getn(Leader) > 0 then
+                local Center = QSBTools.GetGeometricFocus(unpack(Leader));
+                return self:AreAllArmyMembersCloseToPosition(_PlayerID, _ArmyID, Center, Army.Advanced.gatheredArea);
+            end
+        end
+    end
+    return true;
+end
+
+function QuestSystemBehavior:AreAllArmyMembersCloseToPosition(_PlayerID, _ArmyID, _Position, _Area)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
+            local Leaders = self:GetLeadersConnectedToArmy(_PlayerID, _ArmyID);
+            local AllMembers = {};
+            for i= 1, table.getn(Leaders), 1 do
+                table.insert(AllMembers, Leaders[i]);
+                local Soldiers = {Logic.GetSoldiersAttachedToLeader(Leaders[i])};
+                for j= 2, Soldiers[1]+1, 1 do
+                    table.insert(AllMembers, Soldiers[j]);
+                end
+            end
+            for i= 1, table.getn(AllMembers), 1 do
+                if GetDistance(AllMembers[i], _Position) > _Area then
+                    return false;
+                end
+            end
+        end
+    end
+    return true;
+end
+
+-- Recriut controller --
+
+function QuestSystemBehavior:ArmyRecriutController(_PlayerID, _ArmyID)
+    if self.Data.CreatedAiArmies[_PlayerID] then
+        local Army = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID][_ArmyID];
+        if AI.Army_GetNumberOfTroops(_PlayerID, _ArmyID) < Army.strength then
+            local RandomType = Army.AllowedTypes[math.random(1, table.getn(Army.AllowedTypes))];
+            AI.Army_BuyLeader(_PlayerID, _ArmyID, RandomType);
+            local UnemployedID = QuestSystemBehavior:FindUnemployedLeader(_PlayerID);
+            if UnemployedID ~= 0 then
+                AI.Entity_ConnectLeader(UnemployedID, _ArmyID);
+            end
+        end
+    end
+end
+
+-- Army advance controller --
 
 QuestSystemBehavior.ArmyState          = {};
 QuestSystemBehavior.ArmyState.Default  = 1;
@@ -1171,6 +1344,7 @@ QuestSystemBehavior.ArmyState.Select   = 3;
 QuestSystemBehavior.ArmyState.Attack   = 4;
 QuestSystemBehavior.ArmyState.Fallback = 5;
 QuestSystemBehavior.ArmyState.Patrol   = 6;
+QuestSystemBehavior.ArmyState.Gather   = 7;
 
 function QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID)
     local army = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID][_ArmyID];
@@ -1193,31 +1367,51 @@ function QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID)
 
         -- Army is selecting a target
         elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Select then
-            local underProcessing = {};
-			for k,v in pairs(all) do
-				if k ~= _ID and all[k].Advanced.Target ~= nil then
-					table.insert(underProcessing, all[k].Advanced.Target);
-				end
-            end
-
-            -- Select a attack target
-            if army.Advanced.AttackDisabled ~= true and army.Advanced.attackPosition then
-                for i=1,table.getn(army.Advanced.attackPosition),1 do
-                    local atkPos = army.Advanced.attackPosition[i];
-                    if  QSBTools.AreEnemiesInArea(army.player, GetPosition(atkPos), army.rodeLength)
-                    and army.Advanced.Target == nil and not IstDrin(atkPos, underProcessing)
-                    and QSBTools.SameSector(atkPos, army.position) then
-                        Redeploy(army, GetPosition(atkPos));
-                        army.Advanced.Target = atkPos;
-                        army.Advanced.State = QuestSystemBehavior.ArmyState.Attack;
-                        break;
+            if army.Advanced.Target ~= nil then
+                Redeploy(army, GetPosition(army.Advanced.Target));
+                army.Advanced.State = QuestSystemBehavior.ArmyState.Attack;
+            else
+                if HasFullStrength(army) then
+                    local underProcessing = {};
+                    for k,v in pairs(all) do
+                        if k ~= _ID and all[k].Advanced.Target ~= nil then
+                            table.insert(underProcessing, all[k].Advanced.Target);
+                        end
                     end
+
+                    -- Select a attack target
+                    if army.Advanced.AttackDisabled ~= true and army.Advanced.attackPosition then
+                        for i=1,table.getn(army.Advanced.attackPosition),1 do
+                            local atkPos = army.Advanced.attackPosition[i];
+                            if  QSBTools.AreEnemiesInArea(army.player, GetPosition(atkPos), army.rodeLength)
+                            and army.Advanced.Target == nil and not IstDrin(atkPos, underProcessing)
+                            and QSBTools.SameSector(atkPos, army.position) then
+                                Redeploy(army, GetPosition(atkPos));
+                                army.Advanced.Target = atkPos;
+                                army.Advanced.State = QuestSystemBehavior.ArmyState.Attack;
+                                break;
+                            end
+                        end
+                    end
+                end
+
+                -- No target found? Go to patrol
+                if army.Advanced.Target == nil then
+                    army.Advanced.State = QuestSystemBehavior.ArmyState.Patrol;
                 end
             end
 
-            -- No target found? Go to patrol
-            if army.Advanced.Target == nil then
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Patrol;
+        -- Army is scattered
+        elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Gather then
+            -- Army needs to be refreshed
+            if IsVeryWeak(army) or IsDead(army) then
+                army.Advanced.State = QuestSystemBehavior.ArmyState.Fallback;
+                Redeploy(army, army.position);
+            else
+                -- Army has gathered
+                if self:IsArmyGathered(army.player, army.id) then
+                    army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
+                end
             end
 
         -- Army is attacking a target
@@ -1232,10 +1426,17 @@ function QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID)
                     army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
                     Redeploy(army, army.position);
                 else
-                    -- All enemies dead? Wait for command
-                    if not QSBTools.AreEnemiesInArea(army.player, GetPosition(army.Advanced.Target), army.rodeLength) then
-                        army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
-                        army.Advanced.Target = nil;
+                    if self:IsArmyScattered(army.player, army.id) then
+                        local Leaders = self:GetLeadersConnectedToArmy(army.player, army.id);
+                        local Center = QSBTools.GetGeometricFocus(unpack(Leaders));
+                        Redeploy(army, Center);
+                        army.Advanced.State = QuestSystemBehavior.ArmyState.Gather;
+                    else
+                        -- All enemies dead? Wait for command
+                        if not QSBTools.AreEnemiesInArea(army.player, GetPosition(army.Advanced.Target), army.rodeLength) then
+                            army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
+                            army.Advanced.Target = nil;
+                        end
                     end
                 end
             end
@@ -1246,6 +1447,8 @@ function QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID)
             if IsVeryWeak(army) or IsDead(army) then
 				army.Advanced.State = QuestSystemBehavior.ArmyState.Fallback;
                 Redeploy(army, army.position);
+            elseif table.getn(army.Advanced.patrolPoints) == 0 then
+                army.Advanced.State = QuestSystemBehavior.ArmyState.Select;
             else
                 -- Initial patrol station
                 -- First waypoint ever is selected by random
@@ -1291,7 +1494,7 @@ function QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID)
         elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Refresh then
             army.Advanced.Target = nil;
             -- Army has recovered
-			if HasFullStrength(army) then
+			if not AI.Army_IsRefreshing(army.player, army.id) and HasFullStrength(army) then
                 army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
 				Redeploy(army, army.position);
 			end
