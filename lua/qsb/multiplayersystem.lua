@@ -1023,22 +1023,20 @@ function MultiplayerSystem:SetupDiplomacyForPeacetime()
     end
 end
 
-function MultiplayerSystem:SetupDiplomacy()
+function MultiplayerSystem:SetupDiplomacy(_PlayerID)
     local PlayersTable = MPSync:GetActivePlayers();
+    local Team1 = MPSync:GetTeamOfPlayer(_PlayerID);
     for i= 1, table.getn(PlayersTable), 1 do
-        local Team1 = MPSync:GetTeamOfPlayer(PlayersTable[i]);
-        for j= 1, table.getn(PlayersTable), 1 do
-            local Team2 = MPSync:GetTeamOfPlayer(PlayersTable[j]);
-            if PlayersTable[i] ~= PlayersTable[j] then
-                if Team1 == Team2 then
-                    SetFriendly(PlayersTable[i], PlayersTable[j]);
-                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 1);
-		            Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 1);
-                else
-                    SetHostile(PlayersTable[i], PlayersTable[j]);
-                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 0);
-		            Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 0);
-                end
+        if PlayersTable[i] ~= _PlayerID then
+            local Team2 = MPSync:GetTeamOfPlayer(PlayersTable[i]);
+            if Team1 == Team2 then
+                SetFriendly(_PlayerID, PlayersTable[i]);
+                Logic.SetShareExplorationWithPlayerFlag(_PlayerID, PlayersTable[i], 1);
+                Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], _PlayerID, 1);
+            else
+                SetHostile(_PlayerID, PlayersTable[i]);
+                Logic.SetShareExplorationWithPlayerFlag(_PlayerID, PlayersTable[i], 0);
+                Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], _PlayerID, 0);
             end
         end
     end
@@ -1253,20 +1251,23 @@ function MultiplayerSystem:CheckUnitOrBuildingLimit(_PlayerID, _UpgradeCategory,
     end
 end
 
-function MultiplayerSystem:PeacetimeOverMessage()
-    Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[QSBTools.GetLanguage()]));
-    if MPRuleset_Rules.Timer.DeathPenalty > 0 then
-        Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[QSBTools.GetLanguage()]));
+function MultiplayerSystem:PeacetimeOverMessage(_PlayerID)
+    if _PlayerID == GUI.GetPlayerID() then
+        Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[QSBTools.GetLanguage()]));
+        if MPRuleset_Rules.Timer.DeathPenalty > 0 then
+            Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[QSBTools.GetLanguage()]));
+        end
+        Sound.PlayGUISound(Sounds.OnKlick_Select_kerberos, 127);
     end
-    Sound.PlayGUISound(Sounds.OnKlick_Select_kerberos, 127);
 end
 
 function MultiplayerSystem:CreateQuests(_Data)
     local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
     local Players = MPSync:GetActivePlayers();
-    for i= 1, table.getn(Players), 1 do   
-        -- Peacetime
-        if _Data.Timer.Peacetime > 0 then
+    
+    -- Peacetime
+    if _Data.Timer.Peacetime > 0 then
+        for i= 1, table.getn(Players), 1 do
             CreateQuest {
                 Name        = "MultiplayerRules_PeacetimeQuest_Player" ..Players[i],
                 Time        = _Data.Timer.Peacetime * 60,
@@ -1279,21 +1280,23 @@ function MultiplayerSystem:CreateQuests(_Data)
                 },
 
                 Goal_NoChange(),
-                Reward_MapScriptFunction(function()
-                    MultiplayerSystem:SetupDiplomacy();
-                    MultiplayerSystem:PeacetimeOverMessage();
+                Reward_MapScriptFunction(function(_Data, _Quest)
+                    MultiplayerSystem:SetupDiplomacy(_Quest.m_Receiver);
+                    MultiplayerSystem:PeacetimeOverMessage(_Quest.m_Receiver);
                 end),
                 Reward_MapScriptFunction(_Data.Callbacks.OnPeacetimeOver),
                 Trigger_Time(self.Data.GameStartOffset)
             };
-        else
-            self:SetupDiplomacy();
-            self:PeacetimeOverMessage();
-            _Data.Callbacks.OnPeacetimeOver();
         end
+    else
+        self:SetupDiplomacy(Players[i]);
+        self:PeacetimeOverMessage(Players[i]);
+        _Data.Callbacks.OnPeacetimeOver();
+    end
 
-        -- Death Penalty
-        if _Data.Timer.DeathPenalty > 0 then
+    -- Death Penalty
+    if _Data.Timer.DeathPenalty > 0 then
+        for i= 1, table.getn(Players), 1 do
             CreateQuest {
                 Name        = "MultiplayerRules_DeathPenaltyQuest_Player" ..Players[i],
                 Time        = _Data.Timer.DeathPenalty * 60,

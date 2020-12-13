@@ -86,9 +86,9 @@ end
 --
 function Interaction:OverrideBriefing()
     StartBriefing_Orig_Interaction = StartBriefing;
-    StartBriefing = function(_briefing)
+    StartBriefing = function(_briefing, _id, _quest)
         GUIAction_MerchantReady();
-        return StartBriefing_Orig_Interaction(_briefing);
+        return StartBriefing_Orig_Interaction(_briefing, _id, _quest);
     end
 end
 

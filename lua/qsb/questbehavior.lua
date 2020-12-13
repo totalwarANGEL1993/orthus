@@ -3286,6 +3286,10 @@ function b_Reward_Briefing:CustomFunction(_Quest)
     _Quest.m_SuccessBriefing = _G[self.Data.Briefing](self, _Quest);
 end
 
+function b_Reward_Briefing:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
 function b_Reward_Briefing:Reset(_Quest)
     _Quest.m_SuccessBriefing = nil;
 end
@@ -3300,18 +3304,6 @@ function b_Reward_Briefing:Debug(_Quest)
         return true;
     end
     return false;
-end
-
-function b_Reward_Briefing:CustomFunction(_Quest)
-    _Quest.m_SuccessBriefing = _G[self.Data.Briefing](self, _Quest);
-end
-
-function b_Reward_Briefing:Reset(_Quest)
-    _Quest.m_SuccessBriefing = nil;
-end
-
-function b_Reward_Briefing:GetRewardTable()
-    return {self.Data.Type, {self.CustomFunction, self}};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_Briefing);
