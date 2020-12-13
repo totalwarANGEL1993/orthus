@@ -12,7 +12,8 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.questsystem</li>
+-- <li>qsb.core.mpsync</li>
+-- <li>qsb.core.questsystem</li>
 -- </ul>
 --
 -- @set sort=true
@@ -125,7 +126,7 @@ function QuestSystem.GameSpeedSwitch:OverrideGUI()
             XGUIEng.ShowWidget("PauseScreen",1);
         else
             XGUIEng.ShowWidget("PauseScreen",0);
-            self.m_CurrentSpeed = _Speed;
+            QuestSystem.GameSpeedSwitch.m_CurrentSpeed = _Speed;
         end
     end
 
@@ -134,15 +135,24 @@ function QuestSystem.GameSpeedSwitch:OverrideGUI()
         GUITooltip_Generic = function(a)
             if a == "MenuMap/OnlineHelp" then
                 local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-                local Template = " @color:180,180,180 Spielgeschwindigkeit: @color:255,255,255 %d / %d";
-                if Language == "en" then 
-                    Template = " @color:180,180,180 Accelleration: @color:255,255,255 %d / %d";
+                local Text;
+                if QuestSystem.GameSpeedSwitch.m_SpeedUpAllowed then
+                    local Template = {
+                        de = " @color:180,180,180 Spielgeschwindigkeit ändern @color:255,255,255 @cr Erhöht die Spielgeschwindigkeit bis zum Limit oder setzt sie zurück. @cr (Aktuell: %d / %d)",
+                        en = "@color:180,180,180 Accelerate game @color:255,255,255 @cr Increases the game speed up to the limit or resets it back to normal. @cr (Current: %d / %d)"
+                    };
+                    Text = string.format(
+                        Template[Language],
+                        QuestSystem.GameSpeedSwitch.m_CurrentSpeed,
+                        QuestSystem.GameSpeedSwitch.m_SpeedLimit
+                    );
+                else
+                    local Template = {
+                        de = " @color:180,180,180 Spielgeschwindigkeit ändern @color:255,255,255 @cr Spielgeschwindikeit kann nicht geändert werden!",
+                        en = "@color:180,180,180 Accelerate game @color:255,255,255 @cr Game speed is locked and can not be changed!"
+                    };
+                    Text = Template[Language];
                 end
-                local Text = string.format(
-                    Template,
-                    QuestSystem.GameSpeedSwitch.m_CurrentSpeed,
-                    QuestSystem.GameSpeedSwitch.m_SpeedLimit
-                );
                 
                 XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, Text);
                 XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomCosts, "");

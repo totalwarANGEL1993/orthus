@@ -523,6 +523,9 @@ function QuestSystemBehavior:PrepareQuestSystem()
         Information:Install();
         self:CreateBehaviorConstructors();
         self:OverwriteMapClosingFunctions();
+        if QuestSystem.GameSpeedSwitch then
+            QuestSystem.GameSpeedSwitch:Install();
+        end
         if QuestSystem.Workplace then
             QuestSystem.Workplace:Install();
         end

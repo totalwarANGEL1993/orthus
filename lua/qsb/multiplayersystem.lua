@@ -889,8 +889,11 @@ function MultiplayerSystem:ConfigurationFinished()
     SetBlessDelay(MPRuleset_Rules.Commandment.BlessDelay);
     ActivateWeatherChangeLimitBugfix(MPRuleset_Rules.Commandment.WeatherChangeDelay > 0);
     SetWeatherChangeDelay(MPRuleset_Rules.Commandment.WeatherChangeDelay);
-    if QuestSystem.Workplace then
-        QuestSystem.Workplace:EnableMod(MPRuleset_Rules.Commandment.Workplace == 1);
+    if GameSpeedSetAllowed then
+        GameSpeedSetAllowed(false);
+    end
+    if AllowChangingWorkerAmount then
+        AllowChangingWorkerAmount(MPRuleset_Rules.Commandment.Workplace == 1);
     end
 
     self:ResumeEverythingAtGameStart();

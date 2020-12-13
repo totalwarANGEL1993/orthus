@@ -27,6 +27,17 @@ QuestSystem.Workplace = {
     UseMod = true,
 };
 
+
+
+---
+-- Enables or disables the ability to change the worker amount in workplaces.
+-- @param[type=boolean] _Flag Mod is enabled
+-- @within Methods
+--
+function AllowChangingWorkerAmount(_Flag)
+    QuestSystem.Workplace:EnableMod(_Flag);
+end
+
 ---
 -- Installs the mod.
 -- @within QuestSystem.Workplace
