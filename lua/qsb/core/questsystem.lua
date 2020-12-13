@@ -93,15 +93,7 @@ function QuestSystem:InstallQuestSystem()
         EndJob(tributeJingleTriggerId);
         MPSync:Install();
         Bugfixes:Install();
-        self.BriefingFinishedScriptEvent = MPSync:CreateScriptEvent(function(_ID)
-            -- Register briefing end
-            QuestSystem.Briefings[_ID] = true;
-            -- Dequeue next briefing
-            if table.getn(QuestSystem.BriefingsQueue) > 0 then
-                local Entry = table.remove(QuestSystem.BriefingsQueue, 1);
-                StartBriefing(Entry[1], Entry[2], Entry[3]);
-            end
-        end);
+        self:CreateScriptEvents();
 
         -- Quest descriptions for all players
         for i= 1, table.getn(Score.Player), 1 do
@@ -110,9 +102,11 @@ function QuestSystem:InstallQuestSystem()
 
         -- Real random numbers
         local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
-        math.randomseed(tonumber(TimeString));
-        math.random(1, 100);
+        if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
+            MPSync:SnchronizedCall(self.MathRandomSeedScriptEvent, TimeString);
+        end
 
+        -- Quest event trigger
         self:InitalizeQuestEventTrigger();
 
         -- Optional briefing expansion
@@ -140,7 +134,7 @@ function QuestSystem:InstallQuestSystem()
             if _Quest == nil or _Quest.m_Receiver == GUI.GetPlayerID() then
                 -- Enqueue if briefing active
                 if IsBriefingActive() then
-                    table.insert(QuestSystem.BriefingsQueue, {copy(_Briefing), _ID, _Quest});
+                    table.insert(QuestSystem.BriefingsQueue, {copy(_Briefing), _ID, copy(_Quest)});
                     return _ID;
                 end
                 -- Start briefing
@@ -160,6 +154,25 @@ function QuestSystem:InstallQuestSystem()
             MPSync:SnchronizedCall(self.BriefingFinishedScriptEvent, ID);
         end
     end
+end
+
+function QuestSystem:CreateScriptEvents()
+    self.BriefingFinishedScriptEvent = MPSync:CreateScriptEvent(function(_ID)
+        -- Register briefing end
+        QuestSystem.Briefings[_ID] = true;
+        -- Dequeue next briefing
+        if table.getn(QuestSystem.BriefingsQueue) > 0 then
+            local Entry = table.remove(QuestSystem.BriefingsQueue, 1);
+            StartBriefing(Entry[1], Entry[2], Entry[3]);
+        end
+    end);
+
+    self.MathRandomSeedScriptEvent = MPSync:CreateScriptEvent(function(_TimeString)
+        -- Set seed
+        math.randomseed(tonumber(_TimeString));
+        -- Call it once to get fresh randoms
+        math.random(1, 100);
+    end);
 end
 
 function QuestSystem:InitalizeQuestEventTrigger()
@@ -1353,12 +1366,14 @@ function QuestTemplate:CreateQuest()
 
             local Title = self.m_Description.Title;
             if type(Title) == "table" then
-                Title = QuestSystem:ReplacePlaceholders(Title[QSBTools.GetLanguage()]);
+                Title = Title[QSBTools.GetLanguage()];
             end
+            Title = QuestSystem:ReplacePlaceholders(Title);
             local Text  = self.m_Description.Text;
             if type(Text) == "table" then
-                Text = QuestSystem:ReplacePlaceholders(Text[QSBTools.GetLanguage()]);
+                Text = Text[QSBTools.GetLanguage()];
             end
+            Text = QuestSystem:ReplacePlaceholders(Text);
 
             if QSBTools.GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicAddQuest(
@@ -1390,12 +1405,14 @@ function QuestTemplate:CreateQuestEx()
 
             local Title = self.m_Description.Title;
             if type(Title) == "table" then
-                Title = QuestSystem:ReplacePlaceholders(Title[QSBTools.GetLanguage()]);
+                Title = Title[QSBTools.GetLanguage()];
             end
+            Title = QuestSystem:ReplacePlaceholders(Title);
             local Text  = self.m_Description.Text;
             if type(Text) == "table" then
-                Text = QuestSystem:ReplacePlaceholders(Text[QSBTools.GetLanguage()]);
+                Text = Text[QSBTools.GetLanguage()];
             end
+            Text = QuestSystem:ReplacePlaceholders(Text);
 
             if QSBTools.GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicAddQuestEx(
