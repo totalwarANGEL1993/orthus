@@ -8,6 +8,11 @@
 -- This module adds some briefing improvements. Some are just for cosmetics,
 -- some are fixing pittful bugs, some offer helpful new features. This is the
 -- version for the vanilla game.
+--
+-- If multiple choice is used in Multiplayer you must synchronize the actions
+-- of buttont if something is created or lua state changes. Otherwise you will
+-- get a desync!
+--
 -- For Extra 3 we will using mcbBrief by mcb. This will offer at least equal
 -- features or maybe even more advanced.
 --
