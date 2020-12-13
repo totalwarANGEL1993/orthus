@@ -836,7 +836,7 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
 
     -- Technology
     elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Technology then        
-        local TechnologyKey = QuestSystem:GetKeyInTable(Technologies, self.m_Offers[_SlotIndex].Type);
+        local TechnologyKey = QuestSystem:GetKeyInTable(Technologies, self.m_Offers[_SlotIndex].Good);
         if TechnologyKey == nil then
             return;
         end
