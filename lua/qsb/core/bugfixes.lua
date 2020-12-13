@@ -41,8 +41,10 @@ Bugfixes = {
     UseBlessLimit = false,
     UseWeatherChangeLimit = false,
     UseFindViewFix = true,
+    UseTradeAmountFix = true,
 
     ScriptEvents = {},
+    TradeLimit = -1,
     WeatherChangeLimit = {
         Limit = 3 * 60,
         Last  = 0,
@@ -142,6 +144,19 @@ function SetWeatherChangeDelay(_Time)
     Bugfixes.WeatherChangeLimit.Limit = _Time;
 end
 
+---
+-- Sets the limit for transactions. Set limit to -1 do deactivate it. The limit
+-- can only be set in 2500 steps.
+-- @param[type=number] _Limit Limit
+-- @within Methods
+--
+function SetTradeAmountLimit(_Limit)
+    if math.mod(_Limit, 250) ~= 0 then
+        _Limit = 250 * math.floor((_Limit / 250) + 0.5);
+    end
+    Bugfixes.TradeLimit = _Limit;
+end
+
 -- -------------------------------------------------------------------------- --
 
 ---
@@ -232,6 +247,30 @@ function Bugfixes:OverrideGUIActions()
         GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_WeathermashineActivated"));
         Bugfixes:PostWeatherChanged(Time);
         GUI.SetWeather(_Weathertype);
+    end
+
+    function GUIAction_MarketToggleResource(_value, _resource)
+        if Bugfixes.UseTradeAmountFix then
+            _value = _value * 5;
+            if XGUIEng.IsModifierPressed( Keys.ModifierControl ) == 1 then
+                _value = _value * 10;
+            end
+        else
+            _value = _value;
+            if XGUIEng.IsModifierPressed( Keys.ModifierControl ) == 1 then
+                _value = _value * 5;
+            end
+        end
+        _resource = _resource + _value;
+        if Bugfixes.TradeLimit > -1 then
+            if _resource > Bugfixes.TradeLimit then
+                _resource = Bugfixes.TradeLimit;
+            end
+        end
+        if _resource <= 0 then
+            _resource = 0;
+        end
+        return _resource;
     end
 end
 
