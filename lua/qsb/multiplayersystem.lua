@@ -1294,7 +1294,7 @@ function MultiplayerSystem:CreateQuests(_Data)
         -- Goal_NoChange is immedaitly successful when used with Goal_WinQuest
         -- thus we must create our own nochange...
         -- PeaceTimeGoal = Goal_NoChange();
-        PeaceTimeGoal = Goal_MapScriptFunction(function()
+        PeaceTimeGoal = Goal_MapScriptFunction(function(_Behavior, _Quest)
             if self.Data.GameStartOffset + (_Data.Timer.Peacetime * 60) < Logic.GetTime() then
                 return true;
             end

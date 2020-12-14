@@ -17,6 +17,7 @@
 -- <li>qsb.core.questdebug</li>
 -- <li>qsb.core.interaction</li>
 -- <li>qsb.ext.information</li>
+-- <li>qsb.ext.onscreeninfo</li>
 -- </ul>
 --
 -- @set sort=true
@@ -1574,6 +1575,10 @@ function b_Goal_MapScriptFunction:CustomFunction(_Quest)
     return _G[self.Data.CustomFunction](self, _Quest);
 end
 
+function b_Goal_MapScriptFunction:Reset(_Quest)
+    ResetBehaviorProgress(self);
+end
+
 function b_Goal_MapScriptFunction:Debug(_Quest)
     if (type(self.Data.CustomFunction) == "string" and _G[self.Data.CustomFunction] == nil)
     or (self.Data.CustomFunction) == nil then
@@ -2462,9 +2467,18 @@ function b_Goal_BuyOffer:CustomFunction(_Quest)
     if not Interaction.IO[self.Data.Merchant] then
         return false;
     end
+    SetBehaviorProgress(
+        self,
+        Interaction.IO[self.Data.Merchant]:GetTradingVolume(self.Data.Offer),
+        self.Data.Amount
+    );
     if Interaction.IO[self.Data.Merchant]:GetTradingVolume(self.Data.Offer) >= self.Data.Amount then
         return true;
     end
+end
+
+function b_Goal_MapScriptFunction:Reset(_Quest)
+    ResetBehaviorProgress(self);
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_BuyOffer);
