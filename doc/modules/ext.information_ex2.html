@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Reference</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<button onclick="topFunction()" id="back2top" title="Nach oben scrollen">&#11014</button>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>ldoc</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Methods">Methods</a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/core.bugfixes.html">core.bugfixes</a></li>
+  <li><a href="../modules/core.mpsync.html">core.mpsync</a></li>
+  <li><a href="../modules/core.oop.html">core.oop</a></li>
+  <li><a href="../modules/core.questdebug.html">core.questdebug</a></li>
+  <li><a href="../modules/core.questsystem.html">core.questsystem</a></li>
+  <li><strong>ext.information_ex2</strong></li>
+  <li><a href="../modules/ext.interaction.html">ext.interaction</a></li>
+  <li><a href="../modules/ext.onscreeninfo_ex2.html">ext.onscreeninfo_ex2</a></li>
+  <li><a href="../modules/ext.onscreeninfo_ex3.html">ext.onscreeninfo_ex3</a></li>
+  <li><a href="../modules/ext.optionsmenu.html">ext.optionsmenu</a></li>
+  <li><a href="../modules/ext.speed_ex2.html">ext.speed_ex2</a></li>
+  <li><a href="../modules/ext.workplace_ex2.html">ext.workplace_ex2</a></li>
+  <li><a href="../modules/lib.libloader.html">lib.libloader</a></li>
+  <li><a href="../modules/lib.luabit50.html">lib.luabit50</a></li>
+  <li><a href="../modules/lib.metatable.html">lib.metatable</a></li>
+  <li><a href="../modules/lib.qsbtools.html">lib.qsbtools</a></li>
+  <li><a href="../modules/multiplayersystem.html">multiplayersystem</a></li>
+  <li><a href="../modules/questbehavior.html">questbehavior</a></li>
+  <li><a href="../modules/treasure.html">treasure</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>ext.information_ex2</code></h1>
+<p>This module adds some briefing improvements.</p>
+<p> Some are just for cosmetics,
+ some are fixing pittful bugs, some offer helpful new features. This is the
+ version for the vanilla game.
+<p> If multiple choice is used in Multiplayer you must synchronize the actions
+ of buttont if something is created or lua state changes. Otherwise you will
+ get a desync!
+<p> For Extra 3 we will using mcbBrief by mcb. This will offer at least equal
+ features or maybe even more advanced.
+</p>
+
+
+<h2><a href="#Methods">Methods</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#AddPages">AddPages (_briefing)</a></td>
+	<td class="summary">Creates the local briefing functions for adding pages.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#GetPageID">GetPageID (_Name)</a></td>
+	<td class="summary">Returns the page id to the page name.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Methods"></a>Methods</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "AddPages"></a>
+    <strong>AddPages (_briefing)</strong>
+    </dt>
+    <dd>
+    Creates the local briefing functions for adding pages.
+<p> Functions created:
+ <ul>
+ <li>AP: Creates normal pages and multiple choice pages. You have full
+ control over all settings. It is also possible to do cutscene like
+ camera animations.</li>
+ <li>ASP: Creates a simplyfied page. A short notation good for dialogs.
+ can be used in talkative missions.</li>
+ </ul>
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_briefing</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Briefing
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">function</span></span>
+        AP function</li>
+        <li>
+           <span class="types"><span class="type">function</span></span>
+        ASP function</li>
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "GetPageID"></a>
+    <strong>GetPageID (_Name)</strong>
+    </dt>
+    <dd>
+    Returns the page id to the page name.  If a name is not found a absurd high
+ page ID is providet to prevent lua errors.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Name</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Name of page
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        Page ID
+    </ol>
+
+
+
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2020-12-14 16:33:15 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+
+<script>
+    window.onscroll = function() {scrollFunction()};
+
+    function scrollFunction() {
+        if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+            document.getElementById("back2top").style.display = "block";
+        } else {
+            document.getElementById("back2top").style.display = "none";
+        }
+    }
+
+    function topFunction() {
+        document.body.scrollTop = 0; // For Safari
+        document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+    }
+</script>
+
+</body>
+</html>
