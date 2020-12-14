@@ -816,8 +816,8 @@ MultiplayerSystem = {
                     en = "Peacetime",
                 },
                 Text  = {
-                    de = "Es herrscht Frieden.{cr}Nutzt die Zeit und bereitet euch auf den Kampf vor.{cr}{cr}Das Gefecht beginnt in %d Minuten!",
-                    en = "There is peace.{cr}Use the time and prepare for battle.{cr}{cr}The engagement starts in %d minutes!"
+                    de = "Es herrscht Frieden.{cr}Nutzt die Zeit und bereitet euch auf den Kampf vor.{cr}Das Gefecht beginnt in %d Minuten!",
+                    en = "There is peace.{cr}Use the time and prepare for battle.{cr}The engagement starts in %d minutes!"
                 }
             },
             ConquestVictoryCondition = {
@@ -836,8 +836,8 @@ MultiplayerSystem = {
                     en = "Inpending Cataclysm",
                 },
                 Text  = {
-                    de = "Ihr müsst vor Ablauf der Zeit alle gegnerischen Teams besiegen, sonst droht Euch ein Todesurteil!{cr}{cr}Ihr habt dafür %d Minuten Zeit!",
-                    en = "You have to defeat all hostile teams. If there is no winner by then, everyone receives the death penalty!{cr}{cr}You have %d minutes!"
+                    de = "Ihr müsst vor Ablauf der Zeit alle gegnerischen Teams besiegen, sonst droht Euch ein Todesurteil!{cr}Ihr habt dafür %d Minuten Zeit!",
+                    en = "You have to defeat all hostile teams. If there is no winner by then, everyone receives the death penalty!{cr}You have %d minutes!"
                 }
             }
         }
