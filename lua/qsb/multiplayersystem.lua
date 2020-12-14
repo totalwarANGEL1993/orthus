@@ -1325,7 +1325,9 @@ function MultiplayerSystem:CreateQuests(_Data)
                 end
             end
         end
-        return true;
+        if MPSync:IsMultiplayerGame() then
+            return true;
+        end
     end);
     if _Data.Timer.DeathPenalty > 0 then
         VictoryCondition = (_Data.Timer.DeathPenalty * 60);
