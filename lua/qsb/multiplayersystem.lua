@@ -800,24 +800,44 @@ MultiplayerSystem = {
             },
         },
         Quests = {
+            Mainquest = {
+                Title = {
+                    de = "Missionsziel",
+                    en = "Mission Objective",
+                },
+                Text  = {
+                    de = "Dies ist eine Eroberungsmission! Euer Ziel ist es, alle Eure Widersacher zu schlagen und Euch und Eurem Team den Sieg zu sichern!",
+                    en = "This is a conquest mission! Your objective is it to destroy all your opponents who dare to offend you and your team!"
+                }
+            },
             Peacetime = {
                 Title = {
                     de = "Friedenszeit",
                     en = "Peacetime",
                 },
                 Text  = {
-                    de = "Es herrscht Frieden.{cr}{cr}Nutzt die Zeit und bereitet euch auf den Kampf vor.{cr}{cr}Das Gefecht beginnt in %d Minuten!",
-                    en = "There is peace.{cr}{cr}Use the time and prepare for battle.{cr}{cr}The engagement starts in %d minutes!"
+                    de = "Es herrscht Frieden.{cr}Nutzt die Zeit und bereitet euch auf den Kampf vor.{cr}{cr}Das Gefecht beginnt in %d Minuten!",
+                    en = "There is peace.{cr}Use the time and prepare for battle.{cr}{cr}The engagement starts in %d minutes!"
                 }
             },
-            DeathPenalty = {
+            ConquestVictoryCondition = {
                 Title = {
-                    de = "Todesurteil",
-                    en = "Death Penalty",
+                    de = "Eroberungsfeldzug",
+                    en = "Conquest campaign",
+                },
+                Text  = {
+                    de = "Nun müsst Ihr alle gegnerischen Teams besiegen, um zum Sieger dieses Spiels zu werden!",
+                    en = "Now you have to defeat all hostile teams to be declared victor of this game!"
+                }
+            },
+            DeathPenaltyVictoryCondition = {
+                Title = {
+                    de = "Nahendes Todesurteil",
+                    en = "Inpending Cataclysm",
                 },
                 Text  = {
                     de = "Ihr müsst vor Ablauf der Zeit alle gegnerischen Teams besiegen, sonst droht Euch ein Todesurteil!{cr}{cr}Ihr habt dafür %d Minuten Zeit!",
-                    en = "You have to defeat all hostile teams. If there is no winner by then, everyone get's the death penalty.{cr}{cr}You have %d minutes!"
+                    en = "You have to defeat all hostile teams. If there is no winner by then, everyone receives the death penalty!{cr}{cr}You have %d minutes!"
                 }
             }
         }
@@ -1023,20 +1043,22 @@ function MultiplayerSystem:SetupDiplomacyForPeacetime()
     end
 end
 
-function MultiplayerSystem:SetupDiplomacy(_PlayerID)
+function MultiplayerSystem:SetupDiplomacy()
     local PlayersTable = MPSync:GetActivePlayers();
-    local Team1 = MPSync:GetTeamOfPlayer(_PlayerID);
     for i= 1, table.getn(PlayersTable), 1 do
-        if PlayersTable[i] ~= _PlayerID then
-            local Team2 = MPSync:GetTeamOfPlayer(PlayersTable[i]);
-            if Team1 == Team2 then
-                SetFriendly(_PlayerID, PlayersTable[i]);
-                Logic.SetShareExplorationWithPlayerFlag(_PlayerID, PlayersTable[i], 1);
-                Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], _PlayerID, 1);
-            else
-                SetHostile(_PlayerID, PlayersTable[i]);
-                Logic.SetShareExplorationWithPlayerFlag(_PlayerID, PlayersTable[i], 0);
-                Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], _PlayerID, 0);
+        local Team1 = MPSync:GetTeamOfPlayer(PlayersTable[i]);
+        for j= 1, table.getn(PlayersTable), 1 do
+            if PlayersTable[i] ~= PlayersTable[j] then
+                local Team2 = MPSync:GetTeamOfPlayer(PlayersTable[j]);
+                if Team1 == Team2 then
+                    SetFriendly(PlayersTable[j], PlayersTable[i]);
+                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 1);
+                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 1);
+                else
+                    SetHostile(PlayersTable[j], PlayersTable[i]);
+                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 0);
+                    Logic.SetShareExplorationWithPlayerFlag(PlayersTable[i], PlayersTable[j], 0);
+                end
             end
         end
     end
@@ -1252,83 +1274,116 @@ function MultiplayerSystem:CheckUnitOrBuildingLimit(_PlayerID, _UpgradeCategory,
 end
 
 function MultiplayerSystem:PeacetimeOverMessage(_PlayerID)
-    if _PlayerID == GUI.GetPlayerID() then
-        Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[QSBTools.GetLanguage()]));
-        if MPRuleset_Rules.Timer.DeathPenalty > 0 then
-            Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[QSBTools.GetLanguage()]));
-        end
-        Sound.PlayGUISound(Sounds.OnKlick_Select_kerberos, 127);
+    Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[QSBTools.GetLanguage()]));
+    if MPRuleset_Rules.Timer.DeathPenalty > 0 then
+        Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[QSBTools.GetLanguage()]));
     end
+    Sound.PlayGUISound(Sounds.OnKlick_Select_kerberos, 127);
 end
 
 function MultiplayerSystem:CreateQuests(_Data)
     local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
     local Players = MPSync:GetActivePlayers();
-    
-    -- Peacetime
-    if _Data.Timer.Peacetime > 0 then
-        for i= 1, table.getn(Players), 1 do
-            CreateQuest {
-                Name        = "MultiplayerRules_PeacetimeQuest_Player" ..Players[i],
-                Time        = _Data.Timer.Peacetime * 60,
-                Receiver    = Players[i],
-                Description = {
-                    Title = self.Text.Quests.Peacetime.Title[Language],
-                    Text  = string.format(self.Text.Quests.Peacetime.Text[Language], _Data.Timer.Peacetime),
-                    Type  = MAINQUEST_OPEN,
-                    Info  = 1
-                },
 
-                Goal_NoChange(),
-                Reward_MapScriptFunction(function(_Data, _Quest)
-                    MultiplayerSystem:SetupDiplomacy(_Quest.m_Receiver);
-                    MultiplayerSystem:PeacetimeOverMessage(_Quest.m_Receiver);
-                end),
-                Reward_MapScriptFunction(_Data.Callbacks.OnPeacetimeOver),
-                Trigger_Time(self.Data.GameStartOffset)
-            };
-        end
-    else
-        self:SetupDiplomacy(Players[i]);
-        self:PeacetimeOverMessage(Players[i]);
-        _Data.Callbacks.OnPeacetimeOver();
+    -- Peacetime goal and description
+    local PeaceTime = 0;
+    local PeaceTimeDescription = nil;
+    local PeaceTimeGoal = Goal_InstantSuccess();
+    if _Data.Timer.Peacetime > 0 then
+        PeaceTime = (_Data.Timer.Peacetime * 60) +1;
+        -- Goal_NoChange is immedaitly successful when used with Goal_WinQuest
+        -- thus we must create our own nochange...
+        -- PeaceTimeGoal = Goal_NoChange();
+        PeaceTimeGoal = Goal_MapScriptFunction(function()
+            if self.Data.GameStartOffset + (_Data.Timer.Peacetime * 60) < Logic.GetTime() then
+                return true;
+            end
+        end);
+        PeaceTimeDescription = {
+            Title = self.Text.Quests.Peacetime.Title[Language],
+            Text  = string.format(self.Text.Quests.Peacetime.Text[Language], _Data.Timer.Peacetime),
+            Type  = FRAGMENTQUEST_OPEN,
+            Info  = 1
+        };
     end
 
-    -- Death Penalty
-    if _Data.Timer.DeathPenalty > 0 then
-        for i= 1, table.getn(Players), 1 do
-            CreateQuest {
-                Name        = "MultiplayerRules_DeathPenaltyQuest_Player" ..Players[i],
-                Time        = _Data.Timer.DeathPenalty * 60,
-                Receiver    = Players[i],
-                Description = {
-                    Title = self.Text.Quests.DeathPenalty.Title[Language],
-                    Text  = string.format(self.Text.Quests.DeathPenalty.Text[Language], _Data.Timer.DeathPenalty),
-                    Type  = MAINQUEST_OPEN,
-                    Info  = 1
-                },
-
-                -- This is a behavior that waits until there is only one player
-                -- or one team left before ending the quest. So if there are
-                -- still more than one team lurking around when death penalty
-                -- is triggered by the quests time limit, everyone looses.
-                Goal_MapScriptFunction(function(_Behavior, _Quest)
-                    local Team = MPSync:GetTeamOfPlayer(_Quest.m_Receiver)
-                    local ActivePlayers = MPSync:GetActivePlayers();
-                    if table.getn(ActivePlayers) > 1 then
-                        for k, v in pairs(ActivePlayers) do
-                            if v and MPSync:GetTeamOfPlayer(v) ~= Team then
-                                return;
-                            end
-                        end
-                    end
-                    return true;
-                end),
-                Reprisal_Defeat(),
-                Reward_Victory(),
-                Trigger_Time(self.Data.GameStartOffset + (_Data.Timer.Peacetime * 60) +2)
-            };
+    -- Victory condition goal and description
+    local VictoryCondition = 0;
+    local VictoryConditionDescription = {
+        Title = self.Text.Quests.ConquestVictoryCondition.Title[Language],
+        Text  = self.Text.Quests.ConquestVictoryCondition.Text[Language],
+        Type  = FRAGMENTQUEST_OPEN,
+        Info  = 1
+    };
+    local VictoryConditionGoal = Goal_MapScriptFunction(function(_Behavior, _Quest)
+        local Team = MPSync:GetTeamOfPlayer(_Quest.m_Receiver)
+        local ActivePlayers = MPSync:GetActivePlayers();
+        if table.getn(ActivePlayers) > 1 then
+            for k, v in pairs(ActivePlayers) do
+                if v and MPSync:GetTeamOfPlayer(v) ~= Team then
+                    return;
+                end
+            end
         end
+        return true;
+    end);
+    if _Data.Timer.DeathPenalty > 0 then
+        VictoryCondition = (_Data.Timer.DeathPenalty * 60);
+        VictoryConditionDescription = {
+            Title = self.Text.Quests.DeathPenaltyVictoryCondition.Title[Language],
+            Text  = string.format(self.Text.Quests.DeathPenaltyVictoryCondition.Text[Language], _Data.Timer.DeathPenalty),
+            Type  = FRAGMENTQUEST_OPEN,
+            Info  = 1
+        };
+    end
+
+    for i= 1, table.getn(Players), 1 do
+        CreateQuest {
+            Name        = "MultiplayerRules_Mainquest_Player" ..Players[i],
+            Receiver    = Players[i],
+            Description = {
+                Title = self.Text.Quests.Mainquest.Title[Language],
+                Text  = string.format(self.Text.Quests.Mainquest.Text[Language], _Data.Timer.Peacetime),
+                Type  = MAINQUEST_OPEN,
+                Info  = 1
+            },
+
+            Goal_WinQuest("MultiplayerRules_Peacetime_Player" ..Players[i]),
+            Goal_WinQuest("MultiplayerRules_VictoryCondition_Player" ..Players[i]),
+            Trigger_Time(self.Data.GameStartOffset)
+        };
+
+        CreateQuest {
+            Name        = "MultiplayerRules_Peacetime_Player" ..Players[i],
+            Receiver    = Players[i],
+            Description = PeaceTimeDescription,
+            Time        = PeaceTime,
+
+            PeaceTimeGoal,
+            Reward_MapScriptFunction(function(_Data, _Quest)
+                -- Only execute this once. We are using the host player to
+                -- ensure that this realy only happens once.
+                local HostPlayerID = MPSync:GetHostPlayerID();
+                if HostPlayerID == _Quest.m_Receiver then
+                    MultiplayerSystem:SetupDiplomacy(_Quest.m_Receiver);
+                    MultiplayerSystem:PeacetimeOverMessage(_Quest.m_Receiver);
+                    MPRuleset_Rules.Callbacks.OnPeacetimeOver();
+                end
+            end),
+            Trigger_QuestActive("MultiplayerRules_Mainquest_Player" ..Players[i])
+        };
+
+        CreateQuest {
+            Name        = "MultiplayerRules_VictoryCondition_Player" ..Players[i],
+            Receiver    = Players[i],
+            Description = VictoryConditionDescription,
+            Time        = VictoryCondition,
+            
+            VictoryConditionGoal,
+            Reprisal_Defeat(),
+            Reward_Victory(),
+            Trigger_QuestSuccess("MultiplayerRules_Peacetime_Player" ..Players[i], 1)
+        };
     end
 end
 

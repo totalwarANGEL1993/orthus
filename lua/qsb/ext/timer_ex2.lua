@@ -122,15 +122,16 @@ function QuestSystem.QuestTimer:Show(_Index, _title, _Current, _Limit, _r, _g, _
 
 	XGUIEng.ShowWidget("VCMP_Team".._Index, 1);
 	XGUIEng.SetWidgetSize("VCMP_Team".._Index, 180, 15);
-	XGUIEng.SetText("VCMP_Team".._Index.."Points", "");
-	XGUIEng.SetText("VCMP_Team".._Index.."Name", _title);
+	XGUIEng.SetText("VCMP_Team".._Index.."Points", _title);
+	XGUIEng.SetText("VCMP_Team".._Index.."Name", "");
 	XGUIEng.ShowWidget("VCMP_Team".._Index.."PointGame", 1);
 	XGUIEng.ShowWidget("VCMP_Team".._Index.."_Shade", 1);
 
-	XGUIEng.SetWidgetSize("VCMP_Team".._Index.."Name", ProgressBar, 13);
-	XGUIEng.SetWidgetSize("VCMP_Team".._Index.."_Shade", 180, 15);
+	XGUIEng.SetWidgetSize("VCMP_Team".._Index.."Name", ProgressBar, 10);
+	XGUIEng.SetWidgetSize("VCMP_Team".._Index.."_Shade", 180, 12);
 	XGUIEng.SetWidgetPosition("VCMP_Team".._Index.."Name", 0, 0);
-	XGUIEng.SetMaterialColor("VCMP_Team".._Index.."Name",0, _r, _g, _b, _a);
+	XGUIEng.SetWidgetPositionAndSize("VCMP_Team".._Index.."Points", 0, 10, 180, 10);
+	XGUIEng.SetMaterialColor("VCMP_Team".._Index.."Name", 0, _r, _g, _b, _a);
 	XGUIEng.SetMaterialColor("VCMP_Team".._Index.."_Shade",0, 0, 0, 0, 80);
 end
 
