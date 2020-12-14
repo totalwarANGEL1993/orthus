@@ -251,13 +251,13 @@ function Information:CreateAddPageFunctions()
         local page = {
             name         = arg[1],
             title        = arg[3],
-            text         = arg[4],
+            text         = arg[7],
             position     = arg[2],
-            dialogCamera = arg[5] == true,
-            action       = arg[6],
+            dialogCamera = arg[4] == true,
+            action       = arg[8],
             lookAt       = true;
-            disableFog   = arg[8],
-            showSky      = arg[7],
+            disableFog   = arg[6],
+            showSky      = arg[5],
         };
         return page;
     end
@@ -266,19 +266,19 @@ function Information:CreateAddPageFunctions()
         local page = {
             name         = arg[1],
             position     = arg[2],
-            dialogCamera = arg[5] == true,
-            action       = arg[6],
+            dialogCamera = arg[4] == true,
+            action       = arg[12],
             lookAt       = true;
-            disableFog   = arg[8],
-            showSky      = arg[7],
+            disableFog   = arg[5],
+            showSky      = arg[6],
 
             mc           = {
                 title	       = arg[3],
-                text 	       = arg[4],
-                firstText      = arg[9],
-                secondText     = arg[11],
-                firstSelected  = arg[10],
-                secondSelected = arg[12],
+                text 	       = arg[11],
+                firstText      = arg[7],
+                secondText     = arg[9],
+                firstSelected  = arg[8],
+                secondSelected = arg[10],
             },
         };
         return page;
