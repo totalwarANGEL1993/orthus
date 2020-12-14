@@ -105,19 +105,21 @@ end
 
 function QuestSystem.OnScreenInfo:RenderOnScreenInfos()
     QuestSystem.OnScreenInfo:InitPositions();
-    local Index = 1;
-    for i= 1, table.getn(self.m_Data), 1 do
-        local OsiData = self:GetPosition(i);
-        local Visible = 0;
-        if OsiData.Counter and OsiData.Counter.Max > -1 then
-            Visible = Visible +1;
-        end
-        if OsiData.Timer and OsiData.Timer.TimeLeft > -1 then
-            Visible = Visible +2;
-        end
-        if Index < 8 and self.m_Data[i].Receiver == GUI.GetPlayerID() then
-            self:ShowPosition(Index, self.m_Data[i].Receiver, Visible);
-            Index = Index +1;
+    for k, v in pairs(MPSync:GetActivePlayers()) do
+        local Index = 1;
+        for i= 1, table.getn(self.m_Data), 1 do
+            local OsiData = self:GetPosition(i);
+            local Visible = 0;
+            if OsiData.Counter and OsiData.Counter.Max > -1 then
+                Visible = Visible +1;
+            end
+            if OsiData.Timer and OsiData.Timer.TimeLeft > -1 then
+                Visible = Visible +2;
+            end
+            if Index < 8 and v == GUI.GetPlayerID() and v == self.m_Data[i].Receiver then
+                self:ShowPosition(Index, self.m_Data[i].Receiver, Visible);
+                Index = Index +1;
+            end
         end
     end
 end
