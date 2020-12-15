@@ -185,7 +185,7 @@ function QuestSystem.Debug:TokenizeCommand(_Message)
 end
 
 function QuestSystem.Debug:CreateScriptEvents()
-    self.ScriptEvents.AlterQuestResult = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
+    self.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
         if QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
                 Message("Can not find quest: " ..command[2]);
@@ -212,7 +212,7 @@ function QuestSystem.Debug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.AlterQuestState = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _State)
+    self.ScriptEvents.AlterQuestState = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _State)
         if QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
                 Message("Can not find quest: " ..command[2]);
@@ -244,7 +244,7 @@ function QuestSystem.Debug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.WakeUpHero = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _Hero)
+    self.ScriptEvents.WakeUpHero = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Hero)
         if Logic.IsHero(GetID(_Hero)) == 1 then
             local ID = ReplaceEntity(_Hero, Logic.GetEntityType(GetID(_Hero)));
             if GUI.GetPlayerID() == _ExecutingPlayer then
@@ -253,7 +253,7 @@ function QuestSystem.Debug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.AlterDiplomacyState = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _Player1, _Player2, _State)
+    self.ScriptEvents.AlterDiplomacyState = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Player1, _Player2, _State)
         local Exploration = (_State == Diplomacy.Friendly and 1) or 0;
         Logic.SetShareExplorationWithPlayerFlag(_Player1, _Player2, Exploration);
         Logic.SetShareExplorationWithPlayerFlag(_Player2, _Player1, Exploration);	
@@ -263,13 +263,13 @@ function QuestSystem.Debug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.ClearNotes = MPSync:CreateScriptEvent(function(_ExecutingPlayer)
+    self.ScriptEvents.ClearNotes = QuestSync:CreateScriptEvent(function(_ExecutingPlayer)
         if GUI.GetPlayerID() == _ExecutingPlayer then
             GUI.ClearNotes();
         end
     end);
 
-    self.ScriptEvents.ShowQuestStatus = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _Option, _Quest)
+    self.ScriptEvents.ShowQuestStatus = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Option, _Quest)
         if GUI.GetPlayerID() ~= _ExecutingPlayer then
             return;
         end
@@ -309,7 +309,7 @@ function QuestSystem.Debug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.ShowCheatCodes = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _Option)
+    self.ScriptEvents.ShowCheatCodes = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Option)
         if GUI.GetPlayerID() ~= _ExecutingPlayer then
             return;
         end
@@ -381,7 +381,7 @@ function QuestSystem.Debug:CreateScriptEvents()
         GUI.AddStaticNote(MessageText);
     end);
 
-    self.ScriptEvents.ChangeEntityPlayer = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _Entity, _Player)
+    self.ScriptEvents.ChangeEntityPlayer = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Entity, _Player)
         if IsExisting(_Entity) then
             if Logic.IsLeader(_Entity) == 1 then
                 Tools.ChangeGroupPlayerID(_Entity, _Player);
@@ -395,7 +395,7 @@ function QuestSystem.Debug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.ChangeEntityHealth = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _Entity, _Flag)
+    self.ScriptEvents.ChangeEntityHealth = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Entity, _Flag)
         if IsExisting(_Entity) then
             if _Flag == 0 then
                 if Logic.IsLeader(_Entity) == 1 then
@@ -415,7 +415,7 @@ function QuestSystem.Debug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.CheatUnitAtMousePosition = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _X, _Y, _Flag)
+    self.ScriptEvents.CheatUnitAtMousePosition = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _X, _Y, _Flag)
         local pos = {X= _X, Y= _Y};
         if QuestTools.IsValidPosition(pos) then
             if _Flag == 1 then
@@ -451,11 +451,11 @@ function QuestSystem.Debug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.AddResourcesToPlayer = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _Type, _Amount)
+    self.ScriptEvents.AddResourcesToPlayer = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Type, _Amount)
         Logic.AddToPlayersGlobalResource(_ExecutingPlayer, _Type, _Amount);
     end);
 
-    self.ScriptEvents.CheatTechnologies = MPSync:CreateScriptEvent(function(_ExecutingPlayer)
+    self.ScriptEvents.CheatTechnologies = QuestSync:CreateScriptEvent(function(_ExecutingPlayer)
         CheatTechnologies(_ExecutingPlayer)
     end);
 end
@@ -465,7 +465,7 @@ function QuestSystem.Debug:EvaluateCommand(_Tokens)
         local Action = string.lower(command[1]);        
 
         if Action == "load" then
-            if MPSync:IsMultiplayerGame() then
+            if QuestSync:IsMultiplayerGame() then
                 return;
             end
             Script.Load(command[2]);
@@ -474,47 +474,47 @@ function QuestSystem.Debug:EvaluateCommand(_Tokens)
 
         elseif Action == "win" then 
             local QuestID = GetQuestID(command[2]);
-            MPSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Success);
+            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Success);
             return true;
 
         elseif Action == "fail" then 
             local QuestID = GetQuestID(command[2]);
-            MPSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Failure);
+            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Failure);
             return true;
         
         elseif Action == "stop" then 
             local QuestID = GetQuestID(command[2]);
-            MPSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Interrupted);
+            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Interrupted);
             return true;
 
         elseif Action == "start" then 
             local QuestID = GetQuestID(command[2]);
-            MPSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestStates.Active);
+            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestStates.Active);
             return true;
             
         elseif Action == "reset" then 
             local QuestID = GetQuestID(command[2]);
-            MPSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, -1);
+            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, -1);
             return true;
 
         elseif Action == "wakeup" then 
-            MPSync:SnchronizedCall(self.ScriptEvents.WakeUpHero, GUI.GetPlayerID(), command[2]);
+            QuestSync:SnchronizedCall(self.ScriptEvents.WakeUpHero, GUI.GetPlayerID(), command[2]);
             return true;
 
         elseif Action == "diplomacy" then
-            MPSync:SnchronizedCall(self.ScriptEvents.AlterDiplomacyState, GUI.GetPlayerID(), command[2], command[3], command[4]);
+            QuestSync:SnchronizedCall(self.ScriptEvents.AlterDiplomacyState, GUI.GetPlayerID(), command[2], command[3], command[4]);
             return true;
 
         elseif Action == "clear" then 
-            MPSync:SnchronizedCall(self.ScriptEvents.ClearNotes, GUI.GetPlayerID());
+            QuestSync:SnchronizedCall(self.ScriptEvents.ClearNotes, GUI.GetPlayerID());
             return true;
 
         elseif Action == "show" then
-            MPSync:SnchronizedCall(self.ScriptEvents.ShowQuestStatus, GUI.GetPlayerID(), command[2], command[3]);
+            QuestSync:SnchronizedCall(self.ScriptEvents.ShowQuestStatus, GUI.GetPlayerID(), command[2], command[3]);
             return true;
 
         elseif Action == "help" then
-            MPSync:SnchronizedCall(self.ScriptEvents.ShowCheatCodes, GUI.GetPlayerID(), command[2]);
+            QuestSync:SnchronizedCall(self.ScriptEvents.ShowCheatCodes, GUI.GetPlayerID(), command[2]);
             return true;
         end
     end
@@ -543,7 +543,7 @@ function QuestSystem.Debug:CreateCheats()
         Input.KeyBindDown(Keys.ModifierShift + Keys.D8, "Cheats_ChangePlayer(8)", 2);
 
         -- Changing controling player
-        if not MPSync:IsMultiplayerGame() then
+        if not QuestSync:IsMultiplayerGame() then
             Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D1, "GUI.SetControlledPlayer(1)", 2);
             Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D2, "GUI.SetControlledPlayer(2)", 2);
             Input.KeyBindDown(Keys.ModifierShift + Keys.ModifierAlt + Keys.D3, "GUI.SetControlledPlayer(3)", 2);
@@ -577,7 +577,7 @@ function QuestSystem.Debug:CreateCheats()
         Input.KeyBindDown(Keys.ModifierControl + Keys.F9, "Cheats_CheatTechnologies(1)");
 
         -- Game functions
-        if not MPSync:IsMultiplayerGame() then
+        if not QuestSync:IsMultiplayerGame() then
             Input.KeyBindDown(Keys.Multiply, "Game.GameTimeReset()", 2);
             Input.KeyBindDown(Keys.Subtract, "Game.GameTimeSlowDown()", 2);
             Input.KeyBindDown(Keys.Add,      "Game.GameTimeSpeedUp()", 2);
@@ -598,27 +598,27 @@ function QuestSystem.Debug:CreateCheatMethods()
     -- Changing entity owner
     function Cheats_ChangePlayer(_player)
         local eID = GUI.GetEntityAtPosition(GUI.GetMousePosition());
-        MPSync:SnchronizedCall(self.ScriptEvents.ChangeEntityPlayer, GUI.GetPlayerID(), eID, _player);
+        QuestSync:SnchronizedCall(self.ScriptEvents.ChangeEntityPlayer, GUI.GetPlayerID(), eID, _player);
     end
 
     -- Change entity health
     function Cheats_ChangeHealth(_flag)
         local eID = GUI.GetEntityAtPosition(GUI.GetMousePosition());
-        MPSync:SnchronizedCall(self.ScriptEvents.ChangeEntityHealth, GUI.GetPlayerID(), eID, _flag);
+        QuestSync:SnchronizedCall(self.ScriptEvents.ChangeEntityHealth, GUI.GetPlayerID(), eID, _flag);
     end
 
     -- Cheat units
     function Cheats_CreateUnitUnderMouse(_flag)
         local mouse = {GUI.Debug_GetMapPositionUnderMouse()};
-        MPSync:SnchronizedCall(self.ScriptEvents.CheatUnitAtMousePosition, GUI.GetPlayerID(), mouse[1], mouse[2], _flag);
+        QuestSync:SnchronizedCall(self.ScriptEvents.CheatUnitAtMousePosition, GUI.GetPlayerID(), mouse[1], mouse[2], _flag);
     end
 
     function Cheats_AddResourcesToPlayer(_Resource, _Amount)
-        MPSync:SnchronizedCall(self.ScriptEvents.AddResourcesToPlayer, GUI.GetPlayerID(), _Resource, _Amount);
+        QuestSync:SnchronizedCall(self.ScriptEvents.AddResourcesToPlayer, GUI.GetPlayerID(), _Resource, _Amount);
     end
 
     function Cheats_CheatTechnologies(_PlayerID)
-        MPSync:SnchronizedCall(self.ScriptEvents.CheatTechnologies, GUI.GetPlayerID());
+        QuestSync:SnchronizedCall(self.ScriptEvents.CheatTechnologies, GUI.GetPlayerID());
     end
 end
 

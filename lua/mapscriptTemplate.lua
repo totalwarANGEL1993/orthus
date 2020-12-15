@@ -14,7 +14,7 @@ gvBasePath = "data/maps/externalmap/qsb/";
 
 Script.Load(gvBasePath.. "core/oop.lua");
 Script.Load(gvBasePath.. "core/questtools.lua");
-Script.Load(gvBasePath.. "core/mpsync.lua");
+Script.Load(gvBasePath.. "core/questsync.lua");
 Script.Load(gvBasePath.. "core/bugfixes.lua");
 Script.Load(gvBasePath.. "core/questsystem.lua");
 Script.Load(gvBasePath.. "core/questdebug.lua");

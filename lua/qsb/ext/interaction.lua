@@ -19,7 +19,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
--- <li>qsb.core.mpsync</li>
+-- <li>qsb.core.questsync</li>
 -- <li>qsb.core.questsystem</li>
 -- </ul>
 --
@@ -170,7 +170,7 @@ end
 --
 function Interaction:CreateNpcMerchantScriptEvents()
     -- Buy Units
-    Interaction.Event.BuyUnit = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _EntityType, _X, _Y, _SlotIndex, _Costs)
+    Interaction.Event.BuyUnit = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _EntityType, _X, _Y, _SlotIndex, _Costs)
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             local ID = AI.Entity_CreateFormation(_PlayerID, _EntityType, 0, 0, _X, _Y, 0, 0, 3, 0);
@@ -182,7 +182,7 @@ function Interaction:CreateNpcMerchantScriptEvents()
         end
     end);
     -- Buy Resources
-    Interaction.Event.BuyRes = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _GoodType, _Amount, _SlotIndex, _Costs)
+    Interaction.Event.BuyRes = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _GoodType, _Amount, _SlotIndex, _Costs)
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             Logic.AddToPlayersGlobalResource(_PlayerID, _GoodType, _Amount);
@@ -191,7 +191,7 @@ function Interaction:CreateNpcMerchantScriptEvents()
         end
     end);
     -- Buy Technology
-    Interaction.Event.BuyTech = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _TechType, _SlotIndex, _Costs)
+    Interaction.Event.BuyTech = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _TechType, _SlotIndex, _Costs)
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             ResearchTechnology(_TechType, _PlayerID);
@@ -200,7 +200,7 @@ function Interaction:CreateNpcMerchantScriptEvents()
         end
     end);
     -- Buy Custom
-    Interaction.Event.BuyFunc = MPSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _SlotIndex, _Costs)
+    Interaction.Event.BuyFunc = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _SlotIndex, _Costs)
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             Instance.m_Offers[_SlotIndex].Good(
@@ -715,7 +715,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
             else
                 Position = GetPosition(self.m_ScriptName);
             end
-            MPSync:SnchronizedCall(
+            QuestSync:SnchronizedCall(
                 Interaction.Event.BuyUnit,
                 self.m_ScriptName,
                 PlayerID,
@@ -728,7 +728,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
 
         -- Resource
         elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
-            MPSync:SnchronizedCall(
+            QuestSync:SnchronizedCall(
                 Interaction.Event.BuyRes,
                 self.m_ScriptName,
                 PlayerID,
@@ -743,7 +743,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
             if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 1 then
                 return;
             end
-            MPSync:SnchronizedCall(
+            QuestSync:SnchronizedCall(
                 Interaction.Event.BuyTech,
                 self.m_ScriptName,
                 PlayerID,
@@ -754,7 +754,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
 
         -- Custom
         else
-            MPSync:SnchronizedCall(
+            QuestSync:SnchronizedCall(
                 Interaction.Event.BuyFunc,
                 self.m_ScriptName,
                 PlayerID,

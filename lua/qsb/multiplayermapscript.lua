@@ -12,7 +12,7 @@ Script.Load("data/script/maptools/mapeditortools.lua");
 -- Load QSB
 Script.Load(gvBasePath.. "core/oop.lua");
 Script.Load(gvBasePath.. "core/questtools.lua");
-Script.Load(gvBasePath.. "core/mpsync.lua");
+Script.Load(gvBasePath.. "core/questsync.lua");
 Script.Load(gvBasePath.. "core/bugfixes.lua");
 Script.Load(gvBasePath.. "core/questsystem.lua");
 Script.Load(gvBasePath.. "core/questdebug.lua");
@@ -43,7 +43,7 @@ function GameCallback_OnGameStart()
     MultiplayerTools.SetUpGameLogicOnMPGameConfig();
     
     -- Singleplayer
-    if not MPSync or not MPSync:IsMultiplayerGame() then
+    if not QuestSync or not QuestSync:IsMultiplayerGame() then
 		for i=1, 8, 1 do
 			MultiplayerTools.DeleteFastGameStuff(i);
 		end

@@ -12,7 +12,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.core.mpsync</li>
+-- <li>qsb.core.questsync</li>
 -- <li>qsb.core.questsystem</li>
 -- </ul>
 --

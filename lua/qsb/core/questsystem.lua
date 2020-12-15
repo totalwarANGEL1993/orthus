@@ -31,7 +31,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
--- <li>qsb.core.mpsync</li>
+-- <li>qsb.core.questsync</li>
 -- <li>qsb.core.bugfix</li>
 -- </ul>
 --
@@ -91,7 +91,7 @@ function QuestSystem:InstallQuestSystem()
         
         -- Initalize syncher
         EndJob(tributeJingleTriggerId);
-        MPSync:Install();
+        QuestSync:Install();
         Bugfixes:Install();
         self:CreateScriptEvents();
 
@@ -102,8 +102,8 @@ function QuestSystem:InstallQuestSystem()
 
         -- Real random numbers
         local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
-        if MPSync:IsPlayerHost(GUI.GetPlayerID()) then
-            MPSync:SnchronizedCall(self.MathRandomSeedScriptEvent, TimeString);
+        if QuestSync:IsPlayerHost(GUI.GetPlayerID()) then
+            QuestSync:SnchronizedCall(self.MathRandomSeedScriptEvent, TimeString);
         end
 
         -- Quest event trigger
@@ -151,13 +151,13 @@ function QuestSystem:InstallQuestSystem()
             -- End briefing
             EndBriefing_Orig_QuestSystem();
             -- Send briefing end event
-            MPSync:SnchronizedCall(self.BriefingFinishedScriptEvent, ID);
+            QuestSync:SnchronizedCall(self.BriefingFinishedScriptEvent, ID);
         end
     end
 end
 
 function QuestSystem:CreateScriptEvents()
-    self.BriefingFinishedScriptEvent = MPSync:CreateScriptEvent(function(_ID)
+    self.BriefingFinishedScriptEvent = QuestSync:CreateScriptEvent(function(_ID)
         -- Register briefing end
         QuestSystem.Briefings[_ID] = true;
         -- Dequeue next briefing
@@ -167,7 +167,7 @@ function QuestSystem:CreateScriptEvents()
         end
     end);
 
-    self.MathRandomSeedScriptEvent = MPSync:CreateScriptEvent(function(_TimeString)
+    self.MathRandomSeedScriptEvent = QuestSync:CreateScriptEvent(function(_TimeString)
         -- Set seed
         math.randomseed(tonumber(_TimeString));
         -- Call it once to get fresh randoms
@@ -281,7 +281,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
     -- ---------------------------------------------------------------------- --
 
     function QuestSystem_Steal_CheckThieves()
-        for k, v in pairs(MPSync:GetActivePlayers()) do
+        for k, v in pairs(QuestSync:GetActivePlayers()) do
             QuestSystem:ObjectiveStealHandler(v);
         end
     end

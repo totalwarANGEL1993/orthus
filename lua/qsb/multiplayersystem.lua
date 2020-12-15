@@ -15,7 +15,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.lib.oop</li>
--- <li>qsb.core.mpsync</li>
+-- <li>qsb.core.questsync</li>
 -- <li>qsb.questbehavior</li>
 -- <li>qsb.ext.optionsmenu</li>
 -- <li>qsb.ext.timer</li>
@@ -868,7 +868,7 @@ function MultiplayerSystem:Install()
         StartSimpleJobEx(function()
             if Logic.GetTime() > 1 then
                 MPRuleset_Rules.Callbacks.OnMapLoaded();
-                MultiplayerSystem.Menu.PlayerID = MPSync:GetHostPlayerID();
+                MultiplayerSystem.Menu.PlayerID = QuestSync:GetHostPlayerID();
                 ShowOptionMenu(MultiplayerSystem.Menu);
                 return true;
             end
@@ -881,7 +881,7 @@ function MultiplayerSystem:Install()
 end
 
 function MultiplayerSystem:ConfigurationFinished()
-    local PlayersTable = MPSync:GetActivePlayers();
+    local PlayersTable = QuestSync:GetActivePlayers();
     for i= 1, table.getn(PlayersTable), 1 do
         if MPRuleset_Rules.Limits.Hero < 0 then
             MPRuleset_Rules.Limits.Hero = 0;
@@ -945,7 +945,7 @@ function MultiplayerSystem:AddExtraStuff()
 end
 
 function MultiplayerSystem:SuspendEverythingAtGameStart()
-    for k, v in pairs(MPSync:GetActivePlayers()) do
+    for k, v in pairs(QuestSync:GetActivePlayers()) do
         self.Data.GameStartEntities[v] = {};
         local PlayerEntities = QuestTools.GetPlayerEntities(v, 0);
         for i= 1, table.getn(PlayerEntities), 1 do
@@ -969,7 +969,7 @@ function MultiplayerSystem:SuspendEverythingAtGameStart()
 end
 
 function MultiplayerSystem:ResumeEverythingAtGameStart()
-    for k, v in pairs(MPSync:GetActivePlayers()) do
+    for k, v in pairs(QuestSync:GetActivePlayers()) do
         for i= 1, table.getn(self.Data.GameStartEntities[v]), 1 do
             local Entry = self.Data.GameStartEntities[v][i];
             local ID = ReplaceEntity(Entry[1], Entry[2]);
@@ -1024,11 +1024,11 @@ function MultiplayerSystem:GiveResources(_Data)
 end
 
 function MultiplayerSystem:SetupDiplomacyForPeacetime()
-    local PlayersTable = MPSync:GetActivePlayers();
+    local PlayersTable = QuestSync:GetActivePlayers();
     for i= 1, table.getn(PlayersTable), 1 do
-        local Team1 = MPSync:GetTeamOfPlayer(PlayersTable[i]);
+        local Team1 = QuestSync:GetTeamOfPlayer(PlayersTable[i]);
         for j= 1, table.getn(PlayersTable), 1 do
-            local Team2 = MPSync:GetTeamOfPlayer(PlayersTable[j]);
+            local Team2 = QuestSync:GetTeamOfPlayer(PlayersTable[j]);
             if PlayersTable[i] ~= PlayersTable[j] then
                 SetNeutral(PlayersTable[i], PlayersTable[j]);
                 if Team1 == Team2 then
@@ -1044,12 +1044,12 @@ function MultiplayerSystem:SetupDiplomacyForPeacetime()
 end
 
 function MultiplayerSystem:SetupDiplomacy()
-    local PlayersTable = MPSync:GetActivePlayers();
+    local PlayersTable = QuestSync:GetActivePlayers();
     for i= 1, table.getn(PlayersTable), 1 do
-        local Team1 = MPSync:GetTeamOfPlayer(PlayersTable[i]);
+        local Team1 = QuestSync:GetTeamOfPlayer(PlayersTable[i]);
         for j= 1, table.getn(PlayersTable), 1 do
             if PlayersTable[i] ~= PlayersTable[j] then
-                local Team2 = MPSync:GetTeamOfPlayer(PlayersTable[j]);
+                local Team2 = QuestSync:GetTeamOfPlayer(PlayersTable[j]);
                 if Team1 == Team2 then
                     SetFriendly(PlayersTable[j], PlayersTable[i]);
                     Logic.SetShareExplorationWithPlayerFlag(PlayersTable[j], PlayersTable[i], 1);
@@ -1202,7 +1202,7 @@ function MultiplayerSystem:FillResourceHeaps(_Data)
 end
 
 function MultiplayerSystem:ForbidTechnologies(_Data)
-    local Players = MPSync:GetActivePlayers();
+    local Players = QuestSync:GetActivePlayers();
     for k, v in pairs(self.Data.Technologies) do
         for Category, Content in pairs(v) do
             for i= 1, table.getn(Players), 1 do
@@ -1218,7 +1218,7 @@ function MultiplayerSystem:ForbidTechnologies(_Data)
 end
 
 function MultiplayerSystem:LogicEventOnEveryTurn(_Data)
-    local Players = MPSync:GetActivePlayers();
+    local Players = QuestSync:GetActivePlayers();
     for i= 1, table.getn(Players), 1 do
         -- Building and unit limits
         for k, v in pairs(_Data.Limits) do
@@ -1246,7 +1246,7 @@ function MultiplayerSystem:LogicEventOnEveryTurn(_Data)
 end
 
 function MultiplayerSystem:CheckUnitOrBuildingLimit(_PlayerID, _UpgradeCategory, _Limit)
-    local Players = MPSync:GetActivePlayers();
+    local Players = QuestSync:GetActivePlayers();
     local Amount = 0;
     local Members = {Logic.GetBuildingTypesInUpgradeCategory(_UpgradeCategory)};
     if Members[1] > 0 and self.Maps.EntityTypeToTechnologyType[Members[2]] then
@@ -1288,16 +1288,16 @@ function Global_PeaceTimeGoal(_Behavior, _Quest)
 end
 
 function Global_VictoryConditionGoal(_Behavior, _Quest)
-    local Team = MPSync:GetTeamOfPlayer(_Quest.m_Receiver)
-    local ActivePlayers = MPSync:GetActivePlayers();
+    local Team = QuestSync:GetTeamOfPlayer(_Quest.m_Receiver)
+    local ActivePlayers = QuestSync:GetActivePlayers();
     if table.getn(ActivePlayers) > 1 then
         for k, v in pairs(ActivePlayers) do
-            if v and MPSync:GetTeamOfPlayer(v) ~= Team then
+            if v and QuestSync:GetTeamOfPlayer(v) ~= Team then
                 return;
             end
         end
     end
-    if MPSync:IsMultiplayerGame() then
+    if QuestSync:IsMultiplayerGame() then
         return true;
     end
 end
@@ -1305,7 +1305,7 @@ end
 function Global_PeaceTimeReward(_Data, _Quest)
     -- Only execute this once. We are using the host player to
     -- ensure that this realy only happens once.
-    local HostPlayerID = MPSync:GetHostPlayerID();
+    local HostPlayerID = QuestSync:GetHostPlayerID();
     if HostPlayerID == _Quest.m_Receiver then
         MultiplayerSystem:SetupDiplomacy(_Quest.m_Receiver);
         MultiplayerSystem:PeacetimeOverMessage(_Quest.m_Receiver);
@@ -1315,7 +1315,7 @@ end
 
 function MultiplayerSystem:CreateQuests(_Data)
     local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
-    local Players = MPSync:GetActivePlayers();
+    local Players = QuestSync:GetActivePlayers();
 
     -- Peacetime goal and description
     local PeaceTime = 0;

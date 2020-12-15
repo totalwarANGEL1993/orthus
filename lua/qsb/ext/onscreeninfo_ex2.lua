@@ -21,7 +21,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.qsbtools</li>
+-- <li>qsb.questtools</li>
 -- <li>qsb.questsystem</li>
 -- </ul>
 --

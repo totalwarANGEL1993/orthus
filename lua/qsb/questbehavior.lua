@@ -12,7 +12,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.lib.oop</li>
--- <li>qsb.lib.qsbtools</li>
+-- <li>qsb.lib.questtools</li>
 -- <li>qsb.core.questsystem</li>
 -- <li>qsb.core.questdebug</li>
 -- <li>qsb.core.interaction</li>
