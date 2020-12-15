@@ -1274,11 +1274,44 @@ function MultiplayerSystem:CheckUnitOrBuildingLimit(_PlayerID, _UpgradeCategory,
 end
 
 function MultiplayerSystem:PeacetimeOverMessage(_PlayerID)
-    Message(ReplacePlacholders(self.Text.Messages.PeacetimeOver[QSBTools.GetLanguage()]));
+    Message(ReplacePlacholders(MultiplayerSystem.Text.Messages.PeacetimeOver[QSBTools.GetLanguage()]));
     if MPRuleset_Rules.Timer.DeathPenalty > 0 then
-        Message(ReplacePlacholders(self.Text.Messages.ImpendingDeath[QSBTools.GetLanguage()]));
+        Message(ReplacePlacholders(MultiplayerSystem.Text.Messages.ImpendingDeath[QSBTools.GetLanguage()]));
     end
     Sound.PlayGUISound(Sounds.OnKlick_Select_kerberos, 127);
+end
+
+function Global_PeaceTimeGoal(_Behavior, _Quest)
+    SetBehaviorProgress(_Behavior, Logic.GetTime(), 200);
+    if MultiplayerSystem.Data.GameStartOffset + (MPRuleset_Rules.Timer.Peacetime * 60) < Logic.GetTime() then
+        return true;
+    end
+end
+
+function Global_VictoryConditionGoal(_Behavior, _Quest)
+    local Team = MPSync:GetTeamOfPlayer(_Quest.m_Receiver)
+    local ActivePlayers = MPSync:GetActivePlayers();
+    if table.getn(ActivePlayers) > 1 then
+        for k, v in pairs(ActivePlayers) do
+            if v and MPSync:GetTeamOfPlayer(v) ~= Team then
+                return;
+            end
+        end
+    end
+    if MPSync:IsMultiplayerGame() then
+        return true;
+    end
+end
+
+function Global_PeaceTimeReward(_Data, _Quest)
+    -- Only execute this once. We are using the host player to
+    -- ensure that this realy only happens once.
+    local HostPlayerID = MPSync:GetHostPlayerID();
+    if HostPlayerID == _Quest.m_Receiver then
+        MultiplayerSystem:SetupDiplomacy(_Quest.m_Receiver);
+        MultiplayerSystem:PeacetimeOverMessage(_Quest.m_Receiver);
+        MPRuleset_Rules.Callbacks.OnPeacetimeOver();
+    end
 end
 
 function MultiplayerSystem:CreateQuests(_Data)
@@ -1294,11 +1327,7 @@ function MultiplayerSystem:CreateQuests(_Data)
         -- Goal_NoChange is immedaitly successful when used with Goal_WinQuest
         -- thus we must create our own nochange...
         -- PeaceTimeGoal = Goal_NoChange();
-        PeaceTimeGoal = Goal_MapScriptFunction(function(_Behavior, _Quest)
-            if self.Data.GameStartOffset + (_Data.Timer.Peacetime * 60) < Logic.GetTime() then
-                return true;
-            end
-        end);
+        PeaceTimeGoal = Goal_MapScriptFunction("Global_PeaceTimeGoal");
         PeaceTimeDescription = {
             Title = self.Text.Quests.Peacetime.Title[Language],
             Text  = string.format(self.Text.Quests.Peacetime.Text[Language], _Data.Timer.Peacetime),
@@ -1315,20 +1344,7 @@ function MultiplayerSystem:CreateQuests(_Data)
         Type  = FRAGMENTQUEST_OPEN,
         Info  = 1
     };
-    local VictoryConditionGoal = Goal_MapScriptFunction(function(_Behavior, _Quest)
-        local Team = MPSync:GetTeamOfPlayer(_Quest.m_Receiver)
-        local ActivePlayers = MPSync:GetActivePlayers();
-        if table.getn(ActivePlayers) > 1 then
-            for k, v in pairs(ActivePlayers) do
-                if v and MPSync:GetTeamOfPlayer(v) ~= Team then
-                    return;
-                end
-            end
-        end
-        if MPSync:IsMultiplayerGame() then
-            return true;
-        end
-    end);
+    local VictoryConditionGoal = Goal_MapScriptFunction("Global_VictoryConditionGoal");
     if _Data.Timer.DeathPenalty > 0 then
         VictoryCondition = (_Data.Timer.DeathPenalty * 60);
         VictoryConditionDescription = {
@@ -1362,16 +1378,7 @@ function MultiplayerSystem:CreateQuests(_Data)
             Time        = PeaceTime,
 
             PeaceTimeGoal,
-            Reward_MapScriptFunction(function(_Data, _Quest)
-                -- Only execute this once. We are using the host player to
-                -- ensure that this realy only happens once.
-                local HostPlayerID = MPSync:GetHostPlayerID();
-                if HostPlayerID == _Quest.m_Receiver then
-                    MultiplayerSystem:SetupDiplomacy(_Quest.m_Receiver);
-                    MultiplayerSystem:PeacetimeOverMessage(_Quest.m_Receiver);
-                    MPRuleset_Rules.Callbacks.OnPeacetimeOver();
-                end
-            end),
+            Reward_MapScriptFunction("Global_PeaceTimeReward"),
             Trigger_QuestActive("MultiplayerRules_Mainquest_Player" ..Players[i])
         };
 
