@@ -150,6 +150,24 @@ function QSBTools.SaveCall(_Data)
     end
 end
 
+---
+-- Rounds the given value to the next integer.
+--
+-- Values below x.5 will be floored to the previous integer. Values greater
+-- than x.5 will be risen to the next integer.
+--
+-- @param[type=number] _Value Number to round
+-- @return[type=number] Rounded number
+-- @within Utils
+-- @local
+--
+--
+function QSBTools.Round(_Value)
+    return math.floor(_Value + 0.5);
+end
+Round = QSBTools.Round;
+round = QSBTools.Round;
+
 -- Entities --
 
 function QSBTools.GetAllLeader(_PlayerID)
