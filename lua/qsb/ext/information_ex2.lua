@@ -500,7 +500,7 @@ function Information:AdjustBriefingPageCamHeight(_Page)
 
 	if _Page.height > 0 and _Page.angle > 0 and _Page.angle < 90 then
 		local AngleTangens = _Page.height / math.tan(math.rad(_Page.angle));
-        local RotationRadiant = math.rad(_Page.rotation);
+        local RotationRadiant = math.rad(_Page.rotation or -45);
         -- Save backup for when page is visited again
         if not _Page.positionOriginal then
             _Page.positionOriginal = _Page.position;
@@ -517,7 +517,7 @@ function Information:AdjustBriefingPageCamHeight(_Page)
             if not _Page.zoomOriginal then
                 _Page.zoomOriginal = _Page.zoom;
             end
-			_Page.zoom = _Page.zoomOriginal + math.sqrt(_Page.height^2 + AngleTangens^2);
+			_Page.zoom = _Page.zoomOriginal + math.sqrt(math.pow(_Page.height, 2) + math.pow(AngleTangens, 2));
 			_Page.position = NewPosition;
 		end
     end
@@ -564,18 +564,21 @@ end
 --
 function Information:AdjustBriefingPageRotation(_Page)
     local RotationAngle = -45;
-    if _Page.entity then
-        RotationAngle = Logic.GetEntityOrientation(GetID(_Page.entity));
-        if Logic.IsBuilding(GetID(_Page.entity)) == 1 then
-            RotationAngle = RotationAngle - 90;
-        end
-        if Logic.IsSettler(GetID(_Page.entity)) == 1 then
-            RotationAngle = RotationAngle + 90;
+    if _Page.entity and IsExisting(_Page.entity) then
+        local NewAngle = Logic.GetEntityOrientation(GetID(_Page.entity));
+        if NewAngle then
+            RotationAngle = NewAngle;
+            if Logic.IsBuilding(GetID(_Page.entity)) == 1 then
+                RotationAngle = RotationAngle - 90;
+            end
+            if Logic.IsSettler(GetID(_Page.entity)) == 1 then
+                RotationAngle = RotationAngle + 90;
+            end
         end
     end
     RotationAngle = (_Page.rotation ~= nil and _Page.rotation) or RotationAngle;
     _Page.rotation = RotationAngle;
-    return RotationAngle;
+    return _Page.rotation;
 end
 
 ---
