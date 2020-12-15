@@ -1282,7 +1282,6 @@ function MultiplayerSystem:PeacetimeOverMessage(_PlayerID)
 end
 
 function Global_PeaceTimeGoal(_Behavior, _Quest)
-    SetBehaviorProgress(_Behavior, Logic.GetTime(), 200);
     if MultiplayerSystem.Data.GameStartOffset + (MPRuleset_Rules.Timer.Peacetime * 60) < Logic.GetTime() then
         return true;
     end

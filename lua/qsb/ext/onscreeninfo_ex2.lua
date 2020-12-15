@@ -33,6 +33,8 @@ QuestSystem.OnScreenInfo = {
     m_TimerJob = nil,
     m_Data = {},
 
+    LocalOsiData = {},
+
     ProgressBarBehavior = {
         Objectives.Produce,
         Objectives.Settlers,
@@ -43,6 +45,7 @@ QuestSystem.OnScreenInfo = {
         Objectives.DestroyType,
         Objectives.DestroyCategory,
         Objectives.Steal,
+        Objectives.MapScriptFunction,
     }
 };
 
@@ -57,9 +60,15 @@ QuestSystem.OnScreenInfo = {
 --
 function SetBehaviorProgress(_Behavior, _Current, _Max)
     if not _Behavior.Data.Progress then
-        _Behavior.Data.Progress = {Max = _Max};
+        _Behavior.Data.Progress = {};
+        if not _Behavior.Data.Progress.Init then
+            _Behavior.Data.Progress.Init = true;
+        _Behavior.Data.Progress.Max  = _Max;
+        end
     end
-    _Behavior.Data.Progress.Current = _Current;
+    if _Behavior.Data.Progress then
+        _Behavior.Data.Progress.Current = _Current;
+    end
 end
 
 ---
@@ -79,15 +88,16 @@ function QuestSystem.OnScreenInfo:Install()
     self.m_IsInstalled = true;
 
     self:OverrideUpdates();
-    StartSimpleJobEx(function()
+    StartSimpleHiResJobEx(function()
         QuestSystem.OnScreenInfo:RenderOnScreenInfos();
     end);
 end
 
 function QuestSystem.OnScreenInfo:Activate(_QuestID)
     local Quest = QuestSystem.Quests[_QuestID];
+    self.m_Data[Quest.m_Receiver] = self.m_Data[Quest.m_Receiver] or {};
     if Quest and Quest.m_Description and self:IsUsingOnScreenInfo(Quest) then
-        table.insert(self.m_Data, {
+        table.insert(self.m_Data[Quest.m_Receiver], {
             QuestID   = _QuestID,
             Receiver  = Quest.m_Receiver,
             Title     = string.gsub(Quest.m_Description.Title, "@cr", ""),
@@ -96,19 +106,29 @@ function QuestSystem.OnScreenInfo:Activate(_QuestID)
 end
 
 function QuestSystem.OnScreenInfo:Deactivate(_QuestID)
-    for i= table.getn(self.m_Data), 1, -1 do
-        if self.m_Data[i].QuestID == _QuestID then
-            table.remove(self.m_Data, i);
+    local Quest = QuestSystem.Quests[_QuestID];
+    self.m_Data[Quest.m_Receiver] = self.m_Data[Quest.m_Receiver] or {};
+    if self.m_Data[Quest.m_Receiver] then
+        for i= table.getn(self.m_Data[Quest.m_Receiver]), 1, -1 do
+            if self.m_Data[Quest.m_Receiver][i].QuestID == _QuestID then
+                table.remove(self.m_Data[Quest.m_Receiver], i);
+            end
         end
     end
 end
 
 function QuestSystem.OnScreenInfo:RenderOnScreenInfos()
-    QuestSystem.OnScreenInfo:InitPositions();
-    for k, v in pairs(MPSync:GetActivePlayers()) do
-        local Index = 1;
-        for i= 1, table.getn(self.m_Data), 1 do
-            local OsiData = self:GetPosition(i);
+    local CurrentPlayerID = GUI.GetPlayerID();
+    self.m_Data[CurrentPlayerID] = self.m_Data[CurrentPlayerID] or {};
+    self:InitPositions();
+    local Index = 1;
+    for i= 1, table.getn(self.m_Data[CurrentPlayerID]), 1 do
+        if Index > 8 then
+            return;
+        end
+
+        local OsiData = self:GetPosition(CurrentPlayerID, i);       
+        if CurrentPlayerID == OsiData.Receiver then
             local Visible = 0;
             if OsiData.Counter and OsiData.Counter.Max > -1 then
                 Visible = Visible +1;
@@ -116,26 +136,28 @@ function QuestSystem.OnScreenInfo:RenderOnScreenInfos()
             if OsiData.Timer and OsiData.Timer.TimeLeft > -1 then
                 Visible = Visible +2;
             end
-            if Index < 8 and v == GUI.GetPlayerID() and v == self.m_Data[i].Receiver then
-                self:ShowPosition(Index, self.m_Data[i].Receiver, Visible);
+            if Visible > 0 then
+                self:ShowPosition(Index, CurrentPlayerID, Visible);
+                self.m_Data[CurrentPlayerID][i].Index = Index;
                 Index = Index +1;
             end
         end
     end
 end
 
-function QuestSystem.OnScreenInfo:GetPosition(_PositionID)
-    if not self.m_Data[_PositionID] then
+function QuestSystem.OnScreenInfo:GetPosition(_PlayerID, _Index)
+    self.m_Data[_PlayerID] = self.m_Data[_PlayerID] or {};
+    if not self.m_Data[_PlayerID][_Index] then
         return;
     end
-    local Quest = QuestSystem.Quests[self.m_Data[_PositionID].QuestID];
-    self:CollectTimerData(Quest, self.m_Data[_PositionID]);
+    local Quest = QuestSystem.Quests[self.m_Data[_PlayerID][_Index].QuestID];
+    self:CollectTimerData(Quest, self.m_Data[_PlayerID][_Index]);
     for i= 1, table.getn(Quest.m_Objectives), 1 do
-        if self:CollectCounterData(Quest, Quest.m_Objectives[1], self.m_Data[_PositionID]) then
+        if self:CollectCounterData(Quest, Quest.m_Objectives[i], self.m_Data[_PlayerID][_Index]) then
             break;
         end
     end
-    return self.m_Data[_PositionID];
+    return self.m_Data[_PlayerID][_Index];
 end
 
 function QuestSystem.OnScreenInfo:IsUsingOnScreenInfo(_Quest)
@@ -273,49 +295,72 @@ function QuestSystem.OnScreenInfo:ConvertSecondsToString(_TotalSeconds)
 end
 
 function QuestSystem.OnScreenInfo:OverrideUpdates()
+    -- Must be overridden to do nothing
+    GUIUpdate_VCTechRaceColor = function(_Player)
+    end
+
     GUIUpdate_VCTechRaceProgress = function()
-        local CurrentWidgetID = XGUIEng.GetCurrentWidgetID();
-        local MotherContainer= XGUIEng.GetWidgetsMotherID(CurrentWidgetID);
-        local GrandMaContainer= XGUIEng.GetWidgetsMotherID(MotherContainer);
-        local PositionID = XGUIEng.GetBaseWidgetUserVariable(GrandMaContainer, 0);
-
-        local Data = QuestSystem.OnScreenInfo:GetPosition(PositionID+1);
-        XGUIEng.SetText("VCMP_Team1Name", Data.Title);
-
-        local Progress = Data.Counter.Current / Data.Counter.Max;
-        local R = 150 - math.floor(100 * Progress);
-        local G = 42 + math.floor(108 * Progress);
-        local B = 45;
-	    XGUIEng.SetProgressBarValues(CurrentWidgetID, Data.Counter.Current, Data.Counter.Max);
-        XGUIEng.SetMaterialColor(CurrentWidgetID, 0, R, G, B, 255);
+        local PlayerID = GUI.GetPlayerID();
+        if QuestSystem.OnScreenInfo.m_Data[PlayerID] then
+            for i= 1, 8, 1 do
+                local Data = QuestSystem.OnScreenInfo.m_Data[PlayerID][i];
+                if Data and Data.Index and Data.Counter and Data.Counter.Max then
+                    XGUIEng.SetText("VCMP_Team" ..Data.Index.. "Name", Data.Title);
+                    local CurrentWidgetID = XGUIEng.GetWidgetID("VCMP_Team" ..Data.Index.. "Progress");
+                    local Progress = Data.Counter.Current / Data.Counter.Max;
+                    local R = 150 - math.floor(100 * Progress);
+                    local G = 42 + math.floor(108 * Progress);
+                    local B = 45;
+                    XGUIEng.SetProgressBarValues(CurrentWidgetID, Data.Counter.Current, Data.Counter.Max);
+                    XGUIEng.SetMaterialColor(CurrentWidgetID, 0, R, G, B, 255);
+                end
+            end
+        end
     end
 
     GUIUpdate_GetTeamPoints = function()
-        local CurrentWidgetID = XGUIEng.GetCurrentWidgetID();
-        local MotherContainer= XGUIEng.GetWidgetsMotherID(CurrentWidgetID);
-        local GrandMaContainer= XGUIEng.GetWidgetsMotherID(MotherContainer);
-        local PositionID = XGUIEng.GetBaseWidgetUserVariable(GrandMaContainer, 0);
-        
-        local Data = QuestSystem.OnScreenInfo:GetPosition(PositionID+1);
-        XGUIEng.SetText("VCMP_Team1Name", Data.Title);
-
-        local FormatedTime = QuestSystem.OnScreenInfo:ConvertSecondsToString(Data.Timer.TimeLeft);
-        local Text = string.format(
-            " %s @ra %s",
-            (Data.Timer.TimeLeft >= 60 and "@color:255:255:255") or "@color:180,80,80",
-            FormatedTime
-        );
-        XGUIEng.SetText(CurrentWidgetID, Text);
+        local PlayerID = GUI.GetPlayerID();
+        if QuestSystem.OnScreenInfo.m_Data[PlayerID] then
+            for i= 1, 8, 1 do
+                local Data = QuestSystem.OnScreenInfo.m_Data[PlayerID][i];
+                if Data and Data.Index and Data.Timer and Data.Timer.TimeLeft then
+                    local CurrentWidgetID = XGUIEng.GetWidgetID("VCMP_Team" ..Data.Index.. "Points");
+                    XGUIEng.SetText("VCMP_Team" ..Data.Index.. "Name", Data.Title);
+                    local FormatedTime = QuestSystem.OnScreenInfo:ConvertSecondsToString(Data.Timer.TimeLeft);
+                    local Text = string.format(
+                        " %s %s",
+                        (Data.Timer.TimeLeft >= 60 and "@color:255:255:255") or "@color:190,110,110",
+                        FormatedTime
+                    );
+                    XGUIEng.SetText(CurrentWidgetID, Text);
+                end
+            end
+        end
     end
+end
+
+function QuestSystem.OnScreenInfo:GetScreenSizeFactors()
+    local Size = {GUI.GetScreenSize()};
+    local FactorX = (1024/Size[1]);
+    local FactorY = (768/Size[2]);
+    local FactorW = (1024/Size[1]);
+    local FactorH = (768/Size[2]);
+    return FactorX, FactorY, FactorW, FactorH;
 end
 
 function QuestSystem.OnScreenInfo:InitPositions()
     local Size = {GUI.GetScreenSize()};
-    XGUIEng.SetWidgetPositionAndSize("VCMP_Window", 0, 120, Size[1], Size[2]-120);
+    local X,Y,W,H = self:GetScreenSizeFactors();
+
+    local MotherW = round(300 * W);
+    local MotherH = round(640 * H);
+    local XAnchor = round(1024-(380*X));
+    local YAnchor = round(160 * Y);
+	XGUIEng.SetWidgetPositionAndSize("VCMP_Window", XAnchor, YAnchor, MotherW, MotherH);
     XGUIEng.ShowWidget("VCMP_Window", 1);
     for i= 1, 8, 1 do
-        local Offset = (48 * (i-1));
-        XGUIEng.SetWidgetPositionAndSize("VCMP_Team" ..i, 0, Offset, Size[1], 70);
+        local OffsetY = ((48*Y) * (i-1));
+        XGUIEng.SetWidgetPositionAndSize("VCMP_Team" ..i, XAnchor, OffsetY, MotherW, round(48*Y));
         for j= 1, 8, 1 do
             XGUIEng.ShowWidget("VCMP_Team" ..i.. "Player" ..j, 0);
         end
@@ -325,10 +370,13 @@ function QuestSystem.OnScreenInfo:InitPositions()
 end
 
 function QuestSystem.OnScreenInfo:ShowPosition(_Index, _Receiver, _TimerCounterFlag)
-    local Size = {GUI.GetScreenSize()};
-    if _Index > 8 then
+    local PlayerID = GUI.GetPlayerID();
+    if _Index > 8 or _TimerCounterFlag == 0 or _Receiver ~= PlayerID then
         return;
     end
+    local X,Y,W,H = self:GetScreenSizeFactors();
+    local MotherW = round(300 * W);
+    local MotherH = round(700 * H);
     
     local BaseOffset = 24;
     local TechRaceVisible = ((_TimerCounterFlag == 1 or _TimerCounterFlag == 3) and 1) or 0;
@@ -336,39 +384,29 @@ function QuestSystem.OnScreenInfo:ShowPosition(_Index, _Receiver, _TimerCounterF
     if TechRaceVisible == 1 or PointsVisible == 1 then
         BaseOffset = BaseOffset +16;
     end
-    local Offset = (BaseOffset * (_Index-1));
+    local OffsetY = round((BaseOffset*X) * (_Index-1));
 
     XGUIEng.ShowWidget("VCMP_Team" .._Index, 1);
 
-    local TeamNamePosX = (Size[1]/2) +230;
-    local TeamNameSizeX = (Size[1]/2) -300;
-    local R, G, B = GUI.GetPlayerColor(_Receiver);
     XGUIEng.ShowWidget("VCMP_Team" .._Index.. "Name", 1);
-    XGUIEng.SetMaterialColor("VCMP_Team" .._Index.. "Name", 0, R, G, B, 200);
-    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "Name", TeamNamePosX, 0, TeamNameSizeX, 16);
+    XGUIEng.SetWidgetSize("VCMP_Team" .._Index.. "Name", MotherW, round(16*H));
 
-    local TechRacePosX = (Size[1]/2) +230;
-    local TechRaceSizeX = (Size[1]/2) -300;
-    local PointsOffsetX = 0 + ((PointsVisible == 1 and 0) or 62);
-    local PointsOffsetS = 0 + ((PointsVisible == 1 and 62) or 0);
+    local BarS = round(300*W - ((PointsVisible == 1 and 65*W) or 0));
     XGUIEng.ShowWidget("VCMP_Team" .._Index.. "TechRace", TechRaceVisible);
-    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "TechRace", TechRacePosX, 16, TechRaceSizeX, 16);
-    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "Progress", PointsOffsetX, 0, TechRaceSizeX - PointsOffsetS, 16);
-    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "ProgressBG", PointsOffsetX, 0, TechRaceSizeX - PointsOffsetS, 16);
+    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "TechRace", round(60*X), round(16*Y), MotherW, round(16*H));
+    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "Progress", 0, 0, BarS, round(16*H));
+    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "ProgressBG", 0, 0, BarS, round(16*H));
 
-    local PointsPosX = (Size[1]/2) +230;
-    local PointsSizeX = (Size[1]/2) -300;
-    local BarVisibleOffset = 0 + ((TechRaceVisible == 1 and TechRaceSizeX) or 0);
+    local PointsX = round(240*W);
     XGUIEng.ShowWidget("VCMP_Team" .._Index.. "PointGame", PointsVisible);
-    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "PointGame", PointsPosX, 16, PointsSizeX, 16);
-    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "Points", BarVisibleOffset, 0, 60, 16);
-    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "PointBG", BarVisibleOffset, 0, 60, 16);
+    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "PointGame", PointsX, round(16*Y), round(60*W), round(16*H));
+    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "Points", 0, 0, round(60*W), round(16*H));
+    XGUIEng.SetWidgetPositionAndSize("VCMP_Team" .._Index.. "PointBG", 0, 0, round(60*W), round(16*H));
 end
 
 GameCallback_OnQuestStatusChanged_Orig_OnScreenInfo = GameCallback_OnQuestStatusChanged;
 GameCallback_OnQuestStatusChanged = function(_QuestID, _State, _Result)
     GameCallback_OnQuestStatusChanged_Orig_OnScreenInfo(_QuestID, _State, _Result);
-    
     QuestSystem.OnScreenInfo:Install();
     if _State == QuestStates.Active then
         QuestSystem.OnScreenInfo:Deactivate(_QuestID);
