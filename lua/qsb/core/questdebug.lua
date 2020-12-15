@@ -20,7 +20,7 @@
 -- @set sort=true
 --
 
-QuestSystem.Debug = {
+QuestDebug = {
     ScriptEvents = {},
 };
 
@@ -32,9 +32,9 @@ QuestSystem.Debug = {
 -- @param[type=boolean] _DebugKeys   Activate debug cheats
 -- @param[type=boolean] _DebugShell  Activate debug shell
 -- @param[type=boolean] _QuestTrace  Display quest status changes
--- @within QuestSystem.Debug
+-- @within QuestDebug
 --
-function QuestSystem.Debug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)
+function QuestDebug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)
     self.m_QuestTrace = _QuestTrace == true;
     self.m_CheckQuests = _CheckQuests == true;
     self.m_DebugKeys = _DebugKeys == true;
@@ -48,10 +48,10 @@ function QuestSystem.Debug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _Ques
     self:OverrideQuestSystemTriggerQuest();
 end
 
-function QuestSystem.Debug:OverrideQuestSystemTriggerQuest()
+function QuestDebug:OverrideQuestSystemTriggerQuest()
     QuestTemplate.TriggerOriginal = QuestTemplate.Trigger;
     QuestTemplate.Trigger = function(self)
-        if QuestSystem.Debug.m_CheckQuests then
+        if QuestDebug.m_CheckQuests then
             for i= 1, table.getn(self.m_Objectives), 1 do
                 if self.m_Objectives[i][1] == Objectives.MapScriptFunction and self.m_Objectives[i][2][2].Debug then
                     if self.m_Objectives[i][2][2]:Debug(self) then
@@ -90,7 +90,7 @@ function QuestSystem.Debug:OverrideQuestSystemTriggerQuest()
     end
 end
 
-function QuestSystem.Debug:PrintQuestStatus(_QuestID, _State, _Result)
+function QuestDebug:PrintQuestStatus(_QuestID, _State, _Result)
     if self.m_QuestTrace then 
         local QuestState = self:GetKeyByValue(QuestStates, _State);
         local QuestResult = self:GetKeyByValue(QuestResults, _Result);
@@ -99,7 +99,7 @@ function QuestSystem.Debug:PrintQuestStatus(_QuestID, _State, _Result)
     end
 end
 
-function QuestSystem.Debug:ActivateConsole()
+function QuestDebug:ActivateConsole()
     if self.m_DebugShell then
         Input.KeyBindDown(Keys.OemPipe, "XGUIEng.ShowWidget('ChatInput',1)", 2);
         
@@ -116,10 +116,10 @@ function QuestSystem.Debug:ActivateConsole()
     end
 end
 function eval(_Input)
-    return QuestSystem.Debug:EvaluateCommand(QuestSystem.Debug:TokenizeCommand(_Input));
+    return QuestDebug:EvaluateCommand(QuestDebug:TokenizeCommand(_Input));
 end
 
-function QuestSystem.Debug:TokenizeCommand(_Message)
+function QuestDebug:TokenizeCommand(_Message)
     local Commands = {};
     local DAmberCommands = {_Message};
     local AmberCommands = {_Message};
@@ -184,7 +184,7 @@ function QuestSystem.Debug:TokenizeCommand(_Message)
     return Commands;
 end
 
-function QuestSystem.Debug:CreateScriptEvents()
+function QuestDebug:CreateScriptEvents()
     self.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
         if QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
@@ -460,7 +460,7 @@ function QuestSystem.Debug:CreateScriptEvents()
     end);
 end
 
-function QuestSystem.Debug:EvaluateCommand(_Tokens)
+function QuestDebug:EvaluateCommand(_Tokens)
     for _, command in pairs(_Tokens) do
         local Action = string.lower(command[1]);        
 
@@ -521,7 +521,7 @@ function QuestSystem.Debug:EvaluateCommand(_Tokens)
     return false;
 end
 
-function QuestSystem.Debug:CreateCheats()
+function QuestDebug:CreateCheats()
     if self.m_DebugKeys then
         -- Open quest shell
         Input.KeyBindDown(Keys.OemPipe, "XGUIEng.ShowWidget('ChatInput',1)",2);
@@ -594,7 +594,7 @@ function QuestSystem.Debug:CreateCheats()
     end
 end
 
-function QuestSystem.Debug:CreateCheatMethods()
+function QuestDebug:CreateCheatMethods()
     -- Changing entity owner
     function Cheats_ChangePlayer(_player)
         local eID = GUI.GetEntityAtPosition(GUI.GetMousePosition());
@@ -622,12 +622,12 @@ function QuestSystem.Debug:CreateCheatMethods()
     end
 end
 
-function QuestSystem.Debug:OverrideSaveGameLoaded()
+function QuestDebug:OverrideSaveGameLoaded()
     Mission_OnSaveGameLoaded_Orig_QuestSystemDebug = Mission_OnSaveGameLoaded;
     Mission_OnSaveGameLoaded = function()
         Mission_OnSaveGameLoaded_Orig_QuestSystemDebug();
 
-        QuestSystem.Debug:CreateCheats();
+        QuestDebug:CreateCheats();
     end
 end
 
@@ -638,6 +638,6 @@ function GameCallback_OnQuestStatusChanged(_QuestID, _State, _Result)
     if GameCallback_OnQuestStatusChanged_Orig_QsbQuestDebug then
         GameCallback_OnQuestStatusChanged_Orig_QsbQuestDebug(_QuestID, _State, _Result);
     end
-    QuestSystem.Debug:PrintQuestStatus(_QuestID, _State, _Result);
+    QuestDebug:PrintQuestStatus(_QuestID, _State, _Result);
 end
 

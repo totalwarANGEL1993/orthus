@@ -15,7 +15,7 @@
 -- <li>qsb.lib.questtools</li>
 -- <li>qsb.core.questsystem</li>
 -- <li>qsb.core.questdebug</li>
--- <li>qsb.core.interaction</li>
+-- <li>qsb.ext.interaction</li>
 -- <li>qsb.ext.information</li>
 -- <li>qsb.ext.onscreeninfo</li>
 -- </ul>
@@ -167,7 +167,7 @@ end
 -- @usage ActivateDebugMode(true, false, true, true);
 --
 function ActivateDebugMode(_CheckQuests, _TraceQuests, _Cheats, _Console)
-    QuestSystem.Debug:Activate(_CheckQuests, _Cheats, _Console, _TraceQuests);
+    QuestDebug:Activate(_CheckQuests, _Cheats, _Console, _TraceQuests);
 end
 
 ---
@@ -5832,8 +5832,8 @@ function b_Reward_DEBUG:GetRewardTable()
 end
 
 function b_Reward_DEBUG:CustomFunction(_Quest)
-    if QuestSystem.Debug then
-        QuestSystem.Debug:Activate(
+    if QuestDebug then
+        QuestDebug:Activate(
             self.Data.UseDebugQuests,
             self.Data.UseCheats,
             self.Data.UseShell,
