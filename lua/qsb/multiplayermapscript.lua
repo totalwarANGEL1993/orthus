@@ -24,9 +24,13 @@ Script.Load(gvBasePath.. "treasure.lua");
 
 -- Settings ----------------------------------------------------------------- --
 
+function Mission_InitWeatherGfxSets()
+    SetupHighlandWeatherGfxSet();
+end
+
 function GameCallback_OnGameStart()
     -- Weather
-    SetupHighlandWeatherGfxSet();
+    Mission_InitWeatherGfxSets();
     AddPeriodicSummer(10);
 
     -- Music 
