@@ -67,7 +67,7 @@ end
 --
 function QuestSystem.Workplace:PrepareWorkerAmountEvent()
 	self.ScriptEvent = MPSync:CreateScriptEvent(function(_BuildingID, _Amount, _State, ...)
-		local ScriptName = QSBTools.CreateNameForEntity(_BuildingID);
+		local ScriptName = QuestTools.CreateNameForEntity(_BuildingID);
 		local PlayerID   = Logic.EntityGetPlayer(_BuildingID);
 		QuestSystem.Workplace.WorkplaceStates[ScriptName] = _State;
 		if MPSync:IsCNetwork() then
@@ -286,7 +286,7 @@ function QuestSystem.Workplace:OverrideInterfaceUpdate()
 	GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod = GameCallback_OnBuildingUpgradeComplete
 	GameCallback_OnBuildingUpgradeComplete = function(a,b)
 		GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod(a,b);
-		local eName = QSBTools.CreateNameForEntity(b);
+		local eName = QuestTools.CreateNameForEntity(b);
 		if QuestSystem.Workplace.WorkplaceStates[eName] then
 			local backupSel = {GUI.GetSelectedEntities()};
 			GUI.ClearSelection();
@@ -316,7 +316,7 @@ function QuestSystem.Workplace:UpdateDisplay()
 	if sel then
 		local inTable = false;
 		for k,v in pairs(self.WorkplaceStates)do
-			local eName = QSBTools.CreateNameForEntity(sel);
+			local eName = QuestTools.CreateNameForEntity(sel);
 			if eName == tostring(k) then
 				inTable = true;
 				if IsExisting(eName)then

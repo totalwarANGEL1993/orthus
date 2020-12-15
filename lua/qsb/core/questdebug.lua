@@ -295,8 +295,8 @@ function QuestSystem.Debug:CreateScriptEvents()
                 Message("Can not find quest: " .._Quest);
             end
             local QuestName      = "Name: " ..QuestSystem.Quests[QuestID].m_QuestName.. " @cr ";
-            local QuestState     = "State: " ..QSBTools.GetKeyByValue(QuestSystem.Quests[QuestID].m_State, QuestStates).. " @cr ";
-            local QuestResult    = "Result: " ..QSBTools.GetKeyByValue(QuestSystem.Quests[QuestID].m_Result, QuestResults).. " @cr ";
+            local QuestState     = "State: " ..QuestTools.GetKeyByValue(QuestSystem.Quests[QuestID].m_State, QuestStates).. " @cr ";
+            local QuestResult    = "Result: " ..QuestTools.GetKeyByValue(QuestSystem.Quests[QuestID].m_Result, QuestResults).. " @cr ";
             local QuestReceiver  = "Receiver: " ..QuestSystem.Quests[QuestID].m_Receiver.. " @cr ";
             local QuestTime      = "Time: " ..QuestSystem.Quests[QuestID].m_Time.. " @cr ";
             local QuestGoals     = "Objectives: " ..table.getn(QuestSystem.Quests[QuestID].m_Objectives).. " @cr ";
@@ -387,7 +387,7 @@ function QuestSystem.Debug:CreateScriptEvents()
                 Tools.ChangeGroupPlayerID(_Entity, _Player);
             else
                 if Logic.IsEntityInCategory(_Entity,EntityCategories.Soldier) == 1 then
-                    Tools.ChangeGroupPlayerID(QSBTools.SoldierGetLeader(_Entity), _Player);
+                    Tools.ChangeGroupPlayerID(QuestTools.SoldierGetLeader(_Entity), _Player);
                 else
                     ChangePlayer(_Entity, _Player);
                 end
@@ -417,7 +417,7 @@ function QuestSystem.Debug:CreateScriptEvents()
 
     self.ScriptEvents.CheatUnitAtMousePosition = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _X, _Y, _Flag)
         local pos = {X= _X, Y= _Y};
-        if QSBTools.IsValidPosition(pos) then
+        if QuestTools.IsValidPosition(pos) then
             if _Flag == 1 then
                 Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderSword4, 8, pos.X , pos.Y ,0 );
                 if GUI.GetPlayerID() == _ExecutingPlayer then

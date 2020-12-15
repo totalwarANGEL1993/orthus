@@ -357,8 +357,8 @@ function Bugfixes:UpdateFindViewButtons()
         if Entities.PU_Thief then
             ThiefAmount = Logic.GetNumberOfEntitiesOfTypeOfPlayer(PlayerID, Entities.PU_Thief);
         end
-        local AllCannons  = QSBTools.GetAllCannons(PlayerID);
-        local AllLeader   = QSBTools.GetAllLeader(PlayerID);
+        local AllCannons  = QuestTools.GetAllCannons(PlayerID);
+        local AllLeader   = QuestTools.GetAllLeader(PlayerID);
 
         local ExistingMap = {}
         for i= 1, table.getn(AllLeader), 1 do

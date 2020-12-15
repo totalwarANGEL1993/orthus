@@ -108,7 +108,7 @@ function Information:CreateAddPageFunctions()
                     _page = QuestSystem:ReplacePlaceholders(_page);
                     if _page.title then
                         if type(_page.title) == "table" then
-                            _page.title = _page.title[QSBTools.GetLanguage()];
+                            _page.title = _page.title[QuestTools.GetLanguage()];
                         end
                         if not string.find(string.sub(_page.title, 1, 2), "@") then
                             _page.title = "@center " .. _page.title;
@@ -116,14 +116,14 @@ function Information:CreateAddPageFunctions()
                     end
                     if _page.text then
                         if type(_page.text) == "table" then
-                            _page.text = _page.text[QSBTools.GetLanguage()];
+                            _page.text = _page.text[QuestTools.GetLanguage()];
                         end
                     end
 
                     -- Set mc text
                     if _page.mc and _page.mc.title then
                         if type(_page.mc.title) == "table" then
-                            _page.mc.title = _page.mc.title[QSBTools.GetLanguage()];
+                            _page.mc.title = _page.mc.title[QuestTools.GetLanguage()];
                         end
                         if not string.find(string.sub(_page.mc.title, 1, 2), "@") then
                             _page.mc.title = "@center " .. _page.mc.title;
@@ -131,7 +131,7 @@ function Information:CreateAddPageFunctions()
                     end
                     if _page.mc and _page.mc.text then
                         if type(_page.mc.text) == "table" then
-                            _page.mc.text = _page.mc.text[QSBTools.GetLanguage()];
+                            _page.mc.text = _page.mc.text[QuestTools.GetLanguage()];
                         end
                     end
 

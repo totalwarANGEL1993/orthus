@@ -15,7 +15,7 @@
 -- @set sort=true
 --
 
-QSBTools = {
+QuestTools = {
     InlineJobs = {Counter = 0},
     EntityNameCounter = 0,
 };
@@ -28,7 +28,7 @@ QSBTools = {
 -- @return[type=number] Extension
 -- @within Utils
 --
-function QSBTools.GetExtensionNumber()
+function QuestTools.GetExtensionNumber()
     local Version = Framework.GetProgramVersion();
     local extensionNumber = tonumber(string.sub(Version, string.len(Version))) or 0;
     return extensionNumber;
@@ -39,7 +39,7 @@ end
 -- @return[type=string] Short name
 -- @within Utils
 --
-function QSBTools.GetLanguage()
+function QuestTools.GetLanguage()
     return (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
 end
 
@@ -49,9 +49,9 @@ end
 -- @return[type=string] 
 -- @within Utils
 --
-function QSBTools.GetLocalizedTextInTable(_Text)
+function QuestTools.GetLocalizedTextInTable(_Text)
     if type(_Text) == "table" then
-        return _Text[QSBTools.GetLanguage()] or " ERROR_TEXT_INVALID ";
+        return _Text[QuestTools.GetLanguage()] or " ERROR_TEXT_INVALID ";
     end
     return _Text;
 end
@@ -64,10 +64,10 @@ end
 -- @return[type=boolean] Value found
 -- @within Utils
 --
-function QSBTools.IsInTable(_Value, _Table)
-	return QSBTools.GetKeyByValue(_Value, _Table) ~= nil;
+function QuestTools.IsInTable(_Value, _Table)
+	return QuestTools.GetKeyByValue(_Value, _Table) ~= nil;
 end
-IstDrin = QSBTools.IsInTable;
+IstDrin = QuestTools.IsInTable;
 
 ---
 -- Returns the key of the given value in the table if value is existing.
@@ -77,7 +77,7 @@ IstDrin = QSBTools.IsInTable;
 -- @return Key of value
 -- @within Utils
 --
-function QSBTools.GetKeyByValue(_Value, _Table)
+function QuestTools.GetKeyByValue(_Value, _Table)
     for k, v in pairs(_Table) do 
         if v == _Value then
             return k;
@@ -92,7 +92,7 @@ end
 -- @within Utils
 -- @local
 --
-function QSBTools.CheckFunctionSize(t)
+function QuestTools.CheckFunctionSize(t)
     table.foreach(t, function(k, v)
         if type(v) == "function" then
             local res, dmp = xpcall(
@@ -110,7 +110,7 @@ function QSBTools.CheckFunctionSize(t)
             end
         end
         if type(v) == "table" and not tonumber(k) and v ~= _G then
-            QSBTools.CheckFunctionSize(v);
+            QuestTools.CheckFunctionSize(v);
         end
     end);
 end
@@ -125,7 +125,7 @@ end
 -- The error handler gets the actual error and all arguments from the original
 -- call passed when executed.
 --
--- QSBTools.SaveCall returns the return value of the function if no errors
+-- QuestTools.SaveCall returns the return value of the function if no errors
 -- occur. Ifsomething went wrong the return value of the error handler is 
 -- returned. If no handler is present the return value will always be nil.
 --
@@ -140,7 +140,7 @@ end
 -- @local
 --
 --
-function QSBTools.SaveCall(_Data)
+function QuestTools.SaveCall(_Data)
     if type(_Data == "table" and type(_Data[1]) == "function") then
         local Function = table.remove(_Data, 1);
         if QuestSystem.IgnoreLuaDebugger or LuaDebugger.Log == nil then
@@ -151,7 +151,7 @@ function QSBTools.SaveCall(_Data)
             if Values[1] == false then
                 GUI.AddStaticNote("Runtime error: " ..tostring(Values[2]));
                 if type(_Data.ErrorHandler) == "function" then
-                    return QSBTools.SaveCall{_Data.ErrorHandler, Values[2], unpack(_Data)};
+                    return QuestTools.SaveCall{_Data.ErrorHandler, Values[2], unpack(_Data)};
                 end
             end
             return Values[2];
@@ -173,15 +173,15 @@ end
 -- @local
 --
 --
-function QSBTools.Round(_Value)
+function QuestTools.Round(_Value)
     return math.floor(_Value + 0.5);
 end
-Round = QSBTools.Round;
-round = QSBTools.Round;
+Round = QuestTools.Round;
+round = QuestTools.Round;
 
 -- Entities --
 
-function QSBTools.GetAllLeader(_PlayerID)
+function QuestTools.GetAllLeader(_PlayerID)
     local LeaderList = {};
     local FirstID = Logic.GetNextLeader(_PlayerID, 0);
     if FirstID ~= 0 then
@@ -199,7 +199,7 @@ function QSBTools.GetAllLeader(_PlayerID)
     return LeaderList;
 end
 
-function QSBTools.GetAllCannons(_PlayerID)
+function QuestTools.GetAllCannons(_PlayerID)
     local CannonList = {};
     for i= 1, 4, 1 do
         local n, FirstID = Logic.GetPlayerEntities(_PlayerID, Entities["PV_Cannon" ..i], 1);
@@ -226,7 +226,7 @@ end
 -- @return[type=table] List of entities
 -- @within Entities
 --
-function QSBTools.GetPlayerEntities(_PlayerID, _EntityType)
+function QuestTools.GetPlayerEntities(_PlayerID, _EntityType)
     local PlayerEntities = {}
     if _EntityType ~= 0 then
         local n,eID = Logic.GetPlayerEntities(_PlayerID, _EntityType, 1);
@@ -254,7 +254,7 @@ function QSBTools.GetPlayerEntities(_PlayerID, _EntityType)
     end
     return PlayerEntities
 end
-GetPlayerEntities = QSBTools.GetPlayerEntities;
+GetPlayerEntities = QuestTools.GetPlayerEntities;
 
 ---
 -- Finds all entities numbered from 1 to n with a common prefix.
@@ -262,7 +262,7 @@ GetPlayerEntities = QSBTools.GetPlayerEntities;
 -- @return[type=table] List of entities
 -- @within Entities
 --
-function QSBTools.GetEntitiesByPrefix(_Prefix)
+function QuestTools.GetEntitiesByPrefix(_Prefix)
     local list = {};
     local i = 1;
     local bFound = true;
@@ -277,7 +277,7 @@ function QSBTools.GetEntitiesByPrefix(_Prefix)
     end
     return list;
 end
-GetEntitiesByPrefix = QSBTools.GetEntitiesByPrefix;
+GetEntitiesByPrefix = QuestTools.GetEntitiesByPrefix;
 
 ---
 -- Checks worldwide for doodad entities or player entities.
@@ -292,7 +292,7 @@ GetEntitiesByPrefix = QSBTools.GetEntitiesByPrefix;
 -- @return[type=table] Result set
 -- @within Entities
 --
-function QSBTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position)
+function QuestTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position)
 	local ResultSet = {};
     
     _AreaSize = _AreaSize or Logic.WorldGetSize();
@@ -311,41 +311,41 @@ function QSBTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position)
 		local PositionX2 = _Position.X + _AreaSize / 4;
 		local PositionY1 = _Position.Y - _AreaSize / 4;
 		local PositionY2 = _Position.Y + _AreaSize / 4;
-		local ResultSetRecursive = QSBTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY1});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY1});
 		for i = 1, table.getn(ResultSetRecursive) do
-			if not QSBTools.IsInTable(ResultSetRecursive[i], ResultSet) then
+			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
-		local ResultSetRecursive = QSBTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY2});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY2});
 		for i = 1, table.getn(ResultSetRecursive) do
-			if not QSBTools.IsInTable(ResultSetRecursive[i], ResultSet) then
+			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
-		local ResultSetRecursive = QSBTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY1});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY1});
 		for i = 1, table.getn(ResultSetRecursive) do
-			if not QSBTools.IsInTable(ResultSetRecursive[i], ResultSet) then
+			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
-		local ResultSetRecursive = QSBTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY2});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY2});
 		for i = 1, table.getn(ResultSetRecursive) do
-			if not QSBTools.IsInTable(ResultSetRecursive[i], ResultSet) then
+			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
 	else
 		table.remove(Data, 1);
 		for i = 1, table.getn(Data) do
-			if not QSBTools.IsInTable(Data[i], ResultSet) then
+			if not QuestTools.IsInTable(Data[i], ResultSet) then
 				table.insert(ResultSet, Data[i]);
 			end
 		end
 	end
 	return ResultSet
 end
-SucheAufDerWelt = QSBTools.FindAllEntities
+SucheAufDerWelt = QuestTools.FindAllEntities
 
 ---
 -- Returns the distance between two positions or entities.
@@ -355,7 +355,7 @@ SucheAufDerWelt = QSBTools.FindAllEntities
 -- @return[type=number] Distance between positions
 -- @within Entities
 --
-function QSBTools.GetDistance(_pos1, _pos2)
+function QuestTools.GetDistance(_pos1, _pos2)
     if (type(_pos1) == "string") or (type(_pos1) == "number") then
         _pos1 = GetPosition(_pos1);
     end
@@ -368,7 +368,7 @@ function QSBTools.GetDistance(_pos1, _pos2)
     local yDistance = (_pos1.Y - _pos2.Y);
     return math.sqrt((xDistance^2) + (yDistance^2));
 end
-GetDistance = QSBTools.GetDistance;
+GetDistance = QuestTools.GetDistance;
 
 ---
 -- Returns the geometric focus of the passed positions.
@@ -380,7 +380,7 @@ GetDistance = QSBTools.GetDistance;
 -- @return[type=table] Average position
 -- @within Entities
 --
-function QSBTools.GetGeometricFocus(...)
+function QuestTools.GetGeometricFocus(...)
     local SumX = 0;
     local SumY = 0;
     local SumZ = 0;
@@ -410,7 +410,7 @@ end
 -- @return[type=number] Erreichbare Position
 -- @within Entities
 --
-function QSBTools.GetReachablePosition(_Entity, _Target)
+function QuestTools.GetReachablePosition(_Entity, _Target)
     local PlayerID = Logic.EntityGetPlayer(GetID(_Entity));
     local Position1 = GetPosition(_Entity);
     local Position2 =_Target;
@@ -423,7 +423,7 @@ function QSBTools.GetReachablePosition(_Entity, _Target)
     local ID = AI.Entity_CreateFormation(PlayerID, Entities.XD_ScriptEntity, 0, 0, Position2.X, Position2.Y, 0, 0, 0, 0);
     local NewPosition = GetPosition(ID);
     DestroyEntity(ID);
-    if QSBTools.SameSector(_Entity, NewPosition) then
+    if QuestTools.SameSector(_Entity, NewPosition) then
         return NewPosition;
     end
     return nil;
@@ -437,7 +437,7 @@ end
 -- @return[type=boolean] Army or entity is dead
 -- @within Entities
 --
-function QSBTools.IsDead(_input)
+function QuestTools.IsDead(_input)
     if type(_input) == "table" and not _input.created then
         _input.created = not IsDeadOrig(_input);
         return false;
@@ -445,7 +445,7 @@ function QSBTools.IsDead(_input)
     return IsDeadOrig(_input);
 end
 IsDeadOrig = IsDead;
-IsDead = QSBTools.IsDead;
+IsDead = QuestTools.IsDead;
 
 ---
 -- Checks if the position table contains a valid position on the map.
@@ -454,7 +454,7 @@ IsDead = QSBTools.IsDead;
 -- @return[type=boolean] Position valid
 -- @within Entities
 --
-function QSBTools.IsValidPosition(_pos)
+function QuestTools.IsValidPosition(_pos)
 	if type(_pos) == "table" then
 		if (_pos.X ~= nil and type(_pos.X) == "number") and (_pos.Y ~= nil and type(_pos.Y) == "number") then
 			local world = {Logic.WorldGetSize()};
@@ -465,7 +465,7 @@ function QSBTools.IsValidPosition(_pos)
 	end
 	return false;
 end
-IsValidPosition = QSBTools.IsValidPosition;
+IsValidPosition = QuestTools.IsValidPosition;
 
 ---
 -- Checks if a building is currently being upgraded.
@@ -474,7 +474,7 @@ IsValidPosition = QSBTools.IsValidPosition;
 -- @return[type=boolean] Building is being upgraded
 -- @within Entities
 --
-function QSBTools.IsBuildingBeingUpgraded(_Entity)
+function QuestTools.IsBuildingBeingUpgraded(_Entity)
     local BuildingID = GetID(_Entity);
     if Logic.IsBuilding(BuildingID) == 0 then
         return false;
@@ -493,13 +493,13 @@ end
 -- @return[type=number] Entity ID of leader
 -- @within Entities
 --
-function QSBTools.SoldierGetLeader(_eID)
+function QuestTools.SoldierGetLeader(_eID)
     if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
         return Logic.GetEntityScriptingValue(_eID, 69) or _eID;
     end
     return _eID;
 end
-SoldierGetLeader = QSBTools.SoldierGetLeader;
+SoldierGetLeader = QuestTools.SoldierGetLeader;
 
 ---
 -- Returns the script name of the entity. If the entity do not have a name a
@@ -509,21 +509,21 @@ SoldierGetLeader = QSBTools.SoldierGetLeader;
 -- @return[type=string] Script name
 -- @within Entities
 --
-function QSBTools.CreateNameForEntity(_eID)
+function QuestTools.CreateNameForEntity(_eID)
     if type(_eID) == "string" then
         return _eID;
     else
         assert(type(_eID) == "number");
         local name = Logic.GetEntityName(_eID);
         if (type(name) ~= "string" or name == "" ) then
-            QSBTools.EntityNameCounter = QSBTools.EntityNameCounter + 1;
-            name = "eName_"..QSBTools.EntityNameCounter;
+            QuestTools.EntityNameCounter = QuestTools.EntityNameCounter + 1;
+            name = "eName_"..QuestTools.EntityNameCounter;
             Logic.SetEntityName(_eID,name);
         end
         return name;
     end
 end
-GiveEntityName = QSBTools.CreateNameForEntity;
+GiveEntityName = QuestTools.CreateNameForEntity;
 
 -- Diplomacy --
 
@@ -536,10 +536,10 @@ GiveEntityName = QSBTools.CreateNameForEntity;
 -- @return[type=boolean] Enemies near
 -- @within Diplomacy
 --
-function QSBTools.AreEnemiesInArea( _player, _position, _range)
-    return QSBTools.AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Hostile);
+function QuestTools.AreEnemiesInArea( _player, _position, _range)
+    return QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Hostile);
 end
-AreEnemiesInArea = QSBTools.AreEnemiesInArea;
+AreEnemiesInArea = QuestTools.AreEnemiesInArea;
 
 ---
 -- Checks the area for entities of an allied player.
@@ -550,10 +550,10 @@ AreEnemiesInArea = QSBTools.AreEnemiesInArea;
 -- @return[type=boolean] Allies near
 -- @within Diplomacy
 --
-function QSBTools.AreAlliesInArea( _player, _position, _range)
-    return QSBTools.AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Friendly);
+function QuestTools.AreAlliesInArea( _player, _position, _range)
+    return QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, Diplomacy.Friendly);
 end
-AreAlliesInArea = QSBTools.AreAlliesInArea;
+AreAlliesInArea = QuestTools.AreAlliesInArea;
 
 ---
 -- Checks the area for entities of other parties with a diplomatic state to
@@ -569,7 +569,7 @@ AreAlliesInArea = QSBTools.AreAlliesInArea;
 -- @return[type=boolean] Entities near
 -- @within Diplomacy
 --
-function QSBTools.AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state)
+function QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state)
 	for i = 1,8 do
         if Logic.GetDiplomacyState(_player, i) == _state then
             local Data = {Logic.GetPlayerEntitiesInArea(i, 0, _position.X, _position.Y, _range, 16)};
@@ -601,26 +601,26 @@ end
 -- @return[type=number] ID of started job
 -- @within Jobs
 --
-function QSBTools.StartInlineJob(_EventType, _Function, ...)
+function QuestTools.StartInlineJob(_EventType, _Function, ...)
     -- Who needs a trigger fix. :D
-    QSBTools.InlineJobs.Counter = QSBTools.InlineJobs.Counter +1;
-    _G["QSBTools_InlineJob_Data_" ..QSBTools.InlineJobs.Counter] = copy(arg);
-    _G["QSBTools_InlineJob_Function_" ..QSBTools.InlineJobs.Counter] = _Function;
-    _G["QSBTools_InlineJob_Executor_" ..QSBTools.InlineJobs.Counter] = function(i)
-        if _G["QSBTools_InlineJob_Function_" ..i](unpack(_G["QSBTools_InlineJob_Data_" ..i])) then
+    QuestTools.InlineJobs.Counter = QuestTools.InlineJobs.Counter +1;
+    _G["QuestTools_InlineJob_Data_" ..QuestTools.InlineJobs.Counter] = copy(arg);
+    _G["QuestTools_InlineJob_Function_" ..QuestTools.InlineJobs.Counter] = _Function;
+    _G["QuestTools_InlineJob_Executor_" ..QuestTools.InlineJobs.Counter] = function(i)
+        if _G["QuestTools_InlineJob_Function_" ..i](unpack(_G["QuestTools_InlineJob_Data_" ..i])) then
             return true;
         end
     end
     return Trigger.RequestTrigger(
         _EventType,
         "",
-        "QSBTools_InlineJob_Executor_" ..QSBTools.InlineJobs.Counter,
+        "QuestTools_InlineJob_Executor_" ..QuestTools.InlineJobs.Counter,
         1,
         {},
-        {QSBTools.InlineJobs.Counter}
+        {QuestTools.InlineJobs.Counter}
     );
 end
-StartInlineJob = QSBTools.StartInlineJob;
+StartInlineJob = QuestTools.StartInlineJob;
 
 ---
 -- Creates an inline job that is executed every second.
@@ -629,10 +629,10 @@ StartInlineJob = QSBTools.StartInlineJob;
 -- @return[type=number] Job ID
 -- @within Jobs
 --
-function QSBTools.StartSimpleJobEx(_Function, ...)
-    return QSBTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, _Function, unpack(arg));
+function QuestTools.StartSimpleJobEx(_Function, ...)
+    return QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, _Function, unpack(arg));
 end
-StartSimpleJobEx = QSBTools.StartSimpleJobEx;
+StartSimpleJobEx = QuestTools.StartSimpleJobEx;
 
 ---
 -- Creates an inline job that is executed ten times per second.
@@ -641,10 +641,10 @@ StartSimpleJobEx = QSBTools.StartSimpleJobEx;
 -- @return[type=number] Job ID
 -- @within Jobs
 --
-function QSBTools.StartSimpleHiResJobEx(_Function, ...)
-    return QSBTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, _Function, unpack(arg));
+function QuestTools.StartSimpleHiResJobEx(_Function, ...)
+    return QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, _Function, unpack(arg));
 end
-StartSimpleHiResJobEx = QSBTools.StartSimpleHiResJobEx;
+StartSimpleHiResJobEx = QuestTools.StartSimpleHiResJobEx;
 
 -- AI --
 
@@ -657,7 +657,7 @@ StartSimpleHiResJobEx = QSBTools.StartSimpleHiResJobEx;
 -- @return[type=boolean] Army is near
 -- @within AI
 --
-function QSBTools.IsArmyNear(_Army, _Target, _Distance)
+function QuestTools.IsArmyNear(_Army, _Target, _Distance)
     local LeaderID = 0;
     if not _Distance then
         _Distance = _Army.rodeLength;
@@ -667,14 +667,14 @@ function QSBTools.IsArmyNear(_Army, _Target, _Distance)
         LeaderID = Logic.GetNextLeader(_Army.player, LeaderID);
         local ArmyID = AI.Entity_GetConnectedArmy(LeaderID);
         if ArmyID == _Army.id then
-            if QSBTools.GetDistance(LeaderID, _Target) < _Distance then
+            if QuestTools.GetDistance(LeaderID, _Target) < _Distance then
                 return true;
             end
         end
     end
     return false;
 end
-IsArmyNear = QSBTools.IsArmyNear;
+IsArmyNear = QuestTools.IsArmyNear;
 
 ---
 -- Checks, if the positions are in the same sector. If 2 possitions are not
@@ -685,7 +685,7 @@ IsArmyNear = QSBTools.IsArmyNear;
 -- @return[type=boolean] Same sector
 -- @within AI
 --
-function QSBTools.SameSector(_pos1, _pos2)
+function QuestTools.SameSector(_pos1, _pos2)
 	local sectorEntity1 = _pos1;
 	local toVanish1;
 	if type(sectorEntity1) == "table" then
@@ -716,5 +716,5 @@ function QSBTools.SameSector(_pos1, _pos2)
 	end
     return (sector1 ~= 0 and sector2 ~= 0 and sector1 == sector2);
 end
-SameSector = QSBTools.SameSector;
+SameSector = QuestTools.SameSector;
 
