@@ -1569,9 +1569,6 @@ function b_Goal_MapScriptFunction:GetGoalTable()
 end
 
 function b_Goal_MapScriptFunction:CustomFunction(_Quest)
-    if type(self.Data.CustomFunction) == "function" then
-        return self.Data.CustomFunction(self, _Quest);
-    end
     return _G[self.Data.CustomFunction](self, _Quest);
 end
 
@@ -2477,7 +2474,7 @@ function b_Goal_BuyOffer:CustomFunction(_Quest)
     end
 end
 
-function b_Goal_MapScriptFunction:Reset(_Quest)
+function b_Goal_BuyOffer:Reset(_Quest)
     ResetBehaviorProgress(self);
 end
 
@@ -2626,10 +2623,6 @@ function b_Reprisal_MapScriptFunction:GetReprisalTable()
 end
 
 function b_Reprisal_MapScriptFunction:CustomFunction(_Quest)
-    if type(self.Data.CustomFunction) == "function" then
-        self.Data.CustomFunction(self, _Quest);
-        return;
-    end
     _G[self.Data.CustomFunction](self, _Quest);
 end
 
@@ -3214,10 +3207,6 @@ function b_Reward_MapScriptFunction:GetRewardTable()
 end
 
 function b_Reward_MapScriptFunction:CustomFunction(_Quest)
-    if type(self.Data.CustomFunction) == "function" then
-        self.Data.CustomFunction(self, _Quest);
-        return;
-    end
     _G[self.Data.CustomFunction](self, _Quest);
 end
 
@@ -3983,9 +3972,6 @@ function b_Trigger_MapScriptFunction:GetTriggerTable()
     return {self.Data.Type, {self.CustomFunction, self}};
 end
 function b_Trigger_MapScriptFunction:CustomFunction(_Quest)
-    if type(self.Data.CustomFunction) == "function" then
-        return self.Data.CustomFunction(self, _Quest);
-    end
     return _G[self.Data.CustomFunction](self, _Quest);
 end
 
