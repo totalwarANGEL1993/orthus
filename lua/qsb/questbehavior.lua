@@ -1202,7 +1202,7 @@ end
 function QuestSystemBehavior:HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag)
     if self.Data.CreatedAiPlayers[_PlayerID] then
         if _HiddenFlag then
-            if not QSBTools.FindValue(_Entity, self.Data.CreatedAiPlayers[_PlayerID].Blacklist) then
+            if not QSBTools.IsInTable(_Entity, self.Data.CreatedAiPlayers[_PlayerID].Blacklist) then
                 table.insert(self.Data.CreatedAiPlayers[_PlayerID], _Entity);
             end
         else
@@ -1220,8 +1220,8 @@ function QuestSystemBehavior:FindUnemployedLeader(_PlayerID)
         Leader = copy(QSBTools.GetAllLeader(_PlayerID), Leader);
         for i= table.getn(Leader), 1, -1 do
             local ScriptName = Logic.GetEntityName(Leader[i]);
-            if QSBTools.FindValue(Leader[i], self.Data.CreatedAiPlayers[_PlayerID].Blacklist)
-            or QSBTools.FindValue(ScriptName, self.Data.CreatedAiPlayers[_PlayerID].Blacklist) then
+            if QSBTools.IsInTable(Leader[i], self.Data.CreatedAiPlayers[_PlayerID].Blacklist)
+            or QSBTools.IsInTable(ScriptName, self.Data.CreatedAiPlayers[_PlayerID].Blacklist) then
                 table.remove(Leader, i);
             elseif AI.Entity_GetConnectedArmy(Leader[i]) ~= -1 then
                 table.remove(Leader, i);

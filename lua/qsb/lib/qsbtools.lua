@@ -64,15 +64,26 @@ end
 -- @return[type=boolean] Value found
 -- @within Utils
 --
-function QSBTools.FindValue(_Value, _Table)
-	for k,v in pairs(_Table)do
-		if v == _Value then
-			return true;
-		end
-	end
-	return false;
+function QSBTools.IsInTable(_Value, _Table)
+	return QSBTools.GetKeyByValue(_Value, _Table) ~= nil;
 end
-IstDrin = QSBTools.FindValue;
+IstDrin = QSBTools.IsInTable;
+
+---
+-- Returns the key of the given value in the table if value is existing.
+--
+-- @param             _Value Value of key
+-- @param[type=table] _Table Table to search
+-- @return Key of value
+-- @within Utils
+--
+function QSBTools.GetKeyByValue(_Value, _Table)
+    for k, v in pairs(_Table) do 
+        if v == _Value then
+            return k;
+        end
+    end
+end
 
 ---
 -- Displays the name of any function that is to large to be loaded when a
@@ -302,32 +313,32 @@ function QSBTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position)
 		local PositionY2 = _Position.Y + _AreaSize / 4;
 		local ResultSetRecursive = QSBTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY1});
 		for i = 1, table.getn(ResultSetRecursive) do
-			if not QSBTools.FindValue(ResultSetRecursive[i], ResultSet) then
+			if not QSBTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
 		local ResultSetRecursive = QSBTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY2});
 		for i = 1, table.getn(ResultSetRecursive) do
-			if not QSBTools.FindValue(ResultSetRecursive[i], ResultSet) then
+			if not QSBTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
 		local ResultSetRecursive = QSBTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY1});
 		for i = 1, table.getn(ResultSetRecursive) do
-			if not QSBTools.FindValue(ResultSetRecursive[i], ResultSet) then
+			if not QSBTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
 		local ResultSetRecursive = QSBTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY2});
 		for i = 1, table.getn(ResultSetRecursive) do
-			if not QSBTools.FindValue(ResultSetRecursive[i], ResultSet) then
+			if not QSBTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
 	else
 		table.remove(Data, 1);
 		for i = 1, table.getn(Data) do
-			if not QSBTools.FindValue(Data[i], ResultSet) then
+			if not QSBTools.IsInTable(Data[i], ResultSet) then
 				table.insert(ResultSet, Data[i]);
 			end
 		end

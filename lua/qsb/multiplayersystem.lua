@@ -951,7 +951,7 @@ function MultiplayerSystem:SuspendEverythingAtGameStart()
         for i= 1, table.getn(PlayerEntities), 1 do
             local EntityType = Logic.GetEntityType(PlayerEntities[i]);
             if Logic.IsEntityInCategory(PlayerEntities[i], EntityCategories.Headquarters) == 0 then
-                if not QSBTools.FindValue(EntityType, self.Data.GameStartEntitiesBlacklist) then
+                if not QSBTools.IsInTable(EntityType, self.Data.GameStartEntitiesBlacklist) then
                     local IsLeader = Logic.IsLeader(PlayerEntities[i]) == 1;
                     local Soldiers = {0};
                     if IsLeader then

@@ -20,7 +20,7 @@
 -- @set sort=true
 --
 
-QuestSystemDebug = {
+QuestSystem.Debug = {
     ScriptEvents = {},
 };
 
@@ -32,9 +32,9 @@ QuestSystemDebug = {
 -- @param[type=boolean] _DebugKeys   Activate debug cheats
 -- @param[type=boolean] _DebugShell  Activate debug shell
 -- @param[type=boolean] _QuestTrace  Display quest status changes
--- @within QuestSystemDebug
+-- @within QuestSystem.Debug
 --
-function QuestSystemDebug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)
+function QuestSystem.Debug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)
     self.m_QuestTrace = _QuestTrace == true;
     self.m_CheckQuests = _CheckQuests == true;
     self.m_DebugKeys = _DebugKeys == true;
@@ -48,10 +48,10 @@ function QuestSystemDebug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _Quest
     self:OverrideQuestSystemTriggerQuest();
 end
 
-function QuestSystemDebug:OverrideQuestSystemTriggerQuest()
+function QuestSystem.Debug:OverrideQuestSystemTriggerQuest()
     QuestTemplate.TriggerOriginal = QuestTemplate.Trigger;
     QuestTemplate.Trigger = function(self)
-        if QuestSystemDebug.m_CheckQuests then
+        if QuestSystem.Debug.m_CheckQuests then
             for i= 1, table.getn(self.m_Objectives), 1 do
                 if self.m_Objectives[i][1] == Objectives.MapScriptFunction and self.m_Objectives[i][2][2].Debug then
                     if self.m_Objectives[i][2][2]:Debug(self) then
@@ -90,7 +90,7 @@ function QuestSystemDebug:OverrideQuestSystemTriggerQuest()
     end
 end
 
-function QuestSystemDebug:PrintQuestStatus(_QuestID, _State, _Result)
+function QuestSystem.Debug:PrintQuestStatus(_QuestID, _State, _Result)
     if self.m_QuestTrace then 
         local QuestState = self:GetKeyByValue(QuestStates, _State);
         local QuestResult = self:GetKeyByValue(QuestResults, _Result);
@@ -99,7 +99,7 @@ function QuestSystemDebug:PrintQuestStatus(_QuestID, _State, _Result)
     end
 end
 
-function QuestSystemDebug:ActivateConsole()
+function QuestSystem.Debug:ActivateConsole()
     if self.m_DebugShell then
         Input.KeyBindDown(Keys.OemPipe, "XGUIEng.ShowWidget('ChatInput',1)", 2);
         
@@ -116,10 +116,10 @@ function QuestSystemDebug:ActivateConsole()
     end
 end
 function eval(_Input)
-    return QuestSystemDebug:EvaluateCommand(QuestSystemDebug:TokenizeCommand(_Input));
+    return QuestSystem.Debug:EvaluateCommand(QuestSystem.Debug:TokenizeCommand(_Input));
 end
 
-function QuestSystemDebug:TokenizeCommand(_Message)
+function QuestSystem.Debug:TokenizeCommand(_Message)
     local Commands = {};
     local DAmberCommands = {_Message};
     local AmberCommands = {_Message};
@@ -184,7 +184,7 @@ function QuestSystemDebug:TokenizeCommand(_Message)
     return Commands;
 end
 
-function QuestSystemDebug:CreateScriptEvents()
+function QuestSystem.Debug:CreateScriptEvents()
     self.ScriptEvents.AlterQuestResult = MPSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
         if QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
@@ -295,8 +295,8 @@ function QuestSystemDebug:CreateScriptEvents()
                 Message("Can not find quest: " .._Quest);
             end
             local QuestName      = "Name: " ..QuestSystem.Quests[QuestID].m_QuestName.. " @cr ";
-            local QuestState     = "State: " ..QuestSystemDebug:GetKeyByValue(QuestStates, QuestSystem.Quests[QuestID].m_State).. " @cr ";
-            local QuestResult    = "Result: " ..QuestSystemDebug:GetKeyByValue(QuestResults, QuestSystem.Quests[QuestID].m_Result).. " @cr ";
+            local QuestState     = "State: " ..QSBTools.GetKeyByValue(QuestSystem.Quests[QuestID].m_State, QuestStates).. " @cr ";
+            local QuestResult    = "Result: " ..QSBTools.GetKeyByValue(QuestSystem.Quests[QuestID].m_Result, QuestResults).. " @cr ";
             local QuestReceiver  = "Receiver: " ..QuestSystem.Quests[QuestID].m_Receiver.. " @cr ";
             local QuestTime      = "Time: " ..QuestSystem.Quests[QuestID].m_Time.. " @cr ";
             local QuestGoals     = "Objectives: " ..table.getn(QuestSystem.Quests[QuestID].m_Objectives).. " @cr ";
@@ -460,7 +460,7 @@ function QuestSystemDebug:CreateScriptEvents()
     end);
 end
 
-function QuestSystemDebug:EvaluateCommand(_Tokens)
+function QuestSystem.Debug:EvaluateCommand(_Tokens)
     for _, command in pairs(_Tokens) do
         local Action = string.lower(command[1]);        
 
@@ -521,7 +521,7 @@ function QuestSystemDebug:EvaluateCommand(_Tokens)
     return false;
 end
 
-function QuestSystemDebug:CreateCheats()
+function QuestSystem.Debug:CreateCheats()
     if self.m_DebugKeys then
         -- Open quest shell
         Input.KeyBindDown(Keys.OemPipe, "XGUIEng.ShowWidget('ChatInput',1)",2);
@@ -594,7 +594,7 @@ function QuestSystemDebug:CreateCheats()
     end
 end
 
-function QuestSystemDebug:CreateCheatMethods()
+function QuestSystem.Debug:CreateCheatMethods()
     -- Changing entity owner
     function Cheats_ChangePlayer(_player)
         local eID = GUI.GetEntityAtPosition(GUI.GetMousePosition());
@@ -622,20 +622,12 @@ function QuestSystemDebug:CreateCheatMethods()
     end
 end
 
-function QuestSystemDebug:OverrideSaveGameLoaded()
+function QuestSystem.Debug:OverrideSaveGameLoaded()
     Mission_OnSaveGameLoaded_Orig_QuestSystemDebug = Mission_OnSaveGameLoaded;
     Mission_OnSaveGameLoaded = function()
         Mission_OnSaveGameLoaded_Orig_QuestSystemDebug();
 
-        QuestSystemDebug:CreateCheats();
-    end
-end
-
-function QuestSystemDebug:GetKeyByValue(_Table, _Value)
-    for k, v in pairs(_Table) do 
-        if v == _Value then
-            return k;
-        end
+        QuestSystem.Debug:CreateCheats();
     end
 end
 
@@ -646,6 +638,6 @@ function GameCallback_OnQuestStatusChanged(_QuestID, _State, _Result)
     if GameCallback_OnQuestStatusChanged_Orig_QsbQuestDebug then
         GameCallback_OnQuestStatusChanged_Orig_QsbQuestDebug(_QuestID, _State, _Result);
     end
-    QuestSystemDebug:PrintQuestStatus(_QuestID, _State, _Result);
+    QuestSystem.Debug:PrintQuestStatus(_QuestID, _State, _Result);
 end
 
