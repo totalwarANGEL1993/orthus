@@ -468,7 +468,7 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     table.insert(QuestSystem.Quests, self);
     self.m_QuestID = table.getn(QuestSystem.Quests);
     Trigger.RequestTrigger(
-        Events.LOGIC_EVENT_EVERY_SECOND,
+        Events.LOGIC_EVENT_EVERY_TURN,
         "",
         QuestSystem.QuestLoop,
         1,

@@ -230,7 +230,7 @@ function QuestSystemDebug:CreateScriptEvents()
                     Message("Restart quest: " ..command[2]);
                 end
                 Trigger.RequestTrigger(
-                    Events.LOGIC_EVENT_EVERY_SECOND,
+                    Events.LOGIC_EVENT_EVERY_TURN,
                     "",
                     QuestSystem.QuestLoop,
                     1,
