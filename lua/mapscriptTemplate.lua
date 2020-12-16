@@ -17,6 +17,7 @@ Script.Load(gvBasePath.. "core/questtools.lua");
 Script.Load(gvBasePath.. "core/questsync.lua");
 Script.Load(gvBasePath.. "core/bugfixes.lua");
 Script.Load(gvBasePath.. "core/questsystem.lua");
+Script.Load(gvBasePath.. "core/questbriefing.lua");
 Script.Load(gvBasePath.. "core/questdebug.lua");
 
 Script.Load(gvBasePath.. "lib/libloader.lua");
