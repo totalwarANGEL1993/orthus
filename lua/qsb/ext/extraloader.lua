@@ -15,7 +15,6 @@ else
     Script.Load(gvBasePath.. "ext/speed_ex2.lua");
     Script.Load(gvBasePath.. "ext/onscreeninfo_ex2.lua");
     Script.Load(gvBasePath.. "ext/workplace_ex2.lua");
-    Script.Load(gvBasePath.. "ext/information_ex2.lua");
 end
 -- Load allways
 Script.Load(gvBasePath.. "ext/treasure.lua");

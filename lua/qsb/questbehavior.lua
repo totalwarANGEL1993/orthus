@@ -522,7 +522,6 @@ function QuestSystemBehavior:PrepareQuestSystem()
         Camera.ZoomSetFactorMax(1.5);
         QuestSystem:InstallQuestSystem();
         Interaction:Install();
-        Information:Install();
         self:CreateBehaviorConstructors();
         self:OverwriteMapClosingFunctions();
         if QuestSystem.GameSpeedSwitch then

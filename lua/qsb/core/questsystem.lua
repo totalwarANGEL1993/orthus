@@ -93,6 +93,7 @@ function QuestSystem:InstallQuestSystem()
         EndJob(tributeJingleTriggerId);
         QuestSync:Install();
         Bugfixes:Install();
+        QuestBriefing:Install();
         self:CreateScriptEvents();
 
         -- Quest descriptions for all players
@@ -108,65 +109,10 @@ function QuestSystem:InstallQuestSystem()
 
         -- Quest event trigger
         self:InitalizeQuestEventTrigger();
-
-        -- Optional briefing expansion
-        if ActivateBriefingExpansion then
-            ActivateBriefingExpansion();
-        end
-
-        -- Briefing Start
-        StartBriefing_Orig_QuestSystem = StartBriefing;
-        StartBriefing = function(_Briefing, _ID, _Quest)
-            -- Convinience
-            if type(_ID) == "table" and _Quest == nil then
-                _Quest = _ID;
-                _ID = nil;
-            end
-            -- Set briefing id
-            if not _ID then
-                QuestSystem.UniqueBriefingID = QuestSystem.UniqueBriefingID +1;
-                _ID = QuestSystem.UniqueBriefingID;
-            end
-            -- initalize briefing id
-            QuestSystem.Briefings[_ID] = false;
-
-            -- Display briefing for receiver
-            if _Quest == nil or _Quest.m_Receiver == GUI.GetPlayerID() then
-                -- Enqueue if briefing active
-                if IsBriefingActive() then
-                    table.insert(QuestSystem.BriefingsQueue, {copy(_Briefing), _ID, copy(_Quest)});
-                    return _ID;
-                end
-                -- Start briefing
-                StartBriefing_Orig_QuestSystem(_Briefing);
-                briefingState.BriefingID = _ID;
-            end
-            return _ID;
-        end
-
-        -- Briefing End
-        EndBriefing_Orig_QuestSystem = EndBriefing;
-        EndBriefing = function()
-            local ID = briefingState.BriefingID;
-            -- End briefing
-            EndBriefing_Orig_QuestSystem();
-            -- Send briefing end event
-            QuestSync:SnchronizedCall(self.BriefingFinishedScriptEvent, ID);
-        end
     end
 end
 
 function QuestSystem:CreateScriptEvents()
-    self.BriefingFinishedScriptEvent = QuestSync:CreateScriptEvent(function(_ID)
-        -- Register briefing end
-        QuestSystem.Briefings[_ID] = true;
-        -- Dequeue next briefing
-        if table.getn(QuestSystem.BriefingsQueue) > 0 then
-            local Entry = table.remove(QuestSystem.BriefingsQueue, 1);
-            StartBriefing(Entry[1], Entry[2], Entry[3]);
-        end
-    end);
-
     self.MathRandomSeedScriptEvent = QuestSync:CreateScriptEvent(function(_TimeString)
         -- Set seed
         math.randomseed(tonumber(_TimeString));
@@ -468,7 +414,7 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     table.insert(QuestSystem.Quests, self);
     self.m_QuestID = table.getn(QuestSystem.Quests);
     Trigger.RequestTrigger(
-        Events.LOGIC_EVENT_EVERY_TURN,
+        Events.LOGIC_EVENT_EVERY_SECOND,
         "",
         QuestSystem.QuestLoop,
         1,
