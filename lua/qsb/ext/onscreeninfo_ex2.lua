@@ -179,7 +179,7 @@ end
 
 function QuestSystem.OnScreenInfo:CollectTimerData(_Quest, _Data)
     if _Quest.m_Time > 0 then
-        local RemainingTime = (_Quest.m_StartTime + _Quest.m_Time -1) - Logic.GetTime();
+        local RemainingTime = (_Quest.m_StartTime + _Quest.m_Time -1) - round(Logic.GetTime());
         if RemainingTime < 0 then
             RemainingTime = 0;
         end
