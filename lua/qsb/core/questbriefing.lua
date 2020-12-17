@@ -39,6 +39,7 @@ QuestBriefing = {
     BriefingZoomAngle = 48,
     BriefingRotationAngle = -45,
     BriefingExploration = 6000,
+    MCButtonAmount = 2,
 }
 
 ---
@@ -656,8 +657,9 @@ function QuestBriefing:RenderPage(_PlayerID)
     if Page.MC then
         self:PrintOptions(Page);
     else
-        XGUIEng.ShowWidget("CinematicMC_Button1", 0);
-        XGUIEng.ShowWidget("CinematicMC_Button2", 0);
+        for i= 1, self.MCButtonAmount, 1 do
+            XGUIEng.ShowWidget("CinematicMC_Button" ..i, 0);
+        end
     end
 end
 
@@ -795,23 +797,25 @@ function QuestBriefing:PrintOptions(_Page)
     if _Page.MC then
         Mouse.CursorShow();
         for i= 1, table.getn(_Page.MC), 1 do
-            -- Button highlight fix
-            XGUIEng.ShowWidget("CinematicMC_Button" ..i, 1);
-            XGUIEng.DisableButton("CinematicMC_Button" ..i, 1);
-            XGUIEng.DisableButton("CinematicMC_Button" ..i, 0);
-            -- Localize text
-            local Text = _Page.MC[i][1];
-            if type(Text) == "table" then
-                Text = Text[Language];
+            if self.MCButtonAmount >= i then
+                -- Button highlight fix
+                XGUIEng.ShowWidget("CinematicMC_Button" ..i, 1);
+                XGUIEng.DisableButton("CinematicMC_Button" ..i, 1);
+                XGUIEng.DisableButton("CinematicMC_Button" ..i, 0);
+                -- Localize text
+                local Text = _Page.MC[i][1];
+                if type(Text) == "table" then
+                    Text = Text[Language];
+                end
+                -- String table text or replace placeholders
+                if string.find(Text, "^%w/%w$") then
+                    Text = XGUIEng.GetStringTableText(Text);
+                else
+                    Text = QuestSystem:ReplacePlaceholders(Text);
+                end
+                -- Set text
+                XGUIEng.SetText("CinematicMC_Button" ..i, Text or "");
             end
-            -- String table text or replace placeholders
-            if string.find(Text, "^%w/%w$") then
-                Text = XGUIEng.GetStringTableText(Text);
-            else
-                Text = QuestSystem:ReplacePlaceholders(Text);
-            end
-            -- Set text
-            XGUIEng.SetText("CinematicMC_Button" ..i, Text or "");
         end
     end
 end
@@ -877,21 +881,23 @@ end
 
 function QuestBriefing:SetPageApperance(_DisableMap)
     local size = {GUI.GetScreenSize()};
-    local choicePosY = (size[2]*(768/size[2]))-240;
+    local Is4To3 = (size[2]/3) * 4 == size[1];
     local button1Y = (size[2]*(768/size[2]))-10;
     local button2Y = (size[2]*(768/size[2]))-10;
     local titlePosY = 45;
     local textPosY = ((size[2]*(768/size[2])))-100;
-    local button1SizeX = (((size[1]*(1024/size[1])))-660);
-    local button2SizeX = (((size[1]*(1024/size[1])))-660);
     local titleSize = (size[1]-200);
-    local bottomBarX = (size[2]*(768/size[2]))-85;
-    local bottomBarY = (size[2]*(768/size[2]))-85;
+    local choiceHeight = round(46*(768/size[2]));
+    local choiceWidth  = round(800*(1024/size[1]));
+    local choicePosX   = round(((Is4To3 and 112) or 112*1.4)*(size[1]/1024));
+    local choicePosY   = round(((size[2]*(768/size[2]))/2) - ((self.MCButtonAmount/2)*(choiceHeight+10)));
 
     -- Set widget apperance
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Container",0,0,size[1],size[2]);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1",200,button1Y,button1SizeX,46);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2",570,button2Y,button2SizeX,46);
+    for i= 1, self.MCButtonAmount, 1 do
+        XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button" ..i, choicePosX, choicePosY, choiceWidth, choiceHeight);
+        choicePosY = choicePosY + ((choiceHeight+10) * (i));
+    end
     XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(200),textPosY,(680),100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(200),textPosY,(680),100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
