@@ -31,12 +31,14 @@ QuestBriefing = {
     UniqieID = 0,
 
     TimerPerChar = 0.6,
+    FakeHeight = 150,
     DialogZoomDistance = 1000,
     DialogZoomAngle = 35,
     DialogRotationAngle = -45,
     BriefingZoomDistance = 4000,
     BriefingZoomAngle = 48,
     BriefingRotationAngle = -45,
+    BriefingExploration = 6000,
 }
 
 ---
@@ -122,6 +124,43 @@ function QuestBriefing:OverrideBriefingFunctions()
     -- The function with the briefing muss always pass the created ID back to
     -- the calling quest.
     --
+    -- The briefing can have the following attributes:
+    --
+    -- <table border="1">
+    -- <tr>
+    -- <td><b>Attribute</b></td>
+    -- <td><b>Type</b></td>
+    -- <td><b>Description</b></td>
+    -- </tr>
+    -- <tr>
+    -- <td>Starting</td>
+    -- <td>function</td>
+    -- <td>Method to be invoked before briefing starts.</td>
+    -- </tr>
+    -- <tr>
+    -- <td>Finished</td>
+    -- <td>function</td>
+    -- <td>Method to be invoked when briefing has finished.</td>
+    -- </tr>
+    -- <tr>
+    -- <td>RestoreCamera</td>
+    -- <td>boolean</td>
+    -- <td>Camera position is saved and restored after briefing ends.</td>
+    -- </tr>
+    -- <tr>
+    -- <td>RenderFoW</td>
+    -- <td>boolean</td>
+    -- <td>Shows the fog of war. This is a default setting and can be set for
+    -- each page seperatley.</td>
+    -- </tr>
+    -- <tr>
+    -- <td>RenderSky</td>
+    -- <td>boolean</td>
+    -- <td>Shows the sky. This is a default setting and can be set for each
+    -- page seperatley.</td>
+    -- </tr>
+    -- </table>
+    --
     -- @param[type=table] _Briefing Briefing description
     -- @param[type=table] _Quest    Quest briefing is bound to
     -- @return[type=number] ID of briefing
@@ -175,10 +214,11 @@ function QuestBriefing:OverrideBriefingFunctions()
 
     GameCallback_Escape_Orig_QuestBriefing = GameCallback_Escape;
     GameCallback_Escape = function()
-        GameCallback_Escape_Orig_QuestBriefing();
         local PlayerID = GUI.GetPlayerID();
         if QuestBriefing:IsBriefingActive(PlayerID) then
             QuestSync:SnchronizedCall(QuestBriefing.Events.PostEscapePressed, PlayerID);
+        else
+            GameCallback_Escape_Orig_QuestBriefing();
         end
     end
 end
@@ -189,7 +229,7 @@ function QuestBriefing:AddPages(_Briefing)
     --
     -- Pages can have the following attributes:
     --
-    -- <table>
+    -- <table border="1">
     -- <tr>
     -- <td><b>Attribute</b></td>
     -- <td><b>Type</b></td>
@@ -248,6 +288,32 @@ function QuestBriefing:AddPages(_Briefing)
     -- <td>number</td>
     -- <td>(Optional) Sets a different elevation angle then the default.</td>
     -- </tr>
+    -- <tr>
+    -- <td>RenderFoW</td>
+    -- <td>boolean</td>
+    -- <td>Shows the fog of war.</td>
+    -- </tr>
+    -- <tr>
+    -- <td>RenderSky</td>
+    -- <td>boolean</td>
+    -- <td>Shows the sky.</td>
+    -- </tr>
+    -- <tr>
+    -- <td>Minimap</td>
+    -- <td>boolean</td>
+    -- <td>Shows the minimap.</td>
+    -- </tr>
+    -- <tr>
+    -- <td>Signal</td>
+    -- <td>boolean</td>
+    -- <td>Marks the camera position on the minimap with a signal.</td>
+    -- </tr>
+    -- <tr>
+    -- <td>Explore</td>
+    -- <td>number</td>
+    -- <td>Reveals an area of the set size around the position. This area is
+    -- hidden again after the briefing ends.</td>
+    -- </tr>
     -- </table>
     --
     -- @param[type=table] _Page Definded page
@@ -278,14 +344,20 @@ function QuestBriefing:AddPages(_Briefing)
             table.insert(arg, 6, function() end);
         end
         -- Create short page
-        return AP {
+        local Page = AP {
             Name         = arg[1],
-            Position     = arg[2],
+            Target       = arg[2],
             Title        = arg[3],
             Text         = arg[4],
             DialogCamera = arg[5],
             Action       = arg[6],
         };
+        Page.Explore   = 0;
+        Page.MiniMap   = false;
+        Page.RenderFoW = false;
+        Page.RenderSky = true;
+        Page.Signal    = false;
+        return Page;
     end
 
     ---
@@ -311,13 +383,18 @@ function QuestBriefing:AddPages(_Briefing)
         -- Create short page
         local Page = AP {
             Name         = arg[1],
-            Position     = arg[2],
+            Target       = arg[2],
             Title        = arg[3],
             Text         = arg[4],
             DialogCamera = arg[5],
             Action       = arg[6],
             MC           = {}
         };
+        Page.Explore   = 0;
+        Page.MiniMap   = false;
+        Page.RenderFoW = false;
+        Page.RenderSky = true;
+        Page.Signal    = false;
         for i= 7, table.getn(arg), 2 do
             table.insert(Page.MC, {arg[i], arg[i+1], ID = math.ceil((i-6)/2)});
         end
@@ -371,9 +448,10 @@ function QuestBriefing:StartBriefing(_Briefing, _ID, _PlayerID)
 
     -- Start briefing
     else
-        self.m_Book[_PlayerID]       = copy(_Briefing);
-        self.m_Book[_PlayerID].ID    = self.UniqieID;
-        self.m_Book[_PlayerID].Page  = 0;
+        self.m_Book[_PlayerID]             = copy(_Briefing);
+        self.m_Book[_PlayerID].Exploration = {};
+        self.m_Book[_PlayerID].ID          = self.UniqieID;
+        self.m_Book[_PlayerID].Page        = 0;
 
         self:EnableCinematicMode(_PlayerID);
         if self.m_Book[_PlayerID].Starting then
@@ -388,6 +466,10 @@ end
 function QuestBriefing:EndBriefing(_PlayerID)
     -- Disable cinematic mode
     self:DisableCinematicMode(_PlayerID);
+    -- Destroy explorations
+    for k, v in pairs(self.m_Book[_PlayerID].Exploration) do
+        DestroyEntity(v);
+    end
     -- Call finished
     if self.m_Book[_PlayerID].Finished then
         self.m_Book[_PlayerID]:Finished();
@@ -423,6 +505,17 @@ function QuestBriefing:NextPage(_PlayerID, _FirstPage)
     end
     -- Set start time
     self.m_Book[_PlayerID][PageID].StartTime = round(Logic.GetTime() * 10);
+    -- Set position
+    if Page.Target then
+        self.m_Book[_PlayerID][PageID].Position = GetPosition(Page.Target);
+    end
+    -- Create exploration entity
+    if Page.Target and Page.Explore and Page.Explore > 0 then
+        local Position = GetPosition(Page.Target);
+        local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, 0, _PlayerID);
+        Logic.SetEntityExplorationRange(ViewCenter, math.ceil(Page.Explore/10));
+        table.insert(self.m_Book[_PlayerID].Exploration, ID);
+    end
     -- Render the page
     self:RenderPage(_PlayerID);
 end
@@ -487,15 +580,24 @@ function QuestBriefing:RenderPage(_PlayerID)
     if not Page then
         return;
     end
+    -- Render signal
+    if Page.Target and Page.Signal then
+        local Position = GetPosition(Page.Target);
+        GUI.ScriptSignal(Position.X, Position.Y, 0);
+    end
 
-    self:SetPageApperance(not Page.ShowMiniMap);
+    self:SetPageApperance(Page.MiniMap ~= true);
+    local RenderFoW = (self.m_Book[_PlayerID].RenderFoW or Page.RenderFoW and 1) or 0;
+    Display.SetRenderFogOfWar(RenderFoW);
+    local RenderSky = (self.m_Book[_PlayerID].RenderSky or Page.RenderSky and 1) or 0;
+    Display.SetRenderSky(RenderSky);
     Camera.ScrollUpdateZMode(0);
     Camera.FollowEntity(0);
     Mouse.CursorHide();
     
-    if Page.Position then
-        local EntityID = GetID(Page.Position);
-        local Position = GetPosition(EntityID);
+    if Page.Target then
+        Page = self:AdjustBriefingPageCamHeight(Page);
+        local EntityID = GetID(Page.Target);
 
         if not Page.CameraFlight then
             local Rotation = Logic.GetEntityOrientation(EntityID);
@@ -504,9 +606,9 @@ function QuestBriefing:RenderPage(_PlayerID)
                 Camera.FollowEntity(EntityID);
             elseif Logic.IsBuilding(EntityID) == 1 then
                 Rotation = Rotation -90;
-                Camera.ScrollSetLookAt(Position.X, Position.Y);
+                Camera.ScrollSetLookAt(Page.Position.X, Page.Position.Y);
             else
-                Camera.ScrollSetLookAt(Position.X, Position.Y);
+                Camera.ScrollSetLookAt(Page.Position.X, Page.Position.Y);
             end
             if Page.DialogCamera then
                 Camera.ZoomSetDistance(Page.Distance or self.DialogZoomDistance);
@@ -515,15 +617,15 @@ function QuestBriefing:RenderPage(_PlayerID)
                 Camera.ZoomSetDistance(Page.Distance or self.BriefingZoomDistance);
                 Camera.ZoomSetAngle(Page.Angle or self.BriefingZoomAngle);
             end
-            Camera.RotSetAngle(Page.Rotation or Rotation or self.BriefingRotationAngle);
+            Camera.RotSetAngle(Rotation or Page.Rotation or self.BriefingRotationAngle);
         else
             if not _LastPage then
-                Camera.ScrollSetLookAt(Position.X, Position.Y);
+                Camera.ScrollSetLookAt(Page.Position.X, Page.Position.Y);
                 Camera.ZoomSetDistance(Page.Distance or self.BriefingZoomDistance);
                 Camera.ZoomSetAngle(Page.Angle or self.BriefingZoomAngle);
                 Camera.RotSetAngle(Page.Rotation or self.BriefingRotationAngle);
             else
-                local x, y, z = Logic.EntityGetPos(GetID(_LastPage.Position));
+                local x, y, z = Logic.EntityGetPos(GetID(_LastPage.Target));
                 Camera.ScrollSetLookAt(x, y);
                 Camera.ZoomSetDistance(_LastPage.Distance or self.BriefingZoomDistance);
                 Camera.ZoomSetAngle(_LastPage.Angle or self.BriefingZoomAngle);
@@ -533,7 +635,7 @@ function QuestBriefing:RenderPage(_PlayerID)
                 Camera.ZoomSetDistanceFlight(Page.Distance, Page.Duration);
                 Camera.ZoomSetAngleFlight(Page.Angle, Page.Duration);
                 Camera.RotFlight(Page.Rotation, Page.Duration);
-                Camera.FlyToLookAt(Position.X, Position.Y, Page.Duration);
+                Camera.FlyToLookAt(Page.Position.X, Page.Position.Y, Page.Duration);
             end
         end
     end
@@ -603,6 +705,57 @@ function QuestBriefing:ControlBriefing()
     end
 end
 
+---
+-- Fakes camera hight on the unusable Z-achis. This function must be called
+-- after all camera calculations are done.
+-- @param[type=table] _Page Briefing page
+-- @return[type=table] Page
+-- @within Information
+-- @local
+--
+function QuestBriefing:AdjustBriefingPageCamHeight(_Page)
+    if _Page.Position then
+        -- Set defaults
+        _Page.Angle = _Page.Angle or ((_Page.DialogCamera and self.DialogZoomAngle) or self.BriefingZoomAngle);
+        _Page.Rotation = _Page.Rotation or ((_Page.DialogCamera and self.DialogRotationAngle) or self.BriefingRotationAngle);
+        _Page.Distance = _Page.Distance or ((_Page.DialogCamera and self.DialogZoomDistance) or self.BriefingZoomDistance);
+        -- Set height
+        if Logic.IsSettler(GetID(_Page.Target)) == 1 then
+            _Page.Height = _Page.Height or self.FakeHeight;
+        else
+            _Page.Height = _Page.Height or 0;
+        end
+        if _Page.Angle >= 90 then
+            _Page.Height = 0;
+        end
+
+        if _Page.Height > 0 and _Page.Angle > 0 and _Page.Angle < 90 then
+            local AngleTangens = _Page.Height / math.tan(math.rad(_Page.Angle));
+            local RotationRadiant = math.rad(_Page.Rotation or -45);
+            -- Save backup for when page is visited again
+            if not _Page.PositionOriginal then
+                _Page.PositionOriginal = _Page.Position;
+            end
+
+            -- New position
+            local NewPosition = {
+                X = _Page.PositionOriginal.X - math.sin(RotationRadiant) * AngleTangens,
+                Y = _Page.PositionOriginal.Y + math.cos(RotationRadiant) * AngleTangens
+            };
+            -- Update if valid position
+            if NewPosition.X > 0 and NewPosition.Y > 0 and NewPosition.X < Logic.WorldGetSize() and NewPosition.Y < Logic.WorldGetSize() then
+                -- Save backup for when page is visited again
+                if not _Page.ZoomOriginal then
+                    _Page.ZoomOriginal = _Page.Distance;
+                end
+                _Page.Distance = _Page.ZoomOriginal + math.sqrt(math.pow(_Page.Height, 2) + math.pow(AngleTangens, 2));
+                _Page.Position = NewPosition;
+            end
+        end
+    end
+    return _Page;
+end
+
 function QuestBriefing:PrintHeadline(_Text)
     -- Localize text
     local Language = QuestTools.GetLanguage();
@@ -668,13 +821,18 @@ function QuestBriefing:EnableCinematicMode(_PlayerID)
     if PlayerID ~= _PlayerID then
         return;
     end
+    if self.m_Book[PlayerID].RestoreCamera then
+        local x, y = Camera.ScrollGetLookAt();
+        self.m_Book[PlayerID].RestorePosition = {X= x, Y= y};
+    end
     GUIAction_GoBackFromHawkViewInNormalView();
     Interface_SetCinematicMode(1);
     Camera.StopCameraFlight();
     Camera.ScrollUpdateZMode(0);
     Camera.RotSetAngle(-45);
-    Display.SetRenderFogOfWar(1);
+    Display.SetRenderFogOfWar(0);
     GUI.MiniMap_SetRenderFogOfWar(1);
+    Display.SetRenderSky(1);
     GUI.EnableBattleSignals(false);
     Sound.PlayFeedbackSound(0,0);
     Input.CutsceneMode();
@@ -696,7 +854,12 @@ function QuestBriefing:DisableCinematicMode(_PlayerID)
     if PlayerID ~= _PlayerID then
         return;
     end
+    if self.m_Book[PlayerID].RestorePosition then
+        local Position = self.m_Book[PlayerID].RestorePosition;
+        Camera.ScrollSetLookAt(Position.X, Position.Y);
+    end
     Interface_SetCinematicMode(0);
+    Display.SetRenderFogOfWar(1);
     Display.SetRenderSky(0);
     Logic.SetGlobalInvulnerability(0);
     GUI.EnableBattleSignals(true);
