@@ -304,15 +304,19 @@ function InstallS5Hook()
     local eID = Logic.CreateEntity(Entities.XD_Plant1, 0, 0, 0, 0)
     local d, w, r = {}, Logic.SetEntityScriptingValue, Logic.GetEntityScriptingValue
     if (r(eID, -58) ~= 7880308) then
+    -- if (r(eID, -50) ~= 23459836) then
         Message("Error: vtable not at expected offset!")
         return false
     end
     for o, v in loader do 
         d[o] = r(eID, -59+o)
+        -- d[o] = r(eID, -51+o)
         if v ~= 0 then w(eID, -59+o, v); end
+        -- if v ~= 0 then w(eID, -51+o, v); end
     end
     Logic.HeroSetActionPoints(eID, 7517305, shrink(table.concat(S5HookData)))
     for o, v in d do w(eID, -59+o, v); end
+    -- for o, v in d do w(eID, -51+o, v); end
     Logic.DestroyEntity(eID)
     
     if S5Hook ~= nil then 

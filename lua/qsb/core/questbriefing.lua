@@ -191,6 +191,20 @@ function QuestBriefing:OverrideBriefingFunctions()
     end
 
     ---
+    -- Sets the amount of options for multiple choice briefings.
+    --
+    -- You have to use the GUI editor to make this feature work. Create more
+    -- buttons. Name them CinematicMC_Button3 (and so on) and make them call
+    -- BriefingMCButtonSelected with the respective button index.
+    -- 
+    -- @param[type=number] _Amount MC Button amount
+    -- @within Methods
+    --
+    SetMCButtonCount = function(_Amount)
+        QuestBriefing.MCButtonAmount = _Amount;
+    end
+
+    ---
     -- Returns true if a briefing is active for the player. If no player was
     -- passed, the local player is checked.
     --
@@ -829,6 +843,8 @@ function QuestBriefing:EnableCinematicMode(_PlayerID)
         local x, y = Camera.ScrollGetLookAt();
         self.m_Book[PlayerID].RestorePosition = {X= x, Y= y};
     end
+    self.m_Book[PlayerID].SelectedEntities = {GUI.GetSelectedEntities()};
+    GUI.ClearSelection();
     GUIAction_GoBackFromHawkViewInNormalView();
     Interface_SetCinematicMode(1);
     Camera.StopCameraFlight();
@@ -851,6 +867,33 @@ function QuestBriefing:EnableCinematicMode(_PlayerID)
     XGUIEng.ShowWidget("CinematicMC_Text", 1);
     XGUIEng.ShowWidget("CinematicMC_Headline", 1);
     XGUIEng.ShowWidget("CinematicMiniMapContainer",1);
+
+    GUIAction_NetworkWindow_KickPlayer = function(_Index) end
+    GUIUpdate_NetworkWindow_PlayerName = function(_Index) 
+        XGUIEng.ShowWidget("NetworkWindowPlayer" ..(_Index+1).. "KickButton", 1);
+    end
+
+    XGUIEng.ShowWidget("Normal",1);
+    XGUIEng.ShowAllSubWidgets("Windows",0);
+    -- XGUIEng.ShowWidget("NetworkWindow",1);
+    -- XGUIEng.ShowWidget("NetworkWindowController",0);
+    XGUIEng.ShowWidget("Top",0);
+    XGUIEng.ShowWidget("MiniMapOverlay",0);
+    XGUIEng.ShowWidget("ResourceView",0);
+    XGUIEng.ShowWidget("SelectionView",0);
+    XGUIEng.ShowWidget("TooltipBottom",0);
+    XGUIEng.ShowWidget("ShortMessagesListWindow",0);
+    XGUIEng.ShowWidget("ShortMessagesOutputWindow",0);
+    XGUIEng.ShowWidget("BackGround_Top",0);
+    XGUIEng.ShowWidget("MapProgressStuff",0);
+    XGUIEng.ShowWidget("VCMP_Window",0);
+    XGUIEng.ShowWidget("MultiSelectionContainer",0);
+    XGUIEng.ShowWidget("MinimapButtons",0);
+    XGUIEng.ShowWidget("BackGroundBottomContainer",0);
+    XGUIEng.ShowWidget("TutorialMessageBG",0);
+    XGUIEng.ShowWidget("MiniMap",0);
+    XGUIEng.ShowWidget("VideoPreview",0);
+    XGUIEng.ShowWidget("Movie",0);
 end
 
 function QuestBriefing:DisableCinematicMode(_PlayerID)
@@ -861,6 +904,9 @@ function QuestBriefing:DisableCinematicMode(_PlayerID)
     if self.m_Book[PlayerID].RestorePosition then
         local Position = self.m_Book[PlayerID].RestorePosition;
         Camera.ScrollSetLookAt(Position.X, Position.Y);
+    end
+    for i= 1, table.getn(self.m_Book[PlayerID].SelectedEntities), 1 do
+        GUI.SelectEntity(self.m_Book[PlayerID].SelectedEntities[i]);
     end
     Interface_SetCinematicMode(0);
     Display.SetRenderFogOfWar(1);
@@ -877,6 +923,19 @@ function QuestBriefing:DisableCinematicMode(_PlayerID)
     XGUIEng.ShowWidget("3dOnScreenDisplay",1);
     XGUIEng.ShowWidget("Cinematic",0);
     XGUIEng.ShowWidget("CinematicMiniMapContainer",0);
+
+    XGUIEng.ShowWidget("Windows",1);
+    XGUIEng.ShowWidget("Top",1);
+    XGUIEng.ShowWidget("MiniMapOverlay",1);
+    XGUIEng.ShowWidget("ResourceView",1);
+    XGUIEng.ShowWidget("SelectionView",1);
+    XGUIEng.ShowWidget("ShortMessagesListWindow",1);
+    XGUIEng.ShowWidget("BackGround_Top",1);
+    XGUIEng.ShowWidget("MapProgressStuff",1);
+    XGUIEng.ShowWidget("VCMP_Window",1);
+    XGUIEng.ShowWidget("MinimapButtons",1);
+    XGUIEng.ShowWidget("BackGroundBottomContainer",1);
+    XGUIEng.ShowWidget("MiniMap",1);
 end
 
 function QuestBriefing:SetPageApperance(_DisableMap)
@@ -896,7 +955,7 @@ function QuestBriefing:SetPageApperance(_DisableMap)
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Container",0,0,size[1],size[2]);
     for i= 1, self.MCButtonAmount, 1 do
         XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button" ..i, choicePosX, choicePosY, choiceWidth, choiceHeight);
-        choicePosY = choicePosY + ((choiceHeight+10) * (i));
+        choicePosY = choicePosY + (choiceHeight+10);
     end
     XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(200),textPosY,(680),100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(200),textPosY,(680),100);

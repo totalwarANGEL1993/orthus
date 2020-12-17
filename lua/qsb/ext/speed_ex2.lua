@@ -53,14 +53,11 @@ end
 -- @local
 --
 function QuestSystem.GameSpeedSwitch:Install()
-    -- Speed up is not allowed in multiplayer hence will not be started.
-    if XNetwork.Manager_DoesExist() == 1 then
-        return;
-    end
     if not self.m_Installed then
         self.m_Installed = true;
         self:OnSaveGameLoaded();
         self:OverrideGUI();
+        self:SetSpeedUpAllowed(XNetwork.Manager_DoesExist() == 1);
         AddOnSaveLoadedAction(function()
             QuestSystem.GameSpeedSwitch:OnSaveGameLoaded()
         end);
