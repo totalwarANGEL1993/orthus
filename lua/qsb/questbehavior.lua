@@ -6456,8 +6456,9 @@ function b_Goal_MultipleChoiceSelection:GetGoalTable()
 end
 
 function b_Goal_MultipleChoiceSelection:CustomFunction(_Quest)
-    if QuestSystemBehavior.Data.ChoicePages[self.Data.ChoicePage] ~= nil then
-        return QuestSystemBehavior.Data.ChoicePages[self.Data.ChoicePage] == self.Data.Answer;
+    QuestBriefing.SelectedCoices[_Quest.m_Receiver] = QuestBriefing.SelectedCoices[_Quest.m_Receiver] or {};
+    if QuestBriefing.SelectedCoices[_Quest.m_Receiver][self.Data.ChoicePage] ~= nil then
+        return QuestBriefing.SelectedCoices[self.Data.ChoicePage] == self.Data.Answer;
     end
 end
 
@@ -6471,7 +6472,8 @@ end
 
 function b_Goal_MultipleChoiceSelection:Reset(_Quest)
     if self.Data.Briefing and self.Data.ChoicePage then
-        QuestSystemBehavior.Data.ChoicePages[self.Data.ChoicePage] = nil;
+        QuestBriefing.SelectedCoices[_Quest.m_Receiver] = QuestBriefing.SelectedCoices[_Quest.m_Receiver] or {};
+        QuestBriefing.SelectedCoices[_Quest.m_Receiver][self.Data.ChoicePage] = nil;
     end
 end
 

@@ -28,6 +28,7 @@ QuestBriefing = {
     m_Queue = {};
 
     Events = {},
+    SelectedCoices = {},
     UniqieID = 0,
 
     TimerPerChar = 0.6,
@@ -69,9 +70,11 @@ function QuestBriefing:CreateScriptEvents()
     -- Multiple choice option selected
     self.Events.PostOptionSelected = QuestSync:CreateScriptEvent(function(_PlayerID, _PageID, _OptionID)
         if QuestBriefing:IsBriefingActive(_PlayerID) then
-            if QuestBriefing.m_Book[_PlayerID][_PageID] then
-                if QuestBriefing.m_Book[_PlayerID][_PageID].MC then
-                    for k, v in pairs(QuestBriefing.m_Book[_PlayerID][_PageID].MC) do
+            local Page = QuestBriefing.m_Book[_PlayerID][_PageID];
+            if Page then
+                assert(Page.Name ~= nil, "Multiple Choice Pages must have an name!");
+                if Page.MC then
+                    for k, v in pairs(Page.MC) do
                         if v and v.ID == _OptionID then
                             local Option = v;
                             if type(v[2]) == "function" then
@@ -80,6 +83,8 @@ function QuestBriefing:CreateScriptEvents()
                                 QuestBriefing.m_Book[_PlayerID].Page = self:GetPageID(v[2], _PlayerID) -1;
                             end
                             QuestBriefing.m_Book[_PlayerID][_PageID].MC.Selected = _OptionID;
+                            QuestBriefing.SelectedCoices[_PlayerID] = QuestBriefing.SelectedCoices[_PlayerID] or {};
+                            QuestBriefing.SelectedCoices[_PlayerID][Page.Name] = _OptionID;
                             QuestBriefing:NextPage(_PlayerID, false);
                             return;
                         end
@@ -832,6 +837,11 @@ function QuestBriefing:PrintOptions(_Page)
                 -- Set text for HE
                 XGUIEng.SetText("NetworkWindowPlayer" ..i.. "Name", Text or "");
             end
+            -- Ensure Buttons are disabled if fallback is used
+            if XGUIEng.IsWidgetExisting("CinematicMC_Button" ..self.MCButtonAmount) == 0 then
+                XGUIEng.ShowWidget("CinematicMC_Button1", 0);
+                XGUIEng.ShowWidget("CinematicMC_Button2", 0);
+            end
         end
     end
 end
@@ -1023,8 +1033,7 @@ function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID, _DisableMap)
     XGUIEng.ShowWidget("NetworkBG_Complete", 0);
 
     for i= 1, 8, 1 do
-        XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "KickButton", 0);
-        XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "Name", 0);
+        XGUIEng.ShowWidget("NetworkWindowPlayer" ..i, 0);
     end
     
     if self.m_Book[_PlayerID][PageID].MC then
@@ -1032,7 +1041,8 @@ function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID, _DisableMap)
             self.m_Book[_PlayerID][PageID].MC[1] = {"EXIT", 65565};
         else
             for i= 1, self.MCButtonAmount, 1 do
-                if self.m_Book[_PlayerID][PageID].MC[i] then                   
+                if self.m_Book[_PlayerID][PageID].MC[i] then
+                    XGUIEng.ShowWidget("NetworkWindowPlayer" ..i, 1);
                     XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "KickButton", 1);
                     XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "Name", 1);
                     XGUIEng.SetWidgetPositionAndSize("NetworkWindowPlayer" ..i, 0, choicePosY, 500, SizeY);
