@@ -601,7 +601,7 @@ function QuestBriefing:RenderPage(_PlayerID)
         GUI.ScriptSignal(Position.X, Position.Y, 0);
     end
 
-    self:SetPageApperance(Page.MiniMap ~= true);
+    self:SetPageApperance(_PlayerID, Page.MiniMap ~= true);
     local RenderFoW = (self.m_Book[_PlayerID].RenderFoW or Page.RenderFoW and 1) or 0;
     Display.SetRenderFogOfWar(RenderFoW);
     local RenderSky = (self.m_Book[_PlayerID].RenderSky or Page.RenderSky and 1) or 0;
@@ -829,6 +829,8 @@ function QuestBriefing:PrintOptions(_Page)
                 end
                 -- Set text
                 XGUIEng.SetText("CinematicMC_Button" ..i, Text or "");
+                -- Set text for HE
+                XGUIEng.SetText("NetworkWindowPlayer" ..i.. "Name", Text or "");
             end
         end
     end
@@ -868,15 +870,8 @@ function QuestBriefing:EnableCinematicMode(_PlayerID)
     XGUIEng.ShowWidget("CinematicMC_Headline", 1);
     XGUIEng.ShowWidget("CinematicMiniMapContainer",1);
 
-    GUIAction_NetworkWindow_KickPlayer = function(_Index) end
-    GUIUpdate_NetworkWindow_PlayerName = function(_Index) 
-        XGUIEng.ShowWidget("NetworkWindowPlayer" ..(_Index+1).. "KickButton", 1);
-    end
-
     XGUIEng.ShowWidget("Normal",1);
     XGUIEng.ShowAllSubWidgets("Windows",0);
-    -- XGUIEng.ShowWidget("NetworkWindow",1);
-    -- XGUIEng.ShowWidget("NetworkWindowController",0);
     XGUIEng.ShowWidget("Top",0);
     XGUIEng.ShowWidget("MiniMapOverlay",0);
     XGUIEng.ShowWidget("ResourceView",0);
@@ -894,6 +889,19 @@ function QuestBriefing:EnableCinematicMode(_PlayerID)
     XGUIEng.ShowWidget("MiniMap",0);
     XGUIEng.ShowWidget("VideoPreview",0);
     XGUIEng.ShowWidget("Movie",0);
+
+    if QuestSync:IsHistoryEdition() or XGUIEng.IsWidgetExisting("CinematicMC_Button3") == 0 then
+        self:EnableCinematicModeForHistoryEdition(_PlayerID);
+        GUIAction_ToggleMenu("NetworkWindow", 1);
+    end
+end
+
+function QuestBriefing:EnableCinematicModeForHistoryEdition(_PlayerID)
+    GUIAction_NetworkWindow_KickPlayer = function(_Index)
+        BriefingMCButtonSelected(_Index+1);
+    end
+    GUIUpdate_NetworkWindow_PlayerName = function(_Index)
+    end
 end
 
 function QuestBriefing:DisableCinematicMode(_PlayerID)
@@ -936,10 +944,15 @@ function QuestBriefing:DisableCinematicMode(_PlayerID)
     XGUIEng.ShowWidget("MinimapButtons",1);
     XGUIEng.ShowWidget("BackGroundBottomContainer",1);
     XGUIEng.ShowWidget("MiniMap",1);
+
+    if QuestSync:IsHistoryEdition() or XGUIEng.IsWidgetExisting("CinematicMC_Button3") == 0 then
+        GUIAction_ToggleMenu("NetworkWindow", 0);
+    end
 end
 
-function QuestBriefing:SetPageApperance(_DisableMap)
+function QuestBriefing:SetPageApperance(_PlayerID, _DisableMap)
     local size = {GUI.GetScreenSize()};
+    local PageID = self.m_Book[_PlayerID].Page;
     local Is4To3 = (size[2]/3) * 4 == size[1];
     local button1Y = (size[2]*(768/size[2]))-10;
     local button2Y = (size[2]*(768/size[2]))-10;
@@ -953,10 +966,6 @@ function QuestBriefing:SetPageApperance(_DisableMap)
 
     -- Set widget apperance
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Container",0,0,size[1],size[2]);
-    for i= 1, self.MCButtonAmount, 1 do
-        XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button" ..i, choicePosX, choicePosY, choiceWidth, choiceHeight);
-        choicePosY = choicePosY + (choiceHeight+10);
-    end
     XGUIEng.SetWidgetPositionAndSize("Cinematic_Text",(200),textPosY,(680),100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Text",(200),textPosY,(680),100);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
@@ -965,7 +974,19 @@ function QuestBriefing:SetPageApperance(_DisableMap)
     XGUIEng.SetMaterialTexture("CinematicBar02", 0, "data/graphics/textures/gui/cutscene_top.dds");
     XGUIEng.SetMaterialColor("CinematicBar02", 0, 255, 255, 255, 255);
     XGUIEng.SetWidgetPositionAndSize("CinematicBar02", 0, 0, size[1], 180);
-
+    -- Set answers
+    if self.m_Book[_PlayerID][PageID].MC then
+        if table.getn(self.m_Book[_PlayerID][PageID].MC) == 0 then
+            self.m_Book[_PlayerID][PageID].MC[1] = {"EXIT", 65565};
+        else
+            for i= 1, self.MCButtonAmount, 1 do
+                if XGUIEng.IsWidgetExisting("CinematicMC_Button" ..i) == 1 and self.m_Book[_PlayerID][PageID].MC[i] then
+                    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button" ..i, choicePosX, choicePosY, choiceWidth, choiceHeight);
+                    choicePosY = choicePosY + (choiceHeight+10);
+                end
+            end
+        end
+    end
     -- Set widget visability
     XGUIEng.ShowWidget("CinematicMiniMapOverlay", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicMiniMap", (_DisableMap and 0) or 1);
@@ -974,5 +995,56 @@ function QuestBriefing:SetPageApperance(_DisableMap)
     XGUIEng.ShowWidget("CinematicBar02", 1);
     XGUIEng.ShowWidget("CinematicBar01", 1);
     XGUIEng.ShowWidget("CinematicBar00", 0);
+
+    if QuestSync:IsHistoryEdition() or XGUIEng.IsWidgetExisting("CinematicMC_Button3") == 0 then
+        self:SetPageApperanceForHistoryEdition(_PlayerID, _DisableMap);
+    end
+end
+
+function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID, _DisableMap)
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1", 0);
+    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2", 0);
+
+    local size = {GUI.GetScreenSize()};
+    local PageID = self.m_Book[_PlayerID].Page;
+    local SizeY = round(50 * (768/size[2]));
+    local choicePosY = round(140 - ((self.MCButtonAmount/2)*((SizeY/2)+15)));
+
+    XGUIEng.SetWidgetPositionAndSize("NetworkWindow",190,400,500,300);
+    XGUIEng.ShowWidget("NetworkWindowController",0);
+    XGUIEng.ShowWidget("NetworkWindowCloseButton",0);
+    XGUIEng.ShowWidget("NetworkWindowInfoCustomWidget", 0);
+    XGUIEng.ShowWidget("NetworkWindowFrame", 0);
+    XGUIEng.ShowWidget("NetworkWindowBGFill", 0);
+    XGUIEng.ShowWidget("NetworkWindowBGDown", 0);
+    XGUIEng.ShowWidget("NetworkWindowBGRight", 0);
+    XGUIEng.ShowWidget("NetworkWindowBGTop", 0);
+    XGUIEng.ShowWidget("NetworkWindowBGLeft", 0);
+    XGUIEng.ShowWidget("NetworkBG_Complete", 0);
+
+    for i= 1, 8, 1 do
+        XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "KickButton", 0);
+        XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "Name", 0);
+    end
+    
+    if self.m_Book[_PlayerID][PageID].MC then
+        if table.getn(self.m_Book[_PlayerID][PageID].MC) == 0 then
+            self.m_Book[_PlayerID][PageID].MC[1] = {"EXIT", 65565};
+        else
+            for i= 1, self.MCButtonAmount, 1 do
+                if self.m_Book[_PlayerID][PageID].MC[i] then                   
+                    XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "KickButton", 1);
+                    XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "Name", 1);
+                    XGUIEng.SetWidgetPositionAndSize("NetworkWindowPlayer" ..i, 0, choicePosY, 500, SizeY);
+                    XGUIEng.SetWidgetPositionAndSize("NetworkWindowPlayer" ..i.. "KickButton", 0, 0, 35, 35);
+                    XGUIEng.SetWidgetPositionAndSize("NetworkWindowPlayer" ..i.. "Name", 40, 0, 460, SizeY);
+                    XGUIEng.SetMaterialTexture("NetworkWindowPlayer" ..i.. "Name", 0, "");
+                    XGUIEng.SetMaterialColor("NetworkWindowPlayer" ..i.. "Name", 0, 0, 0, 0, 100);
+                    XGUIEng.TransferMaterials("Trade_Market_AcceptSulfur", "NetworkWindowPlayer" ..i.. "KickButton");
+                    choicePosY = choicePosY + (SizeY+15);
+                end
+            end
+        end
+    end
 end
 

@@ -304,7 +304,7 @@ function InstallS5Hook()
     local eID = Logic.CreateEntity(Entities.XD_Plant1, 0, 0, 0, 0)
     local d, w, r = {}, Logic.SetEntityScriptingValue, Logic.GetEntityScriptingValue
     if (r(eID, -58) ~= 7880308) then
-    -- if (r(eID, -50) ~= 23459836) then
+    -- if (r(eID, -50) ~= 12253180) then
         Message("Error: vtable not at expected offset!")
         return false
     end
