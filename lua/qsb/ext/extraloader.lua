@@ -17,7 +17,6 @@ else
     Script.Load(gvBasePath.. "ext/workplace_ex2.lua");
 end
 -- Load allways
-Script.Load(gvBasePath.. "ext/treasure.lua");
 Script.Load(gvBasePath.. "ext/optionsmenu.lua");
 Script.Load(gvBasePath.. "ext/interaction.lua");
 

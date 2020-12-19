@@ -29,7 +29,7 @@ QuestBriefing = {
     m_Queue = {};
 
     Events = {},
-    SelectedCoices = {},
+    SelectedChoices = {},
     UniqieID = 0,
 
     TimerPerChar = 0.6,
@@ -84,8 +84,8 @@ function QuestBriefing:CreateScriptEvents()
                                 QuestBriefing.m_Book[_PlayerID].Page = self:GetPageID(v[2], _PlayerID) -1;
                             end
                             QuestBriefing.m_Book[_PlayerID][_PageID].MC.Selected = _OptionID;
-                            QuestBriefing.SelectedCoices[_PlayerID] = QuestBriefing.SelectedCoices[_PlayerID] or {};
-                            QuestBriefing.SelectedCoices[_PlayerID][Page.Name] = _OptionID;
+                            QuestBriefing.SelectedChoices[_PlayerID] = QuestBriefing.SelectedChoices[_PlayerID] or {};
+                            QuestBriefing.SelectedChoices[_PlayerID][Page.Name] = _OptionID;
                             QuestBriefing:NextPage(_PlayerID, false);
                             return;
                         end
@@ -1022,9 +1022,7 @@ function QuestBriefing:EnableCinematicMode(_PlayerID)
     end
     -- Backup selection
     local SelectedEntities = {GUI.GetSelectedEntities()};
-    if table.getn(SelectedEntities) > 0 then
-        QuestSync:SnchronizedCall(self.Events.PostSelectedEntities, PlayerID, unpack(SelectedEntities));
-    end
+    QuestSync:SnchronizedCall(self.Events.PostSelectedEntities, PlayerID, unpack(SelectedEntities));
 
     GUI.ClearSelection();
     GUIAction_GoBackFromHawkViewInNormalView();
@@ -1096,8 +1094,10 @@ function QuestBriefing:DisableCinematicMode(_PlayerID)
         Camera.ScrollSetLookAt(Position.X, Position.Y);
     end
     -- Restore selection
-    for i= 1, table.getn(self.m_Book[PlayerID].SelectedEntities), 1 do
-        GUI.SelectEntity(self.m_Book[PlayerID].SelectedEntities[i]);
+    if self.m_Book[PlayerID].SelectedEntities then
+        for i= 1, table.getn(self.m_Book[PlayerID].SelectedEntities), 1 do
+            GUI.SelectEntity(self.m_Book[PlayerID].SelectedEntities[i]);
+        end
     end
 
     Interface_SetCinematicMode(0);

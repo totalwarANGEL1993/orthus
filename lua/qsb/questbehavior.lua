@@ -2563,7 +2563,7 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyEnemiesInArea);
 -- -------------------------------------------------------------------------- --
 
 ---
--- 
+-- The player must steal the amount of the resource from other players.
 -- @param[type=string] _Good   Area center
 -- @param[type=number] _Amount Area size
 -- @within Goals
@@ -6456,9 +6456,9 @@ function b_Goal_MultipleChoiceSelection:GetGoalTable()
 end
 
 function b_Goal_MultipleChoiceSelection:CustomFunction(_Quest)
-    QuestBriefing.SelectedCoices[_Quest.m_Receiver] = QuestBriefing.SelectedCoices[_Quest.m_Receiver] or {};
-    if QuestBriefing.SelectedCoices[_Quest.m_Receiver][self.Data.ChoicePage] ~= nil then
-        return QuestBriefing.SelectedCoices[self.Data.ChoicePage] == self.Data.Answer;
+    QuestBriefing.SelectedChoices[_Quest.m_Receiver] = QuestBriefing.SelectedChoices[_Quest.m_Receiver] or {};
+    if QuestBriefing.SelectedChoices[_Quest.m_Receiver][self.Data.ChoicePage] ~= nil then
+        return QuestBriefing.SelectedChoices[_Quest.m_Receiver][self.Data.ChoicePage] == self.Data.Answer;
     end
 end
 
@@ -6472,8 +6472,8 @@ end
 
 function b_Goal_MultipleChoiceSelection:Reset(_Quest)
     if self.Data.Briefing and self.Data.ChoicePage then
-        QuestBriefing.SelectedCoices[_Quest.m_Receiver] = QuestBriefing.SelectedCoices[_Quest.m_Receiver] or {};
-        QuestBriefing.SelectedCoices[_Quest.m_Receiver][self.Data.ChoicePage] = nil;
+        QuestBriefing.SelectedChoices[_Quest.m_Receiver] = QuestBriefing.SelectedChoices[_Quest.m_Receiver] or {};
+        QuestBriefing.SelectedChoices[_Quest.m_Receiver][self.Data.ChoicePage] = nil;
     end
 end
 
