@@ -814,9 +814,9 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
 
     elseif _Behavior[1] == Callbacks.Briefing then
         if _ResultType == QuestResults.Success then
-            self.m_SuccessBriefing = _Behavior[2](self);
+            self.m_SuccessBriefing = _Behavior[2](self.m_Receiver);
         elseif _ResultType == QuestResults.Failure then
-            self.m_FailureBriefing = _Behavior[2](self);
+            self.m_FailureBriefing = _Behavior[2](self.m_Receiver);
         end
 
     elseif _Behavior[1] == Callbacks.ChangePlayer then

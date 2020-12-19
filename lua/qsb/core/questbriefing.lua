@@ -25,6 +25,7 @@
 
 QuestBriefing = {
     m_Book = {};
+    m_Fader = {};
     m_Queue = {};
 
     Events = {},
@@ -60,7 +61,7 @@ end
 function QuestBriefing:CreateScriptEvents()
     -- Player pressed escape
     self.Events.PostEscapePressed = QuestSync:CreateScriptEvent(function(_PlayerID)
-        if QuestBriefing:IsBriefingActive(_PlayerID) then
+        if not QuestSync:IsMultiplayerGame() and QuestBriefing:IsBriefingActive(_PlayerID) then
             if QuestBriefing:CanPageBeSkipped(_PlayerID) then
                 QuestBriefing:NextPage(_PlayerID, false);
             end
@@ -91,6 +92,20 @@ function QuestBriefing:CreateScriptEvents()
                     end
                 end
             end
+        end
+    end);
+
+    -- Post players camera position to all
+    self.Events.PostCameraPosition = QuestSync:CreateScriptEvent(function(_PlayerID, _X, _Y)
+        QuestBriefing.m_Book[_PlayerID] = QuestBriefing.m_Book[PlayerID] or {};
+        QuestBriefing.m_Book[_PlayerID].RestorePosition = {X= _X, Y= _Y};
+    end);
+
+    -- Post players selected entities to all
+    self.Events.PostSelectedEntities = QuestSync:CreateScriptEvent(function(_PlayerID, ...)
+        if arg and table.getn(arg) > 0 then
+            QuestBriefing.m_Book[_PlayerID] = QuestBriefing.m_Book[_PlayerID] or {};
+            QuestBriefing.m_Book[_PlayerID].SelectedEntities = copy(arg);
         end
     end);
 end
@@ -261,7 +276,7 @@ function QuestBriefing:AddPages(_Briefing)
     -- <td>(Optional) Name of the page</td>
     -- </tr>
     -- <tr>
-    -- <td>Position</td>
+    -- <td>Target</td>
     -- <td>string|number</td>
     -- <td>Scriptname or ID of target entity</td>
     -- </tr>
@@ -473,6 +488,20 @@ function QuestBriefing:StartBriefing(_Briefing, _ID, _PlayerID)
         self.m_Book[_PlayerID].ID          = self.UniqieID;
         self.m_Book[_PlayerID].Page        = 0;
 
+        -- Calculate duration
+        for k, v in pairs(self.m_Book[_PlayerID]) do
+            if type(v) == "table" then
+                if not v.Duration then
+                    local Text       = v.Text or "";
+                    local TextLength = (string.len(Text) +60) * self.TimerPerChar;
+                    local Duration   = v.Duration or TextLength;
+                    self.m_Book[_PlayerID][k].Duration = Duration;
+                else
+                    self.m_Book[_PlayerID][k].Duration = v.Duration * 10;
+                end
+            end
+        end
+
         self:EnableCinematicMode(_PlayerID);
         if self.m_Book[_PlayerID].Starting then
             self.m_Book[_PlayerID]:Starting();
@@ -536,6 +565,8 @@ function QuestBriefing:NextPage(_PlayerID, _FirstPage)
         Logic.SetEntityExplorationRange(ViewCenter, math.ceil(Page.Explore/10));
         table.insert(self.m_Book[_PlayerID].Exploration, ID);
     end
+    -- Start Fader
+    self:InitalizeFaderForBriefingPage(_PlayerID, Page);
     -- Render the page
     self:RenderPage(_PlayerID);
 end
@@ -588,16 +619,20 @@ function QuestBriefing:GetPageID(_Name, _PlayerID)
 end
 
 function QuestBriefing:RenderPage(_PlayerID)
-    -- Only for local player
-    if _PlayerID ~= GUI.GetPlayerID() then
-        return;
-    end
     -- Check page exists
     if not self.m_Book[_PlayerID] then
         return;
     end
     local Page = self.m_Book[_PlayerID][self.m_Book[_PlayerID].Page];
     if not Page then
+        return;
+    end
+    -- Call page action for all players
+    if Page.Action then
+        Page:Action(self.m_Book[_PlayerID]);
+    end
+    -- Only for local player
+    if _PlayerID ~= GUI.GetPlayerID() then
         return;
     end
     -- Render signal
@@ -616,7 +651,7 @@ function QuestBriefing:RenderPage(_PlayerID)
     Mouse.CursorHide();
     
     if Page.Target then
-        Page = self:AdjustBriefingPageCamHeight(Page);
+        -- Page = self:AdjustBriefingPageCamHeight(Page);
         local EntityID = GetID(Page.Target);
 
         if not Page.CameraFlight then
@@ -652,25 +687,25 @@ function QuestBriefing:RenderPage(_PlayerID)
                 Camera.RotSetAngle(_LastPage.Rotation or self.BriefingRotationAngle);
 
                 Camera.InitCameraFlight();
-                Camera.ZoomSetDistanceFlight(Page.Distance, Page.Duration);
-                Camera.ZoomSetAngleFlight(Page.Angle, Page.Duration);
-                Camera.RotFlight(Page.Rotation, Page.Duration);
-                Camera.FlyToLookAt(Page.Position.X, Page.Position.Y, Page.Duration);
+                Camera.ZoomSetDistanceFlight(Page.Distance, Page.Duration/10);
+                Camera.ZoomSetAngleFlight(Page.Angle, Page.Duration/10);
+                Camera.RotFlight(Page.Rotation, Page.Duration/10);
+                Camera.FlyToLookAt(Page.Position.X, Page.Position.Y, Page.Duration/10);
             end
         end
     end
 
     if Page.Title then
         self:PrintHeadline(Page.Title);
+    else
+        self:PrintHeadline("");
     end
 
     if Page.Text then
         self:PrintText(Page.Text);
         -- TODO: Start speech
-    end
-
-    if Page.Action then
-        Page:Action(self.m_Book[_PlayerID]);
+    else
+        self:PrintText("");
     end
 
     if Page.MC then
@@ -712,13 +747,9 @@ function QuestBriefing:ControlBriefing()
                     self:NextPage(v, self.m_Book[v].Page > 0);
                     return false;
                 end
-                -- Calculate duration
-                local Text       = self.m_Book[v][PageID].Text or "";
-                local TextLength = (string.len(Text) +60) * self.TimerPerChar;
-                local Duration   = self.m_Book[v][PageID].Duration or TextLength;
                 -- Next page after duration is up
                 local TimePassed = (Logic.GetTime() * 10) - self.m_Book[v][PageID].StartTime;
-                if self:CanPageBeSkipped(v) and TimePassed > Duration then
+                if self:CanPageBeSkipped(v) and TimePassed > self.m_Book[v][PageID].Duration then
                     self:NextPage(v, false);
                 end
             end
@@ -731,7 +762,7 @@ end
 -- after all camera calculations are done.
 -- @param[type=table] _Page Briefing page
 -- @return[type=table] Page
--- @within Information
+-- @within QuestBriefing
 -- @local
 --
 function QuestBriefing:AdjustBriefingPageCamHeight(_Page)
@@ -778,37 +809,47 @@ function QuestBriefing:AdjustBriefingPageCamHeight(_Page)
 end
 
 function QuestBriefing:PrintHeadline(_Text)
+    -- Create local copy of text
+    local Text = _Text;
+    if type(Text) == "table" then
+        Text = copy(Text);
+    end
     -- Localize text
     local Language = QuestTools.GetLanguage();
-    if type(_Text) == "table" then
-        _Text = _Text[Language];
+    if type(Text) == "table" then
+        Text = Text[Language];
     end
     -- Add title format
-    if not string.find(string.sub(_Text, 1, 2), "@") then
-        _Text = "@center " .._Text;
+    if not string.find(string.sub(Text, 1, 2), "@") then
+        Text = "@center " ..Text;
     end
     -- String table text or replace placeholders
-    if string.find(_Text, "^%w/%w$") then
-        _Text = XGUIEng.GetStringTableText(_Text);
+    if string.find(Text, "^%w/%w$") then
+        Text = XGUIEng.GetStringTableText(Text);
     else
-        _Text = QuestSystem:ReplacePlaceholders(_Text);
+        Text = QuestSystem:ReplacePlaceholders(Text);
     end
-    XGUIEng.SetText("CinematicMC_Headline", _Text or "");
+    XGUIEng.SetText("CinematicMC_Headline", Text or "");
 end
 
 function QuestBriefing:PrintText(_Text)
+    -- Create local copy of text
+    local Text = _Text;
+    if type(Text) == "table" then
+        Text = copy(Text);
+    end
     -- Localize text
     local Language = QuestTools.GetLanguage();
-    if type(_Text) == "table" then
-        _Text = _Text[Language];
+    if type(Text) == "table" then
+        Text = Text[Language];
     end
     -- String table text or replace placeholders
-    if string.find(_Text, "^%w/%w$") then
-        _Text = XGUIEng.GetStringTableText(_Text);
+    if string.find(Text, "^%w/%w$") then
+        Text = XGUIEng.GetStringTableText(Text);
     else
-        _Text = QuestSystem:ReplacePlaceholders(_Text);
+        Text = QuestSystem:ReplacePlaceholders(Text);
     end
-    XGUIEng.SetText("CinematicMC_Text", _Text or "");
+    XGUIEng.SetText("CinematicMC_Text", Text or "");
 end
 
 function QuestBriefing:PrintOptions(_Page)
@@ -846,16 +887,145 @@ function QuestBriefing:PrintOptions(_Page)
     end
 end
 
-function QuestBriefing:EnableCinematicMode(_PlayerID)
+function QuestBriefing:InitalizeFaderForBriefingPage(_PlayerID, _Page)
+    if _Page then
+        self.m_Fader[_PlayerID] = {};
+        if _Page.FaderAlpha then
+            self:StopFader(_PlayerID);
+            self:SetFaderAlpha(_PlayerID, _Page.FaderAlpha);
+        else
+            if not _Page.FadeIn and not _Page.FadeOut then
+                self:StopFader(_PlayerID);
+                self:SetFaderAlpha(_PlayerID, 0);
+            end
+            if _Page.FadeIn then
+                self:StopFader(_PlayerID);
+                self:StartFader(_PlayerID, _Page.FadeIn, true);
+            end
+            if _Page.FadeOut then
+                local Waittime = (Logic.GetTime() + (_Page.Duration/10)) - _Page.FadeOut;
+                self:StartFaderDelayed(_PlayerID, Waittime, _Page.FadeOut, false);
+            end
+        end
+    end
+end
+
+function QuestBriefing:StartFader(_PlayerID, _Duration, _FadeIn)
+    self.m_Fader[_PlayerID].FadeInJob = StartSimpleHiResJobEx(
+        function(_PlayerID, _Duration, _StartTime, _FadeIn)
+            return QuestBriefing:FaderVisibilityController(_PlayerID, _Duration, _StartTime, _FadeIn)
+        end, 
+        _PlayerID, 
+        _Duration * 1000, 
+        Logic.GetTimeMs(), 
+        _FadeIn == true
+    );
+    self:SetFaderAlpha(_PlayerID, (_FadeIn == true and 1) or 0);
+end
+
+function QuestBriefing:StartFaderDelayed(_PlayerID, _Waittime, _Duration, _FadeIn)
+    self.m_Fader[_PlayerID].FadeOutJob = StartSimpleHiResJobEx(
+        function(_PlayerID, _Duration, _StartTime, _FadeIn)
+            return QuestBriefing:FaderDelayController(_PlayerID, _Duration, _StartTime, _FadeIn)
+        end, 
+        _PlayerID, 
+        _Duration, 
+        _Waittime * 1000, 
+        _FadeIn == true
+    );
+end
+
+function QuestBriefing:StopFader(_PlayerID)
+    if not self.m_Fader[_PlayerID] then
+        return;
+    end
+    if self.m_Fader[_PlayerID].FadeInJob and JobIsRunning(self.m_Fader[_PlayerID].FadeInJob) then
+        EndJob(self.m_Fader[_PlayerID].FadeInJob);
+        self.m_Fader[_PlayerID].FadeInJob = nil;
+    end
+    if self.m_Fader[_PlayerID].FadeOutJob and JobIsRunning(self.m_Fader[_PlayerID].FadeOutJob) then
+        EndJob(self.m_Fader[_PlayerID].FadeOutJob);
+        self.m_Fader[_PlayerID].FadeOutJob = nil;
+    end
+end
+
+function QuestBriefing:SetFaderAlpha(_PlayerID, _AlphaFactor)
     local PlayerID = GUI.GetPlayerID();
     if PlayerID ~= _PlayerID then
         return;
     end
+    local AlphaFactor = _AlphaFactor;
+    if XGUIEng.IsWidgetShown("Cinematic") == 1 then
+        local FaderWidget = "CinematicBar00";
+        if XGUIEng.IsWidgetExisting("CinematicFader") == 1 then
+            FaderWidget = "CinematicFader";
+        end
+        
+        AlphaFactor = (AlphaFactor > 1 and 1) or AlphaFactor;
+        AlphaFactor = (AlphaFactor < 0 and 0) or AlphaFactor;
+
+        local sX, sY = GUI.GetScreenSize();
+        XGUIEng.SetWidgetPositionAndSize(FaderWidget, 0, 0, sX, sY);
+        XGUIEng.SetMaterialTexture(FaderWidget, 0, "");
+        XGUIEng.ShowWidget(FaderWidget, 1);
+        XGUIEng.SetMaterialColor(FaderWidget, 0, 0, 0, 0, math.floor(255 * AlphaFactor));
+    end
+end
+
+function QuestBriefing:GetFadingFactor(_PlayerID, _StartTime, _Duration, _FadeIn)
+    if IsBriefingActive(_PlayerID) == false then
+        return 0;
+    end
+    local CurrentTime = Logic.GetTimeMs();
+    local FadingFactor = (CurrentTime - _StartTime) / _Duration;
+    FadingFactor = (FadingFactor > 1 and 1) or FadingFactor;
+    FadingFactor = (FadingFactor < 0 and 0) or FadingFactor;
+    if _FadeIn then
+        FadingFactor = 1 - FadingFactor;
+    end
+    return FadingFactor;
+end
+
+function QuestBriefing:FaderVisibilityController(_PlayerID, _Duration, _StartTime, _FadeIn)
+    if IsBriefingActive(_PlayerID) == false then
+        return true;
+    end
+    if Logic.GetTimeMs() > _StartTime + _Duration then
+        return true;
+    end
+    self:SetFaderAlpha(_PlayerID, self:GetFadingFactor(_PlayerID, _StartTime, _Duration, _FadeIn));
+    return false;
+end
+
+function QuestBriefing:FaderDelayController(_PlayerID, _Duration, _StartTime, _FadeIn)
+    if IsBriefingActive(_PlayerID) == false then
+        return true;
+    end
+    if Logic.GetTimeMs() > _StartTime then
+        self:StopFader(_PlayerID);
+        self:StartFader(_PlayerID, _Duration, Logic.GetTimeMs(), _FadeIn);
+        return true;
+    end
+    return false;
+end
+
+function QuestBriefing:EnableCinematicMode(_PlayerID)
+    -- Only for receiving player
+    local PlayerID = GUI.GetPlayerID();
+    if PlayerID ~= _PlayerID then
+        return;
+    end
+    -- Backup camera
     if self.m_Book[PlayerID].RestoreCamera then
         local x, y = Camera.ScrollGetLookAt();
-        self.m_Book[PlayerID].RestorePosition = {X= x, Y= y};
+        QuestSync:SnchronizedCall(self.Events.PostCameraPosition, PlayerID, x, y);
     end
-    self.m_Book[PlayerID].SelectedEntities = {GUI.GetSelectedEntities()};
+    -- Backup selection
+    local SelectedEntities = {GUI.GetSelectedEntities()};
+    if table.getn(SelectedEntities) > 0 then
+        QuestSync:SnchronizedCall(self.Events.PostSelectedEntities, PlayerID, unpack(SelectedEntities));
+    end
+
     GUI.ClearSelection();
     GUIAction_GoBackFromHawkViewInNormalView();
     Interface_SetCinematicMode(1);
@@ -915,17 +1085,21 @@ function QuestBriefing:EnableCinematicModeForHistoryEdition(_PlayerID)
 end
 
 function QuestBriefing:DisableCinematicMode(_PlayerID)
+    -- Only for receiving player
     local PlayerID = GUI.GetPlayerID();
     if PlayerID ~= _PlayerID then
         return;
     end
+    -- Restore camera
     if self.m_Book[PlayerID].RestorePosition then
         local Position = self.m_Book[PlayerID].RestorePosition;
         Camera.ScrollSetLookAt(Position.X, Position.Y);
     end
+    -- Restore selection
     for i= 1, table.getn(self.m_Book[PlayerID].SelectedEntities), 1 do
         GUI.SelectEntity(self.m_Book[PlayerID].SelectedEntities[i]);
     end
+
     Interface_SetCinematicMode(0);
     Display.SetRenderFogOfWar(1);
     Display.SetRenderSky(0);
@@ -981,14 +1155,13 @@ function QuestBriefing:SetPageApperance(_PlayerID, _DisableMap)
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Headline",100,titlePosY,titleSize,15);
     XGUIEng.SetWidgetPositionAndSize("Cinematic_Headline",100,titlePosY,titleSize,15);
     XGUIEng.SetWidgetPositionAndSize("CinematicBar01",0,size[2],size[1],180);
+    XGUIEng.SetWidgetPositionAndSize("CinematicBar00",0,0,size[1],size[2]);
     XGUIEng.SetMaterialTexture("CinematicBar02", 0, "data/graphics/textures/gui/cutscene_top.dds");
     XGUIEng.SetMaterialColor("CinematicBar02", 0, 255, 255, 255, 255);
     XGUIEng.SetWidgetPositionAndSize("CinematicBar02", 0, 0, size[1], 180);
     -- Set answers
     if self.m_Book[_PlayerID][PageID].MC then
-        if table.getn(self.m_Book[_PlayerID][PageID].MC) == 0 then
-            self.m_Book[_PlayerID][PageID].MC[1] = {"EXIT", 65565};
-        else
+        if table.getn(self.m_Book[_PlayerID][PageID].MC) > 0 then
             for i= 1, self.MCButtonAmount, 1 do
                 if XGUIEng.IsWidgetExisting("CinematicMC_Button" ..i) == 1 and self.m_Book[_PlayerID][PageID].MC[i] then
                     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button" ..i, choicePosX, choicePosY, choiceWidth, choiceHeight);
@@ -1004,14 +1177,14 @@ function QuestBriefing:SetPageApperance(_PlayerID, _DisableMap)
     XGUIEng.ShowWidget("CinematicFrame", (_DisableMap and 0) or 1);
     XGUIEng.ShowWidget("CinematicBar02", 1);
     XGUIEng.ShowWidget("CinematicBar01", 1);
-    XGUIEng.ShowWidget("CinematicBar00", 0);
+    XGUIEng.ShowWidget("CinematicBar00", 1);
 
     if QuestSync:IsHistoryEdition() or XGUIEng.IsWidgetExisting("CinematicMC_Button3") == 0 then
-        self:SetPageApperanceForHistoryEdition(_PlayerID, _DisableMap);
+        self:SetPageApperanceForHistoryEdition(_PlayerID);
     end
 end
 
-function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID, _DisableMap)
+function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID)
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1", 0);
     XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2", 0);
 
@@ -1037,9 +1210,7 @@ function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID, _DisableMap)
     end
     
     if self.m_Book[_PlayerID][PageID].MC then
-        if table.getn(self.m_Book[_PlayerID][PageID].MC) == 0 then
-            self.m_Book[_PlayerID][PageID].MC[1] = {"EXIT", 65565};
-        else
+        if table.getn(self.m_Book[_PlayerID][PageID].MC) > 0 then
             for i= 1, self.MCButtonAmount, 1 do
                 if self.m_Book[_PlayerID][PageID].MC[i] then
                     XGUIEng.ShowWidget("NetworkWindowPlayer" ..i, 1);

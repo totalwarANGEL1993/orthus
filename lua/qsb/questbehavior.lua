@@ -2717,7 +2717,7 @@ function b_Reprisal_Briefing:GetReprisalTable()
 end
 
 function b_Reprisal_Briefing:CustomFunction(_Quest)
-    _Quest.m_FailureBriefing = _G[self.Data.Briefing](self, _Quest);
+    _Quest.m_FailureBriefing = _G[self.Data.Briefing](_Quest.m_Receiver);
 end
 
 function b_Reprisal_Briefing:Reset(_Quest)
@@ -3287,7 +3287,7 @@ function b_Reward_Briefing:AddParameter(_Index, _Parameter)
 end
 
 function b_Reward_Briefing:CustomFunction(_Quest)
-    _Quest.m_SuccessBriefing = _G[self.Data.Briefing](self, _Quest);
+    _Quest.m_SuccessBriefing = _G[self.Data.Briefing](_Quest.m_Receiver);
 end
 
 function b_Reward_Briefing:GetRewardTable()
