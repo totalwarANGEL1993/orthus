@@ -28,6 +28,7 @@ QuestBriefing = {
     m_Fader = {};
     m_Queue = {};
 
+    Local = {},
     Events = {},
     SelectedChoices = {},
     UniqieID = 0,
@@ -488,11 +489,15 @@ function QuestBriefing:StartBriefing(_Briefing, _ID, _PlayerID)
         self.m_Book[_PlayerID].ID          = self.UniqieID;
         self.m_Book[_PlayerID].Page        = 0;
 
-        -- Calculate duration
+        -- Calculate duration and height
         for k, v in pairs(self.m_Book[_PlayerID]) do
             if type(v) == "table" then
+                self.m_Book[_PlayerID][k] = self:AdjustBriefingPageCamHeight(v);
                 if not v.Duration then
-                    local Text       = v.Text or "";
+                    local Text = v.Text or "";
+                    if type(Text) == "table" then
+                        Text = Text.de or "";
+                    end
                     local TextLength = (string.len(Text) +60) * self.TimerPerChar;
                     local Duration   = v.Duration or TextLength;
                     self.m_Book[_PlayerID][k].Duration = Duration;
@@ -591,8 +596,8 @@ function QuestBriefing:CanPageBeSkipped(_PlayerID)
         if self.m_Book[_PlayerID][PageID].MC then
             return false;
         end
-        -- 1.5 seconds must have passed between two page skips
-        if math.abs(self.m_Book[_PlayerID][PageID].StartTime - (Logic.GetTime() * 10)) < 15 then
+        -- 0.5 seconds must have passed between two page skips
+        if math.abs(self.m_Book[_PlayerID][PageID].StartTime - (Logic.GetTime() * 10)) < 5 then
             return false;
         end
     end
@@ -651,7 +656,6 @@ function QuestBriefing:RenderPage(_PlayerID)
     Mouse.CursorHide();
     
     if Page.Target then
-        -- Page = self:AdjustBriefingPageCamHeight(Page);
         local EntityID = GetID(Page.Target);
 
         if not Page.CameraFlight then
@@ -1018,11 +1022,11 @@ function QuestBriefing:EnableCinematicMode(_PlayerID)
     -- Backup camera
     if self.m_Book[PlayerID].RestoreCamera then
         local x, y = Camera.ScrollGetLookAt();
-        QuestSync:SnchronizedCall(self.Events.PostCameraPosition, PlayerID, x, y);
+        self.Local.RestorePosition = {X= x, Y= y};
     end
     -- Backup selection
     local SelectedEntities = {GUI.GetSelectedEntities()};
-    QuestSync:SnchronizedCall(self.Events.PostSelectedEntities, PlayerID, unpack(SelectedEntities));
+    self.Local.SelectedEntities = SelectedEntities;
 
     GUI.ClearSelection();
     GUIAction_GoBackFromHawkViewInNormalView();
@@ -1089,15 +1093,16 @@ function QuestBriefing:DisableCinematicMode(_PlayerID)
         return;
     end
     -- Restore camera
-    if self.m_Book[PlayerID].RestorePosition then
-        local Position = self.m_Book[PlayerID].RestorePosition;
-        Camera.ScrollSetLookAt(Position.X, Position.Y);
+    if self.Local.RestorePosition then
+        Camera.ScrollSetLookAt(self.Local.RestorePosition.X, self.Local.RestorePosition.Y);
+        self.Local.RestorePosition = nil;
     end
     -- Restore selection
-    if self.m_Book[PlayerID].SelectedEntities then
-        for i= 1, table.getn(self.m_Book[PlayerID].SelectedEntities), 1 do
-            GUI.SelectEntity(self.m_Book[PlayerID].SelectedEntities[i]);
+    if self.Local.SelectedEntities then
+        for i= 1, table.getn(self.Local.SelectedEntities), 1 do
+            GUI.SelectEntity(self.Local.SelectedEntities[i]);
         end
+        self.Local.SelectedEntities = nil;
     end
 
     Interface_SetCinematicMode(0);

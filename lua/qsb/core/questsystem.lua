@@ -243,9 +243,6 @@ function QuestSystem:InitalizeQuestEventTrigger()
 
     GameCallback_NPCInteraction_Orig_Questsystem = GameCallback_NPCInteraction;
     GameCallback_NPCInteraction = function(_Hero, _NPC)
-        if IsBriefingActive() then
-            return;
-        end
         GameCallback_NPCInteraction_Orig_Questsystem(_Hero, _Hero);
 
         gvLastInteractionHero = _Hero;
