@@ -29,11 +29,19 @@ QuestDebug = {
 -- to use.
 --
 -- @param[type=boolean] _CheckQuests Call debug check of behavior
--- @param[type=boolean] _DebugKeys   Activate debug cheats
--- @param[type=boolean] _DebugShell  Activate debug shell
--- @param[type=boolean] _QuestTrace  Display quest status changes
--- @within QuestDebug
+-- @param[type=boolean] _TraceQuests Display quest status changes
+-- @param[type=boolean] _Cheats      Activate debug cheats
+-- @param[type=boolean] _Console     Activate debug shell
+-- @within Methods
 --
+-- @usage ActivateDebugMode(true, false, true, true);
+--
+function ActivateDebugMode(_CheckQuests, _TraceQuests, _Cheats, _Console)
+    QuestDebug:Activate(_CheckQuests, _Cheats, _Console, _TraceQuests);
+end
+
+-- -------------------------------------------------------------------------- --
+
 function QuestDebug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)
     self.m_QuestTrace = _QuestTrace == true;
     self.m_CheckQuests = _CheckQuests == true;

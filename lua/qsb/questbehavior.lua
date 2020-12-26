@@ -18,6 +18,7 @@
 -- <li>qsb.ext.interaction</li>
 -- <li>qsb.ext.information</li>
 -- <li>qsb.ext.onscreeninfo</li>
+-- <li>qsb.ext.troopgenerator</li>
 -- </ul>
 --
 -- @set sort=true
@@ -98,79 +99,6 @@ function LoadQuestSystem()
 end
 
 ---
--- Raplaces the placeholders in the message with their values.
---
--- <u>Simple placeholders:</u>
--- <ul>
--- <li><b>{qq}</b> : Inserts a double quote (")</li>
--- <li><b>{cr}</b> : Inserts a line break</li>
--- <li><b>{ra}</b> : Positions the text at the right</li>
--- <li><b>{center}</b> : Positions the text at the center</li>
--- <li><b>{red}</b> : Following text is red</li>
--- <li><b>{green}</b> : Following text is green</li>
--- <li><b>{blue}</b> : Following text is blue</li>
--- <li><b>{yellow}</b> : Following text is yellow</li>
--- <li><b>{violet}</b> : Following text is violet</li>
--- <li><b>{azure}</b> : Following text is turquoise</li>
--- <li><b>{black}</b> : Following text is black (not pitch black)</li>
--- <li><b>{white}</b> : Following text is white</li>
--- <li><b>{grey}</b> : Following text is grey</li>
--- <li><b>{hero}</b> : Will be replaced with the configured name of the last
--- hero involved in an npc interaction.</li>
--- <li><b>{npc}</b> : Will be replaced with the configured name of the last
--- npc involved in an npc interaction.</li>
--- </ul>
---
--- <u>Valued placeholders:</u>
--- <ul>
--- <li><b>{color:</b><i>r,g,b</i><b>}</b>
--- Changes the color of the following text to the given RGB value</li>
--- <li><b>{val:</b><i>name</i><b>}</b>
--- The placeholder is replaced with a global variable</li>
--- <li><b>{cval:</b><i>name</i><b>}</b>
--- The placeholder is replaced with a custom variable</li>
--- <li><b>{name:</b><i>scriptname</i><b>}</b>
--- A scriptname is replaced with a pre configured name</li>
--- </ul>
---
--- @param[type=string] _Text Text to parse
--- @return[type=string] New text
--- @within Methods
---
--- @usage Message(ReplacePlacholders("You open the chest and find a{red}already used{white}bedpan!"));
---
-function ReplacePlacholders(_Text)
-    return QuestSystem:ReplacePlaceholders(_Text);
-end
-
----
--- Sets the display name for the entity with the given scriptname.
--- @within Methods
---
--- @param[type=string] _ScriptName Scriptname of entity
--- @param[type=string] _DisplayName Displayed name
---
-function AddDisplayName(_ScriptName, _DisplayName)
-    QuestSystem.NamedEntityNames[_ScriptName] = _DisplayName;
-end
-
----
--- Activates the debug mode. Use the flags to decide which features you want
--- to use.
---
--- @param[type=boolean] _CheckQuests Call debug check of behavior
--- @param[type=boolean] _TraceQuests Display quest status changes
--- @param[type=boolean] _Cheats      Activate debug cheats
--- @param[type=boolean] _Console     Activate debug shell
--- @within Methods
---
--- @usage ActivateDebugMode(true, false, true, true);
---
-function ActivateDebugMode(_CheckQuests, _TraceQuests, _Cheats, _Console)
-    QuestDebug:Activate(_CheckQuests, _Cheats, _Console, _TraceQuests);
-end
-
----
 -- Checks, if the S5Hook has been installed. Hook might not be installed, if
 -- the player uses the History Edition.
 --
@@ -183,213 +111,6 @@ end
 --
 function IsS5HookInstalled()
     return QuestSystemBehavior.Data.S5HookInitalized == true;
-end
-
----
--- Creates an AI player and sets the technology level.
---
--- Use this function or the behavior to initalize the AI. An AI must first be
--- initalized before an army can be created.
---
--- @param[type=number] _PlayerID  PlayerID
--- @param[type=number] _TechLevel Technology level [1|4]
--- @param[type=number] _SerfAmount (optional) Amount of serfs
--- @param[type=boolean] _Construct (optional) AI can construct buildings
--- @param[type=boolean] _Rebuild (optional) AI rebuilds (construction required)
--- @within Methods
---
--- @usage CreateAIPlayer(2, 4);
---
-function CreateAIPlayer(_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)
-    _SerfAmount = _SerfAmount or 6;
-    _Construct = (_Construct ~= nil and _Construct) or true;
-    _Rebuild = (_Rebuild ~= nil and _Rebuild) or true;
-    QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild);
-end
-
----
--- Disables or enables the ability to attack for the army. This function can
--- be used to forbid an army to attack even if there are valid targets.
---
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ArmyID   ID of army
--- @param[type=boolean] _Flag    Ability to attack
--- @within Methods
--- 
--- @usage ArmyDisableAttackAbility(2, 1, true)
---
-function ArmyDisableAttackAbility(_PlayerID, _ArmyID, _Flag)
-    QuestSystemBehavior:ArmyDisableAttackAbility(_PlayerID, _ArmyID, _Flag);
-end
-
----
--- Disables or enables the ability to patrol between positions. This
--- function can be force an army to stay on its spawnpoint.
---
--- @param[type=number]  _PlayerID ID of player
--- @param[type=number]  _ArmyID   ID of army
--- @param[type=boolean] _Flag     Ability to attack
--- @within Methods
--- 
--- @usage ArmyDisablePatrolAbility(2, 1, true)
---
-function ArmyDisablePatrolAbility(_PlayerID, _ArmyID, _Flag)
-    QuestSystemBehavior:ArmyDisablePatrolAbility(_PlayerID, _ArmyID, _Flag);
-end
-
----
--- Initalizes an army that is recruited by the AI player.
--- Armies can also be created with the behavior interface. This is a simple
--- type of army that can be configured by placing and naming script entities.
--- The army name must be unique for the player!
---
--- The AI player must be initalized first!
---
--- For the troop types either define a table of upgrade categories or use the
--- constants from the QuestSystemBehavior.ArmyCategories table.
---
--- Use script entities named with PlayerX_AttackTargetY to define positions
--- that will be attacked by the army. Replace X with the player ID and Y with
--- a unique number starting by 1.
---
--- Also you can use entities named with PlayerX_PatrolPointY to define
--- positions were the army will patrol. Also replace X with the player ID and
--- Y with a unique number starting by 1.
---
--- @param[type=string] _ArmyName   Army identifier
--- @param[type=number] _PlayerID   Owner of army
--- @param[type=number] _Strength   Strength of army [1|8]
--- @param[type=string] _Position   Home Position of army
--- @param[type=number] _Area Action range of the army
--- @param[type=table] _TroopTypes  Upgrade categories to recruit
--- @return[type=number] Army ID
--- @within Methods
---
--- @usage CreateAIPlayerArmy("Foo", 2, 8, "armyPos1", 5000, QuestSystemBehavior.ArmyCategories.City);
---
-function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, _TroopTypes)
-    if QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] then
-        return;
-    end
-    local ID = QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area, _TroopTypes);
-    if ID then
-        QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] = ID;
-    end
-    return ID;
-end
-
----
--- Initalizes an army that is spawned until a generator entity is destroyed.
--- Armies can also be created with the behavior interface. This is a simple
--- type of army that can be configured by placing and naming script entities.
--- The army name must be unique for the player!
---
--- The AI player must be initalized first!
---
--- Define a list of troops that are sparned in this order. Troops will be
--- spawrned as long as the generator exists.
---
--- Use script entities named with PlayerX_AttackTargetY to define positions
--- that will be attacked by the army. Replace X with the player ID and Y with
--- a unique number starting by 1.
---
--- Also you can use entities named with PlayerX_PatrolPointY to define
--- positions were the army will patrol. Also replace X with the player ID and
--- Y with a unique number starting by 1.
---
--- @param[type=string] _ArmyName    Army identifier
--- @param[type=number] _PlayerID    Owner of army.
--- @param[type=number] _Strength    Strength of army [1|8]
--- @param[type=string] _Position    Home Position of army
--- @param[type=string] _Spawner  Name of generator
--- @param[type=number] _Area  Action range of the army
--- @param[type=number] _Respawn Time till troops are refreshed
--- @param              ...          List of types to spawn
--- @within Methods
---
--- @usage CreateAIPlayerSpawnArmy(
---     "Bar", 2, 8, "armyPos1", "lifethread", 5000,
---     Entities.PU_LeaderSword2,
---     Entities.PU_LeaderBow2,
---     Entities.PV_Cannon2
--- );
---
-function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)
-    if QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] then
-        return;
-    end
-    local EntityTypes = {unpack(arg)};
-    assert(table.getn(EntityTypes) > 0);
-    local ID = QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _Spawner, _Area, EntityTypes, _Respawn);
-    if ID then
-        QuestSystemBehavior.Data.AiArmyNameToId[_ArmyName] = ID;
-    end
-    return ID;
-end
-
----
--- Hides an Entity from the AI or makes it visible again.
---
--- Hidden entities will under no circumstances be added to armies created with
--- code from this library.
---
--- @param[type=number]  _PlayerID ID of player
--- @param               _Entity Entity to hide (Scriptname or ID)
--- @param[type=boolean] _HiddenFlag Entity is hidden
--- @within Methods
---
-function HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag)
-    QuestSystemBehavior:HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag);
-end
-
----
--- Registers an attack target position for the player.
---
--- Already generated armies will also add this position to the list of their
--- possible targets.
---
--- @param[type=number] _PlayerID ID of player
--- @param              _Position Zielppsition
--- @return[type=number] ID of target position
--- @within Methods
---
-function CreateAIPlayerAttackTarget(_PlayerID, _Position)
-    return QuestSystemBehavior:CreateAIPlayerAttackTarget(_PlayerID, _Position)
-end
-
----
--- Removes the attack target from the AI player and all armies of said player.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ID       Zielppsition
--- @within Methods
---
-function DestroyAIPlayerAttackTarget(_PlayerID, _ID)
-    QuestSystemBehavior:DestroyAIPlayerAttackTarget(_PlayerID, _ID)
-end
-
----
--- Registers an patrol waypoint position for the player.
---
--- Already generated armies will also add this position to the list of their
--- patrol waypoints.
---
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _Position Zielppsition
--- @return[type=number] ID of target position
--- @within Methods
---
-function CreateAIPlayerPatrolPoint(_PlayerID, _Position)
-    return QuestSystemBehavior:CreateAIPlayerPatrolPoint(_PlayerID, _ID);
-end
-
----
--- Removes the patrol waypoint from the AI player and all armies of said player.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ID       Zielppsition
--- @within Methods
---
-function DestroyAIPlayerPatrolPoint(_PlayerID, _ID)
-    QuestSystemBehavior:DestroyAIPlayerPatrolPoint(_PlayerID, _ID);
 end
 
 -- Helper --
@@ -483,11 +204,8 @@ QuestSystemBehavior = {
 
         SaveLoadedActions = {},
         PlayerColorAssigment = {},
-        CreatedAiPlayers = {},
-        CreatedAiArmies = {},
         AiPlayerAttackTargets = {},
         AiPlayerPatrolPoints = {},
-        AiArmyNameToId = {},
         ChoicePages = {},
     }
 };
@@ -679,80 +397,6 @@ function QuestSystemBehavior:CreateBehaviorConstructors()
 end
 
 ---
--- Creates a AI player and upgrades the troops according to the technology
--- level.
--- @param[type=number] _PlayerID  ID of player
--- @param[type=number] _TechLevel Technology level
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:CreateAI(_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)
-    if self.Data.CreatedAiPlayers[_PlayerID] then
-        return;
-    end
-
-    -- Create Player
-    local description 	= {
-        serfLimit	  	= _SerfAmount,
-        resourceFocus 	= nil,
-        extracting	  	= false,
-        repairing	  	= true,
-        constructing  	= _Construct == true,
-        resources = {
-            gold   = 30000,
-            clay   = 3000,
-            wood   = 9000,
-            stone  = 3000,
-            iron   = 9000,
-            sulfur = 9000
-        },
-        refresh	= {
-            gold       = 1500,
-            clay       = 40,
-            wood       = 400,
-            stone      = 40,
-            iron       = 400,
-            sulfur     = 400,
-            updateTime = 15
-        },
-    }
-    if _Rebuild then
-        description.rebuild	= {delay = 2*60};
-    end
-    SetupPlayerAi(_PlayerID, description);
-
-    -- Upgrade troops
-    local CannonEntityType = Entities["PV_Cannon".._TechLevel];
-    for i= 2, _TechLevel, 1 do
-        Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderBow, _PlayerID);
-        Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderSword, _PlayerID);
-        Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderPoleArm, _PlayerID);
-    end
-    if _TechLevel == 4 then
-        Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderCavalry, _PlayerID);
-        Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderHeavyCavalry, _PlayerID);
-        Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderRifle, _PlayerID);
-    end
-
-    -- Save Player data
-    self.Data.CreatedAiPlayers[_PlayerID] = {
-        TechnologyLevel = _TechLevel,
-        CannonType = Entities["PV_Cannon".._TechLevel],
-        Blacklist = {},
-    };
-    self.Data.AiPlayerAttackTargets[_PlayerID] = {};
-    self.Data.AiPlayerPatrolPoints[_PlayerID] = {};
-
-    -- Find default target and patrol points
-    for k, v in pairs(QuestTools.GetEntitiesByPrefix("Player" .._PlayerID.. "_AttackTarget")) do
-        self:CreateAIPlayerAttackTarget(_PlayerID, v);
-    end
-    for k, v in pairs(QuestTools.GetEntitiesByPrefix("Player" .._PlayerID.. "_PatrolPoint")) do
-        self:CreateAIPlayerPatrolPoint(_PlayerID, v);
-    end
-end
-
----
 -- Upgrades an existing AI player with a higher technology level.
 -- @param[type=number] _PlayerID     ID of player
 -- @param[type=number] _NewTechLevel Technology level
@@ -760,752 +404,8 @@ end
 -- @local
 --
 function QuestSystemBehavior:UpgradeAI(_PlayerID, _NewTechLevel)
-    if self.Data.CreatedAiPlayers[_PlayerID] then
-        local OldLevel = self.Data.CreatedAiPlayers[_PlayerID].TechnologyLevel;
-        if _NewTechLevel > 0 and _NewTechLevel < 5 and OldLevel < _NewTechLevel then
-            -- Upgrade troops
-            local CannonEntityType = Entities["PV_Cannon".._NewTechLevel];
-            for i= OldLevel, _NewTechLevel, 1 do
-                Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderBow, _PlayerID);
-                Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderSword, _PlayerID);
-                Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderPoleArm, _PlayerID);
-            end
-            if _NewTechLevel == 4 then
-                Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderCavalry, _PlayerID);
-                Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderHeavyCavalry, _PlayerID);
-                Logic.UpgradeSettlerCategory(UpgradeCategories.LeaderRifle, _PlayerID);
-            end
-
-            -- Save Player data
-            self.Data.CreatedAiPlayers[_PlayerID] = {
-                TechnologyLevel = _NewTechLevel,
-                CannonType = Entities["PV_Cannon".._NewTechLevel],
-            };
-        end
-    end
-end
-
----
--- Table of army categories
--- @field City City troop types
--- @field BlackKnight Black knight troop types
--- @field Bandit Bandit troop types
--- @field Barbarian Barbarian troop types
--- @within Constants
---
-QuestSystemBehavior.ArmyCategories = {
-    City = {
-        UpgradeCategories.LeaderBow,
-        UpgradeCategories.LeaderSword,
-        UpgradeCategories.LeaderPoleArm,
-        UpgradeCategories.LeaderCavalry,
-        UpgradeCategories.LeaderHeavyCavalry,
-        UpgradeCategories.LeaderRifle
-    },
-    BlackKnight = {
-        UpgradeCategories.LeaderBanditBow,
-        UpgradeCategories.BlackKnightLeaderMace1,
-        UpgradeCategories.LeaderPoleArm,
-        UpgradeCategories.LeaderCavalry,
-        UpgradeCategories.LeaderHeavyCavalry
-    },
-    Bandit = {
-        UpgradeCategories.LeaderBanditBow,
-        UpgradeCategories.LeaderBandit,
-        UpgradeCategories.LeaderPoleArm,
-        UpgradeCategories.LeaderCavalry,
-        UpgradeCategories.LeaderHeavyCavalry
-    },
-    Barbarian = {
-        UpgradeCategories.LeaderBanditBow,
-        UpgradeCategories.LeaderBarbarian,
-        UpgradeCategories.LeaderCavalry,
-        UpgradeCategories.LeaderHeavyCavalry
-    },
-};
-
----
--- Disables or enables the ability to attack for the army. This function can
--- be used to forbid an army to attack even if there are valid targets.
--- @param[type=number]  _PlayerID ID of player
--- @param[type=number]  _ArmyID   ID of army
--- @param[type=boolean] _Flag     Ability to attack
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:ArmyDisableAttackAbility(_PlayerID, _ArmyID, _Flag)
-    if QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID] then
-        local army = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-        if army and army.Advanced then
-            army.Advanced.AttackDisabled = _Flag == true;
-            army.Advanced.AnchorChanged = false;
-        end
-    end
-end
-
----
--- Disables or enables the ability to patrol between positions. This
--- function can be used to forbid an army to attack even if there are
--- valid targets.
--- @param[type=number]  _PlayerID ID of player
--- @param[type=number]  _ArmyID   ID of army
--- @param[type=boolean] _Flag     Ability to patrol
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:ArmyDisablePatrolAbility(_PlayerID, _ArmyID, _Flag)
-    if QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID] then
-        local army = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-        if army and army.Advanced then
-            army.Advanced.PatrolDisabled = _Flag == true;
-            army.Advanced.AnchorChanged = false;
-        end
-    end
-end
-
----
--- Adds an attack target to the AI player.
--- @param[type=number] _PlayerID ID of player
--- @param              _Position Zielppsition
--- @return[type=number] ID of target position
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:CreateAIPlayerAttackTarget(_PlayerID, _Position)
-    if not self.Data.CreatedAiPlayers[_PlayerID] then
-        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
-        return -1;
-    end
-    if type(_Position) ~= "table" then
-        _Position = GetPosition(_Position);
-    end
-    local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, _Position.X, _Position.Y, 0, _PlayerID);
-    table.insert(self.Data.AiPlayerAttackTargets[_PlayerID], ID);
-
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        for i= 1, table.getn(self.Data.CreatedAiArmies[_PlayerID]), 1 do
-            self:ArmyCreateAttackTarget(
-                _PlayerID,
-                self.Data.CreatedAiArmies[_PlayerID][i],
-                ID
-            );
-        end
-    end
-    return ID;
-end
-
----
--- Removes an attack target from the AI player.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ID       Zielppsition
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:DestroyAIPlayerAttackTarget(_PlayerID, _ID)
-    if not self.Data.CreatedAiPlayers[_PlayerID] then
-        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
-        return;
-    end
-    -- Remove from AI list
-    for i= table.getn(self.Data.AiPlayerAttackTargets[_PlayerID]), 1, -1 do
-        if self.Data.AiPlayerAttackTargets[_PlayerID][i] == _ID then
-            table.remove(self.Data.AiPlayerAttackTargets[_PlayerID], i);
-        end
-    end
-    -- Remove from army list
-    self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
-    for i= 1, table.getn(self.Data.CreatedAiArmies[_PlayerID]), 1 do
-        self:ArmyRemoveAttackTarget(
-            _PlayerID,
-            self.Data.CreatedAiArmies[_PlayerID][i],
-            _ID
-        );
-    end
-end
-
----
--- Adds an patrol waypoint to the AI player.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _Position Zielppsition
--- @return[type=number] ID of target position
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:CreateAIPlayerPatrolPoint(_PlayerID, _Position)
-    if not self.Data.CreatedAiPlayers[_PlayerID] then
-        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
-        return -1;
-    end
-    if type(_Position) ~= "table" then
-        _Position = GetPosition(_Position);
-    end
-    local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, _Position.X, _Position.Y, 0, _PlayerID);
-    table.insert(self.Data.AiPlayerPatrolPoints[_PlayerID], ID);
-
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        for i= 1, table.getn(self.Data.CreatedAiArmies[_PlayerID]), 1 do
-            self:ArmyCreatePatrolTarget(
-                _PlayerID,
-                self.Data.CreatedAiArmies[_PlayerID][i],
-                ID
-            );
-        end
-    end
-    return ID;
-end
-
----
--- Removes an patrol waypoint from the AI player.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ID       Zielppsition
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:DestroyAIPlayerPatrolPoint(_PlayerID, _ID)
-    if not self.Data.CreatedAiPlayers[_PlayerID] then
-        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
-        return;
-    end
-    -- Remove from AI list
-    for i= table.getn(self.Data.AiPlayerPatrolPoints[_PlayerID]), 1, -1 do
-        if self.Data.AiPlayerPatrolPoints[_PlayerID][i] == _ID then
-            table.remove(self.Data.AiPlayerPatrolPoints[_PlayerID], i);
-        end
-    end
-    -- Remove from army list
-    self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
-    for i= 1, table.getn(self.Data.CreatedAiArmies[_PlayerID]), 1 do
-        self:ArmyRemovePatrolTarget(
-            _PlayerID,
-            self.Data.CreatedAiArmies[_PlayerID][i],
-            _ID
-        );
-    end
-end
-
----
--- Adds an attack target to the army.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ArmyID   ID of armY
--- @param[type=number] _Position Zielppsition
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:ArmyCreateAttackTarget(_PlayerID, _ArmyID, _Position)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        local army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-        if army and army.Advanced then
-            self:ArmyRemoveAttackTarget(_PlayerID, _ArmyID, _Position)
-            table.insert(army.Advanced.attackPosition, _Position);
-        end
-    end
-end
-
----
--- Removes an attack target from the army.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ArmyID   ID of armY
--- @param[type=number] _Position Zielppsition
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:ArmyRemoveAttackTarget(_PlayerID, _ArmyID, _Position)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        local army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-        if army and army.Advanced then
-            for i= table.getn(army.Advanced.attackPosition), 1, -1 do
-                if army.Advanced.attackPosition[i] == _Position then
-                    table.remove(army.Advanced.attackPosition, i);
-                end
-            end
-        end
-    end
-end
-
----
--- Adds a patrol waypoint to the army.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ArmyID   ID of armY
--- @param[type=number] _Position Zielppsition
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:ArmyCreatePatrolTarget(_PlayerID, _ArmyID, _Position)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        local army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-        if army and army.Advanced then
-            self:ArmyRemovePatrolTarget(_PlayerID, _ArmyID, _Position);
-            table.insert(army.Advanced.patrolPoints, _Position);
-        end
-    end
-end
-
----
--- Removes a patrol waypoint from the army.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ArmyID   ID of armY
--- @param[type=number] _Position Zielppsition
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:ArmyRemovePatrolTarget(_PlayerID, _ArmyID, _Position)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        local army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-        if army and army.Advanced then
-            for i= table.getn(army.Advanced.patrolPoints), 1, -1 do
-                if army.Advanced.patrolPoints[i] == _Position then
-                    table.remove(army.Advanced.patrolPoints, i);
-                end
-            end
-        end
-    end
-end
-
----
--- Creates an army for the AI that is recruited from the barracks of the player.
--- The cannon type is automatically set by the technology level of the AI.
--- @param[type=number] _PlayerID   ID of player
--- @param[type=number] _Strength   Strength of army
--- @param[type=string] _Position   Home area center
--- @param[type=number] _Area Rode length
--- @param[type=table]  _TroopTypes Allowed troops
--- @return[table=number] Army ID
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:CreateAIArmy(_PlayerID, _Strength, _Position, _Area, _TroopTypes)
-    self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
-    _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
-
-    -- Check created AI
-    if not self.Data.CreatedAiPlayers[_PlayerID] then
-        return;
-    end
-
-    -- Get army ID
-    local ArmyID = table.getn(self.Data.CreatedAiArmies[_PlayerID]) +1;
-    if ArmyID > 9 then
-        return;
-    end
-
-    -- Set allowed types
-    if not _TroopTypes then
-        _TroopTypes = copy(QuestSystemBehavior.ArmyCategories.City);
-    end
-    assert(type(_TroopTypes) == "table", "CreateAIArmy: _TroopTypes must be a table!");
-    table.insert(_TroopTypes, self.Data.CreatedAiPlayers[_PlayerID].CannonType);
-
-    -- Create army
-    local army 				     = {};
-    army.player 			     = _PlayerID;
-    army.id					     = ArmyID;
-    army.strength			     = _Strength;
-    army.position			     = GetPosition(_Position);
-    army.rodeLength			     = _Area;
-    army.retreatStrength	     = math.ceil(_Strength/3);
-    army.AllowedTypes		     = _TroopTypes;
-
-    army.Advanced                = {};
-    army.Advanced.attackPosition = copy(self.Data.AiPlayerAttackTargets[_PlayerID]);
-    army.Advanced.patrolPoints   = copy(self.Data.AiPlayerPatrolPoints[_PlayerID]);
-    army.Advanced.scatteredArea  = _Area * 0.9;
-    army.Advanced.gatheredArea   = _Area * 0.5;
-
-    table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
-    -- Recruit controller
-    QuestTools.StartSimpleJobEx(function(_PlayerID, _ArmyID)
-        QuestSystemBehavior:ArmyRecriutController(_PlayerID, _ArmyID);
-    end, _PlayerID, ArmyID);
-    -- Army controller
-    QuestTools.StartSimpleJobEx(function(_PlayerID, _ArmyID)
-        QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID);
-    end, _PlayerID, ArmyID);
-
-    -- Default values
-    AI.Army_BeAlwaysAggressive(_PlayerID, ArmyID);
-    return ArmyID;
-end
-
----
--- Creates an army for the AI that is spawned from a life thread building.
--- @param[type=number] _PlayerID    ID of player
--- @param[type=number] _Strength    Strength of army
--- @param[type=string] _Position    Home area center
--- @param[type=string] _Spawner  Name of generator
--- @param[type=number] _Area  Rode length
--- @param[type=table]  _EntityTypes Spawned troops
--- @param[type=number] _Respawn Time to respawn
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:CreateAISpawnArmy(_PlayerID, _Strength, _Position, _Spawner, _Area, _EntityTypes, _Respawn)
-    self.Data.CreatedAiArmies[_PlayerID] = self.Data.CreatedAiArmies[_PlayerID] or {};
-    _Strength = (_Strength < 0 and 1) or (_Strength > 8 and 8) or _Strength;
-
-    -- Check created AI
-    if not self.Data.CreatedAiPlayers[_PlayerID] then
-        assert(false, "No AI created")
-        return;
-    end
-
-    -- Get army ID
-    local ArmyID = table.getn(self.Data.CreatedAiArmies[_PlayerID]) +1;
-    if ArmyID > 9 then
-        assert(false, "To many armies");
-        return;
-    end
-
-    -- Convert spawned types list
-    assert(type(_EntityTypes) == "table", "CreateAISpawnArmy: _TroopTypes must be a table!");
-    local SpawnedTypes = {};
-    for i= 1, table.getn(_EntityTypes), 1 do
-        table.insert(SpawnedTypes, {_EntityTypes[i], 16});
-    end
-
-    -- Create army
-    local army 				     = {};
-    army.player 			     = _PlayerID;
-    army.id					     = ArmyID;
-    army.strength			     = _Strength;
-    army.position			     = GetPosition(_Position);
-    army.rodeLength			     = _Area;
-    army.refresh 			     = true;
-    army.retreatStrength	     = math.ceil(_Strength/3);
-
-    army.spawnPos 		 	     = GetPosition(_Position);
-    army.spawnGenerator 		 = _Spawner;
-    army.spawnTypes 			 = SpawnedTypes;
-    army.respawnTime 		     = _Respawn;
-    army.maxSpawnAmount 		 = math.ceil(_Strength/3);
-    army.endless 			     = true;
-    army.noEnemy 			     = true;
-    army.noEnemyDistance 	     = 700;
-
-    army.Advanced                = {};
-    army.Advanced.attackPosition = copy(self.Data.AiPlayerAttackTargets[_PlayerID]);
-    army.Advanced.patrolPoints   = copy(self.Data.AiPlayerPatrolPoints[_PlayerID]);
-    army.Advanced.scatteredArea  = _Area * 0.9;
-    army.Advanced.gatheredArea   = _Area * 0.5;
-
-    table.insert(self.Data.CreatedAiArmies[_PlayerID], army);
-    SetupAITroopSpawnGenerator("QuestSystemBehavior_AiArmies_" .._PlayerID.. "_" ..ArmyID, self.Data.CreatedAiArmies[_PlayerID][ArmyID]);
-    QuestTools.StartSimpleJobEx(function(_PlayerID, _ArmyID)
-        QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID);
-    end, _PlayerID, ArmyID);
-
-    -- Default values
-    AI.Army_BeAlwaysAggressive(_PlayerID, ArmyID);
-    return ArmyID;
-end
-
-function QuestSystemBehavior:HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag)
-    if self.Data.CreatedAiPlayers[_PlayerID] then
-        if _HiddenFlag then
-            if not QuestTools.IsInTable(_Entity, self.Data.CreatedAiPlayers[_PlayerID].Blacklist) then
-                table.insert(self.Data.CreatedAiPlayers[_PlayerID], _Entity);
-            end
-        else
-            for i= table.getn(self.Data.CreatedAiPlayers[_PlayerID].Blacklist), 1, -1 do
-                table.remove(self.Data.CreatedAiPlayers[_PlayerID].Blacklist, i);
-            end
-        end
-    end
-end
-
-function QuestSystemBehavior:FindUnemployedLeader(_PlayerID)
-    if self.Data.CreatedAiPlayers[_PlayerID] then
-        local Leader = {};
-        Leader = copy(QuestTools.GetAllCannons(_PlayerID), Leader);
-        Leader = copy(QuestTools.GetAllLeader(_PlayerID), Leader);
-        for i= table.getn(Leader), 1, -1 do
-            local ScriptName = Logic.GetEntityName(Leader[i]);
-            if QuestTools.IsInTable(Leader[i], self.Data.CreatedAiPlayers[_PlayerID].Blacklist)
-            or QuestTools.IsInTable(ScriptName, self.Data.CreatedAiPlayers[_PlayerID].Blacklist) then
-                table.remove(Leader, i);
-            elseif AI.Entity_GetConnectedArmy(Leader[i]) ~= -1 then
-                table.remove(Leader, i);
-            end
-        end
-        if table.getn(Leader) > 0 then
-            return Leader[1];
-        end
-    end
-    return 0;
-end
-
-function QuestSystemBehavior:GetLeadersConnectedToArmy(_PlayerID, _ArmyID)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
-            local Leader = {};
-            Leader = copy(QuestTools.GetAllLeader(_PlayerID), Leader);
-            Leader = copy(QuestTools.GetAllCannons(_PlayerID), Leader);
-            for i= table.getn(Leader), 1, -1 do
-                if AI.Entity_GetConnectedArmy(Leader[i]) ~= _ArmyID then
-                    table.remove(Leader, i);
-                end
-            end
-            return Leader;
-        end
-    end
-    return {};
-end
-
-function QuestSystemBehavior:IsArmyFighting(_PlayerID, _ArmyID)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
-            local Army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-            local Leader = self:GetLeadersConnectedToArmy(_PlayerID, _ArmyID);
-            if table.getn(Leader) > 0 then
-                for i= 1, table.getn(Leader), 1 do
-                    local Task = Logic.GetCurrentTaskList(Leader[i]);
-                    if Task and string.find(Task, "BATTLE") then
-                        return true;
-                    end
-                end
-            end
-        end
-    end
-    return false;
-end
-
-function QuestSystemBehavior:IsArmyScattered(_PlayerID, _ArmyID)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
-            if self:IsArmyFighting(_PlayerID, _ArmyID) then
-                return false;
-            end
-            local Army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-            local Leader = self:GetLeadersConnectedToArmy(_PlayerID, _ArmyID);
-            if table.getn(Leader) > 0 then
-                local Center = QuestTools.GetGeometricFocus(unpack(Leader));
-                return not self:AreAllArmyMembersCloseToPosition(_PlayerID, _ArmyID, Center, Army.Advanced.scatteredArea);
-            end
-        end
-    end
-    return false;
-end
-
-function QuestSystemBehavior:IsArmyGathered(_PlayerID, _ArmyID)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
-            if self:IsArmyFighting(_PlayerID, _ArmyID) then
-                return true;
-            end
-            local Army = self.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-            local Leader = self:GetLeadersConnectedToArmy(_PlayerID, _ArmyID);
-            if table.getn(Leader) > 0 then
-                local Center = QuestTools.GetGeometricFocus(unpack(Leader));
-                return self:AreAllArmyMembersCloseToPosition(_PlayerID, _ArmyID, Center, Army.Advanced.gatheredArea);
-            end
-        end
-    end
-    return true;
-end
-
-function QuestSystemBehavior:AreAllArmyMembersCloseToPosition(_PlayerID, _ArmyID, _Position, _Area)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        if self.Data.CreatedAiArmies[_PlayerID][_ArmyID] then
-            local Leaders = self:GetLeadersConnectedToArmy(_PlayerID, _ArmyID);
-            local AllMembers = {};
-            for i= 1, table.getn(Leaders), 1 do
-                table.insert(AllMembers, Leaders[i]);
-                local Soldiers = {Logic.GetSoldiersAttachedToLeader(Leaders[i])};
-                for j= 2, Soldiers[1]+1, 1 do
-                    table.insert(AllMembers, Soldiers[j]);
-                end
-            end
-            for i= 1, table.getn(AllMembers), 1 do
-                if GetDistance(AllMembers[i], _Position) > _Area then
-                    return false;
-                end
-            end
-        end
-    end
-    return true;
-end
-
--- Recriut controller --
-
-function QuestSystemBehavior:ArmyRecriutController(_PlayerID, _ArmyID)
-    if self.Data.CreatedAiArmies[_PlayerID] then
-        local Army = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-        if AI.Army_GetNumberOfTroops(_PlayerID, _ArmyID) < Army.strength then
-            local RandomType = Army.AllowedTypes[math.random(1, table.getn(Army.AllowedTypes))];
-            AI.Army_BuyLeader(_PlayerID, _ArmyID, RandomType);
-            local UnemployedID = QuestSystemBehavior:FindUnemployedLeader(_PlayerID);
-            if UnemployedID ~= 0 then
-                AI.Entity_ConnectLeader(UnemployedID, _ArmyID);
-            end
-        end
-    end
-end
-
--- Army advance controller --
-
-QuestSystemBehavior.ArmyState          = {};
-QuestSystemBehavior.ArmyState.Default  = 1;
-QuestSystemBehavior.ArmyState.Refresh  = 2;
-QuestSystemBehavior.ArmyState.Select   = 3;
-QuestSystemBehavior.ArmyState.Attack   = 4;
-QuestSystemBehavior.ArmyState.Fallback = 5;
-QuestSystemBehavior.ArmyState.Patrol   = 6;
-QuestSystemBehavior.ArmyState.Gather   = 7;
-
-function QuestSystemBehavior:AiArmiesController(_PlayerID, _ArmyID)
-    local army = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID][_ArmyID];
-    local all  = QuestSystemBehavior.Data.CreatedAiArmies[_PlayerID];
-
-    if army.Advanced ~= nil then
-        if army.Advanced.State == nil then
-			army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
-        end
-
-        -- Army is waiting for a command
-        if army.Advanced.State == QuestSystemBehavior.ArmyState.Default then
-            -- Army must select an attack target
-            if army.Advanced.attackPosition and army.Advanced.AttackDisabled ~= true then
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Select;
-            else
-                -- Army must patrol
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Patrol;
-            end
-
-        -- Army is selecting a target
-        elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Select then
-            if army.Advanced.Target ~= nil then
-                Redeploy(army, GetPosition(army.Advanced.Target));
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Attack;
-            else
-                if HasFullStrength(army) then
-                    local underProcessing = {};
-                    for k,v in pairs(all) do
-                        if k ~= _ID and all[k].Advanced.Target ~= nil then
-                            table.insert(underProcessing, all[k].Advanced.Target);
-                        end
-                    end
-
-                    -- Select a attack target
-                    if army.Advanced.AttackDisabled ~= true and army.Advanced.attackPosition then
-                        for i=1,table.getn(army.Advanced.attackPosition),1 do
-                            local atkPos = army.Advanced.attackPosition[i];
-                            if  QuestTools.AreEnemiesInArea(army.player, GetPosition(atkPos), army.rodeLength)
-                            and army.Advanced.Target == nil and not IstDrin(atkPos, underProcessing)
-                            and QuestTools.SameSector(atkPos, army.position) then
-                                Redeploy(army, GetPosition(atkPos));
-                                army.Advanced.Target = atkPos;
-                                army.Advanced.State = QuestSystemBehavior.ArmyState.Attack;
-                                break;
-                            end
-                        end
-                    end
-                end
-
-                -- No target found? Go to patrol
-                if army.Advanced.Target == nil then
-                    army.Advanced.State = QuestSystemBehavior.ArmyState.Patrol;
-                end
-            end
-
-        -- Army is scattered
-        elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Gather then
-            -- Army needs to be refreshed
-            if IsVeryWeak(army) or IsDead(army) then
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Fallback;
-                Redeploy(army, army.position);
-            else
-                -- Army has gathered
-                if self:IsArmyGathered(army.player, army.id) then
-                    army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
-                end
-            end
-
-        -- Army is attacking a target
-        elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Attack then
-            -- Army needs to be refreshed
-            if IsVeryWeak(army) or IsDead(army) then
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Fallback;
-                Redeploy(army, army.position);
-            else
-                -- Attack is not allowed
-                if army.Advanced.AttackDisabled == true then
-                    army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
-                    Redeploy(army, army.position);
-                else
-                    if self:IsArmyScattered(army.player, army.id) then
-                        local Leaders = self:GetLeadersConnectedToArmy(army.player, army.id);
-                        local Center = QuestTools.GetGeometricFocus(unpack(Leaders));
-                        Redeploy(army, Center);
-                        army.Advanced.State = QuestSystemBehavior.ArmyState.Gather;
-                    else
-                        -- All enemies dead? Wait for command
-                        if not QuestTools.AreEnemiesInArea(army.player, GetPosition(army.Advanced.Target), army.rodeLength) then
-                            army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
-                            army.Advanced.Target = nil;
-                        end
-                    end
-                end
-            end
-
-        -- Army patrols between points
-        elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Patrol then
-            -- Army needs to be refreshed
-            if IsVeryWeak(army) or IsDead(army) then
-				army.Advanced.State = QuestSystemBehavior.ArmyState.Fallback;
-                Redeploy(army, army.position);
-            elseif table.getn(army.Advanced.patrolPoints) == 0 then
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Select;
-            else
-                -- Initial patrol station
-                -- First waypoint ever is selected by random
-                if army.Advanced.Waypoint == nil then
-                    army.Advanced.Waypoint = math.random(1, table.getn(army.Advanced.patrolPoints));
-                    army.Advanced.AnchorChanged = nil;
-                    army.Advanced.StartTime = Logic.GetTime();
-                end
-
-                -- Set anchor position
-                if not army.Advanced.AnchorChanged then
-                    if army.Advanced.PatrolDisabled then
-                        -- Army walkes back to base position
-                        Redeploy(army, GetPosition(army.position));
-                    else
-                        -- Army walks to waypoint
-                        Redeploy(army, GetPosition(army.Advanced.patrolPoints[army.Advanced.Waypoint]));
-                    end
-                    army.Advanced.AnchorChanged = true;
-                end
-
-                -- Army is moving to next patrol station
-                if army.Advanced.StartTime + 5*60 < Logic.GetTime() then
-                    army.Advanced.AnchorChanged = nil;
-                    army.Advanced.Waypoint = army.Advanced.Waypoint +1;
-                    if army.Advanced.Waypoint > table.getn(army.Advanced.patrolPoints) then
-                        army.Advanced.Waypoint = 1;
-                    end
-                    army.Advanced.StartTime = Logic.GetTime();
-                end
-
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Select;
-			end
-
-        -- Army is weak and returns
-        elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Fallback then
-            -- Army needs to be refreshed
-            if QuestTools.IsDead(army) or QuestTools.IsArmyNear(army, army.position) then
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Refresh;
-            end
-
-        -- Army is refreshing troops
-        elseif army.Advanced.State == QuestSystemBehavior.ArmyState.Refresh then
-            army.Advanced.Target = nil;
-            -- Army has recovered
-			if not AI.Army_IsRefreshing(army.player, army.id) and HasFullStrength(army) then
-                army.Advanced.State = QuestSystemBehavior.ArmyState.Default;
-				Redeploy(army, army.position);
-			end
-        end
-    else
-        Advance(army);
+    if TroopGenerator.CreatedAiPlayers[_PlayerID] then
+        TroopGenerator.AI:UpgradeTroops(_PlayerID, _NewTechLevel);
     end
 end
 
@@ -1572,7 +472,7 @@ function b_Goal_MapScriptFunction:CustomFunction(_Quest)
 end
 
 function b_Goal_MapScriptFunction:Reset(_Quest)
-    ResetBehaviorProgress(self);
+    QuestTools.SaveCall{ResetBehaviorProgress, self};
 end
 
 function b_Goal_MapScriptFunction:Debug(_Quest)
@@ -2717,7 +1617,11 @@ function b_Reprisal_Briefing:GetReprisalTable()
 end
 
 function b_Reprisal_Briefing:CustomFunction(_Quest)
-    _Quest.m_FailureBriefing = _G[self.Data.Briefing](_Quest.m_Receiver);
+    _Quest.m_FailureBriefing = QuestTools.SaveCall{
+        _G[self.Data.Briefing],
+        _Quest.m_Receiver,
+        ErrorHandler = function() return -1; end
+    };
 end
 
 function b_Reprisal_Briefing:Reset(_Quest)
@@ -3287,7 +2191,11 @@ function b_Reward_Briefing:AddParameter(_Index, _Parameter)
 end
 
 function b_Reward_Briefing:CustomFunction(_Quest)
-    _Quest.m_SuccessBriefing = _G[self.Data.Briefing](_Quest.m_Receiver);
+    _Quest.m_SuccessBriefing = QuestTools.SaveCall{
+        _G[self.Data.Briefing],
+        _Quest.m_Receiver,
+        ErrorHandler = function() return -1; end
+    };
 end
 
 function b_Reward_Briefing:GetRewardTable()
@@ -4595,9 +3503,8 @@ end
 
 function b_Goal_DestroyPlayer:CustomFunction(_Quest)
     if not IsExisting(self.Data.Headquarter) then
-        if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] then
+        if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] then
             AI.Player_DisableAi(self.Data.PlayerID);
-            QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] = nil;
         end
 
         local PlayerEntities = QuestTools.GetPlayerEntities(self.Data.PlayerID, 0);
@@ -4663,33 +3570,19 @@ function b_Goal_DestroyArmy:GetGoalTable()
 end
 
 function b_Goal_DestroyArmy:CustomFunction(_Quest)
-    local Armies = QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] or {};
-    local Army = Armies[QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
+    local Armies = TroopGenerator.CreatedAiArmies[self.Data.PlayerID] or {};
+    local Army = Armies[TroopGenerator.AiArmyNameToId[self.Data.ArmyName]];
     if Army == nil then
         return false;
     end
-    if GetNumberOfLeaders(Army) == 0 then
-        if Army.spawnGenerator ~= nil then
-            if not IsExisting(Army.spawnGenerator) then
-                return true;
-            end
-        elseif Army.AllowedTypes ~= nil then
-            local PlayerEntities = QuestTools.GetPlayerEntities(self.Data.PlayerID, 0);
-            for i= 1, table.getn(PlayerEntities), 1 do 
-                if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
-                    return;
-                end
-            end
-            return true;
-        else
-            return true;
-        end
+    if Army:IsDead() then
+        return true;
     end
 end
 
 function b_Goal_DestroyArmy:Debug(_Quest)
-    local Armies = QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] or {};
-    local Army = Armies[QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName]];
+    local Armies = TroopGenerator.CreatedAiArmies[self.Data.PlayerID] or {};
+    local Army = Armies[TroopGenerator.AiArmyNameToId[self.Data.ArmyName]];
     if Army == nil then
         local Player = tostring(self.Data.PlayerID);
         local ArmyID = tostring(self.Data.ArmyID);
@@ -5328,8 +4221,9 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CloseMerchant);
 -- Initalising the AI is nessessary for usung the quest system behavior army
 -- controller.
 --
--- @param[type=number] _PlayerID Id of player
--- @param[type=number] _TechLevel  Tech level
+-- @param[type=number] _PlayerID  Id of player
+-- @param[type=number] _SerfLimit Amount of serfs
+-- @param[type=number] _TechLevel Technology level
 -- @within Rewards
 --
 function Reward_AI_CreateAIPlayer(...)
@@ -5347,13 +4241,9 @@ function b_Reward_AI_CreateAIPlayer:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.PlayerID = _Parameter;
     elseif _Index == 2 then
-        self.Data.TechLevel = _Parameter;
-    elseif _Index == 3 then
         self.Data.SerfLimit = _Parameter;
-    elseif _Index == 4 then
-        self.Data.Construct = _Parameter;
-    elseif _Index == 5 then
-        self.Data.Repair = _Parameter;
+    elseif _Index == 3 then
+        self.Data.TechLevel = _Parameter;
     end
 end
 
@@ -5362,7 +4252,16 @@ function b_Reward_AI_CreateAIPlayer:GetRewardTable()
 end
 
 function b_Reward_AI_CreateAIPlayer:CustomFunction(_Quest)
-    QuestSystemBehavior:CreateAI(self.Data.PlayerID, self.Data.TechLevel, self.Data.SerfLimit, self.Data.Construct, self.Data.Repair);
+    QuestTools.SaveCall{
+        CreateAIPlayer,
+        self.Data.PlayerID,
+        self.Data.TechLevel,
+        self.Data.SerfLimit,
+        nil,
+        0,
+        true,
+        true
+    };
 end
 
 function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
@@ -5378,7 +4277,7 @@ function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
         dbg(_Quest, self, "Serf limit must be a number >= 0!");
         return true;
     end
-    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] then
+    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] then
         dbg(_Quest, self, "A player already exists for ID " ..tostring(self.Data.PlayerID));
         return true;
     end
@@ -5412,11 +4311,11 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateAIPlayer);
 -- 
 -- Y shall be replaced with the index of the waypoint of players armies.
 --
--- @param[type=string] _ArmyName Army identifier
--- @param[type=number] _PlayerID Id of player
--- @param[type=number] _Strength Strength of army
--- @param[type=string] _Position Army base position
--- @param[type=number] _Area Average action range
+-- @param[type=string] _ArmyName  Army identifier
+-- @param[type=number] _PlayerID  Id of player
+-- @param[type=number] _Strength  Strength of army
+-- @param[type=string] _Position  Army base position
+-- @param[type=number] _Area      Average action range
 -- @param[type=string] _TroopType Army troop type
 -- @within Rewards
 --
@@ -5444,7 +4343,7 @@ function b_Reward_AI_CreateArmy:AddParameter(_Index, _Parameter)
         self.Data.RodeLength = _Parameter;
     elseif _Index == 6 then
         _Parameter = _Parameter or "City";
-        self.Data.TroopType = QuestSystemBehavior.ArmyCategories[_Parameter];
+        self.Data.TroopType = ArmyCategories[_Parameter];
     end
 end
 
@@ -5453,14 +4352,22 @@ function b_Reward_AI_CreateArmy:GetRewardTable()
 end
 
 function b_Reward_AI_CreateArmy:CustomFunction(_Quest)
-    local ID = QuestSystemBehavior:CreateAIArmy(self.Data.PlayerID, self.Data.Strength, self.Data.Position, self.Data.RodeLength, self.Data.TroopType);
-    if ID then
-        QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] = ID;
+    local Army = QuestTools.SaveCall{
+        CreateAIPlayerArmy,
+        self.Data.ArmyName,
+        self.Data.PlayerID,
+        self.Data.Strength,
+        self.Data.Position,
+        self.Data.RodeLength,
+        self.Data.TroopType
+    };
+    if not Army then
+        dbg(_Quest, self, "Army creation for player " ..tostring(self.Data.PlayerID).. " failed!");
     end
 end
 
 function b_Reward_AI_CreateArmy:Debug(_Quest)
-    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == null then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
@@ -5468,12 +4375,12 @@ function b_Reward_AI_CreateArmy:Debug(_Quest)
         dbg(_Quest, self, "An army got an invalid identifier!");
         return true;
     end
-    if QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
+    if TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
         return true;
     end
-    if  QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID] 
-    and table.getn(QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID]) > 9 then
+    if  TroopGenerator.CreatedAiArmies[self.Data.PlayerID] 
+    and table.getn(TroopGenerator.CreatedAiArmies[self.Data.PlayerID]) > 9 then
         dbg(_Quest, self, "Player '" ..tostring(self.Data.PlayerID).. "' has to many armies!");
         return true;
     end
@@ -5489,7 +4396,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateArmy);
 
 ---
 -- Defines an army of up to 6 different unit types that is spawned from a
--- generator entiry.
+-- generator entity.
 --
 -- Use script entities named with PlayerX_AttackTargetY to define positions
 -- that will be attacked by the army. Also you can use entities named with
@@ -5564,11 +4471,13 @@ function b_Reward_AI_CreateSpawnArmy:CustomFunction(_Quest)
     local TroopTypes = {};
     for i= 1, 6, 1 do
         if self.Data["TroopType" ..i] and Entities[self.Data["TroopType" ..i]] then
-            table.insert(TroopTypes, Entities[self.Data["TroopType" ..i]]);
+            local Exp = (string.find(self.Data["TroopType" ..i], "PV_") and 0) or 3;
+            table.insert(TroopTypes, {Entities[self.Data["TroopType" ..i]], Exp});
         end
     end
     -- Create army
-    CreateAIPlayerSpawnArmy(
+    local Army = QuestTools.SaveCall{
+        CreateAIPlayerSpawnArmy,
         self.Data.ArmyName, 
         self.Data.PlayerID, 
         self.Data.Strength, 
@@ -5577,11 +4486,14 @@ function b_Reward_AI_CreateSpawnArmy:CustomFunction(_Quest)
         self.Data.RodeLength, 
         self.Data.RespawnTime, 
         unpack(TroopTypes)
-    );
+    };
+    if not Army then
+        dbg(_Quest, self, "Army creation for player " ..tostring(self.Data.PlayerID).. " failed!");
+    end
 end
 
 function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
-    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == null then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
@@ -5589,12 +4501,12 @@ function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
         dbg(_Quest, self, "An army got an invalid identifier!");
         return true;
     end
-    if QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
+    if TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
         return true;
     end
-    if  QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID]
-    and table.getn(QuestSystemBehavior.Data.CreatedAiArmies[self.Data.PlayerID]) > 9 then
+    if  TroopGenerator.CreatedAiArmies[self.Data.PlayerID]
+    and table.getn(TroopGenerator.CreatedAiArmies[self.Data.PlayerID]) > 9 then
         dbg(_Quest, self, "Player '" ..tostring(self.Data.PlayerID).. "' has to many armies!");
         return true;
     end
@@ -5658,18 +4570,17 @@ function b_Reward_AI_EnableArmyPatrol:GetRewardTable()
 end
 
 function b_Reward_AI_EnableArmyPatrol:CustomFunction(_Quest)
-    if QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        local ID = QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName];
-        QuestSystemBehavior:ArmyDisablePatrolAbility(self.Data.PlayerID, ID, not self.Data.Flag);
+    if TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
+        QuestTools.SaveCall{ArmyDisablePatrolAbility, self.Data.PlayerID, self.Data.ArmyName, not self.Data.Flag};
     end
 end
 
 function b_Reward_AI_EnableArmyPatrol:Debug(_Quest)
-    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == null then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
-    if not QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
+    if not TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
     end
@@ -5717,18 +4628,17 @@ function b_Reward_AI_EnableArmyAttack:GetRewardTable()
 end
 
 function b_Reward_AI_EnableArmyAttack:CustomFunction(_Quest)
-    if QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
-        local ID = QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName];
-        QuestSystemBehavior:ArmyDisableAttackAbility(self.Data.PlayerID, ID, not self.Data.Flag);
+    if TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
+        QuestTools.SaveCall{ArmyDisableAttackAbility, self.Data.PlayerID, self.Data.ArmyName, not self.Data.Flag};
     end
 end
 
 function b_Reward_AI_EnableArmyAttack:Debug(_Quest)
-    if QuestSystemBehavior.Data.CreatedAiPlayers[self.Data.PlayerID] == null then
+    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == null then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
-    if not QuestSystemBehavior.Data.AiArmyNameToId[self.Data.ArmyName] then
+    if not TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
     end

@@ -19,4 +19,5 @@ end
 -- Load allways
 Script.Load(gvBasePath.. "ext/optionsmenu.lua");
 Script.Load(gvBasePath.. "ext/interaction.lua");
+Script.Load(gvBasePath.. "ext/troopgenerator.lua");
 

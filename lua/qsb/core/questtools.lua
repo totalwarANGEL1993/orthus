@@ -5,11 +5,12 @@
 -- ########################################################################## --
 
 ---
--- 
+-- This module provides some helpful tools.
 --
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
+-- <li>qsb.lib.questsync</li>
 -- </ul>
 --
 -- @set sort=true
@@ -181,6 +182,38 @@ round = QuestTools.Round;
 
 -- Entities --
 
+---
+-- Sets the visibility of the entity.
+--
+-- @param               _Entity Skriptname or ID of entity
+-- @param[type=boolean] _Flag   Visibility flag
+-- @within Entities
+--
+function QuestTools.SetVisible(_Entity, _Flag)
+    local VisibleFlag = (_Flag == true and 513) or 65793;
+    local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
+    Logic.SetEntityScriptingValue(id, ValueIndex, VisibleFlag);
+end
+
+---
+-- Returns true if the entity is visible.
+--
+-- @param _Entity Skriptname or ID of entity
+-- @return[type=boolean] Entity is visible
+-- @within Entities
+--
+function QuestTools.IsVisible(_Entity)
+    local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
+    return Logic.GetEntityScriptingValue(id, ValueIndex, VisibleFlag) == 513;
+end
+
+---
+-- Returns a list of all leader of the player.
+--
+-- @param[type=number] _PlayerID ID of player
+-- @return[type=table] List of leaders
+-- @within Entities
+--
 function QuestTools.GetAllLeader(_PlayerID)
     local LeaderList = {};
     local FirstID = Logic.GetNextLeader(_PlayerID, 0);
@@ -199,6 +232,13 @@ function QuestTools.GetAllLeader(_PlayerID)
     return LeaderList;
 end
 
+---
+-- Returns a list of all cannons of the player.
+--
+-- @param[type=number] _PlayerID ID of player
+-- @return[type=table] List of cannons
+-- @within Entities
+--
 function QuestTools.GetAllCannons(_PlayerID)
     local CannonList = {};
     for i= 1, 4, 1 do
@@ -420,7 +460,7 @@ function QuestTools.GetReachablePosition(_Entity, _Target)
 	assert(type(Position1) == "table");
     assert(type(Position2) == "table");
 
-    local ID = AI.Entity_CreateFormation(PlayerID, Entities.XD_ScriptEntity, 0, 0, Position2.X, Position2.Y, 0, 0, 0, 0);
+    local ID = AI.Entity_CreateFormation(PlayerID, Entities.PU_Serf, 0, 0, Position2.X, Position2.Y, 0, 0, 0, 0);
     local NewPosition = GetPosition(ID);
     DestroyEntity(ID);
     if QuestTools.SameSector(_Entity, NewPosition) then
@@ -487,15 +527,17 @@ end
 ---
 -- Returns the leader entity ID of the soldier.
 --
--- FIXME: Not compatible to the History Edition!
---
 -- @param[type=number] _eID Entity ID of soldier
 -- @return[type=number] Entity ID of leader
 -- @within Entities
 --
 function QuestTools.SoldierGetLeader(_eID)
     if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
-        return Logic.GetEntityScriptingValue(_eID, 69) or _eID;
+        if QuestSync:IsHistoryEdition() then
+            return Logic.GetEntityScriptingValue(_eID, 66) or _eID;
+        else
+            return Logic.GetEntityScriptingValue(_eID, 69) or _eID;
+        end
     end
     return _eID;
 end
@@ -647,34 +689,6 @@ end
 StartSimpleHiResJobEx = QuestTools.StartSimpleHiResJobEx;
 
 -- AI --
-
----
--- Checks if an army is near the position.
---
--- @param[type=table]  _Army     Army to check
--- @param              _Target   Target position
--- @param[type=number] _Distance Area size
--- @return[type=boolean] Army is near
--- @within AI
---
-function QuestTools.IsArmyNear(_Army, _Target, _Distance)
-    local LeaderID = 0;
-    if not _Distance then
-        _Distance = _Army.rodeLength;
-    end
-    local NumberOfLeader = Logic.GetNumberOfLeader(_Army.player);
-    for i = 1, NumberOfLeader do
-        LeaderID = Logic.GetNextLeader(_Army.player, LeaderID);
-        local ArmyID = AI.Entity_GetConnectedArmy(LeaderID);
-        if ArmyID == _Army.id then
-            if QuestTools.GetDistance(LeaderID, _Target) < _Distance then
-                return true;
-            end
-        end
-    end
-    return false;
-end
-IsArmyNear = QuestTools.IsArmyNear;
 
 ---
 -- Checks, if the positions are in the same sector. If 2 possitions are not
