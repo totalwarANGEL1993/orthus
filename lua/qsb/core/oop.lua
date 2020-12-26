@@ -88,7 +88,11 @@ function class(_Table)
     _Table.toString = _Table.toString or function(self)
         local s = "";
         for k, v in pairs(self) do
-            s = s .. tostring(k) .. ":" .. tostring(v) .. ";";
+            if type(v) == "table" and v.toString then
+                s = s .. tostring(k) .. ":" .. tostring(v:toString()) .. ";";
+            else
+                s = s .. tostring(k) .. ":" .. tostring(v) .. ";";
+            end
         end
         return "{" ..s.. "}";
     end
