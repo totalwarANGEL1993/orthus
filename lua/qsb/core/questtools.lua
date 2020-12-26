@@ -85,6 +85,7 @@ function QuestTools.GetKeyByValue(_Value, _Table)
         end
     end
 end
+KeyOf = QuestTools.GetKeyByValue;
 
 ---
 -- Displays the name of any function that is to large to be loaded when a
@@ -506,6 +507,68 @@ function QuestTools.IsValidPosition(_pos)
 	return false;
 end
 IsValidPosition = QuestTools.IsValidPosition;
+
+---
+-- Returns a position on a circle at the given angle.
+--
+-- @param _Position              Schriptname or id of building
+-- @param[type=number] _AreaSize Radius of circle
+-- @param[type=number] _Angle    Angle on circle
+-- @return[type=table] Position on circle
+-- @within Entities
+--
+function QuestTools.GetCirclePosition(_Position, _AreaSize, _Angle)
+    if type(_Position) ~= "table" then
+        _Position = GetPosition(_Position);
+    end
+    assert(type(_Position) == "table")
+    local Angle = math.rad(_Angle)
+    assert(type(Angle) == "number")
+    assert(type(_AreaSize) == "number")
+    return {
+        X = _Position.X + math.cos(Angle) * _AreaSize,
+        Y = _Position.Y + math.sin(Angle) * _AreaSize  
+    }
+end
+GetCirclePosition = QuestTools.GetCirclePosition;
+
+---
+-- Returns Returns the angle between the two given positions or entities.
+--
+-- @param _Pos1 First position
+-- @param _Pos2 Second position
+-- @return[type=number] Angle between positions
+-- @within Entities
+--
+function QuestTools.GetAngleBetween(_Pos1,_Pos2)
+	local delta_X = 0;
+	local delta_Y = 0;
+	local alpha   = 0
+	if type (_Pos1) == "string" or type (_Pos1) == "number" then
+		_Pos1 = GetPosition(GetEntityId(_Pos1));
+	end
+	if type (_Pos2) == "string" or type (_Pos2) == "number" then
+		_Pos2 = GetPosition(GetEntityId(_Pos2));
+	end
+	delta_X = _Pos1.X - _Pos2.X
+	delta_Y = _Pos1.Y - _Pos2.Y
+	if delta_X == 0 and delta_Y == 0 then -- Gleicher Punkt
+		return 0
+	end
+	alpha = math.deg(math.asin(math.abs(delta_X)/(math.sqrt(__pow(delta_X, 2)+__pow(delta_Y, 2)))))
+	if delta_X >= 0 and delta_Y > 0 then
+		alpha = 270 - alpha 
+	elseif delta_X < 0 and delta_Y > 0 then
+		alpha = 270 + alpha
+	elseif delta_X < 0 and delta_Y <= 0 then
+		alpha = 90  - alpha
+	elseif delta_X >= 0 and delta_Y <= 0 then
+		alpha = 90  + alpha
+	end
+	return alpha
+end
+GetAngleBetween = QuestTools.GetAngleBetween;
+Winkel = QuestTools.GetAngleBetween;
 
 ---
 -- Checks if a building is currently being upgraded.
