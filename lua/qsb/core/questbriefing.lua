@@ -657,9 +657,9 @@ function QuestBriefing:RenderPage(_PlayerID)
     end
 
     self:SetPageApperance(_PlayerID, Page.MiniMap ~= true);
-    local RenderFoW = (self.m_Book[_PlayerID].RenderFoW or Page.RenderFoW and 1) or 0;
+    local RenderFoW = (self.m_Book[_PlayerID].RenderFoW and 1) or (Page.RenderFoW and 1) or 0;
     Display.SetRenderFogOfWar(RenderFoW);
-    local RenderSky = (self.m_Book[_PlayerID].RenderSky or Page.RenderSky and 1) or 0;
+    local RenderSky = (self.m_Book[_PlayerID].RenderSky and 1) or (Page.RenderSky and 1) or 0;
     Display.SetRenderSky(RenderSky);
     Camera.ScrollUpdateZMode(0);
     Camera.FollowEntity(0);
@@ -764,7 +764,7 @@ function QuestBriefing:ControlBriefing()
                 end
                 -- Next page after duration is up
                 local TimePassed = (Logic.GetTime() * 10) - self.m_Book[v][PageID].StartTime;
-                if self:CanPageBeSkipped(v) and TimePassed > self.m_Book[v][PageID].Duration then
+                if TimePassed > self.m_Book[v][PageID].Duration then
                     self:NextPage(v, false);
                 end
             end
