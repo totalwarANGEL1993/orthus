@@ -9,9 +9,8 @@
 --
 -- Libraries loaded (in this order):
 -- <ul>
--- <li>OOP - Creates classes based on deep table copies.</li>
--- <li>QSBTools - Several helper functions.</li>
 -- <li>LuaBit - Lua 5.0 implementation of lua bit.</li>
+-- <li>EntityFind - Library to find all entities.</li>
 -- <li>MD5 - Library to create simple MD5 hashes.</li>
 -- <li>Metatable (S5 Community) - Makes metatables savable.</li>
 -- <li>S5Hook (S5 Community) - Allows basic memory manipulation (not compatible
@@ -28,6 +27,10 @@ end
 -- Load MD5 hash generator lib
 if md5 == nil then
     Script.Load(gvBasePath.. "lib/md5.lua");
+end
+-- Load entity find
+if EntityFind == nil then
+    Script.Load(gvBasePath.. "lib/entityfind.lua");
 end
 -- Load Metatable fix
 if metatable == nil then
