@@ -4222,8 +4222,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CloseMerchant);
 -- controller.
 --
 -- @param[type=number] _PlayerID  Id of player
--- @param[type=number] _SerfLimit Amount of serfs
 -- @param[type=number] _TechLevel Technology level
+-- @param[type=number] _SerfLimit Amount of serfs
 -- @within Rewards
 --
 function Reward_AI_CreateAIPlayer(...)
@@ -4241,9 +4241,9 @@ function b_Reward_AI_CreateAIPlayer:AddParameter(_Index, _Parameter)
     if _Index == 1 then
         self.Data.PlayerID = _Parameter;
     elseif _Index == 2 then
-        self.Data.SerfLimit = _Parameter;
-    elseif _Index == 3 then
         self.Data.TechLevel = _Parameter;
+    elseif _Index == 3 then
+        self.Data.SerfLimit = _Parameter;
     end
 end
 
@@ -4367,7 +4367,7 @@ function b_Reward_AI_CreateArmy:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_CreateArmy:Debug(_Quest)
-    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == null then
+    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == nil then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end

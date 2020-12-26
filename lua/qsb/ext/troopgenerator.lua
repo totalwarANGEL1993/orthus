@@ -141,6 +141,7 @@ function CreateAIPlayer(_PlayerID, _TechLevel, _SerfAmount, _HomePosition, _Stre
     _Construct = (_Construct ~= nil and _Construct) or true;
     _Rebuild = (_Rebuild ~= nil and _Rebuild) or true;
     _Strength = _Strength or 0;
+    TroopGenerator.CreatedAiPlayers[_PlayerID] = true;
     TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Strength, _TechLevel, _Construct, _Rebuild);
 end
 

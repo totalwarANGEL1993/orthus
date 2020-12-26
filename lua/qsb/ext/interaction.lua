@@ -5,9 +5,17 @@
 -- ########################################################################## --
 
 ---
--- The system allows to create special traders based of the merchant widget.
--- Units, resources, technologies and custom actions can be traded and
--- all offers can respawn. Example for a merchant:
+-- Implements a npc system that can be run seperatly to the vanilla npc system.
+--
+-- Normal npcs can be configured just as the vanilla npcs. To create a normal
+-- npc use the following:
+-- <pre>local NPC = new(NonPlayerCharacter, "myNPC")
+--     :SetCallback(SomeFunction)
+--     :Activate();</pre>
+--
+-- The system also allows to create special traders based of the merchant
+-- widget. Units, resources and custom actions can be traded and all offers
+-- can respawn. Example for a merchant:
 -- <pre>local NPC = new(NonPlayerMerchant, "myMerchant")
 --     :AddResourceOffer(ResourceType.Clay, 300, {Gold = 150}, 15, 2*60)
 --     :Activate();</pre>
@@ -65,14 +73,14 @@ function Interaction:OverrideNpcInteraction()
 
         if ID ~= 0 then
             EntityName = Logic.GetEntityName(ID);
-            if EntityName and Interaction.IO[EntityName] then
-                Interaction:OnMerchantInteraction(_Hero, Interaction.IO[EntityName], ID);
+            if EntityName then
+                Interaction:OnInteraction(_Hero, EntityName, ID);
                 return;
             end
         end
 
-        if EntityName and Interaction.IO[EntityName] then
-            Interaction:OnMerchantInteraction(_Hero, Interaction.IO[EntityName], _NPC);
+        if EntityName then
+            Interaction:OnInteraction(_Hero, EntityName, _NPC);
             return;
         end
     end
@@ -231,15 +239,17 @@ function Interaction:IsInteractionPossibleForHeroOrPlayer(_Instance, _HeroID)
     if _Instance.m_Hero then
         if _HeroID ~= GetID(_Instance.m_Hero) then
             if _Instance.m_HeroInfo and PlayerIDOfHero == GUI.GetPlayerID() then
-                Message(_Instance.m_HeroInfo);
+                local Text = QuestTools.GetLocalizedTextInTable(_Instance.m_HeroInfo);
+                Message(ReplacePlacholders(Text));
             end
             return true;
         end
     end
-    if _Instance.m_Player and XNetwork.Manager_DoesExist() == 1 then
+    if _Instance.m_Player and QuestSync:IsMultiplayerGame() then
         if PlayerIDOfHero ~= _Instance.m_Player then
             if _Instance.m_PlayerInfo and PlayerIDOfHero == GUI.GetPlayerID() then
-                Message(_Instance.m_PlayerInfo);
+                local Text = QuestTools.GetLocalizedTextInTable(_Instance.m_PlayerInfo);
+                Message(ReplacePlacholders(Text));
             end
             return false;
         end
@@ -248,18 +258,18 @@ function Interaction:IsInteractionPossibleForHeroOrPlayer(_Instance, _HeroID)
 end
 
 ---
--- Function called when a hero speaks to a merchant npc.
+-- Function called when a hero speaks to an npc.
 -- @param[type=number] _Hero Entity id of hero
--- @param[type=table] _NpcInstance Instance of npc
--- @param[type=number] _MerchantID EntityID of merchant
+-- @param[type=table]  _NpcInstance Instance of npc
+-- @param[type=number] _NPC         EntityID of npc
 -- @within Interaction
 -- @local
 --
-function Interaction:OnMerchantInteraction(_Hero, _NpcInstance, _MerchantID)
-    if not _NpcInstance then
+function Interaction:OnInteraction(_Hero, _ScriptName, _NPC)
+    if not Interaction.IO[_ScriptName] then
         return;
     end
-    _NpcInstance:Interact(_Hero, _MerchantID);
+    Interaction.IO[_ScriptName]:Interact(_Hero, _NPC);
 end
 
 -- -------------------------------------------------------------------------- --
@@ -279,6 +289,419 @@ end
 
 -- -------------------------------------------------------------------------- --
 
+NPC_ARRIVED_TARGET_DISTANCE = 1200;
+NPC_LOOK_AT_HERO_DISTANCE   = 2000;
+NPC_FOLLOW_HERO_DISTANCE    = 2000;
+
+---
+-- Base class for NPCs that implements the vanilla functionality of an NPC.
+-- @param[type=string] _ScriptName Script name of NPC
+-- @within Classes
+--
+NonPlayerCharacter = {}
+function NonPlayerCharacter:construct(_ScriptName)
+    self.m_ScriptName  = _ScriptName;
+    self.m_Callback    = function() end;
+    self.m_Active      = false;
+    -- optional
+    self.m_VanishPos   = nil;
+    self.m_Hero        = nil;
+    self.m_HeroInfo    = nil;
+    self.m_Follow      = nil;
+    self.m_Target      = nil;
+    self.m_WayCallback = nil;
+    self.m_Wanderer    = {};
+    self.m_Waypoints   = {};
+
+    Interaction.IO[_ScriptName] = self;
+    Trigger.RequestTrigger(
+        Events.LOGIC_EVENT_EVERY_SECOND,
+        "",
+        "Interaction_Npc_Controller",
+        1,
+        {},
+        {_ScriptName}
+    );
+end
+class(NonPlayerCharacter);
+
+---
+-- Sets the hero this npc is following. To let him follow anybody set hero
+-- as true.
+-- @param _Hero Hero to follow
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:SetFollow(_Hero)
+    self.m_Follow = _Hero;
+    return self;
+end
+
+---
+-- Adds a waypoint to the npc. The npc will move over every waypoint to the
+-- destination. The last waypoint is used as destination.
+-- Waypoints must be reachable!
+-- @param[type=string] _Waypoint Waypoint to pass
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:AddWaypoint(_Waypoint)
+    table.insert(self.m_Waypoints, _Waypoint);
+    return self;
+end
+
+---
+-- Adds a stray position to the npc. The npc will walk to a random waypoint
+-- from the stray list.
+-- Waypoints must be reachable!
+-- @param[type=string] _Waypoint Waypoint to pass
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:AddStrayPoint(_Waypoint)
+    table.insert(self.m_Wanderer, _Waypoint);
+    return self;
+end
+
+---
+-- Overwrites the default waittime between two waypoints.
+-- @param[type=number] _Waittime time to wait
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:SetWaittime(_Waittime)
+    self.m_Waittime = _Waittime;
+    return self;
+end
+
+---
+-- Sets a talking callback for the npc.
+-- @param[type=function] _Callback Function to call
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:SetCallback(_Callback)
+    self.m_Callback = _Callback;
+    return self;
+end
+
+---
+-- Sets a target destination until the npc is following the hero.
+-- Must be reachable!
+-- @param[type=string] _Target Destination of npc
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:SetTarget(_Target)
+    self.m_Target = _Target;
+    return self;
+end
+
+---
+-- Sets an alternate callback that will be triggered when the npc is on his
+-- way to a destination.
+-- @param[type=function] _Callback Function to call
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:SetWayCallback(_Callback)
+    self.m_WayCallback = _Callback;
+    return self;
+end
+
+---
+-- Activates the NPC
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:Activate()
+    if self:InUseByQuest(self.m_ScriptName) then
+        Message("DEBUG: '" ..self.m_ScriptName.. "' is used by a quest!");
+        return self;
+    end
+    local ID = GetID(self.m_ScriptName);
+    if Logic.IsSettler(ID) == 1 then
+        Logic.SetOnScreenInformation(ID, 1);
+        if self.m_Waypoints then
+            self.m_Waypoints.Current = false;
+        end
+        self.m_Active = true;
+        self.m_Arrived = false;
+        self.m_TalkedTo = nil;
+    end
+    return self;
+end
+
+---
+-- Deactivates the NPC.
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:Deactivate()
+    if self:InUseByQuest(self.m_ScriptName) then
+        Message("DEBUG: '" ..self.m_ScriptName.. "' is used by a quest!");
+        return self;
+    end
+    local ID = GetID(self.m_ScriptName);
+    if Logic.IsSettler(ID) == 1 then
+        Logic.SetOnScreenInformation(ID, 0);
+        self.m_Active = false;
+    end
+    return self;
+end
+
+---
+-- Checks if an npc is used by any quest.
+-- @return[type=boolean] Is used by quest
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:InUseByQuest()
+    for i= 1, table.getn(QuestSystem.Quests) do
+        local Quest = QuestSystem.Quests[i];
+        if Quest.m_State == QuestStates.Active then
+            for j= 1, table.getn(Quest.m_Objectives), 1 do
+                if Quest.m_Objectives[j][1] == Objectives.NPC then
+                    if GetID(Quest.m_Objectives[j][2]) == GetID(self.m_ScriptName) then
+                        return true;
+                    end
+                end
+            end
+        end
+    end
+    return false;
+end
+
+---
+-- Returns true, if the npc is currently active.
+-- @return[type=boolean] NPC is active
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:IsActive()
+    return self.m_Active == true;
+end
+
+---
+-- Checks, if some hero talked to this npc.
+-- @return[type=boolean] Talked to
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:TalkedTo()
+    return self.m_TalkedTo ~= nil;
+end
+
+---
+-- Sets the hero that can speak to the npc.
+-- @param[type=string] _Hero Scriptname of hero
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:SetHero(_Hero)
+    self.m_Hero = _Hero;
+    return self;
+end
+
+---
+-- Sets the information text, if the wrong hero talked to the npc
+-- @param[type=string] _Info Info message
+-- @return self
+-- @within NonPlayerCharacter
+--
+function NonPlayerCharacter:SetHeroInfo(_Info)
+    self.m_HeroInfo = _Info;
+    return self;
+end
+
+---
+-- Controlls the actions of a vanilla NPC if it is active.
+-- @within NonPlayerCharacter
+-- @local
+--
+function NonPlayerCharacter:Controller()
+    if self.m_Active == true then
+        -- Follow hero
+        if self.m_Follow ~= nil and not self.m_Arrived then
+            local FollowID;
+            if type(self.m_Follow) == "string" then
+                FollowID = GetEntityId(self.m_Follow);
+            else
+                FollowID = self:GetNearestHero(NPC_FOLLOW_HERO_DISTANCE);
+            end
+            if FollowID ~= nil and IsAlive(FollowID) then
+                if self.m_Target and IsNear(self.m_ScriptName, self.m_Target, self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
+                    Move(self.m_ScriptName, self.m_Target);
+                    self.m_Arrived = true;
+                end
+                if not self.m_Arrived and Logic.IsEntityMoving(GetID(self.m_ScriptName)) == false then
+                    Move(self.m_ScriptName, FollowID, 500);
+                end
+            end
+
+        -- Walk a path
+        elseif table.getn(self.m_Waypoints) > 0 and not self.m_Arrived then
+            self.m_Waypoints.LastTime = self.m_Waypoints.LastTime or 0;
+            self.m_Waypoints.Current = self.m_Waypoints.Current or 1;
+
+            local CurrentTime = Logic.GetTime();
+            if self.m_Waypoints.LastTime < CurrentTime then
+                -- Check each 2 minutes
+                self.m_Waypoints.LastTime = CurrentTime + (self.m_Waittime or 2*60);
+                -- Set waypoint
+                if IsNear(self.m_ScriptName, self.m_Waypoints[self.m_Waypoints.Current], self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
+                    self.m_Waypoints.Current = self.m_Waypoints.Current +1;
+                    if self.m_Waypoints.Current > table.getn(self.m_Waypoints) then
+                        self.m_Arrived = true;
+                    end
+                end
+                -- Move to waypoint
+                if not self.m_Arrived then
+                    if Logic.IsEntityMoving(GetID(self.m_ScriptName)) == false then
+                        Move(self.m_ScriptName, self.m_Waypoints[self.m_Waypoints.Current]);
+                    end
+                end
+            end
+
+        -- Wander random positions
+        elseif table.getn(self.m_Wanderer) > 1 and not self.m_Arrived then
+            self.m_Wanderer.LastTime = self.m_Wanderer.LastTime or 0;
+            self.m_Wanderer.Current = self.m_Wanderer.Current or 1;
+
+            if not self:GetNearestHero(NPC_LOOK_AT_HERO_DISTANCE) then
+                local CurrentTime = Logic.GetTime();
+                if self.m_Wanderer.LastTime < CurrentTime then
+                    self.m_Wanderer.LastTime = CurrentTime + (self.m_Waittime or 5*60);
+                    if IsNear(self.m_ScriptName, self.m_Wanderer[self.m_Wanderer.Current], self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
+                        -- Select random waypoint
+                        local NewWaypoint;
+                        repeat
+                            NewWaypoint = math.random(1, table.getn(self.m_Wanderer));
+                        until (NewWaypoint ~= self.m_Wanderer.Current);
+                        self.m_Wanderer.Current = NewWaypoint;
+
+                        -- Move to waypoint
+                        if Logic.IsEntityMoving(GetID(self.m_ScriptName)) == false then
+                            Move(self.m_ScriptName, self.m_Wanderer[self.m_Wanderer.Current]);
+                        end
+                    end
+                end
+            end
+        else
+            self.m_Arrived = true;
+        end
+
+        if self.m_Arrived then
+            local NearestHero = self:GetNearestHero();
+            LookAt(self.m_ScriptName, NearestHero);
+        end
+    end
+end
+
+---
+-- Controlls how the NPC interacts with the hero if spoken to.
+-- @param[type=number] _HeroID ID of hero
+-- @within NonPlayerCharacter
+-- @local
+--
+function NonPlayerCharacter:Interact(_HeroID)
+    GUIAction_MerchantReady();
+    if self.m_Follow then
+        if self.m_Target then
+            if IsNear(self.m_ScriptName, self.m_Target, 1200) then
+                self.m_Callback(self, _HeroID);
+                self.m_TalkedTo = _HeroID;
+                self:HeroesLookAtNpc();
+                self:Deactivate();
+            else
+                if self.m_WayCallback then
+                    self.m_WayCallback(self, _HeroID);
+                end
+            end
+        else
+            if self.m_WayCallback then
+                self.m_WayCallback(self, _HeroID);
+            end
+        end
+
+    elseif table.getn(self.m_Waypoints) > 0 then
+        local LastWaypoint = self.m_Waypoints[table.getn(self.m_Waypoints)];
+        if IsNear(self.m_ScriptName, LastWaypoint, 1200) then
+            self.m_Callback(self, _HeroID);
+            self.m_TalkedTo = _HeroID;
+            self:HeroesLookAtNpc();
+            self:Deactivate();
+        else
+            if self.m_WayCallback then
+                self.m_WayCallback(self, _HeroID);
+            end
+        end
+
+    elseif table.getn(self.m_Wanderer) > 0 then
+        if self.m_WayCallback then
+            self.m_WayCallback(self, _HeroID);
+        end
+    else
+        if self.m_Hero then
+            if _HeroID ~= GetID(self.m_Hero) then
+                if self.m_HeroInfo then
+                    Message(self.m_HeroInfo);
+                end
+                return;
+            end
+        end
+        self.m_Callback(self, _HeroID);
+        self.m_TalkedTo = _HeroID;
+        self:HeroesLookAtNpc();
+        self:Deactivate();
+    end
+end
+
+---
+-- Let all heroes of the player look at the npc.
+-- @within NonPlayerCharacter
+-- @local
+--
+function NonPlayerCharacter:HeroesLookAtNpc()
+    local HeroesTable = {};
+    Logic.GetHeroes(GUI.GetPlayerID(), HeroesTable);
+    if not QuestSync:IsMultiplayerGame() then
+        LookAt(self.m_ScriptName, self.m_TalkedTo);
+    end
+
+    for k, v in pairs(HeroesTable) do
+        if v and IsExisting(v) and IsNear(v, self.m_ScriptName, NPC_LOOK_AT_HERO_DISTANCE) then
+            LookAt(v, self.m_ScriptName);
+        end
+    end
+end
+
+---
+-- Returns the nearest hero to the npc.
+-- @return[type=number] Hero ID
+-- @within NonPlayerCharacter
+-- @local
+--
+function NonPlayerCharacter:GetNearestHero(_Distance)
+    local HeroesTable = {};
+    Logic.GetHeroes(GUI.GetPlayerID(), HeroesTable);
+
+    local x1, y1, z1   = Logic.EntityGetPos(GetID(self.m_ScriptName));
+    local BestDistance = _Distance or Logic.WorldGetSize();
+    local BestHero     = nil;
+
+    for k, v in pairs(HeroesTable) do
+        if v and IsExisting(v) then
+            local x2, y2, z2 = Logic.EntityGetPos(v);
+			local Distance   = ((x2-x1)^2)+((y2-y1)^2);
+            if Distance < BestDistance then
+				BestDistance = Distance;
+				BestHero = v;
+			end
+        end
+    end
+    return BestHero;
+end
+
+-- -------------------------------------------------------------------------- --
+
 MerchantOfferTypes = {
     Unit       = 1,
     Technology = 2,
@@ -287,7 +710,7 @@ MerchantOfferTypes = {
 };
 
 ---
--- Base class for NPCs that implements the vanilla functionality of an npc.
+-- Base class for NPCs that implements the functionallity of an merchant.
 -- @param[type=string] _ScriptName Script name of merchant
 -- @within Classes
 --
@@ -406,13 +829,6 @@ function NonPlayerMerchant:IsActive()
     return self.m_Active == true;
 end
 
----
--- Calls the merchant menu of the merchant if a hero talks to him.
--- @param[type=number] _HeroID   ID of hero
--- @param[type=number] _TraderID ID of merchant
--- @within NonPlayerMerchant
--- @local
---
 function NonPlayerMerchant:Interact(_HeroID, _TraderID)
     if not Interaction:IsInteractionPossibleForHeroOrPlayer(self, _HeroID) then
         return;
@@ -431,12 +847,6 @@ function NonPlayerMerchant:Interact(_HeroID, _TraderID)
     end
 end
 
----
--- Controlls the refreshing rate of the merchant offers.
--- @param[type=number] _PlayerID ID of player
--- @within NonPlayerMerchant
--- @local
---
 function NonPlayerMerchant:Controller(_PlayerID)
     if self.m_Active == true then
         for k, v in pairs(self.m_Offers) do
@@ -473,20 +883,6 @@ function NonPlayerMerchant:GetTradingVolume(_SlotIndex)
     return 0;
 end
 
----
--- DONT EVER CALL THIS MANUALLY! Adds a offer to the merchant.
--- @param[type=number] _Type       Type of offer
--- @param[type=table] _Costs       Costs table
--- @param[type=number] _Amount     Amount buyed units
--- @param[type=number] _Good       Entity or leader type
--- @param[type=number] _Load       Amount of wagon loads
--- @param[type=string] _Icon       Button icon
--- @param[type=number] _Refresh    Refresh rate
--- @param[type=table] _Description Button description
--- @return self
--- @within NonPlayerMerchant
--- @local
---
 function NonPlayerMerchant:AddOffer(_Type, _Costs, _Amount, _Good, _Load, _Icon, _Refresh, _Description)
     local CostsTable = {
         [ResourceType.Gold]   = _Costs.Gold or 0,
@@ -630,12 +1026,6 @@ function NonPlayerMerchant:AddCustomOffer(_Action, _Amount, _Costs, _Icon, _Desc
     return self:AddOffer(MerchantOfferTypes.Custom, _Costs, 0, _Action, _Amount, _Icon, _Refresh or -1, _Description);
 end
 
----
--- Updates all merchant offer widgets.
--- @param[type=table] _WidgetTable Offer widget table
--- @within NonPlayerMerchant
--- @local
---
 function NonPlayerMerchant:UpdateOfferWidgets()
     XGUIEng.ShowAllSubWidgets("TroopMerchantOffersContainer", 0);
     for i= 1, 4, 1 do
@@ -646,12 +1036,6 @@ function NonPlayerMerchant:UpdateOfferWidgets()
     end
 end
 
----
--- Updates the merchant offer at the index.
--- @param[type=number] _SlotIndex Index of offer
--- @within NonPlayerMerchant
--- @local
---
 function NonPlayerMerchant:UpdateOffer(_SlotIndex)
     local CurrentWidgetID = XGUIEng.GetCurrentWidgetID();
     local PlayerID = GUI.GetPlayerID();
@@ -686,12 +1070,6 @@ function NonPlayerMerchant:UpdateOffer(_SlotIndex)
     XGUIEng.SetText(gvGUI_WidgetID.TroopMerchantOfferAmount[_SlotIndex], "@center " ..Amount);
 end
 
----
--- Executes the purchase of the player if there are enough resources.
--- @param[type=number] _SlotIndex Index of offer
--- @within NonPlayerMerchant
--- @local
---
 function NonPlayerMerchant:BuyOffer(_SlotIndex)
     local Costs = copy(self.m_Offers[_SlotIndex].Costs);
     for k, v in pairs(Costs) do
@@ -766,11 +1144,6 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
     end
 end
 
----
--- 
--- @within NonPlayerMerchant
--- @local
---
 function NonPlayerMerchant:SubResources(_PlayerID, _SlotIndex)
     local Costs = copy(self.m_Offers[_SlotIndex].Costs);
     for k, v in pairs(Costs) do
@@ -781,11 +1154,6 @@ function NonPlayerMerchant:SubResources(_PlayerID, _SlotIndex)
     end
 end
 
----
--- 
--- @within NonPlayerMerchant
--- @local
---
 function NonPlayerMerchant:UpdateValues(_SlotIndex)
     self.m_Offers[_SlotIndex].Volume = self.m_Offers[_SlotIndex].Volume +1;
     self.m_Offers[_SlotIndex].Load = self.m_Offers[_SlotIndex].Load -1;
@@ -795,12 +1163,6 @@ function NonPlayerMerchant:UpdateValues(_SlotIndex)
     end
 end
 
----
--- Prints the tooltip text for a merchant offer.
--- @param[type=number] _SlotIndex Index of offer
--- @within NonPlayerMerchant
--- @local
---
 function NonPlayerMerchant:TooltipOffer(_SlotIndex)
     local Costs = copy(self.m_Offers[_SlotIndex].Costs);
     for k, v in pairs(Costs) do
