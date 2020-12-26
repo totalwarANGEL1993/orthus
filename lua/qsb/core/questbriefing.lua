@@ -165,6 +165,11 @@ function QuestBriefing:OverrideBriefingFunctions()
     -- <td>Method to be invoked when briefing has finished.</td>
     -- </tr>
     -- <tr>
+    -- <td>DisableSkipping</td>
+    -- <td>boolean</td>
+    -- <td>Globaly disables skipping for the briefing.</td>
+    -- </tr>
+    -- <tr>
     -- <td>RestoreCamera</td>
     -- <td>boolean</td>
     -- <td>Camera position is saved and restored after briefing ends.</td>
@@ -323,6 +328,11 @@ function QuestBriefing:AddPages(_Briefing)
     -- <td>Angle</td>
     -- <td>number</td>
     -- <td>(Optional) Sets a different elevation angle then the default.</td>
+    -- </tr>
+    -- <tr>
+    -- <td>DisableSkipping</td>
+    -- <td>boolean</td>
+    -- <td>Disables skipping for the current page.</td>
     -- </tr>
     -- <tr>
     -- <td>RenderFoW</td>
@@ -678,17 +688,18 @@ function QuestBriefing:RenderPage(_PlayerID)
             end
             Camera.RotSetAngle(Rotation or Page.Rotation or self.BriefingRotationAngle);
         else
-            if not _LastPage then
+            local LastPage = self.m_Book[_PlayerID][self.m_Book[_PlayerID].Page -1];
+            if not LastPage or type(LastPage) ~= "table" then
                 Camera.ScrollSetLookAt(Page.Position.X, Page.Position.Y);
                 Camera.ZoomSetDistance(Page.Distance or self.BriefingZoomDistance);
                 Camera.ZoomSetAngle(Page.Angle or self.BriefingZoomAngle);
                 Camera.RotSetAngle(Page.Rotation or self.BriefingRotationAngle);
             else
-                local x, y, z = Logic.EntityGetPos(GetID(_LastPage.Target));
+                local x, y, z = Logic.EntityGetPos(GetID(LastPage.Target));
                 Camera.ScrollSetLookAt(x, y);
-                Camera.ZoomSetDistance(_LastPage.Distance or self.BriefingZoomDistance);
-                Camera.ZoomSetAngle(_LastPage.Angle or self.BriefingZoomAngle);
-                Camera.RotSetAngle(_LastPage.Rotation or self.BriefingRotationAngle);
+                Camera.ZoomSetDistance(LastPage.Distance or self.BriefingZoomDistance);
+                Camera.ZoomSetAngle(LastPage.Angle or self.BriefingZoomAngle);
+                Camera.RotSetAngle(LastPage.Rotation or self.BriefingRotationAngle);
 
                 Camera.InitCameraFlight();
                 Camera.ZoomSetDistanceFlight(Page.Distance, Page.Duration/10);
