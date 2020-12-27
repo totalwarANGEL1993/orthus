@@ -862,9 +862,9 @@ function MultiplayerSystem:Install()
     end
     -- Select the rules
     self:OverrideUIStuff();
+    self:SuspendEverythingAtGameStart();
     if MPRuleset_Rules.Changeable then
         self.Data.RuleSelectionActive = true;
-        self:SuspendEverythingAtGameStart();
         StartSimpleJobEx(function()
             if Logic.GetTime() > 1 then
                 MPRuleset_Rules.Callbacks.OnMapLoaded();

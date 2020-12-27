@@ -96,7 +96,7 @@ end
 function QuestSystem.OnScreenInfo:Activate(_QuestID)
     local Quest = QuestSystem.Quests[_QuestID];
     self.m_Data[Quest.m_Receiver] = self.m_Data[Quest.m_Receiver] or {};
-    if Quest and Quest.m_Description and self:IsUsingOnScreenInfo(Quest) then
+    if Quest and Quest.m_Description and Quest.m_Description.Title and self:IsUsingOnScreenInfo(Quest) then
         table.insert(self.m_Data[Quest.m_Receiver], {
             QuestID   = _QuestID,
             Receiver  = Quest.m_Receiver,

@@ -379,14 +379,14 @@ QuestTemplate = {};
 ---
 -- Creates a quest.
 --
--- @param[type=string] _QuestName   Quest name
--- @param[type=number] _Receiver    Receiving player
--- @param[type=number] _Time        Completion time
--- @param[type=table]  _Objectives  List of objectives
--- @param[type=table]  _Conditions  List of conditions
--- @param[type=table]  _Rewards     List of rewards
--- @param[type=table]  _Reprisals   List of reprisals
--- @param[type=table]  _Description Quest description
+-- @param[type=string]  _QuestName   Quest name
+-- @param[type=number]  _Receiver    Receiving player
+-- @param[type=number]  _Time        Completion time
+-- @param[type=table]   _Objectives  List of objectives
+-- @param[type=table]   _Conditions  List of conditions
+-- @param[type=table]   _Rewards     List of rewards
+-- @param[type=table]   _Reprisals   List of reprisals
+-- @param[type=table]   _Description Quest description
 -- @within QuestTemplate
 --
 function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Conditions, _Rewards, _Reprisals, _Description)
@@ -401,6 +401,9 @@ function QuestTemplate:construct(_QuestName, _Receiver, _Time, _Objectives, _Con
     self.m_Fragments   = {{}, {}, 0};
 
     if _Description then
+        if _Description and _Description.Visible == nil then
+            _Description.Visible = true;
+        end
         self.m_Description = QuestSystem:RemoveFormattingPlaceholders(_Description);
     end
 
@@ -991,7 +994,7 @@ function QuestTemplate:Trigger()
     self:Reset();
 
     -- Add quest
-    if self.m_Description then
+    if self.m_Description and self.m_Description.Visible then
         if not self.m_Description.Position then
             self:CreateQuest();
         else
@@ -1025,7 +1028,7 @@ function QuestTemplate:Success()
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
 
-    if self.m_Description then
+    if self.m_Description and self.m_Description.Visible then
         self:QuestSetSuccessfull();
     end
     self:PushFragment();
@@ -1050,7 +1053,7 @@ function QuestTemplate:Fail()
     self.m_Briefing = nil;
     self:RemoveQuestMarkers();
 
-    if self.m_Description then
+    if self.m_Description and self.m_Description.Visible then
         self:QuestSetFailed();
     end
     self:PushFragment();
@@ -1090,7 +1093,7 @@ end
 --
 function QuestTemplate:Reset(_VanillaSpareDescription)
     -- Remove quest
-    if self.m_Description and not _VanillaSpareDescription then
+    if self.m_Description and self.m_Description.Visible and not _VanillaSpareDescription then
         self:RemoveQuest();
     end
 
@@ -1157,7 +1160,7 @@ end
 -- -------------------------------------------------------------------------- --
 
 function QuestTemplate:PushFragment()
-    if self.m_Description and self.m_Description.Type == FRAGMENTQUEST_OPEN then
+    if self.m_Description and self.m_Description.Visible and self.m_Description.Type == FRAGMENTQUEST_OPEN then
         for k, v in pairs(QuestSystem.Quests) do
             if v and v.m_Description and v.m_Description.Type ~= FRAGMENTQUEST_OPEN then
                 for i= 1, table.getn(v.m_Objectives), 1 do
@@ -1171,7 +1174,7 @@ function QuestTemplate:PushFragment()
 end
 
 function QuestTemplate:PullFragments()
-    if self.m_Description and (self.m_Description.Type == SUBQUEST_OPEN or self.m_Description.Type == MAINQUEST_OPEN) then
+    if self.m_Description and self.m_Description.Visible and (self.m_Description.Type == SUBQUEST_OPEN or self.m_Description.Type == MAINQUEST_OPEN) then
         self.m_Fragments = {{}, {}, 0};
         for i= 1, table.getn(self.m_Objectives), 1 do
             self:UpdateFragment(i);
@@ -1301,7 +1304,7 @@ function QuestTemplate:AttachFragments()
 end
 
 function QuestTemplate:CreateQuest()
-    if self.m_Description then
+    if self.m_Description and self.m_Description.Visible then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
             local QuestID = QuestSystem:GetNextFreeJornalID(self.m_Receiver);
             if QuestID == nil then
@@ -1340,7 +1343,7 @@ function QuestTemplate:CreateQuest()
 end
 
 function QuestTemplate:CreateQuestEx()
-    if self.m_Description and self.m_Description.Position then
+    if self.m_Description and self.m_Description.Visible and self.m_Description.Position then
         if self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
             local QuestID = QuestSystem:GetNextFreeJornalID(self.m_Receiver);
             if QuestID == nil then
@@ -1381,7 +1384,7 @@ function QuestTemplate:CreateQuestEx()
 end
 
 function QuestTemplate:QuestSetFailed()
-    if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+    if self.m_Description and self.m_Description.Visible and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
         if Jornal then
             if QuestTools.GetExtensionNumber() > 2 then
@@ -1404,7 +1407,7 @@ function QuestTemplate:QuestSetFailed()
 end
 
 function QuestTemplate:QuestSetSuccessfull()
-    if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+    if self.m_Description and self.m_Description.Visible and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
         if Jornal then
             if QuestTools.GetExtensionNumber() > 2 then
@@ -1427,7 +1430,7 @@ function QuestTemplate:QuestSetSuccessfull()
 end
 
 function QuestTemplate:RemoveQuest()
-    if self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
+    if self.m_Visible and self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
         if Jornal then
             if QuestTools.GetExtensionNumber() > 2 then

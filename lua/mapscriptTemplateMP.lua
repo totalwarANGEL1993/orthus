@@ -6,8 +6,8 @@
 -- ~~~                                                                    ~~~ --
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 
-gvBasePath = "data/maps/externalmap/qsb/";
-Script.Load(gvBasePath.. "multiplayermapscript.lua");
+gvBasePath = "data/maps/externalmap/";
+Script.Load(gvBasePath.. "qsb/multiplayermapscript.lua");
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 -- ~~~                            Ruleset                                 ~~~ --

@@ -22,22 +22,22 @@
 
 -- Load luabit implementation for lua 5.0
 if bit_logic_rshift == nil then
-    Script.Load(gvBasePath.. "lib/luabit50.lua");
+    Script.Load(gvBasePath.. "qsb/lib/luabit50.lua");
 end
 -- Load MD5 hash generator lib
 if md5 == nil then
-    Script.Load(gvBasePath.. "lib/md5.lua");
+    Script.Load(gvBasePath.. "qsb/lib/md5.lua");
 end
 -- Load entity find
 if EntityFind == nil then
-    Script.Load(gvBasePath.. "lib/entityfind.lua");
+    Script.Load(gvBasePath.. "qsb/lib/entityfind.lua");
 end
 -- Load Metatable fix
 if metatable == nil then
-    Script.Load(gvBasePath.. "lib/metatable.lua");
+    Script.Load(gvBasePath.. "qsb/lib/metatable.lua");
 end
 -- Load S5Hook
 if S5HookData == nil then
-    Script.Load(gvBasePath.. "lib/s5hook.lua");
+    Script.Load(gvBasePath.. "qsb/lib/s5hook.lua");
 end
 

@@ -366,6 +366,14 @@ function QuestBriefing:AddPages(_Briefing)
     -- @return[type=table] Created page
     --
     local AP = function(_Page)
+        if type(_Page) == "table" then
+            -- Add IDs automatically, if not provided
+            if _Page.MC then
+                for i= 1, table.getn(_Page.MC) do
+                    _Page.MC[i].ID = _Page.MC[i].ID or i;
+                end
+            end
+        end
         table.insert(_Briefing, _Page);
         return _Page;
     end
@@ -442,7 +450,7 @@ function QuestBriefing:AddPages(_Briefing)
         Page.RenderSky = true;
         Page.Signal    = false;
         for i= 7, table.getn(arg), 2 do
-            table.insert(Page.MC, {arg[i], arg[i+1], ID = math.ceil((i-6)/2)});
+            table.insert(Page.MC, {arg[i], arg[i+1]});
         end
         return Page;
     end
@@ -764,7 +772,7 @@ function QuestBriefing:ControlBriefing()
                 end
                 -- Next page after duration is up
                 local TimePassed = (Logic.GetTime() * 10) - self.m_Book[v][PageID].StartTime;
-                if TimePassed > self.m_Book[v][PageID].Duration then
+                if not self.m_Book[v][PageID].MC and TimePassed > self.m_Book[v][PageID].Duration then
                     self:NextPage(v, false);
                 end
             end

@@ -1,13 +1,13 @@
 -- Default mapscript for Multiplayer.
 
 -- Include globals
-Script.Load("data/script/maptools/main.lua");
 Script.Load("data/script/maptools/ai/support.lua");
 Script.Load("data/script/maptools/multiplayer/multiplayertools.lua");
 Script.Load("data/script/maptools/tools.lua");
 Script.Load("data/script/maptools/weathersets.lua");
 Script.Load("data/script/maptools/comfort.lua");
-Script.Load("data/script/maptools/mapeditortools.lua");
+Script.Load("data/script/maptools/dynamicfog.lua");
+Script.Load("data/script/maptools/extra2comfort.lua");
 
 -- Load QSB
 Script.Load(gvBasePath.. "core/oop.lua");
