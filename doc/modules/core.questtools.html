@@ -45,21 +45,19 @@
 <h2>Modules</h2>
 <ul class="nowrap">
   <li><a href="../modules/core.bugfixes.html">core.bugfixes</a></li>
-  <li><a href="../modules/core.mpsync.html">core.mpsync</a></li>
   <li><a href="../modules/core.oop.html">core.oop</a></li>
+  <li><a href="../modules/core.questbriefing.html">core.questbriefing</a></li>
   <li><a href="../modules/core.questdebug.html">core.questdebug</a></li>
+  <li><a href="../modules/core.questsync.html">core.questsync</a></li>
   <li><a href="../modules/core.questsystem.html">core.questsystem</a></li>
-  <li><a href="../modules/ext.information_ex2.html">ext.information_ex2</a></li>
+  <li><strong>core.questtools</strong></li>
   <li><a href="../modules/ext.interaction.html">ext.interaction</a></li>
   <li><a href="../modules/ext.onscreeninfo_ex2.html">ext.onscreeninfo_ex2</a></li>
-  <li><a href="../modules/ext.onscreeninfo_ex3.html">ext.onscreeninfo_ex3</a></li>
   <li><a href="../modules/ext.optionsmenu.html">ext.optionsmenu</a></li>
   <li><a href="../modules/ext.speed_ex2.html">ext.speed_ex2</a></li>
+  <li><a href="../modules/ext.troopgenerator.html">ext.troopgenerator</a></li>
   <li><a href="../modules/ext.workplace_ex2.html">ext.workplace_ex2</a></li>
   <li><a href="../modules/lib.libloader.html">lib.libloader</a></li>
-  <li><a href="../modules/lib.luabit50.html">lib.luabit50</a></li>
-  <li><a href="../modules/lib.metatable.html">lib.metatable</a></li>
-  <li><strong>lib.qsbtools</strong></li>
   <li><a href="../modules/multiplayersystem.html">multiplayersystem</a></li>
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
@@ -69,11 +67,13 @@
 
 <div id="content">
 
-<h1>Module <code>lib.qsbtools</code></h1>
-<p></p>
+<h1>Module <code>core.questtools</code></h1>
+<p>This module provides some helpful tools.</p>
+<p>
 <p> <b>Required modules:</b>
  <ul>
  <li>qsb.core.oop</li>
+ <li>qsb.lib.questsync</li>
  </ul>
 </p>
 
@@ -81,81 +81,113 @@
 <h2><a href="#Utils">Utils</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.FindValue">QSBTools.FindValue (_Value, _Table)</a></td>
-	<td class="summary">Checks if a value is inside a table.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#QSBTools.GetExtensionNumber">QSBTools.GetExtensionNumber ()</a></td>
+	<td class="name" nowrap><a href="#QuestTools.GetExtensionNumber">QuestTools.GetExtensionNumber ()</a></td>
 	<td class="summary">Returns the extension number.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.GetLanguage">QSBTools.GetLanguage ()</a></td>
+	<td class="name" nowrap><a href="#QuestTools.GetKeyByValue">QuestTools.GetKeyByValue (_Value, _Table)</a></td>
+	<td class="summary">Returns the key of the given value in the table if value is existing.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetLanguage">QuestTools.GetLanguage ()</a></td>
 	<td class="summary">Returns the short name of the game language.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.GetLocalizedTextInTable">QSBTools.GetLocalizedTextInTable (_Text)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.GetLocalizedTextInTable">QuestTools.GetLocalizedTextInTable (_Text)</a></td>
 	<td class="summary">Returns the localized text from the input.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.IsInTable">QuestTools.IsInTable (_Value, _Table)</a></td>
+	<td class="summary">Checks if a value is inside a table.</td>
 	</tr>
 </table>
 <h2><a href="#Entities">Entities</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.CreateNameForEntity">QSBTools.CreateNameForEntity (_eID)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.CreateNameForEntity">QuestTools.CreateNameForEntity (_eID)</a></td>
 	<td class="summary">Returns the script name of the entity.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.FindAllEntities">QSBTools.FindAllEntities (_PlayerID, _Type, _AreaSize, _Position)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.FindAllEntities">QuestTools.FindAllEntities (_PlayerID, _Type, _AreaSize, _Position)</a></td>
 	<td class="summary">Checks worldwide for doodad entities or player entities.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.GetDistance">QSBTools.GetDistance (_pos1, _pos2)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.GetAllCannons">QuestTools.GetAllCannons (_PlayerID)</a></td>
+	<td class="summary">Returns a list of all cannons of the player.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetAllLeader">QuestTools.GetAllLeader (_PlayerID)</a></td>
+	<td class="summary">Returns a list of all leader of the player.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetAngleBetween">QuestTools.GetAngleBetween (_Pos1, _Pos2)</a></td>
+	<td class="summary">Returns Returns the angle between the two given positions or entities.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetCirclePosition">QuestTools.GetCirclePosition (_Position, _AreaSize, _Angle)</a></td>
+	<td class="summary">Returns a position on a circle at the given angle.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetDistance">QuestTools.GetDistance (_pos1, _pos2)</a></td>
 	<td class="summary">Returns the distance between two positions or entities.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.GetEntitiesByPrefix">QSBTools.GetEntitiesByPrefix (_Prefix)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.GetEntitiesByPrefix">QuestTools.GetEntitiesByPrefix (_Prefix)</a></td>
 	<td class="summary">Finds all entities numbered from 1 to n with a common prefix.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.GetGeometricFocus">QSBTools.GetGeometricFocus (_pos1)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.GetEntityCategories">QuestTools.GetEntityCategories (_Entity)</a></td>
+	<td class="summary">Returns all categories the entity is in.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetGeometricFocus">QuestTools.GetGeometricFocus (_pos1)</a></td>
 	<td class="summary">Returns the geometric focus of the passed positions.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.GetPlayerEntities">QSBTools.GetPlayerEntities (_PlayerID, _EntityType)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.GetPlayerEntities">QuestTools.GetPlayerEntities (_PlayerID, _EntityType)</a></td>
 	<td class="summary">Finds all entities of the player that have the type.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.GetReachablePosition">QSBTools.GetReachablePosition (_Entity, _Target)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.GetReachablePosition">QuestTools.GetReachablePosition (_Entity, _Target)</a></td>
 	<td class="summary">Returns a reachable position for the entity or nil if no position was found.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.IsBuildingBeingUpgraded">QSBTools.IsBuildingBeingUpgraded (_pos)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.IsBuildingBeingUpgraded">QuestTools.IsBuildingBeingUpgraded (_Entity)</a></td>
 	<td class="summary">Checks if a building is currently being upgraded.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.IsDead">QSBTools.IsDead (_input)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.IsDead">QuestTools.IsDead (_input)</a></td>
 	<td class="summary">Checks if an army or entity is dead.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.IsValidPosition">QSBTools.IsValidPosition (_pos)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.IsValidPosition">QuestTools.IsValidPosition (_pos)</a></td>
 	<td class="summary">Checks if the position table contains a valid position on the map.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.SoldierGetLeader">QSBTools.SoldierGetLeader (_eID)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.IsVisible">QuestTools.IsVisible (_Entity)</a></td>
+	<td class="summary">Returns true if the entity is visible.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.SetVisible">QuestTools.SetVisible (_Entity, _Flag)</a></td>
+	<td class="summary">Sets the visibility of the entity.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.SoldierGetLeader">QuestTools.SoldierGetLeader (_eID)</a></td>
 	<td class="summary">Returns the leader entity ID of the soldier.</td>
 	</tr>
 </table>
 <h2><a href="#Diplomacy">Diplomacy</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.AreAlliesInArea">QSBTools.AreAlliesInArea (_player, _position, _range)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.AreAlliesInArea">QuestTools.AreAlliesInArea (_player, _position, _range)</a></td>
 	<td class="summary">Checks the area for entities of an allied player.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.AreEnemiesInArea">QSBTools.AreEnemiesInArea (_player, _position, _range)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.AreEnemiesInArea">QuestTools.AreEnemiesInArea (_player, _position, _range)</a></td>
 	<td class="summary">Checks the area for entities of an enemy player.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.AreEntitiesOfDiplomacyStateInArea">QSBTools.AreEntitiesOfDiplomacyStateInArea (_player, _position, _range, _state)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.AreEntitiesOfDiplomacyStateInArea">QuestTools.AreEntitiesOfDiplomacyStateInArea (_player, _position, _range, _state)</a></td>
 	<td class="summary">Checks the area for entities of other parties with a diplomatic state to
  the player.</td>
 	</tr>
@@ -163,26 +195,22 @@
 <h2><a href="#Jobs">Jobs</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.StartInlineJob">QSBTools.StartInlineJob (_EventType, _Function, ...)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.StartInlineJob">QuestTools.StartInlineJob (_EventType, _Function, ...)</a></td>
 	<td class="summary">Creates a new inline job.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.StartSimpleHiResJobEx">QSBTools.StartSimpleHiResJobEx (_Function, ...)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.StartSimpleHiResJobEx">QuestTools.StartSimpleHiResJobEx (_Function, ...)</a></td>
 	<td class="summary">Creates an inline job that is executed ten times per second.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.StartSimpleJobEx">QSBTools.StartSimpleJobEx (_Function, ...)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.StartSimpleJobEx">QuestTools.StartSimpleJobEx (_Function, ...)</a></td>
 	<td class="summary">Creates an inline job that is executed every second.</td>
 	</tr>
 </table>
 <h2><a href="#AI">AI</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#QSBTools.IsArmyNear">QSBTools.IsArmyNear (_Army, _Target, _Distance)</a></td>
-	<td class="summary">Checks if an army is near the position.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#QSBTools.SameSector">QSBTools.SameSector (_pos1, _pos2)</a></td>
+	<td class="name" nowrap><a href="#QuestTools.SameSector">QuestTools.SameSector (_pos1, _pos2)</a></td>
 	<td class="summary">Checks, if the positions are in the same sector.</td>
 	</tr>
 </table>
@@ -195,8 +223,104 @@
 
     <dl class="function">
     <dt>
-    <a name = "QSBTools.FindValue"></a>
-    <strong>QSBTools.FindValue (_Value, _Table)</strong>
+    <a name = "QuestTools.GetExtensionNumber"></a>
+    <strong>QuestTools.GetExtensionNumber ()</strong>
+    </dt>
+    <dd>
+    Returns the extension number.  This function can be used to identify the
+ current expansion of the game.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        Extension
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetKeyByValue"></a>
+    <strong>QuestTools.GetKeyByValue (_Value, _Table)</strong>
+    </dt>
+    <dd>
+    Returns the key of the given value in the table if value is existing.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Value</span>
+         Value of key
+        </li>
+        <li><span class="parameter">_Table</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Table to search
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Key of value
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetLanguage"></a>
+    <strong>QuestTools.GetLanguage ()</strong>
+    </dt>
+    <dd>
+    Returns the short name of the game language.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        Short name
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetLocalizedTextInTable"></a>
+    <strong>QuestTools.GetLocalizedTextInTable (_Text)</strong>
+    </dt>
+    <dd>
+    Returns the localized text from the input.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Text</span>
+         Text to translate
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.IsInTable"></a>
+    <strong>QuestTools.IsInTable (_Value, _Table)</strong>
     </dt>
     <dd>
     Checks if a value is inside a table.
@@ -224,80 +348,13 @@
 
 
 </dd>
-    <dt>
-    <a name = "QSBTools.GetExtensionNumber"></a>
-    <strong>QSBTools.GetExtensionNumber ()</strong>
-    </dt>
-    <dd>
-    Returns the extension number.  This function can be used to identify the
- current expansion of the game.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">number</span></span>
-        Extension
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "QSBTools.GetLanguage"></a>
-    <strong>QSBTools.GetLanguage ()</strong>
-    </dt>
-    <dd>
-    Returns the short name of the game language.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-        Short name
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "QSBTools.GetLocalizedTextInTable"></a>
-    <strong>QSBTools.GetLocalizedTextInTable (_Text)</strong>
-    </dt>
-    <dd>
-    Returns the localized text from the input.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_Text</span>
-         Text to translate
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-
-    </ol>
-
-
-
-
-</dd>
 </dl>
     <h2 class="section-header "><a name="Entities"></a>Entities</h2>
 
     <dl class="function">
     <dt>
-    <a name = "QSBTools.CreateNameForEntity"></a>
-    <strong>QSBTools.CreateNameForEntity (_eID)</strong>
+    <a name = "QuestTools.CreateNameForEntity"></a>
+    <strong>QuestTools.CreateNameForEntity (_eID)</strong>
     </dt>
     <dd>
     Returns the script name of the entity.  If the entity do not have a name a
@@ -325,8 +382,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.FindAllEntities"></a>
-    <strong>QSBTools.FindAllEntities (_PlayerID, _Type, _AreaSize, _Position)</strong>
+    <a name = "QuestTools.FindAllEntities"></a>
+    <strong>QuestTools.FindAllEntities (_PlayerID, _Type, _AreaSize, _Position)</strong>
     </dt>
     <dd>
     Checks worldwide for doodad entities or player entities.
@@ -367,8 +424,125 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.GetDistance"></a>
-    <strong>QSBTools.GetDistance (_pos1, _pos2)</strong>
+    <a name = "QuestTools.GetAllCannons"></a>
+    <strong>QuestTools.GetAllCannons (_PlayerID)</strong>
+    </dt>
+    <dd>
+    Returns a list of all cannons of the player.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         ID of player
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        List of cannons
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetAllLeader"></a>
+    <strong>QuestTools.GetAllLeader (_PlayerID)</strong>
+    </dt>
+    <dd>
+    Returns a list of all leader of the player.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         ID of player
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        List of leaders
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetAngleBetween"></a>
+    <strong>QuestTools.GetAngleBetween (_Pos1, _Pos2)</strong>
+    </dt>
+    <dd>
+    Returns Returns the angle between the two given positions or entities.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Pos1</span>
+         First position
+        </li>
+        <li><span class="parameter">_Pos2</span>
+         Second position
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        Angle between positions
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetCirclePosition"></a>
+    <strong>QuestTools.GetCirclePosition (_Position, _AreaSize, _Angle)</strong>
+    </dt>
+    <dd>
+    Returns a position on a circle at the given angle.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Position</span>
+                      Schriptname or id of building
+        </li>
+        <li><span class="parameter">_AreaSize</span>
+            <span class="types"><span class="type">number</span></span>
+         Radius of circle
+        </li>
+        <li><span class="parameter">_Angle</span>
+            <span class="types"><span class="type">number</span></span>
+            Angle on circle
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Position on circle
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetDistance"></a>
+    <strong>QuestTools.GetDistance (_pos1, _pos2)</strong>
     </dt>
     <dd>
     Returns the distance between two positions or entities.
@@ -396,8 +570,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.GetEntitiesByPrefix"></a>
-    <strong>QSBTools.GetEntitiesByPrefix (_Prefix)</strong>
+    <a name = "QuestTools.GetEntitiesByPrefix"></a>
+    <strong>QuestTools.GetEntitiesByPrefix (_Prefix)</strong>
     </dt>
     <dd>
     Finds all entities numbered from 1 to n with a common prefix.
@@ -423,8 +597,34 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.GetGeometricFocus"></a>
-    <strong>QSBTools.GetGeometricFocus (_pos1)</strong>
+    <a name = "QuestTools.GetEntityCategories"></a>
+    <strong>QuestTools.GetEntityCategories (_Entity)</strong>
+    </dt>
+    <dd>
+    Returns all categories the entity is in.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Entity</span>
+         Scriptname or ID
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Category list
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetGeometricFocus"></a>
+    <strong>QuestTools.GetGeometricFocus (_pos1)</strong>
     </dt>
     <dd>
     Returns the geometric focus of the passed positions.
@@ -452,8 +652,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.GetPlayerEntities"></a>
-    <strong>QSBTools.GetPlayerEntities (_PlayerID, _EntityType)</strong>
+    <a name = "QuestTools.GetPlayerEntities"></a>
+    <strong>QuestTools.GetPlayerEntities (_PlayerID, _EntityType)</strong>
     </dt>
     <dd>
     Finds all entities of the player that have the type.
@@ -483,8 +683,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.GetReachablePosition"></a>
-    <strong>QSBTools.GetReachablePosition (_Entity, _Target)</strong>
+    <a name = "QuestTools.GetReachablePosition"></a>
+    <strong>QuestTools.GetReachablePosition (_Entity, _Target)</strong>
     </dt>
     <dd>
     Returns a reachable position for the entity or nil if no position was found.
@@ -512,8 +712,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.IsBuildingBeingUpgraded"></a>
-    <strong>QSBTools.IsBuildingBeingUpgraded (_pos)</strong>
+    <a name = "QuestTools.IsBuildingBeingUpgraded"></a>
+    <strong>QuestTools.IsBuildingBeingUpgraded (_Entity)</strong>
     </dt>
     <dd>
     Checks if a building is currently being upgraded.
@@ -521,7 +721,7 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_pos</span>
+        <li><span class="parameter">_Entity</span>
          Schriptname or id of building
         </li>
     </ul>
@@ -538,8 +738,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.IsDead"></a>
-    <strong>QSBTools.IsDead (_input)</strong>
+    <a name = "QuestTools.IsDead"></a>
+    <strong>QuestTools.IsDead (_input)</strong>
     </dt>
     <dd>
     Checks if an army or entity is dead.  If an army has not been created yet
@@ -566,8 +766,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.IsValidPosition"></a>
-    <strong>QSBTools.IsValidPosition (_pos)</strong>
+    <a name = "QuestTools.IsValidPosition"></a>
+    <strong>QuestTools.IsValidPosition (_pos)</strong>
     </dt>
     <dd>
     Checks if the position table contains a valid position on the map.
@@ -593,13 +793,61 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.SoldierGetLeader"></a>
-    <strong>QSBTools.SoldierGetLeader (_eID)</strong>
+    <a name = "QuestTools.IsVisible"></a>
+    <strong>QuestTools.IsVisible (_Entity)</strong>
+    </dt>
+    <dd>
+    Returns true if the entity is visible.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Entity</span>
+         Skriptname or ID of entity
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Entity is visible
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.SetVisible"></a>
+    <strong>QuestTools.SetVisible (_Entity, _Flag)</strong>
+    </dt>
+    <dd>
+    Sets the visibility of the entity.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Entity</span>
+         Skriptname or ID of entity
+        </li>
+        <li><span class="parameter">_Flag</span>
+            <span class="types"><span class="type">boolean</span></span>
+           Visibility flag
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.SoldierGetLeader"></a>
+    <strong>QuestTools.SoldierGetLeader (_eID)</strong>
     </dt>
     <dd>
     Returns the leader entity ID of the soldier.
-<p> FIXME: Not compatible to the History Edition!
-
 
 
     <h3>Parameters:</h3>
@@ -626,8 +874,8 @@
 
     <dl class="function">
     <dt>
-    <a name = "QSBTools.AreAlliesInArea"></a>
-    <strong>QSBTools.AreAlliesInArea (_player, _position, _range)</strong>
+    <a name = "QuestTools.AreAlliesInArea"></a>
+    <strong>QuestTools.AreAlliesInArea (_player, _position, _range)</strong>
     </dt>
     <dd>
     Checks the area for entities of an allied player.
@@ -661,8 +909,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.AreEnemiesInArea"></a>
-    <strong>QSBTools.AreEnemiesInArea (_player, _position, _range)</strong>
+    <a name = "QuestTools.AreEnemiesInArea"></a>
+    <strong>QuestTools.AreEnemiesInArea (_player, _position, _range)</strong>
     </dt>
     <dd>
     Checks the area for entities of an enemy player.
@@ -696,8 +944,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.AreEntitiesOfDiplomacyStateInArea"></a>
-    <strong>QSBTools.AreEntitiesOfDiplomacyStateInArea (_player, _position, _range, _state)</strong>
+    <a name = "QuestTools.AreEntitiesOfDiplomacyStateInArea"></a>
+    <strong>QuestTools.AreEntitiesOfDiplomacyStateInArea (_player, _position, _range, _state)</strong>
     </dt>
     <dd>
     Checks the area for entities of other parties with a diplomatic state to
@@ -743,8 +991,8 @@
 
     <dl class="function">
     <dt>
-    <a name = "QSBTools.StartInlineJob"></a>
-    <strong>QSBTools.StartInlineJob (_EventType, _Function, ...)</strong>
+    <a name = "QuestTools.StartInlineJob"></a>
+    <strong>QuestTools.StartInlineJob (_EventType, _Function, ...)</strong>
     </dt>
     <dd>
     Creates a new inline job.
@@ -780,8 +1028,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.StartSimpleHiResJobEx"></a>
-    <strong>QSBTools.StartSimpleHiResJobEx (_Function, ...)</strong>
+    <a name = "QuestTools.StartSimpleHiResJobEx"></a>
+    <strong>QuestTools.StartSimpleHiResJobEx (_Function, ...)</strong>
     </dt>
     <dd>
     Creates an inline job that is executed ten times per second.
@@ -810,8 +1058,8 @@
 
 </dd>
     <dt>
-    <a name = "QSBTools.StartSimpleJobEx"></a>
-    <strong>QSBTools.StartSimpleJobEx (_Function, ...)</strong>
+    <a name = "QuestTools.StartSimpleJobEx"></a>
+    <strong>QuestTools.StartSimpleJobEx (_Function, ...)</strong>
     </dt>
     <dd>
     Creates an inline job that is executed every second.
@@ -844,42 +1092,8 @@
 
     <dl class="function">
     <dt>
-    <a name = "QSBTools.IsArmyNear"></a>
-    <strong>QSBTools.IsArmyNear (_Army, _Target, _Distance)</strong>
-    </dt>
-    <dd>
-    Checks if an army is near the position.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_Army</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
-             Army to check
-        </li>
-        <li><span class="parameter">_Target</span>
-           Target position
-        </li>
-        <li><span class="parameter">_Distance</span>
-            <span class="types"><span class="type">number</span></span>
-         Area size
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">boolean</span></span>
-        Army is near
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "QSBTools.SameSector"></a>
-    <strong>QSBTools.SameSector (_pos1, _pos2)</strong>
+    <a name = "QuestTools.SameSector"></a>
+    <strong>QuestTools.SameSector (_pos1, _pos2)</strong>
     </dt>
     <dd>
     Checks, if the positions are in the same sector.  If 2 possitions are not
@@ -915,7 +1129,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2020-12-14 16:33:15 </i>
+<i style="float:right;">Last updated 2020-12-27 16:47:24 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

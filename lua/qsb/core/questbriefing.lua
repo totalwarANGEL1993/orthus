@@ -130,7 +130,7 @@ function QuestBriefing:OverrideBriefingFunctions()
     -- the target.</li>
     -- </ul>
     --
-    -- @param[type=table] _briefing Briefing
+    -- @param[type=table] _Briefing Briefing
     -- @return[type=function] AP function
     -- @return[type=function] ASP function
     -- @return[type=function] AMC function

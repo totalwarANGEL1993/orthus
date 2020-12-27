@@ -36,6 +36,7 @@
 <ul>
 <li><a href="#Functions">Functions</a></li>
 <li><a href="#Classes">Classes</a></li>
+<li><a href="#NonPlayerCharacter">NonPlayerCharacter</a></li>
 <li><a href="#NonPlayerMerchant">NonPlayerMerchant</a></li>
 </ul>
 
@@ -43,21 +44,19 @@
 <h2>Modules</h2>
 <ul class="nowrap">
   <li><a href="../modules/core.bugfixes.html">core.bugfixes</a></li>
-  <li><a href="../modules/core.mpsync.html">core.mpsync</a></li>
   <li><a href="../modules/core.oop.html">core.oop</a></li>
+  <li><a href="../modules/core.questbriefing.html">core.questbriefing</a></li>
   <li><a href="../modules/core.questdebug.html">core.questdebug</a></li>
+  <li><a href="../modules/core.questsync.html">core.questsync</a></li>
   <li><a href="../modules/core.questsystem.html">core.questsystem</a></li>
-  <li><a href="../modules/ext.information_ex2.html">ext.information_ex2</a></li>
+  <li><a href="../modules/core.questtools.html">core.questtools</a></li>
   <li><strong>ext.interaction</strong></li>
   <li><a href="../modules/ext.onscreeninfo_ex2.html">ext.onscreeninfo_ex2</a></li>
-  <li><a href="../modules/ext.onscreeninfo_ex3.html">ext.onscreeninfo_ex3</a></li>
   <li><a href="../modules/ext.optionsmenu.html">ext.optionsmenu</a></li>
   <li><a href="../modules/ext.speed_ex2.html">ext.speed_ex2</a></li>
+  <li><a href="../modules/ext.troopgenerator.html">ext.troopgenerator</a></li>
   <li><a href="../modules/ext.workplace_ex2.html">ext.workplace_ex2</a></li>
   <li><a href="../modules/lib.libloader.html">lib.libloader</a></li>
-  <li><a href="../modules/lib.luabit50.html">lib.luabit50</a></li>
-  <li><a href="../modules/lib.metatable.html">lib.metatable</a></li>
-  <li><a href="../modules/lib.qsbtools.html">lib.qsbtools</a></li>
   <li><a href="../modules/multiplayersystem.html">multiplayersystem</a></li>
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
@@ -68,10 +67,16 @@
 <div id="content">
 
 <h1>Module <code>ext.interaction</code></h1>
-<p>The system allows to create special traders based of the merchant widget.</p>
+<p>Implements a npc system that can be run seperatly to the vanilla npc system.</p>
 <p>
- Units, resources, technologies and custom actions can be traded and
- all offers can respawn. Example for a merchant:
+<p> Normal npcs can be configured just as the vanilla npcs. To create a normal
+ npc use the following:
+ <pre>local NPC = new(NonPlayerCharacter, "myNPC")
+     :SetCallback(SomeFunction)
+     :Activate();</pre>
+<p> The system also allows to create special traders based of the merchant
+ widget. Units, resources and custom actions can be traded and all offers
+ can respawn. Example for a merchant:
  <pre>local NPC = new(NonPlayerMerchant, "myMerchant")
      :AddResourceOffer(ResourceType.Clay, 300, {Gold = 150}, 15, 2*60)
      :Activate();</pre>
@@ -82,7 +87,7 @@
 <p> <b>Required modules:</b>
  <ul>
  <li>qsb.core.oop</li>
- <li>qsb.core.mpsync</li>
+ <li>qsb.core.questsync</li>
  <li>qsb.core.questsystem</li>
  </ul>
 </p>
@@ -98,8 +103,72 @@
 <h2><a href="#Classes">Classes</a></h2>
 <table class="function_list">
 	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter">NonPlayerCharacter</a></td>
+	<td class="summary">Base class for NPCs that implements the vanilla functionality of an NPC.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#NonPlayerMerchant">NonPlayerMerchant</a></td>
-	<td class="summary">Base class for NPCs that implements the vanilla functionality of an npc.</td>
+	<td class="summary">Base class for NPCs that implements the functionallity of an merchant.</td>
+	</tr>
+</table>
+<h2><a href="#NonPlayerCharacter">NonPlayerCharacter</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:Activate">NonPlayerCharacter:Activate ()</a></td>
+	<td class="summary">Activates the NPC</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:AddStrayPoint">NonPlayerCharacter:AddStrayPoint (_Waypoint)</a></td>
+	<td class="summary">Adds a stray position to the npc.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:AddWaypoint">NonPlayerCharacter:AddWaypoint (_Waypoint)</a></td>
+	<td class="summary">Adds a waypoint to the npc.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:Deactivate">NonPlayerCharacter:Deactivate ()</a></td>
+	<td class="summary">Deactivates the NPC.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:InUseByQuest">NonPlayerCharacter:InUseByQuest ()</a></td>
+	<td class="summary">Checks if an npc is used by any quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:IsActive">NonPlayerCharacter:IsActive ()</a></td>
+	<td class="summary">Returns true, if the npc is currently active.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:SetCallback">NonPlayerCharacter:SetCallback (_Callback)</a></td>
+	<td class="summary">Sets a talking callback for the npc.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:SetFollow">NonPlayerCharacter:SetFollow (_Hero)</a></td>
+	<td class="summary">Sets the hero this npc is following.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:SetHero">NonPlayerCharacter:SetHero (_Hero)</a></td>
+	<td class="summary">Sets the hero that can speak to the npc.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:SetHeroInfo">NonPlayerCharacter:SetHeroInfo (_Info)</a></td>
+	<td class="summary">Sets the information text, if the wrong hero talked to the npc</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:SetTarget">NonPlayerCharacter:SetTarget (_Target)</a></td>
+	<td class="summary">Sets a target destination until the npc is following the hero.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:SetWaittime">NonPlayerCharacter:SetWaittime (_Waittime)</a></td>
+	<td class="summary">Overwrites the default waittime between two waypoints.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:SetWayCallback">NonPlayerCharacter:SetWayCallback (_Callback)</a></td>
+	<td class="summary">Sets an alternate callback that will be triggered when the npc is on his
+ way to a destination.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#NonPlayerCharacter:TalkedTo">NonPlayerCharacter:TalkedTo ()</a></td>
+	<td class="summary">Checks, if some hero talked to this npc.</td>
 	</tr>
 </table>
 <h2><a href="#NonPlayerMerchant">NonPlayerMerchant</a></h2>
@@ -184,11 +253,32 @@
 
     <dl class="function">
     <dt>
+    <a name = "NonPlayerCharacter"></a>
+    <strong>NonPlayerCharacter</strong>
+    </dt>
+    <dd>
+    Base class for NPCs that implements the vanilla functionality of an NPC.
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">_ScriptName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Script name of NPC
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "NonPlayerMerchant"></a>
     <strong>NonPlayerMerchant</strong>
     </dt>
     <dd>
-    Base class for NPCs that implements the vanilla functionality of an npc.
+    Base class for NPCs that implements the functionallity of an merchant.
 
 
     <h3>Fields:</h3>
@@ -199,6 +289,348 @@
         </li>
     </ul>
 
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="NonPlayerCharacter"></a>NonPlayerCharacter</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "NonPlayerCharacter:Activate"></a>
+    <strong>NonPlayerCharacter:Activate ()</strong>
+    </dt>
+    <dd>
+    Activates the NPC
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:AddStrayPoint"></a>
+    <strong>NonPlayerCharacter:AddStrayPoint (_Waypoint)</strong>
+    </dt>
+    <dd>
+    Adds a stray position to the npc.  The npc will walk to a random waypoint
+ from the stray list.
+ Waypoints must be reachable!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Waypoint</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Waypoint to pass
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:AddWaypoint"></a>
+    <strong>NonPlayerCharacter:AddWaypoint (_Waypoint)</strong>
+    </dt>
+    <dd>
+    Adds a waypoint to the npc.  The npc will move over every waypoint to the
+ destination. The last waypoint is used as destination.
+ Waypoints must be reachable!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Waypoint</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Waypoint to pass
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:Deactivate"></a>
+    <strong>NonPlayerCharacter:Deactivate ()</strong>
+    </dt>
+    <dd>
+    Deactivates the NPC.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:InUseByQuest"></a>
+    <strong>NonPlayerCharacter:InUseByQuest ()</strong>
+    </dt>
+    <dd>
+    Checks if an npc is used by any quest.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Is used by quest
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:IsActive"></a>
+    <strong>NonPlayerCharacter:IsActive ()</strong>
+    </dt>
+    <dd>
+    Returns true, if the npc is currently active.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        NPC is active
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:SetCallback"></a>
+    <strong>NonPlayerCharacter:SetCallback (_Callback)</strong>
+    </dt>
+    <dd>
+    Sets a talking callback for the npc.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Callback</span>
+            <span class="types"><span class="type">function</span></span>
+         Function to call
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:SetFollow"></a>
+    <strong>NonPlayerCharacter:SetFollow (_Hero)</strong>
+    </dt>
+    <dd>
+    Sets the hero this npc is following.  To let him follow anybody set hero
+ as true.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Hero</span>
+         Hero to follow
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:SetHero"></a>
+    <strong>NonPlayerCharacter:SetHero (_Hero)</strong>
+    </dt>
+    <dd>
+    Sets the hero that can speak to the npc.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Hero</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Scriptname of hero
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:SetHeroInfo"></a>
+    <strong>NonPlayerCharacter:SetHeroInfo (_Info)</strong>
+    </dt>
+    <dd>
+    Sets the information text, if the wrong hero talked to the npc
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Info</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Info message
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:SetTarget"></a>
+    <strong>NonPlayerCharacter:SetTarget (_Target)</strong>
+    </dt>
+    <dd>
+    Sets a target destination until the npc is following the hero.
+ Must be reachable!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Target</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Destination of npc
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:SetWaittime"></a>
+    <strong>NonPlayerCharacter:SetWaittime (_Waittime)</strong>
+    </dt>
+    <dd>
+    Overwrites the default waittime between two waypoints.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Waittime</span>
+            <span class="types"><span class="type">number</span></span>
+         time to wait
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:SetWayCallback"></a>
+    <strong>NonPlayerCharacter:SetWayCallback (_Callback)</strong>
+    </dt>
+    <dd>
+    Sets an alternate callback that will be triggered when the npc is on his
+ way to a destination.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Callback</span>
+            <span class="types"><span class="type">function</span></span>
+         Function to call
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        self
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "NonPlayerCharacter:TalkedTo"></a>
+    <strong>NonPlayerCharacter:TalkedTo ()</strong>
+    </dt>
+    <dd>
+    Checks, if some hero talked to this npc.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Talked to
+    </ol>
 
 
 
@@ -591,7 +1023,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2020-12-14 16:33:15 </i>
+<i style="float:right;">Last updated 2020-12-27 16:47:24 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

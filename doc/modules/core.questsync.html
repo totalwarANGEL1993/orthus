@@ -35,28 +35,26 @@
 <h2>Contents</h2>
 <ul>
 <li><a href="#Functions">Functions</a></li>
-<li><a href="#MPSync">MPSync</a></li>
+<li><a href="#QuestSync">QuestSync</a></li>
 </ul>
 
 
 <h2>Modules</h2>
 <ul class="nowrap">
   <li><a href="../modules/core.bugfixes.html">core.bugfixes</a></li>
-  <li><strong>core.mpsync</strong></li>
   <li><a href="../modules/core.oop.html">core.oop</a></li>
+  <li><a href="../modules/core.questbriefing.html">core.questbriefing</a></li>
   <li><a href="../modules/core.questdebug.html">core.questdebug</a></li>
+  <li><strong>core.questsync</strong></li>
   <li><a href="../modules/core.questsystem.html">core.questsystem</a></li>
-  <li><a href="../modules/ext.information_ex2.html">ext.information_ex2</a></li>
+  <li><a href="../modules/core.questtools.html">core.questtools</a></li>
   <li><a href="../modules/ext.interaction.html">ext.interaction</a></li>
   <li><a href="../modules/ext.onscreeninfo_ex2.html">ext.onscreeninfo_ex2</a></li>
-  <li><a href="../modules/ext.onscreeninfo_ex3.html">ext.onscreeninfo_ex3</a></li>
   <li><a href="../modules/ext.optionsmenu.html">ext.optionsmenu</a></li>
   <li><a href="../modules/ext.speed_ex2.html">ext.speed_ex2</a></li>
+  <li><a href="../modules/ext.troopgenerator.html">ext.troopgenerator</a></li>
   <li><a href="../modules/ext.workplace_ex2.html">ext.workplace_ex2</a></li>
   <li><a href="../modules/lib.libloader.html">lib.libloader</a></li>
-  <li><a href="../modules/lib.luabit50.html">lib.luabit50</a></li>
-  <li><a href="../modules/lib.metatable.html">lib.metatable</a></li>
-  <li><a href="../modules/lib.qsbtools.html">lib.qsbtools</a></li>
   <li><a href="../modules/multiplayersystem.html">multiplayersystem</a></li>
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
@@ -66,7 +64,7 @@
 
 <div id="content">
 
-<h1>Module <code>core.mpsync</code></h1>
+<h1>Module <code>core.questsync</code></h1>
 <p>This module provides a simple synchronization for multiplayer maps.</p>
 <p>
 <p> Synchronization is done by creating an event that houses a function and
@@ -75,7 +73,7 @@
 <p> <b>Required modules:</b>
  <ul>
  <li>qsb.core.oop</li>
- <li>qsb.lib.qsbtools</li>
+ <li>qsb.lib.questtools</li>
  </ul>
 </p>
 
@@ -83,22 +81,22 @@
 <h2><a href="#Functions">Functions</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#MPSync:CreateScriptEvent">MPSync:CreateScriptEvent (_Function)</a></td>
+	<td class="name" nowrap><a href="#QuestSync:CreateScriptEvent">QuestSync:CreateScriptEvent (_Function)</a></td>
 	<td class="summary">Creates an script event and returns the event ID.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#MPSync:SnchronizedCall">MPSync:SnchronizedCall (_Function, ...)</a></td>
+	<td class="name" nowrap><a href="#QuestSync:SnchronizedCall">QuestSync:SnchronizedCall (_ID, ...)</a></td>
 	<td class="summary">Calls the script event synchronous for all players.</td>
 	</tr>
 </table>
-<h2><a href="#MPSync">MPSync</a></h2>
+<h2><a href="#QuestSync">QuestSync</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#MPSync:GetActivePlayers">MPSync:GetActivePlayers ()</a></td>
+	<td class="name" nowrap><a href="#QuestSync:GetActivePlayers">QuestSync:GetActivePlayers ()</a></td>
 	<td class="summary">Returns the number of human players.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#MPSync:GetTeamOfPlayer">MPSync:GetTeamOfPlayer (_PlayerID)</a></td>
+	<td class="name" nowrap><a href="#QuestSync:GetTeamOfPlayer">QuestSync:GetTeamOfPlayer (_PlayerID)</a></td>
 	<td class="summary">Returns the team the player is in.</td>
 	</tr>
 </table>
@@ -111,8 +109,8 @@
 
     <dl class="function">
     <dt>
-    <a name = "MPSync:CreateScriptEvent"></a>
-    <strong>MPSync:CreateScriptEvent (_Function)</strong>
+    <a name = "QuestSync:CreateScriptEvent"></a>
+    <strong>QuestSync:CreateScriptEvent (_Function)</strong>
     </dt>
     <dd>
     Creates an script event and returns the event ID.  Use the ID to call the
@@ -131,14 +129,14 @@
 
     <h3>See also:</h3>
     <ul>
-         <a href="../modules/core.mpsync.html#MPSync:SnchronizedCall">MPSync:SnchronizedCall</a>
+         <a href="../modules/core.questsync.html#QuestSync:SnchronizedCall">QuestSync:SnchronizedCall</a>
     </ul>
 
 
 </dd>
     <dt>
-    <a name = "MPSync:SnchronizedCall"></a>
-    <strong>MPSync:SnchronizedCall (_Function, ...)</strong>
+    <a name = "QuestSync:SnchronizedCall"></a>
+    <strong>QuestSync:SnchronizedCall (_ID, ...)</strong>
     </dt>
     <dd>
     Calls the script event synchronous for all players.
@@ -146,12 +144,12 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Function</span>
+        <li><span class="parameter">_ID</span>
             <span class="types"><span class="type">number</span></span>
          ID of script event
         </li>
         <li><span class="parameter">...</span>
-               List of Parameters (String or Number)
+         List of Parameters (String or Number)
         </li>
     </ul>
 
@@ -159,18 +157,18 @@
 
     <h3>See also:</h3>
     <ul>
-         <a href="../modules/core.mpsync.html#MPSync:CreateScriptEvent">MPSync:CreateScriptEvent</a>
+         <a href="../modules/core.questsync.html#QuestSync:CreateScriptEvent">QuestSync:CreateScriptEvent</a>
     </ul>
 
 
 </dd>
 </dl>
-    <h2 class="section-header "><a name="MPSync"></a>MPSync</h2>
+    <h2 class="section-header "><a name="QuestSync"></a>QuestSync</h2>
 
     <dl class="function">
     <dt>
-    <a name = "MPSync:GetActivePlayers"></a>
-    <strong>MPSync:GetActivePlayers ()</strong>
+    <a name = "QuestSync:GetActivePlayers"></a>
+    <strong>QuestSync:GetActivePlayers ()</strong>
     </dt>
     <dd>
     Returns the number of human players.  In Singleplayer this will always be 1.
@@ -189,8 +187,8 @@
 
 </dd>
     <dt>
-    <a name = "MPSync:GetTeamOfPlayer"></a>
-    <strong>MPSync:GetTeamOfPlayer (_PlayerID)</strong>
+    <a name = "QuestSync:GetTeamOfPlayer"></a>
+    <strong>QuestSync:GetTeamOfPlayer (_PlayerID)</strong>
     </dt>
     <dd>
     Returns the team the player is in.
@@ -222,7 +220,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2020-12-14 16:33:15 </i>
+<i style="float:right;">Last updated 2020-12-27 16:47:24 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

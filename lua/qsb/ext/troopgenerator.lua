@@ -55,11 +55,11 @@ TroopGenerator = {
 
 ---
 -- Table of army sub behaviors.
--- @field Army is in default state and selects next action
--- @field Army walks to the destination and attacks enemies
--- @field Army patrols over their path
--- @field Army is retreating to the home base
--- @field Army is recruiting or respawning until full
+-- @field Decide Army is in default state and selects next action
+-- @field Attack Army walks to the destination and attacks enemies
+-- @field Guard Army patrols over their path
+-- @field Retreat Army is retreating to the home base
+-- @field Refill Army is recruiting or respawning until full
 -- @within Constants
 --
 ArmyBehavior = {
@@ -72,12 +72,12 @@ ArmyBehavior = {
 
 ---
 -- Table of army behavior.
--- @field Enemies in sight of army
--- @field Selects the next purchased type
--- @field Selects the next spawned type
--- @field Selects the attack target
--- @field Selects the first patrol point
--- @field Selects the formation for members
+-- @field EnemyIsInSight Enemies in sight of army
+-- @field SelectPurchasedType Selects the next purchased type
+-- @field SelectSpawnedType Selects the next spawned type
+-- @field SelectAttackTarget Selects the attack target
+-- @field SelectPatrolTarget Selects the first patrol point
+-- @field FormationIsChosen Selects the formation for members
 -- @within Constants
 --
 ArmySubBehavior = {

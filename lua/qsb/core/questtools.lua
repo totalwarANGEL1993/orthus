@@ -573,7 +573,7 @@ Winkel = QuestTools.GetAngleBetween;
 ---
 -- Checks if a building is currently being upgraded.
 --
--- @param _pos Schriptname or id of building
+-- @param _Entity Schriptname or id of building
 -- @return[type=boolean] Building is being upgraded
 -- @within Entities
 --
@@ -609,7 +609,7 @@ SoldierGetLeader = QuestTools.SoldierGetLeader;
 ---
 -- Returns all categories the entity is in.
 --
--- @param _EntityID Scriptname or ID
+-- @param _Entity Scriptname or ID
 -- @return[type=table] Category list
 -- @within Entities
 --

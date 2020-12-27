@@ -44,21 +44,19 @@
 <h2>Modules</h2>
 <ul class="nowrap">
   <li><a href="../modules/core.bugfixes.html">core.bugfixes</a></li>
-  <li><a href="../modules/core.mpsync.html">core.mpsync</a></li>
   <li><a href="../modules/core.oop.html">core.oop</a></li>
+  <li><a href="../modules/core.questbriefing.html">core.questbriefing</a></li>
   <li><a href="../modules/core.questdebug.html">core.questdebug</a></li>
+  <li><a href="../modules/core.questsync.html">core.questsync</a></li>
   <li><strong>core.questsystem</strong></li>
-  <li><a href="../modules/ext.information_ex2.html">ext.information_ex2</a></li>
+  <li><a href="../modules/core.questtools.html">core.questtools</a></li>
   <li><a href="../modules/ext.interaction.html">ext.interaction</a></li>
   <li><a href="../modules/ext.onscreeninfo_ex2.html">ext.onscreeninfo_ex2</a></li>
-  <li><a href="../modules/ext.onscreeninfo_ex3.html">ext.onscreeninfo_ex3</a></li>
   <li><a href="../modules/ext.optionsmenu.html">ext.optionsmenu</a></li>
   <li><a href="../modules/ext.speed_ex2.html">ext.speed_ex2</a></li>
+  <li><a href="../modules/ext.troopgenerator.html">ext.troopgenerator</a></li>
   <li><a href="../modules/ext.workplace_ex2.html">ext.workplace_ex2</a></li>
   <li><a href="../modules/lib.libloader.html">lib.libloader</a></li>
-  <li><a href="../modules/lib.luabit50.html">lib.luabit50</a></li>
-  <li><a href="../modules/lib.metatable.html">lib.metatable</a></li>
-  <li><a href="../modules/lib.qsbtools.html">lib.qsbtools</a></li>
   <li><a href="../modules/multiplayersystem.html">multiplayersystem</a></li>
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
@@ -91,7 +89,7 @@
 <p> <b>Required modules:</b>
  <ul>
  <li>qsb.core.oop</li>
- <li>qsb.core.mpsync</li>
+ <li>qsb.core.questsync</li>
  <li>qsb.core.bugfix</li>
  </ul>
 </p>
@@ -100,12 +98,20 @@
 <h2><a href="#Methods">Methods</a></h2>
 <table class="function_list">
 	<tr>
+	<td class="name" nowrap><a href="#AddDisplayName">AddDisplayName (_ScriptName, _DisplayName)</a></td>
+	<td class="summary">Sets the display name for the entity with the given scriptname.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#GetQuestID">GetQuestID (_QuestName)</a></td>
 	<td class="summary">Returns the quest ID of the quest with the name.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#IsValidQuest">IsValidQuest (_QuestName)</a></td>
 	<td class="summary">Returns true, if the quest is a valid (existing) quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ReplacePlacholders">ReplacePlacholders (_Text)</a></td>
+	<td class="summary">Raplaces the placeholders in the message with their values.</td>
 	</tr>
 </table>
 <h2><a href="#QuestSystem">QuestSystem</a></h2>
@@ -190,6 +196,31 @@
 
     <dl class="function">
     <dt>
+    <a name = "AddDisplayName"></a>
+    <strong>AddDisplayName (_ScriptName, _DisplayName)</strong>
+    </dt>
+    <dd>
+    Sets the display name for the entity with the given scriptname.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_ScriptName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Scriptname of entity
+        </li>
+        <li><span class="parameter">_DisplayName</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Displayed name
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "GetQuestID"></a>
     <strong>GetQuestID (_QuestName)</strong>
     </dt>
@@ -243,6 +274,69 @@
 
 
 
+
+</dd>
+    <dt>
+    <a name = "ReplacePlacholders"></a>
+    <strong>ReplacePlacholders (_Text)</strong>
+    </dt>
+    <dd>
+    Raplaces the placeholders in the message with their values.
+<p> <u>Simple placeholders:</u>
+ <ul>
+ <li><b>{qq}</b> : Inserts a double quote (")</li>
+ <li><b>{cr}</b> : Inserts a line break</li>
+ <li><b>{ra}</b> : Positions the text at the right</li>
+ <li><b>{center}</b> : Positions the text at the center</li>
+ <li><b>{red}</b> : Following text is red</li>
+ <li><b>{green}</b> : Following text is green</li>
+ <li><b>{blue}</b> : Following text is blue</li>
+ <li><b>{yellow}</b> : Following text is yellow</li>
+ <li><b>{violet}</b> : Following text is violet</li>
+ <li><b>{azure}</b> : Following text is turquoise</li>
+ <li><b>{black}</b> : Following text is black (not pitch black)</li>
+ <li><b>{white}</b> : Following text is white</li>
+ <li><b>{grey}</b> : Following text is grey</li>
+ <li><b>{hero}</b> : Will be replaced with the configured name of the last
+ hero involved in an npc interaction.</li>
+ <li><b>{npc}</b> : Will be replaced with the configured name of the last
+ npc involved in an npc interaction.</li>
+ </ul>
+<p> <u>Valued placeholders:</u>
+ <ul>
+ <li><b>{color:</b><i>r,g,b</i><b>}</b>
+ Changes the color of the following text to the given RGB value</li>
+ <li><b>{val:</b><i>name</i><b>}</b>
+ The placeholder is replaced with a global variable</li>
+ <li><b>{cval:</b><i>name</i><b>}</b>
+ The placeholder is replaced with a custom variable</li>
+ <li><b>{name:</b><i>scriptname</i><b>}</b>
+ A scriptname is replaced with a pre configured name</li>
+ </ul>
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Text</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Text to parse
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        New text
+    </ol>
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">Message(ReplacePlacholders(<span class="string">"You open the chest and find a{red}already used{white}bedpan!"</span>));</pre>
+    </ul>
 
 </dd>
 </dl>
@@ -484,36 +578,10 @@
  <pre>{Callbacks.DestroyEffect, _EffectName}</pre>
 
         </li>
-        <li><span class="parameter">CreateEntity</span>
-
- Replaces a script entity with a new entity. The new entity will have the
- same owner and orientation as the script entity.
- <pre>{Callbacks.CreateEntity, _ScriptName, _Type}</pre>
-
-        </li>
-        <li><span class="parameter">CreateGroup</span>
-
- Replaces a script entity with a military group. The group will have the
- same owner and orientation as the script entity.
- <pre>{Callbacks.CreateGroup, _ScriptName, _Type, _Soldiers}</pre>
-
-        </li>
-        <li><span class="parameter">CreateEffect</span>
-
- Creates an effect at the position.
- <pre>{Callbacks.DestroyEffect, _EffectName, _EffectType, _Position}</pre>
-
-        </li>
         <li><span class="parameter">Diplomacy</span>
 
  Changes the diplomacy state between two players.
  <pre>{Callbacks.Diplomacy, _PlayerID1, _PlayerID2, _State}</pre>
-
-        </li>
-        <li><span class="parameter">Resource</span>
-
- Give or remove resources from the player.
- <pre>{Callbacks.Resource, _ResourceType, _Amount}</pre>
 
         </li>
         <li><span class="parameter">RemoveQuest</span>
@@ -564,6 +632,38 @@
  <pre>{Callbacks.Technology, _Tech, _State}</pre>
 
         </li>
+        <li><span class="parameter">Move</span>
+
+ Removes the exploration of an area.
+ <pre>{Callbacks.Move, _Entity, _Destination}</pre>
+
+        </li>
+        <li><span class="parameter">CreateGroup</span>
+
+ Replaces a script entity with a military group. The group will have the
+ same owner and orientation as the script entity.
+ <pre>{Callbacks.CreateGroup, _ScriptName, _Type, _Soldiers}</pre>
+
+        </li>
+        <li><span class="parameter">CreateEffect</span>
+
+ Creates an effect at the position.
+ <pre>{Callbacks.DestroyEffect, _EffectName, _EffectType, _Position}</pre>
+
+        </li>
+        <li><span class="parameter">CreateEntity</span>
+
+ Replaces a script entity with a new entity. The new entity will have the
+ same owner and orientation as the script entity.
+ <pre>{Callbacks.CreateEntity, _ScriptName, _Type}</pre>
+
+        </li>
+        <li><span class="parameter">Resource</span>
+
+ Give or remove resources from the player.
+ <pre>{Callbacks.Resource, _ResourceType, _Amount}</pre>
+
+        </li>
         <li><span class="parameter">CreateMarker</span>
 
  Creates an minimap marker or minimap pulsar at the position.
@@ -586,12 +686,6 @@
 
  Removes the exploration of an area.
  <pre>{Callbacks.ConcealArea, _AreaCenter}</pre>
-
-        </li>
-        <li><span class="parameter">Move</span>
-
- Removes the exploration of an area.
- <pre>{Callbacks.Move, _Entity, _Destination}</pre>
 
         </li>
     </ul>
@@ -857,6 +951,12 @@
  <pre>{Objectives.Headquarters, _Upgrades}</pre>
 
         </li>
+        <li><span class="parameter">NPC</span>
+
+ The player must interact with an NPC.
+ <pre>{Objectives.NPC, _NPC, _Hero, _WrongHeroMessage}</pre>
+
+        </li>
         <li><span class="parameter">DestroyType</span>
 
  Destroy an amount of entities of type.
@@ -893,6 +993,12 @@
  <pre>{Objectives.WeatherState, _State}</pre>
 
         </li>
+        <li><span class="parameter">Steal</span>
+
+ The player must steal the amount of the required resource.
+ <pre>{Objectives.Steal, _ResourceType, _Amount}</pre>
+
+        </li>
         <li><span class="parameter">DestroyAllPlayerUnits</span>
 
  The player must destroy all buildings and units of the player.
@@ -911,18 +1017,6 @@
  The player must build a bridge in the marked area. Because bridges loose
  their script names often, use a XD_ScriptEntity instead of the site.
  <pre>{Objectives.Bridge, _AreaCenter, _AreaSize}</pre>
-
-        </li>
-        <li><span class="parameter">NPC</span>
-
- The player must interact with an NPC.
- <pre>{Objectives.NPC, _NPC, _Hero, _WrongHeroMessage}</pre>
-
-        </li>
-        <li><span class="parameter">Steal</span>
-
- The player must steal the amount of the required resource.
- <pre>{Objectives.Steal, _ResourceType, _Amount}</pre>
 
         </li>
     </ul>
@@ -1046,7 +1140,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2020-12-14 16:33:15 </i>
+<i style="float:right;">Last updated 2020-12-27 16:47:24 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

@@ -2117,6 +2117,10 @@ Conditions = {
 -- Upgrade the headquarters one or two times
 -- <pre>{Objectives.Headquarters, _Upgrades}</pre>
 --
+-- @field NPC
+-- The player must interact with an NPC.
+-- <pre>{Objectives.NPC, _NPC, _Hero, _WrongHeroMessage}</pre>
+--
 -- @field DestroyType
 -- Destroy an amount of entities of type.
 -- <pre>{Objectives.DestroyType, _PlayerID, _Type, _Amount}</pre>
@@ -2141,6 +2145,10 @@ Conditions = {
 -- The player must change the weather to the weather state.
 -- <pre>{Objectives.WeatherState, _State}</pre>
 --
+-- @field Steal
+-- The player must steal the amount of the required resource.
+-- <pre>{Objectives.Steal, _ResourceType, _Amount}</pre>
+--
 -- @field DestroyAllPlayerUnits
 -- The player must destroy all buildings and units of the player.
 -- <pre>{Objectives.DestroyAllPlayerUnits, _PlayerID}</pre>
@@ -2154,14 +2162,6 @@ Conditions = {
 -- The player must build a bridge in the marked area. Because bridges loose
 -- their script names often, use a XD_ScriptEntity instead of the site.
 -- <pre>{Objectives.Bridge, _AreaCenter, _AreaSize}</pre>
---
--- @field NPC
--- The player must interact with an NPC.
--- <pre>{Objectives.NPC, _NPC, _Hero, _WrongHeroMessage}</pre>
---
--- @field Steal
--- The player must steal the amount of the required resource.
--- <pre>{Objectives.Steal, _ResourceType, _Amount}</pre>
 --
 Objectives = {
     MapScriptFunction = 1,
@@ -2229,27 +2229,9 @@ Objectives = {
 -- Destroy a named graphic effect.
 -- <pre>{Callbacks.DestroyEffect, _EffectName}</pre>
 --
--- @field CreateEntity
--- Replaces a script entity with a new entity. The new entity will have the
--- same owner and orientation as the script entity.
--- <pre>{Callbacks.CreateEntity, _ScriptName, _Type}</pre>
---
--- @field CreateGroup
--- Replaces a script entity with a military group. The group will have the
--- same owner and orientation as the script entity.
--- <pre>{Callbacks.CreateGroup, _ScriptName, _Type, _Soldiers}</pre>
---
--- @field CreateEffect
--- Creates an effect at the position.
--- <pre>{Callbacks.DestroyEffect, _EffectName, _EffectType, _Position}</pre>
---
 -- @field Diplomacy
 -- Changes the diplomacy state between two players.
 -- <pre>{Callbacks.Diplomacy, _PlayerID1, _PlayerID2, _State}</pre>
---
--- @field Resource
--- Give or remove resources from the player.
--- <pre>{Callbacks.Resource, _ResourceType, _Amount}</pre>
 --
 -- @field RemoveQuest
 -- Removes a quest from the quest book. The quest itself stays untouched.
@@ -2285,6 +2267,28 @@ Objectives = {
 -- </ul>
 -- <pre>{Callbacks.Technology, _Tech, _State}</pre>
 --
+-- @field Move
+-- Removes the exploration of an area.
+-- <pre>{Callbacks.Move, _Entity, _Destination}</pre>
+--
+-- @field CreateGroup
+-- Replaces a script entity with a military group. The group will have the
+-- same owner and orientation as the script entity.
+-- <pre>{Callbacks.CreateGroup, _ScriptName, _Type, _Soldiers}</pre>
+--
+-- @field CreateEffect
+-- Creates an effect at the position.
+-- <pre>{Callbacks.DestroyEffect, _EffectName, _EffectType, _Position}</pre>
+--
+-- @field CreateEntity
+-- Replaces a script entity with a new entity. The new entity will have the
+-- same owner and orientation as the script entity.
+-- <pre>{Callbacks.CreateEntity, _ScriptName, _Type}</pre>
+--
+-- @field Resource
+-- Give or remove resources from the player.
+-- <pre>{Callbacks.Resource, _ResourceType, _Amount}</pre>
+--
 -- @field CreateMarker
 -- Creates an minimap marker or minimap pulsar at the position.
 -- <pre>{Callbacks.CreateMarker, _Type, _PositionTable}</pre>
@@ -2300,10 +2304,6 @@ Objectives = {
 -- @field ConcealArea
 -- Removes the exploration of an area.
 -- <pre>{Callbacks.ConcealArea, _AreaCenter}</pre>
---
--- @field Move
--- Removes the exploration of an area.
--- <pre>{Callbacks.Move, _Entity, _Destination}</pre>
 --
 Callbacks = {
     MapScriptFunction = 1,
@@ -2322,7 +2322,6 @@ Callbacks = {
     QuestActivate = 14,
     QuestRestart = 15,
     Technology = 16,
-    ConcealArea = 17,
     Move = 18,
 
     CreateGroup = 100,
@@ -2332,4 +2331,5 @@ Callbacks = {
     CreateMarker = 104,
     DestroyMarker = 105,
     RevealArea = 106,
+    ConcealArea = 17,
 }

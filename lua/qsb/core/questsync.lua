@@ -67,8 +67,8 @@ end
 
 ---
 -- Calls the script event synchronous for all players.
--- @param[type=number] _Function ID of script event
--- @param              ...       List of Parameters (String or Number)
+-- @param[type=number] _ID ID of script event
+-- @param              ... List of Parameters (String or Number)
 -- @see QuestSync:CreateScriptEvent
 --
 function QuestSync:SnchronizedCall(_ID, ...)

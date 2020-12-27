@@ -1,5 +1,5 @@
 
---- author:mcb		current maintainer:mcb		v1.2
+-- author:mcb		current maintainer:mcb		v1.2
 -- 
 -- metatable.set(table, metatable) anstatt setmetatable verwenden.
 -- Automatische Speicherung und Wiederherstellung nach dem Laden.

@@ -35,7 +35,6 @@
 <h2>Contents</h2>
 <ul>
 <li><a href="#Methods">Methods</a></li>
-<li><a href="#Constants">Constants</a></li>
 <li><a href="#Goals">Goals</a></li>
 <li><a href="#Reprisals">Reprisals</a></li>
 <li><a href="#Rewards">Rewards</a></li>
@@ -46,21 +45,19 @@
 <h2>Modules</h2>
 <ul class="nowrap">
   <li><a href="../modules/core.bugfixes.html">core.bugfixes</a></li>
-  <li><a href="../modules/core.mpsync.html">core.mpsync</a></li>
   <li><a href="../modules/core.oop.html">core.oop</a></li>
+  <li><a href="../modules/core.questbriefing.html">core.questbriefing</a></li>
   <li><a href="../modules/core.questdebug.html">core.questdebug</a></li>
+  <li><a href="../modules/core.questsync.html">core.questsync</a></li>
   <li><a href="../modules/core.questsystem.html">core.questsystem</a></li>
-  <li><a href="../modules/ext.information_ex2.html">ext.information_ex2</a></li>
+  <li><a href="../modules/core.questtools.html">core.questtools</a></li>
   <li><a href="../modules/ext.interaction.html">ext.interaction</a></li>
   <li><a href="../modules/ext.onscreeninfo_ex2.html">ext.onscreeninfo_ex2</a></li>
-  <li><a href="../modules/ext.onscreeninfo_ex3.html">ext.onscreeninfo_ex3</a></li>
   <li><a href="../modules/ext.optionsmenu.html">ext.optionsmenu</a></li>
   <li><a href="../modules/ext.speed_ex2.html">ext.speed_ex2</a></li>
+  <li><a href="../modules/ext.troopgenerator.html">ext.troopgenerator</a></li>
   <li><a href="../modules/ext.workplace_ex2.html">ext.workplace_ex2</a></li>
   <li><a href="../modules/lib.libloader.html">lib.libloader</a></li>
-  <li><a href="../modules/lib.luabit50.html">lib.luabit50</a></li>
-  <li><a href="../modules/lib.metatable.html">lib.metatable</a></li>
-  <li><a href="../modules/lib.qsbtools.html">lib.qsbtools</a></li>
   <li><a href="../modules/multiplayersystem.html">multiplayersystem</a></li>
   <li><strong>questbehavior</strong></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
@@ -78,12 +75,13 @@
 <p> <b>Required modules:</b>
  <ul>
  <li>qsb.lib.oop</li>
- <li>qsb.lib.qsbtools</li>
+ <li>qsb.lib.questtools</li>
  <li>qsb.core.questsystem</li>
  <li>qsb.core.questdebug</li>
- <li>qsb.core.interaction</li>
+ <li>qsb.ext.interaction</li>
  <li>qsb.ext.information</li>
  <li>qsb.ext.onscreeninfo</li>
+ <li>qsb.ext.troopgenerator</li>
  </ul>
 </p>
 
@@ -91,64 +89,16 @@
 <h2><a href="#Methods">Methods</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#ActivateDebugMode">ActivateDebugMode (_CheckQuests, _TraceQuests, _Cheats, _Console)</a></td>
-	<td class="summary">Activates the debug mode.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#AddDisplayName">AddDisplayName (_ScriptName, _DisplayName)</a></td>
-	<td class="summary">Sets the display name for the entity with the given scriptname.</td>
-	</tr>
-	<tr>
 	<td class="name" nowrap><a href="#AddOnSaveLoadedAction">AddOnSaveLoadedAction (_Function, ...)</a></td>
 	<td class="summary">Adds an action that is performed after a save is loaded.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#ArmyDisableAttackAbility">ArmyDisableAttackAbility (_PlayerID, _ArmyID, _Flag)</a></td>
-	<td class="summary">Disables or enables the ability to attack for the army.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#ArmyDisablePatrolAbility">ArmyDisablePatrolAbility (_PlayerID, _ArmyID, _Flag)</a></td>
-	<td class="summary">Disables or enables the ability to patrol between positions.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayer">CreateAIPlayer (_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)</a></td>
-	<td class="summary">Creates an AI player and sets the technology level.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerArmy">CreateAIPlayerArmy (_ArmyName, _PlayerID, _Strength, _Position, _Area, _TroopTypes)</a></td>
-	<td class="summary">Initalizes an army that is recruited by the AI player.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerAttackTarget">CreateAIPlayerAttackTarget (_PlayerID, _Position)</a></td>
-	<td class="summary">Registers an attack target position for the player.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerPatrolPoint">CreateAIPlayerPatrolPoint (_PlayerID, _Position)</a></td>
-	<td class="summary">Registers an patrol waypoint position for the player.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerSpawnArmy">CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)</a></td>
-	<td class="summary">Initalizes an army that is spawned until a generator entity is destroyed.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#CreateQuest">CreateQuest (_Data)</a></td>
 	<td class="summary">Creates an quest from the given table.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#DestroyAIPlayerAttackTarget">DestroyAIPlayerAttackTarget (_PlayerID, _ID)</a></td>
-	<td class="summary">Removes the attack target from the AI player and all armies of said player.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#DestroyAIPlayerPatrolPoint">DestroyAIPlayerPatrolPoint (_PlayerID, _ID)</a></td>
-	<td class="summary">Removes the patrol waypoint from the AI player and all armies of said player.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#FailQuest">FailQuest (_Subject)</a></td>
+	<td class="name" nowrap><a href="#FailQuest">FailQuest (_Quest)</a></td>
 	<td class="summary">Fails the quest.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#HideEntityFromAI">HideEntityFromAI (_PlayerID, _Entity, _HiddenFlag)</a></td>
-	<td class="summary">Hides an Entity from the AI or makes it visible again.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#IsS5HookInstalled">IsS5HookInstalled ()</a></td>
@@ -164,35 +114,24 @@
 	<td class="summary">Registers a behavior</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#ReplacePlacholders">ReplacePlacholders (_Text)</a></td>
-	<td class="summary">Raplaces the placeholders in the message with their values.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#ResetQuest">ResetQuest (_Subject)</a></td>
+	<td class="name" nowrap><a href="#ResetQuest">ResetQuest (_Quest)</a></td>
 	<td class="summary">Resets the quest.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#RestartQuest">RestartQuest (_Subject)</a></td>
+	<td class="name" nowrap><a href="#RestartQuest">RestartQuest (_Quest)</a></td>
 	<td class="summary">Resets the quest and activates it immediately.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#StartQuest">StartQuest (_Subject)</a></td>
+	<td class="name" nowrap><a href="#StartQuest">StartQuest (_Quest)</a></td>
 	<td class="summary">Wins the quest.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#StopQuest">StopQuest (_Subject)</a></td>
+	<td class="name" nowrap><a href="#StopQuest">StopQuest (_Quest)</a></td>
 	<td class="summary">Interrupts the quest.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#WinQuest">WinQuest (_Subject)</a></td>
+	<td class="name" nowrap><a href="#WinQuest">WinQuest (_Quest)</a></td>
 	<td class="summary">Wins the quest.</td>
-	</tr>
-</table>
-<h2><a href="#Constants">Constants</a></h2>
-<table class="function_list">
-	<tr>
-	<td class="name" nowrap><a href="#QuestSystemBehavior.ArmyCategories">QuestSystemBehavior.ArmyCategories</a></td>
-	<td class="summary">Table of army categories</td>
 	</tr>
 </table>
 <h2><a href="#Goals">Goals</a></h2>
@@ -301,7 +240,7 @@
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Goal_Steal">Goal_Steal (_Good, _Amount)</a></td>
-	<td class="summary"></td>
+	<td class="summary">The player must steal the amount of the resource from other players.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Goal_Technology">Goal_Technology (_Technology)</a></td>
@@ -431,7 +370,7 @@
 <h2><a href="#Rewards">Rewards</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#Reward_AI_CreateAIPlayer">Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel)</a></td>
+	<td class="name" nowrap><a href="#Reward_AI_CreateAIPlayer">Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel, _SerfLimit)</a></td>
 	<td class="summary">Creates an AI player but don't creates any armies.</td>
 	</tr>
 	<tr>
@@ -441,7 +380,7 @@
 	<tr>
 	<td class="name" nowrap><a href="#Reward_AI_CreateSpawnArmy">Reward_AI_CreateSpawnArmy (_ArmyName, _PlayerID, _Spawner, _Strength, _Position, _Area, _Respawn, _TT1, _TT2, _TT3, _TT4, _TT5, _TT6)</a></td>
 	<td class="summary">Defines an army of up to 6 different unit types that is spawned from a
- generator entiry.</td>
+ generator entity.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reward_AI_EnableArmyAttack">Reward_AI_EnableArmyAttack (_PlayerID, _ArmyName, _Flag)</a></td>
@@ -705,70 +644,6 @@
 
     <dl class="function">
     <dt>
-    <a name = "ActivateDebugMode"></a>
-    <strong>ActivateDebugMode (_CheckQuests, _TraceQuests, _Cheats, _Console)</strong>
-    </dt>
-    <dd>
-    Activates the debug mode.  Use the flags to decide which features you want
- to use.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_CheckQuests</span>
-            <span class="types"><span class="type">boolean</span></span>
-         Call debug check of behavior
-        </li>
-        <li><span class="parameter">_TraceQuests</span>
-            <span class="types"><span class="type">boolean</span></span>
-         Display quest status changes
-        </li>
-        <li><span class="parameter">_Cheats</span>
-            <span class="types"><span class="type">boolean</span></span>
-              Activate debug cheats
-        </li>
-        <li><span class="parameter">_Console</span>
-            <span class="types"><span class="type">boolean</span></span>
-             Activate debug shell
-        </li>
-    </ul>
-
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">ActivateDebugMode(<span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span>, <span class="keyword">true</span>);</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "AddDisplayName"></a>
-    <strong>AddDisplayName (_ScriptName, _DisplayName)</strong>
-    </dt>
-    <dd>
-    Sets the display name for the entity with the given scriptname.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_ScriptName</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         Scriptname of entity
-        </li>
-        <li><span class="parameter">_DisplayName</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         Displayed name
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
     <a name = "AddOnSaveLoadedAction"></a>
     <strong>AddOnSaveLoadedAction (_Function, ...)</strong>
     </dt>
@@ -790,321 +665,6 @@
 
 
 
-
-</dd>
-    <dt>
-    <a name = "ArmyDisableAttackAbility"></a>
-    <strong>ArmyDisableAttackAbility (_PlayerID, _ArmyID, _Flag)</strong>
-    </dt>
-    <dd>
-    Disables or enables the ability to attack for the army.  This function can
- be used to forbid an army to attack even if there are valid targets.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_ArmyID</span>
-            <span class="types"><span class="type">number</span></span>
-           ID of army
-        </li>
-        <li><span class="parameter">_Flag</span>
-            <span class="types"><span class="type">boolean</span></span>
-            Ability to attack
-        </li>
-    </ul>
-
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">ArmyDisableAttackAbility(<span class="number">2</span>, <span class="number">1</span>, <span class="keyword">true</span>)</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "ArmyDisablePatrolAbility"></a>
-    <strong>ArmyDisablePatrolAbility (_PlayerID, _ArmyID, _Flag)</strong>
-    </dt>
-    <dd>
-    Disables or enables the ability to patrol between positions.  This
- function can be force an army to stay on its spawnpoint.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_ArmyID</span>
-            <span class="types"><span class="type">number</span></span>
-           ID of army
-        </li>
-        <li><span class="parameter">_Flag</span>
-            <span class="types"><span class="type">boolean</span></span>
-             Ability to attack
-        </li>
-    </ul>
-
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">ArmyDisablePatrolAbility(<span class="number">2</span>, <span class="number">1</span>, <span class="keyword">true</span>)</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "CreateAIPlayer"></a>
-    <strong>CreateAIPlayer (_PlayerID, _TechLevel, _SerfAmount, _Construct, _Rebuild)</strong>
-    </dt>
-    <dd>
-    Creates an AI player and sets the technology level.
-<p> Use this function or the behavior to initalize the AI. An AI must first be
- initalized before an army can be created.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-          PlayerID
-        </li>
-        <li><span class="parameter">_TechLevel</span>
-            <span class="types"><span class="type">number</span></span>
-         Technology level [1|4]
-        </li>
-        <li><span class="parameter">_SerfAmount</span>
-            <span class="types"><span class="type">number</span></span>
-         (optional) Amount of serfs
-        </li>
-        <li><span class="parameter">_Construct</span>
-            <span class="types"><span class="type">boolean</span></span>
-         (optional) AI can construct buildings
-        </li>
-        <li><span class="parameter">_Rebuild</span>
-            <span class="types"><span class="type">boolean</span></span>
-         (optional) AI rebuilds (construction required)
-        </li>
-    </ul>
-
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">CreateAIPlayer(<span class="number">2</span>, <span class="number">4</span>);</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "CreateAIPlayerArmy"></a>
-    <strong>CreateAIPlayerArmy (_ArmyName, _PlayerID, _Strength, _Position, _Area, _TroopTypes)</strong>
-    </dt>
-    <dd>
-    Initalizes an army that is recruited by the AI player.
- Armies can also be created with the behavior interface. This is a simple
- type of army that can be configured by placing and naming script entities.
- The army name must be unique for the player!
-<p> The AI player must be initalized first!
-<p> For the troop types either define a table of upgrade categories or use the
- constants from the QuestSystemBehavior.ArmyCategories table.
-<p> Use script entities named with PlayerX_AttackTargetY to define positions
- that will be attacked by the army. Replace X with the player ID and Y with
- a unique number starting by 1.
-<p> Also you can use entities named with PlayerX_PatrolPointY to define
- positions were the army will patrol. Also replace X with the player ID and
- Y with a unique number starting by 1.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_ArmyName</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-           Army identifier
-        </li>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-           Owner of army
-        </li>
-        <li><span class="parameter">_Strength</span>
-            <span class="types"><span class="type">number</span></span>
-           Strength of army [1|8]
-        </li>
-        <li><span class="parameter">_Position</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-           Home Position of army
-        </li>
-        <li><span class="parameter">_Area</span>
-            <span class="types"><span class="type">number</span></span>
-         Action range of the army
-        </li>
-        <li><span class="parameter">_TroopTypes</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
-          Upgrade categories to recruit
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">number</span></span>
-        Army ID
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">CreateAIPlayerArmy(<span class="string">"Foo"</span>, <span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="number">5000</span>, QuestSystemBehavior.ArmyCategories.City);</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "CreateAIPlayerAttackTarget"></a>
-    <strong>CreateAIPlayerAttackTarget (_PlayerID, _Position)</strong>
-    </dt>
-    <dd>
-    Registers an attack target position for the player.
-<p> Already generated armies will also add this position to the list of their
- possible targets.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_Position</span>
-         Zielppsition
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">number</span></span>
-        ID of target position
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "CreateAIPlayerPatrolPoint"></a>
-    <strong>CreateAIPlayerPatrolPoint (_PlayerID, _Position)</strong>
-    </dt>
-    <dd>
-    Registers an patrol waypoint position for the player.
-<p> Already generated armies will also add this position to the list of their
- patrol waypoints.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_Position</span>
-            <span class="types"><span class="type">number</span></span>
-         Zielppsition
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">number</span></span>
-        ID of target position
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "CreateAIPlayerSpawnArmy"></a>
-    <strong>CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)</strong>
-    </dt>
-    <dd>
-    Initalizes an army that is spawned until a generator entity is destroyed.
- Armies can also be created with the behavior interface. This is a simple
- type of army that can be configured by placing and naming script entities.
- The army name must be unique for the player!
-<p> The AI player must be initalized first!
-<p> Define a list of troops that are sparned in this order. Troops will be
- spawrned as long as the generator exists.
-<p> Use script entities named with PlayerX_AttackTargetY to define positions
- that will be attacked by the army. Replace X with the player ID and Y with
- a unique number starting by 1.
-<p> Also you can use entities named with PlayerX_PatrolPointY to define
- positions were the army will patrol. Also replace X with the player ID and
- Y with a unique number starting by 1.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_ArmyName</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-            Army identifier
-        </li>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-            Owner of army.
-        </li>
-        <li><span class="parameter">_Strength</span>
-            <span class="types"><span class="type">number</span></span>
-            Strength of army [1|8]
-        </li>
-        <li><span class="parameter">_Position</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-            Home Position of army
-        </li>
-        <li><span class="parameter">_Spawner</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-          Name of generator
-        </li>
-        <li><span class="parameter">_Area</span>
-            <span class="types"><span class="type">number</span></span>
-          Action range of the army
-        </li>
-        <li><span class="parameter">_Respawn</span>
-            <span class="types"><span class="type">number</span></span>
-         Time till troops are refreshed
-        </li>
-        <li><span class="parameter">...</span>
-                  List of types to spawn
-        </li>
-    </ul>
-
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">CreateAIPlayerSpawnArmy(
-    <span class="string">"Bar"</span>, <span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="string">"lifethread"</span>, <span class="number">5000</span>,
-    Entities.PU_LeaderSword2,
-    Entities.PU_LeaderBow2,
-    Entities.PV_Cannon2
-);</pre>
-    </ul>
 
 </dd>
     <dt>
@@ -1168,58 +728,8 @@
 
 </dd>
     <dt>
-    <a name = "DestroyAIPlayerAttackTarget"></a>
-    <strong>DestroyAIPlayerAttackTarget (_PlayerID, _ID)</strong>
-    </dt>
-    <dd>
-    Removes the attack target from the AI player and all armies of said player.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_ID</span>
-            <span class="types"><span class="type">number</span></span>
-               Zielppsition
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
-    <a name = "DestroyAIPlayerPatrolPoint"></a>
-    <strong>DestroyAIPlayerPatrolPoint (_PlayerID, _ID)</strong>
-    </dt>
-    <dd>
-    Removes the patrol waypoint from the AI player and all armies of said player.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_ID</span>
-            <span class="types"><span class="type">number</span></span>
-               Zielppsition
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
     <a name = "FailQuest"></a>
-    <strong>FailQuest (_Subject)</strong>
+    <strong>FailQuest (_Quest)</strong>
     </dt>
     <dd>
     Fails the quest.
@@ -1227,39 +737,8 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Subject</span>
+        <li><span class="parameter">_Quest</span>
          Quest name or ID
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
-    <a name = "HideEntityFromAI"></a>
-    <strong>HideEntityFromAI (_PlayerID, _Entity, _HiddenFlag)</strong>
-    </dt>
-    <dd>
-    Hides an Entity from the AI or makes it visible again.
-<p> Hidden entities will under no circumstances be added to armies created with
- code from this library.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_Entity</span>
-         Entity to hide (Scriptname or ID)
-        </li>
-        <li><span class="parameter">_HiddenFlag</span>
-            <span class="types"><span class="type">boolean</span></span>
-         Entity is hidden
         </li>
     </ul>
 
@@ -1333,71 +812,8 @@
 
 </dd>
     <dt>
-    <a name = "ReplacePlacholders"></a>
-    <strong>ReplacePlacholders (_Text)</strong>
-    </dt>
-    <dd>
-    Raplaces the placeholders in the message with their values.
-<p> <u>Simple placeholders:</u>
- <ul>
- <li><b>{qq}</b> : Inserts a double quote (")</li>
- <li><b>{cr}</b> : Inserts a line break</li>
- <li><b>{ra}</b> : Positions the text at the right</li>
- <li><b>{center}</b> : Positions the text at the center</li>
- <li><b>{red}</b> : Following text is red</li>
- <li><b>{green}</b> : Following text is green</li>
- <li><b>{blue}</b> : Following text is blue</li>
- <li><b>{yellow}</b> : Following text is yellow</li>
- <li><b>{violet}</b> : Following text is violet</li>
- <li><b>{azure}</b> : Following text is turquoise</li>
- <li><b>{black}</b> : Following text is black (not pitch black)</li>
- <li><b>{white}</b> : Following text is white</li>
- <li><b>{grey}</b> : Following text is grey</li>
- <li><b>{hero}</b> : Will be replaced with the configured name of the last
- hero involved in an npc interaction.</li>
- <li><b>{npc}</b> : Will be replaced with the configured name of the last
- npc involved in an npc interaction.</li>
- </ul>
-<p> <u>Valued placeholders:</u>
- <ul>
- <li><b>{color:</b><i>r,g,b</i><b>}</b>
- Changes the color of the following text to the given RGB value</li>
- <li><b>{val:</b><i>name</i><b>}</b>
- The placeholder is replaced with a global variable</li>
- <li><b>{cval:</b><i>name</i><b>}</b>
- The placeholder is replaced with a custom variable</li>
- <li><b>{name:</b><i>scriptname</i><b>}</b>
- A scriptname is replaced with a pre configured name</li>
- </ul>
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_Text</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         Text to parse
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-        New text
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">Message(ReplacePlacholders(<span class="string">"You open the chest and find a{red}already used{white}bedpan!"</span>));</pre>
-    </ul>
-
-</dd>
-    <dt>
     <a name = "ResetQuest"></a>
-    <strong>ResetQuest (_Subject)</strong>
+    <strong>ResetQuest (_Quest)</strong>
     </dt>
     <dd>
     Resets the quest.
@@ -1405,7 +821,7 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Subject</span>
+        <li><span class="parameter">_Quest</span>
          Quest name or ID
         </li>
     </ul>
@@ -1417,7 +833,7 @@
 </dd>
     <dt>
     <a name = "RestartQuest"></a>
-    <strong>RestartQuest (_Subject)</strong>
+    <strong>RestartQuest (_Quest)</strong>
     </dt>
     <dd>
     Resets the quest and activates it immediately.
@@ -1425,7 +841,7 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Subject</span>
+        <li><span class="parameter">_Quest</span>
          Quest name or ID
         </li>
     </ul>
@@ -1437,7 +853,7 @@
 </dd>
     <dt>
     <a name = "StartQuest"></a>
-    <strong>StartQuest (_Subject)</strong>
+    <strong>StartQuest (_Quest)</strong>
     </dt>
     <dd>
     Wins the quest.
@@ -1445,7 +861,7 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Subject</span>
+        <li><span class="parameter">_Quest</span>
          Quest name or ID
         </li>
     </ul>
@@ -1457,7 +873,7 @@
 </dd>
     <dt>
     <a name = "StopQuest"></a>
-    <strong>StopQuest (_Subject)</strong>
+    <strong>StopQuest (_Quest)</strong>
     </dt>
     <dd>
     Interrupts the quest.
@@ -1465,7 +881,7 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Subject</span>
+        <li><span class="parameter">_Quest</span>
          Quest name or ID
         </li>
     </ul>
@@ -1477,7 +893,7 @@
 </dd>
     <dt>
     <a name = "WinQuest"></a>
-    <strong>WinQuest (_Subject)</strong>
+    <strong>WinQuest (_Quest)</strong>
     </dt>
     <dd>
     Wins the quest.
@@ -1485,41 +901,8 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">_Subject</span>
+        <li><span class="parameter">_Quest</span>
          Quest name or ID
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-</dl>
-    <h2 class="section-header "><a name="Constants"></a>Constants</h2>
-
-    <dl class="function">
-    <dt>
-    <a name = "QuestSystemBehavior.ArmyCategories"></a>
-    <strong>QuestSystemBehavior.ArmyCategories</strong>
-    </dt>
-    <dd>
-    Table of army categories
-
-
-    <h3>Fields:</h3>
-    <ul>
-        <li><span class="parameter">City</span>
-         City troop types
-        </li>
-        <li><span class="parameter">BlackKnight</span>
-         Black knight troop types
-        </li>
-        <li><span class="parameter">Bandit</span>
-         Bandit troop types
-        </li>
-        <li><span class="parameter">Barbarian</span>
-         Barbarian troop types
         </li>
     </ul>
 
@@ -2192,7 +1575,7 @@
     <strong>Goal_Steal (_Good, _Amount)</strong>
     </dt>
     <dd>
-
+    The player must steal the amount of the resource from other players.
 
 
     <h3>Parameters:</h3>
@@ -2914,7 +2297,7 @@
     <dl class="function">
     <dt>
     <a name = "Reward_AI_CreateAIPlayer"></a>
-    <strong>Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel)</strong>
+    <strong>Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel, _SerfLimit)</strong>
     </dt>
     <dd>
     Creates an AI player but don't creates any armies.
@@ -2927,11 +2310,15 @@
     <ul>
         <li><span class="parameter">_PlayerID</span>
             <span class="types"><span class="type">number</span></span>
-         Id of player
+          Id of player
         </li>
         <li><span class="parameter">_TechLevel</span>
             <span class="types"><span class="type">number</span></span>
-          Tech level
+         Technology level
+        </li>
+        <li><span class="parameter">_SerfLimit</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of serfs
         </li>
     </ul>
 
@@ -2959,23 +2346,23 @@
     <ul>
         <li><span class="parameter">_ArmyName</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         Army identifier
+          Army identifier
         </li>
         <li><span class="parameter">_PlayerID</span>
             <span class="types"><span class="type">number</span></span>
-         Id of player
+          Id of player
         </li>
         <li><span class="parameter">_Strength</span>
             <span class="types"><span class="type">number</span></span>
-         Strength of army
+          Strength of army
         </li>
         <li><span class="parameter">_Position</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         Army base position
+          Army base position
         </li>
         <li><span class="parameter">_Area</span>
             <span class="types"><span class="type">number</span></span>
-         Average action range
+              Average action range
         </li>
         <li><span class="parameter">_TroopType</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
@@ -2994,7 +2381,7 @@
     </dt>
     <dd>
     Defines an army of up to 6 different unit types that is spawned from a
- generator entiry.
+ generator entity.
 <p> Use script entities named with PlayerX_AttackTargetY to define positions
  that will be attacked by the army. Also you can use entities named with
  PlayerX_PatrolPointY to define positions were the army will patrol.
@@ -4648,7 +4035,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2020-12-14 16:33:15 </i>
+<i style="float:right;">Last updated 2020-12-27 16:47:24 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

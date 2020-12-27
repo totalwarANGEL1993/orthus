@@ -141,7 +141,7 @@ end
 
 ---
 -- Fails the quest.
--- @param _Subject Quest name or ID
+-- @param _Quest Quest name or ID
 -- @within Methods
 --
 function FailQuest(_Quest)
@@ -150,7 +150,7 @@ end
 
 ---
 -- Wins the quest.
--- @param _Subject Quest name or ID
+-- @param _Quest Quest name or ID
 -- @within Methods
 --
 function StartQuest(_Quest)
@@ -159,7 +159,7 @@ end
 
 ---
 -- Interrupts the quest.
--- @param _Subject Quest name or ID
+-- @param _Quest Quest name or ID
 -- @within Methods
 --
 function StopQuest(_Quest)
@@ -168,7 +168,7 @@ end
 
 ---
 -- Resets the quest.
--- @param _Subject Quest name or ID
+-- @param _Quest Quest name or ID
 -- @within Methods
 --
 function ResetQuest(_Quest)
@@ -177,7 +177,7 @@ end
 
 ---
 -- Resets the quest and activates it immediately.
--- @param _Subject Quest name or ID
+-- @param _Quest Quest name or ID
 -- @within Methods
 --
 function RestartQuest(_Quest)
@@ -186,7 +186,7 @@ end
 
 ---
 -- Wins the quest.
--- @param _Subject Quest name or ID
+-- @param _Quest Quest name or ID
 -- @within Methods
 --
 function WinQuest(_Quest)
@@ -200,7 +200,7 @@ QuestSystemBehavior = {
         RegisteredQuestBehaviors = {},
         SystemInitalized = false,
         S5HookInitalized = false,
-        Version = "1.2.0",
+        Version = "1.3.0",
 
         SaveLoadedActions = {},
         PlayerColorAssigment = {},

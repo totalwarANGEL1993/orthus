@@ -260,8 +260,8 @@ end
 ---
 -- Function called when a hero speaks to an npc.
 -- @param[type=number] _Hero Entity id of hero
--- @param[type=table]  _NpcInstance Instance of npc
--- @param[type=number] _NPC         EntityID of npc
+-- @param[type=table]  _ScriptName  Scriptname of NPC
+-- @param[type=number] _NPC         EntityID of NPC
 -- @within Interaction
 -- @local
 --
