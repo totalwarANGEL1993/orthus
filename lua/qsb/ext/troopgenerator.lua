@@ -1037,7 +1037,7 @@ end
 function TroopGenerator.AI:DropArmy(_PlayerID, _ArmyID, _DeleteTroops)
     if self[_PlayerID] then
         for i= 1, table.getn(self[_PlayerID].Armies), 1 do
-            if self[_PlayerID].Armies[i]:GetID() == _ArmyID then
+            if self[_PlayerID].Armies[i] and self[_PlayerID].Armies[i]:GetID() == _ArmyID then
                 local Army = table.remove(self[_PlayerID].Armies, i);
                 if _DeleteTroops then
                     Army:KillAllGroups();
