@@ -66,13 +66,10 @@ end
 -- @local
 --
 function QuestSystem.Workplace:PrepareWorkerAmountEvent()
-	self.ScriptEvent = QuestSync:CreateScriptEvent(function(_BuildingID, _Amount, _State, ...)
+	self.ScriptEvent = QuestSync:CreateScriptEvent(function(_BuildingID, _Amount, _State)
 		local ScriptName = QuestTools.CreateNameForEntity(_BuildingID);
-		local PlayerID   = Logic.EntityGetPlayer(_BuildingID);
 		QuestSystem.Workplace.WorkplaceStates[ScriptName] = _State;
-		if QuestSync:IsCNetwork() then
-			SendEvent.SetCurrentMaxNumWorkersInBuilding(_BuildingID, _Amount);
-		end
+		Logic.SetCurrentMaxNumWorkersInBuilding(_BuildingID, _Amount);
 	end);
 end
 
@@ -284,24 +281,22 @@ function QuestSystem.Workplace:OverrideInterfaceUpdate()
 	end
 
 	GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod = GameCallback_OnBuildingUpgradeComplete
-	GameCallback_OnBuildingUpgradeComplete = function(a,b)
-		GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod(a,b);
-		local eName = QuestTools.CreateNameForEntity(b);
-		if QuestSystem.Workplace.WorkplaceStates[eName] then
-			local backupSel = {GUI.GetSelectedEntities()};
-			GUI.ClearSelection();
-
-			GUI.SelectEntity(b);
-			GUIAction_SetAmountOfWorkers(QuestSystem.Workplace.WorkplaceStates[eName]);
-			GUI.DeselectEntity(b);
-
-			if table.getn(backupSel) > 0 then
-				for i=1,table.getn(backupSel)do
-					if IsExisting(backupSel[i])then
-						GUI.SelectEntity(backupSel[i]);
-					end
-				end
+	GameCallback_OnBuildingUpgradeComplete = function(_OldID, _NewID)
+		GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod(_OldID, _NewID);
+		local ScriptName = QuestTools.CreateNameForEntity(_NewID);
+		if QuestSystem.Workplace.WorkplaceStates[ScriptName] then
+			local MaxNumberOfworkers = Logic.GetMaxNumWorkersInBuilding(_NewID);
+			local CurrentWorkerAmount = 0;
+			if QuestSystem.Workplace.WorkplaceStates[ScriptName] == "half" then
+				CurrentWorkerAmount = math.ceil(MaxNumberOfworkers/2);
+			elseif QuestSystem.Workplace.WorkplaceStates[ScriptName] == "full" then
+				CurrentWorkerAmount = MaxNumberOfworkers;
 			end
+			QuestSync:SnchronizedCall(
+				QuestSystem.Workplace.ScriptEvent,
+				_NewID, CurrentWorkerAmount,
+				QuestSystem.Workplace.WorkplaceStates[ScriptName]
+			);
 		end
 	end
 end
