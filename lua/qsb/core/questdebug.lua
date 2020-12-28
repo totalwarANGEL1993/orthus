@@ -112,12 +112,12 @@ function QuestDebug:ActivateConsole()
         Input.KeyBindDown(Keys.OemPipe, "XGUIEng.ShowWidget('ChatInput',1)", 2);
         
         -- Override chat input string, but only once
-        if not GameCallback_GUI_ChatStringInputDone_Orig_QuestSystemDebug then
-            GameCallback_GUI_ChatStringInputDone_Orig_QuestSystemDebug = GameCallback_GUI_ChatStringInputDone;
+        if not GameCallback_GUI_ChatStringInputDone_Orig_QuestDebug then
+            GameCallback_GUI_ChatStringInputDone_Orig_QuestDebug = GameCallback_GUI_ChatStringInputDone;
             GameCallback_GUI_ChatStringInputDone = function(_M)
-                local Tokens = QuestSystemDebug:TokenizeCommand(_M);
-                if not QuestSystemDebug:EvaluateCommand(Tokens) then
-                    GameCallback_GUI_ChatStringInputDone_Orig_QuestSystemDebug(_M);
+                local Tokens = QuestDebug:TokenizeCommand(_M);
+                if not QuestDebug:EvaluateCommand(Tokens) then
+                    GameCallback_GUI_ChatStringInputDone_Orig_QuestDebug(_M);
                 end
             end
         end
@@ -631,9 +631,9 @@ function QuestDebug:CreateCheatMethods()
 end
 
 function QuestDebug:OverrideSaveGameLoaded()
-    Mission_OnSaveGameLoaded_Orig_QuestSystemDebug = Mission_OnSaveGameLoaded;
+    Mission_OnSaveGameLoaded_Orig_QuestDebug = Mission_OnSaveGameLoaded;
     Mission_OnSaveGameLoaded = function()
-        Mission_OnSaveGameLoaded_Orig_QuestSystemDebug();
+        Mission_OnSaveGameLoaded_Orig_QuestDebug();
 
         QuestDebug:CreateCheats();
     end
