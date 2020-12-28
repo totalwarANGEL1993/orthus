@@ -366,6 +366,9 @@ function QuestBriefing:AddPages(_Briefing)
     -- @return[type=table] Created page
     --
     local AP = function(_Page)
+        if _Page == nil then
+            _Page = -1;
+        end
         if type(_Page) == "table" then
             -- Add IDs automatically, if not provided
             if _Page.MC then
@@ -632,8 +635,10 @@ function QuestBriefing:GetPageID(_Name, _PlayerID)
     -- Check briefing for page
     if self.m_Book[PlayerID] then
         for i= 1, table.getn(self.m_Book[PlayerID]), 1 do
-            if self.m_Book[PlayerID][i].Name == _Name then
-                return i;
+            if type(self.m_Book[PlayerID][i]) == "table" then
+                if self.m_Book[PlayerID][i].Name == _Name then
+                    return i;
+                end
             end
         end
     end
@@ -882,7 +887,6 @@ function QuestBriefing:PrintOptions(_Page)
         for i= 1, table.getn(_Page.MC), 1 do
             if self.MCButtonAmount >= i then
                 -- Button highlight fix
-                XGUIEng.ShowWidget("CinematicMC_Button" ..i, 1);
                 XGUIEng.DisableButton("CinematicMC_Button" ..i, 1);
                 XGUIEng.DisableButton("CinematicMC_Button" ..i, 0);
                 -- Localize text
@@ -900,11 +904,6 @@ function QuestBriefing:PrintOptions(_Page)
                 XGUIEng.SetText("CinematicMC_Button" ..i, Text or "");
                 -- Set text for HE
                 XGUIEng.SetText("NetworkWindowPlayer" ..i.. "Name", Text or "");
-            end
-            -- Ensure Buttons are disabled if fallback is used
-            if XGUIEng.IsWidgetExisting("CinematicMC_Button" ..self.MCButtonAmount) == 0 then
-                XGUIEng.ShowWidget("CinematicMC_Button1", 0);
-                XGUIEng.ShowWidget("CinematicMC_Button2", 0);
             end
         end
     end
@@ -1091,9 +1090,9 @@ function QuestBriefing:EnableCinematicMode(_PlayerID)
     XGUIEng.ShowWidget("VideoPreview",0);
     XGUIEng.ShowWidget("Movie",0);
 
+    GUIAction_ToggleMenu("NetworkWindow", 0);
     if QuestSync:IsHistoryEdition() or XGUIEng.IsWidgetExisting("CinematicMC_Button3") == 0 then
         self:EnableCinematicModeForHistoryEdition(_PlayerID);
-        GUIAction_ToggleMenu("NetworkWindow", 1);
     end
 end
 
@@ -1153,9 +1152,7 @@ function QuestBriefing:DisableCinematicMode(_PlayerID)
     XGUIEng.ShowWidget("BackGroundBottomContainer",1);
     XGUIEng.ShowWidget("MiniMap",1);
 
-    if QuestSync:IsHistoryEdition() or XGUIEng.IsWidgetExisting("CinematicMC_Button3") == 0 then
-        GUIAction_ToggleMenu("NetworkWindow", 0);
-    end
+    GUIAction_ToggleMenu("NetworkWindow", 0);
 end
 
 function QuestBriefing:SetPageApperance(_PlayerID, _DisableMap)
@@ -1203,15 +1200,26 @@ function QuestBriefing:SetPageApperance(_PlayerID, _DisableMap)
     XGUIEng.ShowWidget("CinematicBar01", 1);
     XGUIEng.ShowWidget("CinematicBar00", 1);
 
-    if QuestSync:IsHistoryEdition() or XGUIEng.IsWidgetExisting("CinematicMC_Button3") == 0 then
+    -- Ensure Buttons are disabled if fallback is used
+    local AllButtonsExisting = true;
+    for i= 1, self.MCButtonAmount, 1 do
+        if XGUIEng.IsWidgetExisting("CinematicMC_Button" ..i) == 0 then
+            AllButtonsExisting = false;
+        end
+    end
+    if AllButtonsExisting then
+        for i= 1, self.MCButtonAmount, 1 do
+            XGUIEng.ShowWidget("CinematicMC_Button" ..i, 1);
+        end
+    else
+        for i= 1, self.MCButtonAmount, 1 do
+            XGUIEng.ShowWidget("CinematicMC_Button" ..i, 0);
+        end
         self:SetPageApperanceForHistoryEdition(_PlayerID);
     end
 end
 
 function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID)
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button1", 0);
-    XGUIEng.SetWidgetPositionAndSize("CinematicMC_Button2", 0);
-
     local size = {GUI.GetScreenSize()};
     local PageID = self.m_Book[_PlayerID].Page;
     local SizeY = round(50 * (768/size[2]));
@@ -1234,6 +1242,7 @@ function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID)
     end
     
     if self.m_Book[_PlayerID][PageID].MC then
+        GUIAction_ToggleMenu("NetworkWindow", 1);
         if table.getn(self.m_Book[_PlayerID][PageID].MC) > 0 then
             for i= 1, self.MCButtonAmount, 1 do
                 if self.m_Book[_PlayerID][PageID].MC[i] then
@@ -1250,6 +1259,8 @@ function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID)
                 end
             end
         end
+    else
+        GUIAction_ToggleMenu("NetworkWindow", 0);
     end
 end
 
