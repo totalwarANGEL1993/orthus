@@ -628,7 +628,7 @@ function TroopGenerator.AI:ArmyAttackedController(_PlayerID)
         if not self[_PlayerID].Armies[ArmyID] then
             return;
         end
-        self[_PlayerID].Armies[ArmyID]:CallOnMemberIsAttackedBehavior(Attacker, Defender);
+        self[_PlayerID].Armies[ArmyID]:OnMemberIsAttackedBehavior(Attacker, Defender);
     end
 end
 
@@ -1082,7 +1082,7 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
                 if _Army:GetTarget() == nil then
                     local TargetsAvailable = self:GetAllUnattendedAttackTargets(_PlayerID, _Army:GetID());
                     if table.getn(TargetsAvailable) > 0 then
-                        _Army:CallOnAttackTargetSelectedBehavior(TargetsAvailable);
+                        _Army:OnAttackTargetSelectedBehavior(TargetsAvailable);
                         _Army:SetState(ArmyBehavior.Attack);
                         return;
                     end
@@ -1092,7 +1092,7 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
             end
             if _Army:IsDefenceAllowed() then
                 local GuardPath = self:GetArmyDefencePositions(_PlayerID, _Army:GetID());
-                _Army:CallOnWaypointSelectedBehavior(GuardPath);
+                _Army:OnWaypointSelectedBehavior(GuardPath);
                 _Army:SetState(ArmyBehavior.Guard);
             end
             return;
@@ -1147,7 +1147,7 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
                         _Army:SetState(ArmyBehavior.Decide);
                         _Army:SetGuardStartTime(0);
                     else
-                        _Army:CallOnWaypointSelectedBehavior(DefenceTargets);
+                        _Army:OnWaypointSelectedBehavior(DefenceTargets);
                         _Army:SetGuardStartTime(Logic.GetTime());
                     end
                 else
@@ -1217,7 +1217,7 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
                         _Army:BindGroup(UnemployedID);
                     else
                         if self:IsNecessaryToHireLeader(_PlayerID) then
-                            _Army:CallOnTypeToRecruitSelectedBehavior(_Army:GetTroopCatalog());
+                            _Army:OnTypeToRecruitSelectedBehavior(_Army:GetTroopCatalog());
                             -- Using BB army in background to recruit troops
                             AI.Army_BuyLeader(_PlayerID, 1, _Army:GetChosenTypeToRecruit());
                             local UnemployedID = self:GetNextUnemployedLeader(_PlayerID);
@@ -1244,7 +1244,7 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
                 _Army:UnbindGroup(MemberList[i]);
             else
                 if MemberList[i]:GetState() == GroupBehavior.Default then
-                    MemberList[i]:CallOnFormationChosenBehavior(_Army:GetOnFormationChosenBehavior());
+                    MemberList[i]:OnFormationChosenBehavior(_Army:GetOnFormationChosenBehavior());
                     if _Army:GetState() == ArmyBehavior.Attack then
                         MemberList[i]:PrioritizedAttackController(_Army);
                         if MemberList[i]:IsFighting() and not MemberList[i]:IsAttackingPriorizedTarget() then
@@ -1261,7 +1261,7 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
                         if not MemberList[i]:IsFighting() and not MemberList[i]:IsWalking() then
                             local EnemyList = MemberList[i]:GetEnemiesInSight();
                             if table.getn(EnemyList) > 0 then
-                                MemberList[i]:CallOnEnemiesInSightBehavior(EnemyList, _Army:GetOnEnemiesInSightBehavior());
+                                MemberList[i]:OnEnemiesInSightBehavior(EnemyList, _Army:GetOnEnemiesInSightBehavior());
                             else
                                 MemberList[i]:AttackMove(_Army:GetCurrentWaypoint());
                             end
@@ -1345,8 +1345,6 @@ function TroopGenerator.Army:construct(
     self.m_TroopInterator   = (table.getn(self.m_TroopCatalog) > 0 and 1) or 0;
     self.m_Path             = {};
     self.m_Waypoint         = 0;
-
-    self:CreateDefaultBehavior();
 end
 class(TroopGenerator.Army);
 
@@ -1750,121 +1748,91 @@ end
 
 -- Behaviors --
 
-function TroopGenerator.Army:CreateDefaultBehavior()
-    -- When a unit type is selected for recruiting a random type is chosen.
-    -- (Note: List contains upgrade categories for soldiers and entity types
-    -- for cannons!)
-    self.m_OnTypeToRecruitSelected = function(_Data, _Catalog)
-        if table.getn(_Catalog) == 0 then
-            return;
-        end
-        _Data:SetTroopIterator(math.random(1, table.getn(_Catalog)));
+function TroopGenerator.Army:OnTypeToRecruitSelectedBehavior(_Catalog)
+    if table.getn(_Catalog) == 0 then
+        return;
     end
+    self:SetTroopIterator(math.random(1, table.getn(_Catalog)));
+end
 
-    self.m_OnMemberIsAttacked = function(_Data, _Attacker, _Defender)
-        local TypeName = Logic.GetEntityTypeName(Logic.GetEntityType(_Attacker));
-        if string.find(TypeName, "Tower") ~= nil then
-            return;
-        end
-        for k, v in pairs(_Data:GetMembers()) do
-            v:PrioritizedAttack(_Attacker);
-        end
+function TroopGenerator.Army:OnMemberIsAttackedBehavior(_Attacker, _Defender)
+    local TypeName = Logic.GetEntityTypeName(Logic.GetEntityType(_Attacker));
+    if string.find(TypeName, "Tower") ~= nil then
+        return;
     end
+    for k, v in pairs(self:GetMembers()) do
+        v:PrioritizedAttack(_Attacker);
+    end
+end
 
-    -- When a unit type is selected for spawning the list is iterated and the
-    -- type at the index is returned. Iterator is reset to first element after
-    -- end of list is reached.
-    self.m_OnTypeToSpawnSelected = function(_Data, _Catalog)
-        if table.getn(_Catalog) == 0 then
-            return;
-        end
-        _Data:SetTroopIterator(_Data:GetTroopIterator() +1);
-        if _Data:GetTroopIterator() > table.getn(_Catalog) then
-            _Data:SetTroopIterator(1);
-        end
+function TroopGenerator.Army:OnTypeToSpawnSelectedBehavior(_Catalog)
+    if table.getn(_Catalog) == 0 then
+        return;
     end
+    self:SetTroopIterator(self:GetTroopIterator() +1);
+    if self:GetTroopIterator() > table.getn(_Catalog) then
+        self:SetTroopIterator(1);
+    end
+end
 
-    -- When a target is selected the clostest is chosen.
-    self.m_OnAttackTargetSelected = function(_Data, _TargetList)
-        local sort = function(a, b)
-            return QuestTools.GetDistance(a, _Data:GetHomePosition()) < QuestTools.GetDistance(b, _Data:GetHomePosition());
-        end
-        table.sort(_TargetList, sort);
-        _Data:SetPath({_TargetList[1]});
-        _Data:SetWaypoint(1);
-        _Data:SetTarget(_Data:GetCurrentWaypoint());
+function TroopGenerator.Army:OnAttackTargetSelectedBehavior(_TargetList)
+    local sort = function(a, b)
+        return QuestTools.GetDistance(a, self:GetHomePosition()) < QuestTools.GetDistance(b, self:GetHomePosition());
     end
+    table.sort(_TargetList, sort);
+    self:SetPath({_TargetList[1]});
+    self:SetWaypoint(1);
+    self:SetTarget(self:GetCurrentWaypoint());
+end
 
-    -- If a waypoint for patrols is selected, a random pint is chosen.
-    self.m_OnWaypointSelected = function(_Data, _Waypoints)
-        if table.getn(_Waypoints) == 0 then
-            _Waypoints = {_Data:GetHomePosition()};
-        end
-        _Data:SetPath(_Waypoints);
-        _Data:SetWaypoint(math.random(1, table.getn(_Waypoints)));
+function TroopGenerator.Army:OnWaypointSelectedBehavior(_Waypoints)
+    if table.getn(_Waypoints) == 0 then
+        _Waypoints = {self:GetHomePosition()};
     end
+    self:SetPath(_Waypoints);
+    self:SetWaypoint(math.random(1, table.getn(_Waypoints)));
 end
 
 function TroopGenerator.Army:GetOnEnemiesInSightBehavior()
-    return self.m_OnEnemiesInSight;
+    return self.OnEnemiesInSightBehavior;
 end
 
 function TroopGenerator.Army:SetOnEnemiesInSightBehavior(_Behavior)
-    self.m_OnEnemiesInSight = _Behavior;
+    self.OnEnemiesInSightBehavior = _Behavior;
     return self;
 end
 
 function TroopGenerator.Army:GetOnFormationChosenBehavior()
-    return self.m_OnFormationChosen;
+    return self.OnFormationChosenBehavior;
 end
 
 function TroopGenerator.Army:SetOnFormationChosenBehavior(_Behavior)
-    self.m_OnFormationChosen = _Behavior;
+    self.OnFormationChosenBehavior = _Behavior;
     return self;
-end
-
-function TroopGenerator.Army:CallOnTypeToSpawnSelectedBehavior(_Attacker, _Defender)
-    return self.m_OnTypeToSpawnSelected(self, _Attacker, _Defender);
 end
 
 function TroopGenerator.Army:SetOnMemberIsAttackedBehavior(_Behavior)
-    self.m_OnMemberIsAttacked = _Behavior;
+    self.OnMemberIsAttackedBehavior = _Behavior;
     return self;
-end
-
-function TroopGenerator.Army:CallOnMemberIsAttackedBehavior(_List)
-    return self.m_OnMemberIsAttacked(self, _List);
 end
 
 function TroopGenerator.Army:SetOnTypeToSpawnSelectedBehavior(_Behavior)
-    self.m_OnTypeToSpawnSelected = _Behavior;
+    self.OnTypeToSpawnSelectedBehavior = _Behavior;
     return self;
-end
-
-function TroopGenerator.Army:CallOnTypeToRecruitSelectedBehavior(_List)
-    return self.m_OnTypeToRecruitSelected(self, _List);
 end
 
 function TroopGenerator.Army:SetOnTypeToRecruitSelectedBehavior(_Behavior)
-    self.m_OnTypeToRecruitSelected = _Behavior;
+    self.OnTypeToRecruitSelectedBehavior = _Behavior;
     return self;
-end
-
-function TroopGenerator.Army:CallOnAttackTargetSelectedBehavior(_List)
-    return self.m_OnAttackTargetSelected(self, _List);
 end
 
 function TroopGenerator.Army:SetOnAttackTargetSelectedBehavior(_Behavior)
-    self.m_OnAttackTargetSelected = _Behavior;
+    self.OnAttackTargetSelectedBehavior = _Behavior;
     return self;
 end
 
-function TroopGenerator.Army:CallOnWaypointSelectedBehavior(_List)
-    return self.m_OnWaypointSelected(self, _List);
-end
-
 function TroopGenerator.Army:SetOnWaypointSelectedBehavior(_Behavior)
-    self.m_OnWaypointSelected = _Behavior;
+    self.OnWaypointSelectedBehavior = _Behavior;
     return self;
 end
 
@@ -1934,7 +1902,7 @@ function TroopGenerator.Army:SpawnTroop()
     if CatalogSize == 0 then
         return false;
     end
-    self:CallOnTypeToSpawnSelectedBehavior(self:GetTroopCatalog());
+    self:OnTypeToSpawnSelectedBehavior(self:GetTroopCatalog());
     local TroopID = self:CreateGroup(
         self.m_PlayerID,
         self.m_TroopCatalog[self.m_TroopInterator][1],
@@ -2025,78 +1993,64 @@ TroopGenerator.Group = {
 function TroopGenerator.Group:construct(_ScriptName)
     self.m_ScriptName       = _ScriptName;
     self.m_State            = GroupBehavior.Default;
-
-    self:CreateDefaultBehavior();
 end
 class(TroopGenerator.Group);
 
 -- ~~~ Behavior ~~~ --
 
-function TroopGenerator.Group:CreateDefaultBehavior()
-    self.m_OnEnemiesInSight = function(_Data, _EnemyList, _Function)
-        if _Function then
-            _Function(_Data, _EnemyList);
-            return;
-        end
-        if _Data:IsAttackingPriorizedTarget() then
-            return;
-        end
-        local EnemyCategoryMap = self:GetPriorityMap();
-        local Prioritize = function(a, b)
-            local Sight     = (_Data:GetSight()+3000)/1000;
-            local Distance1 = QuestTools.GetDistance(a, self.m_ScriptName) / 1000;
-            local Priority1 = (Sight-Distance1);
-            for k, v in pairs(QuestTools.GetEntityCategories(a)) do
-                Priority1 = Priority1 + (EnemyCategoryMap[v] or 0);
-            end
-            local Distance2 = QuestTools.GetDistance(b, self.m_ScriptName) / 1000;
-            local Priority2 = (Sight-Distance2);
-            for k, v in pairs(QuestTools.GetEntityCategories(b)) do
-                Priority2 = Priority2 + (EnemyCategoryMap[v] or 0);
-            end
-            return Priority1 > Priority2;
-        end
-        table.sort(_EnemyList, Prioritize);
-        self:Attack(_EnemyList[1]);
+function TroopGenerator.Group:OnEnemiesInSightBehavior(_EnemyList, _Function)
+    if _Function then
+        _Function(self, _EnemyList);
+        return;
     end
-
-    self.m_OnFormationChosen = function(_Data, _Function)
-        if _Function then
-            _Function(_Data);
-            return;
-        end
-        local ID = GetID(_Data:GetScriptName());
-        if Logic.IsEntityInCategory(ID, EntityCategories.EvilLeader) == 1 then
-            return;
-        elseif Logic.IsEntityInCategory(ID, EntityCategories.Spear) == 1
-        or     Logic.IsEntityInCategory(ID, EntityCategories.Sword) == 1 then
-            Logic.LeaderChangeFormationType(ID, 2);
-            return;
-        elseif Logic.IsEntityInCategory(ID, EntityCategories.CavalryHeavy) == 1 then
-            Logic.LeaderChangeFormationType(ID, 6);
-            return;
-        end
-        Logic.LeaderChangeFormationType(ID, 4);
+    if self:IsAttackingPriorizedTarget() then
+        return;
     end
+    local EnemyCategoryMap = self:GetPriorityMap();
+    local Prioritize = function(a, b)
+        local Sight     = (self:GetSight()+3000)/1000;
+        local Distance1 = QuestTools.GetDistance(a, self.m_ScriptName) / 1000;
+        local Priority1 = (Sight-Distance1);
+        for k, v in pairs(QuestTools.GetEntityCategories(a)) do
+            Priority1 = Priority1 + (EnemyCategoryMap[v] or 0);
+        end
+        local Distance2 = QuestTools.GetDistance(b, self.m_ScriptName) / 1000;
+        local Priority2 = (Sight-Distance2);
+        for k, v in pairs(QuestTools.GetEntityCategories(b)) do
+            Priority2 = Priority2 + (EnemyCategoryMap[v] or 0);
+        end
+        return Priority1 > Priority2;
+    end
+    table.sort(_EnemyList, Prioritize);
+    self:Attack(_EnemyList[1]);
 end
 
-function TroopGenerator.Group:CallOnEnemiesInSightBehavior(_EnemyList, _Function)
-    self.m_OnEnemiesInSight(self, _EnemyList, _Function);
-    return self;
+function TroopGenerator.Group:OnFormationChosenBehavior(_Function)
+    if _Function then
+        _Function(self);
+        return;
+    end
+    local ID = GetID(self:GetScriptName());
+    if Logic.IsEntityInCategory(ID, EntityCategories.EvilLeader) == 1 then
+        return;
+    elseif Logic.IsEntityInCategory(ID, EntityCategories.Spear) == 1
+    or     Logic.IsEntityInCategory(ID, EntityCategories.Sword) == 1 then
+        Logic.LeaderChangeFormationType(ID, 2);
+        return;
+    elseif Logic.IsEntityInCategory(ID, EntityCategories.CavalryHeavy) == 1 then
+        Logic.LeaderChangeFormationType(ID, 6);
+        return;
+    end
+    Logic.LeaderChangeFormationType(ID, 4);
 end
 
 function TroopGenerator.Group:SetOnEnemiesInSightBehavior(_Function)
-    self.m_OnEnemiesInSight = _Function;
-    return self;
-end
-
-function TroopGenerator.Group:CallOnFormationChosenBehavior(_Function)
-    self.m_OnFormationChosen(self, _Function);
+    self.OnEnemiesInSightBehavior = _Function;
     return self;
 end
 
 function TroopGenerator.Group:SetOnFormationChosenBehavior(_Function)
-    self.m_OnFormationChosen = _Function;
+    self.OnFormationChosenBehavior = _Function;
     return self;
 end
 
