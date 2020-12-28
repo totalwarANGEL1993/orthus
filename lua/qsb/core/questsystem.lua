@@ -853,17 +853,16 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         if not IsExisting(_Behavior[2]) then
             return;
         end
-        local Position = QuestTools.SaveCall{
-            GetPosition, _Behavior[2],
-            ErrorHandler = function() return {X= 100, Y= 100}; end
-        };
+        local Position = GetPosition(_Behavior[2]);
         local PlayerID = QuestTools.SaveCall{
             GetPlayer, _Behavior[2],
             ErrorHandler = function() return 1; end
         };
         local Orientation = Logic.GetEntityOrientation(GetID(_Behavior[2]));
-        DestroyEntity(_Behavior[2]);
-        QuestTools.SaveCall{CreateMilitaryGroup, PlayerID, _Behavior[3], _Behavior[4], Position, _Behavior[2]};
+        DestroyEntity(_Behavior[2]);       
+        local ID = Logic.CreateEntity(_Behavior[3], Position.X, Position.Y, Orientation, PlayerID);
+        Tools.CreateSoldiersForLeader(ID, _Behavior[4]);
+        Logic.SetEntityName(ID, _Behavior[2]);
 
     elseif _Behavior[1] == Callbacks.CreateEffect then
         local Position = QuestTools.SaveCall{
