@@ -57,7 +57,7 @@ function QuestSystem.GameSpeedSwitch:Install()
         self.m_Installed = true;
         self:OnSaveGameLoaded();
         self:OverrideGUI();
-        self:SetSpeedUpAllowed(XNetwork.Manager_DoesExist() == 1);
+        self:SetSpeedUpAllowed(XNetwork.Manager_DoesExist() == 0);
         AddOnSaveLoadedAction(function()
             QuestSystem.GameSpeedSwitch:OnSaveGameLoaded()
         end);
