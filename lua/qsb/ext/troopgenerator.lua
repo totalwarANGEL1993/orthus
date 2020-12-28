@@ -1243,30 +1243,30 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
             else
                 if MemberList[i]:GetState() == GroupBehavior.Default then
                     MemberList[i]:CallOnFormationChosenBehavior(_Army:GetOnFormationChosenBehavior());
-                    if _Army:GetState() == ArmyBehavior.Attack then                       
-                        if not MemberList[i]:IsNear(_Army:GetPosition(), 2000) then
-                            if not MemberList[i]:IsFighting() then
+                    if _Army:GetState() == ArmyBehavior.Attack then
+                        MemberList[i]:PrioritizedAttackController(_Army);
+                        if MemberList[i]:IsFighting() and not MemberList[i]:IsAttackingPriorizedTarget() then
+                            if not MemberList[i]:IsNear(_Army:GetPosition(), 4000) then
                                 MemberList[i]:SetState(GroupBehavior.Scattered);
+                                return;
                             end
                         else
-                            if not MemberList[i]:IsFighting() and not MemberList[i]:IsWalking() then
-                                local EnemyList = MemberList[i]:GetEnemiesInSight();
-                                if table.getn(EnemyList) > 0 then
-                                    MemberList[i]:CallOnEnemiesInSightBehavior(EnemyList, _Army:GetOnEnemiesInSightBehavior());
-                                else
-                                    MemberList[i]:AttackMove(_Army:GetCurrentWaypoint());
-                                end
+                            if not MemberList[i]:IsNear(_Army:GetPosition(), 1500) then
+                                MemberList[i]:SetState(GroupBehavior.Scattered);
+                                return;
+                            end
+                        end
+                        if not MemberList[i]:IsFighting() and not MemberList[i]:IsWalking() then
+                            local EnemyList = MemberList[i]:GetEnemiesInSight();
+                            if table.getn(EnemyList) > 0 then
+                                MemberList[i]:CallOnEnemiesInSightBehavior(EnemyList, _Army:GetOnEnemiesInSightBehavior());
+                            else
+                                MemberList[i]:AttackMove(_Army:GetCurrentWaypoint());
                             end
                         end
                     elseif _Army:GetState() == ArmyBehavior.Guard then
-                        if not MemberList[i]:IsNear(_Army:GetPosition(), 1000) then
-                            if not MemberList[i]:IsFighting() then
-                                MemberList[i]:SetState(GroupBehavior.Scattered);
-                            end
-                        else
-                            -- if not MemberList[i]:IsFighting() and not MemberList[i]:IsWalking() then
-                            --     MemberList[i]:AttackMove(_Army:GetAnchor());
-                            -- end
+                        if not MemberList[i]:IsNear(_Army:GetPosition(), 3000) then
+                            MemberList[i]:SetState(GroupBehavior.Scattered);
                         end
                     elseif _Army:GetState() == ArmyBehavior.Retreat then
                         MemberList[i]:Move(_Army:GetHomePosition());
@@ -1765,9 +1765,7 @@ function TroopGenerator.Army:CreateDefaultBehavior()
             return;
         end
         for k, v in pairs(_Data:GetMembers()) do
-            if not v:IsFighting() then
-                v:AttackMove(_Attacker);
-            end
+            v:PrioritizedAttack(_Attacker);
         end
     end
 
@@ -1993,28 +1991,32 @@ GroupBehavior = {
     Scattered   = 3,
 }
 
+GroupPriorityCannon = {
+    [EntityCategories.VillageCenter] = 4,
+    [EntityCategories.MilitaryBuilding] = 3,
+    [EntityCategories.Headquarters] = 2,
+    [EntityCategories.LongRange] = 1,
+};
+GroupPriorityMelee = {
+    [EntityCategories.LongRange] = 3,
+    [EntityCategories.MilitaryBuilding] = 2,
+    [EntityCategories.Hero] = 1,
+};
+GroupPriorityRanged = {
+    [EntityCategories.VillageCenter] = 6,
+    [EntityCategories.Headquarters] = 5,
+    [EntityCategories.MilitaryBuilding] = 4,
+    [EntityCategories.Military] = 3,
+    [EntityCategories.Hero] = 2,
+    [EntityCategories.Hero10] = 2,
+    [EntityCategories.Hero4] = 1,
+};
+
 TroopGenerator.Group = {
     m_PersecutionArea = 5000,
-
-    PriorityCannon = {
-        [EntityCategories.VillageCenter] = 4,
-        [EntityCategories.MilitaryBuilding] = 3,
-        [EntityCategories.Headquarters] = 2,
-        [EntityCategories.LongRange] = 1,
-    },
-    PriorityMelee = {
-        [EntityCategories.LongRange] = 3,
-        [EntityCategories.MilitaryBuilding] = 2,
-        [EntityCategories.Hero] = 1,
-    },
-    PriorityRanged = {
-        [EntityCategories.VillageCenter] = 6,
-        [EntityCategories.Headquarters] = 5,
-        [EntityCategories.MilitaryBuilding] = 4,
-        [EntityCategories.Military] = 3,
-        [EntityCategories.Hero] = 2,
-        [EntityCategories.Hero10] = 2,
-        [EntityCategories.Hero4] = 1,
+    m_PrioritizedTarget = {
+        Target   = 0,
+        TimeLeft = 0,
     },
 };
 
@@ -2034,7 +2036,7 @@ function TroopGenerator.Group:CreateDefaultBehavior()
             _Function(_Data, _EnemyList);
             return;
         end
-        if _Data:IsFighting() then
+        if _Data:IsAttackingPriorizedTarget() then
             return;
         end
         local EnemyCategoryMap = self:GetPriorityMap();
@@ -2140,11 +2142,11 @@ end
 function TroopGenerator.Group:GetPriorityMap()
     local ID = GetID(self.m_ScriptName);
     if Logic.IsEntityInCategory(ID, EntityCategories.Cannon) == 1 then
-        return self.PriorityCannon;
+        return GroupPriorityCannon;
     elseif Logic.IsEntityInCategory(ID, EntityCategories.LongRange) == 1 then
-        return self.PriorityRanged;
+        return GroupPriorityRanged;
     end
-    return self.PriorityMelee;
+    return GroupPriorityMelee;
 end
 
 function TroopGenerator.Group:Move(_Position)
@@ -2158,6 +2160,35 @@ end
 function TroopGenerator.Group:Attack(_Target)
     Logic.GroupAttack(GetID(self.m_ScriptName), GetID(_Target));
     return self;
+end
+
+function TroopGenerator.Group:PrioritizedAttack(_Target, _Time)
+    _Time = _Time or 15;
+    if self.m_PrioritizedTarget.Target ~= 0 then
+        return;
+    end
+    self.m_PrioritizedTarget.Target   = GetID(_Target);
+    self.m_PrioritizedTarget.TimeLeft = _Time;
+    self:AttackMove(_Target);
+end
+
+function TroopGenerator.Group:PrioritizedAttackController(_Army)
+    local ID = self.m_PrioritizedTarget.Target;
+    if not IsExisting(ID) or Logic.GetEntityHealth(ID) == 0 then
+        self.m_PrioritizedTarget.Target = 0;
+        self.m_PrioritizedTarget.TimeLeft = 0;
+        return;
+    end
+    self.m_PrioritizedTarget.TimeLeft = self.m_PrioritizedTarget.TimeLeft -1;
+    if self.m_PrioritizedTarget.TimeLeft < 1 then
+        self.m_PrioritizedTarget.Target = 0;
+        self.m_PrioritizedTarget.TimeLeft = 0;
+        self:Move(_Army:GetPosition());
+        return;
+    end
+    if not self:IsFighting() then
+        self:AttackMove(ID);
+    end
 end
 
 function TroopGenerator.Group:AttackMove(_Position)
@@ -2197,6 +2228,10 @@ end
 
 function TroopGenerator.Group:IsAlive()
     return IsExisting(self.m_ScriptName) and Logic.GetEntityHealth(GetID(self.m_ScriptName)) > 0;
+end
+
+function TroopGenerator.Group:IsAttackingPriorizedTarget()
+    return self.m_PrioritizedTarget.Target ~= 0;
 end
 
 function TroopGenerator.Group:IsDoingSomething()
