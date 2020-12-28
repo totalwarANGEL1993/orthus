@@ -280,9 +280,9 @@ end
 --
 -- @usage CreateAIPlayerSpawnArmy(
 --     "Bar", 2, 8, "armyPos1", "lifethread", 5000,
---     Entities.PU_LeaderSword2, 3,
---     Entities.PU_LeaderBow2, 3,
---     Entities.PV_Cannon2, 0
+--     {Entities.PU_LeaderSword2, 3},
+--     {Entities.PU_LeaderBow2, 3},
+--     {Entities.PV_Cannon2, 0}
 -- );
 --
 function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)
@@ -295,8 +295,8 @@ function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Sp
         return;
     end
     local EntityTypes = {};
-    for i= 1, table.getn(arg), 2 do
-        table.insert(EntityTypes, {arg[i], arg[i+1]});
+    for i= 1, table.getn(arg), 1 do
+        table.insert(EntityTypes, arg[i]);
     end
     assert(table.getn(EntityTypes) > 0);
     local Instance = TroopGenerator.AI:CreateSpawnArmy {
@@ -1156,14 +1156,16 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
                         _Army:NextWaypoint(true);
                         _Army:SetGuardStartTime(Logic.GetTime());
                     else
-                        if QuestTools.GetDistance(_Army:GetPosition(), _Army:GetAnchor()) > _Army:GetRodeLength() then
-                            _Army:Move(_Army:GetAnchor());
+                        if QuestTools.GetDistance(_Army:GetPosition(), _Army:GetAnchor()) > 1000 then
+                            if not _Army:IsFighting() then
+                                _Army:Move(_Army:GetAnchor());
+                            end
                         else
                             if not _Army:IsFighting() then
                                 local Enemies = _Army:GetEnemiesInRodeLength(_Army:GetAnchor());
-                            if table.getn(Enemies) > 0 then
-                                _Army:AttackMove(Enemies[1]);
-                            end
+                                if table.getn(Enemies) > 0 then
+                                    _Army:AttackMove(Enemies[1]);
+                                end
                             end
                         end
                     end
