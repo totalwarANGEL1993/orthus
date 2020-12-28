@@ -566,12 +566,12 @@ function TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Stre
         repairing    = _Rebuild == true,
         
         resources = {
-            gold   = 3500 * (_Strength +1),
-            clay   = 1200 * (_Strength +1),
-            iron   = 2500 * (_Strength +1),
-            sulfur = 2500 * (_Strength +1),
-            stone  = 1200 * (_Strength +1),
-            wood   = 1500 * (_Strength +1),
+            gold   = 3500 + (600 * _Strength),
+            clay   = 1200 + (200 * _Strength),
+            iron   = 2500 + (300 * _Strength),
+            sulfur = 2500 + (300 * _Strength),
+            stone  = 1200 + (200 * _Strength),
+            wood   = 1500 + (250 * _Strength),
         },
         refresh = {
             updateTime = math.floor((30 / (_Strength +1)) +0.5),
