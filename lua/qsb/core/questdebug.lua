@@ -15,6 +15,7 @@
 -- <ul>
 -- <li>qsb.core.oop</li>
 -- <li>qsb.core.questsystem</li>
+-- <li>qsb.core.tools</li>
 -- </ul>
 --
 -- @set sort=true
@@ -100,8 +101,8 @@ end
 
 function QuestDebug:PrintQuestStatus(_QuestID, _State, _Result)
     if self.m_QuestTrace then 
-        local QuestState = self:GetKeyByValue(QuestStates, _State);
-        local QuestResult = self:GetKeyByValue(QuestResults, _Result);
+        local QuestState = QuestTools.GetKeyByValue(_State, QuestStates);
+        local QuestResult = QuestTools.GetKeyByValue(_Result, QuestResults);
         local QuestName = QuestSystem.Quests[_QuestID].m_QuestName;
         Message("Quest '" ..QuestName.."' changed: State is now " ..QuestState.. "; Result is now " ..QuestResult);
     end

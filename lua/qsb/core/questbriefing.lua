@@ -13,6 +13,9 @@
 -- of buttont if something is created or lua state changes. Otherwise you will
 -- get a desync!
 --
+-- If briefings are used and the map is in compability mode with the history
+-- edition, the map can not be played in LAN.
+--
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
