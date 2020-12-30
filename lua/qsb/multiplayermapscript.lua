@@ -10,20 +10,20 @@ Script.Load("data/script/maptools/dynamicfog.lua");
 Script.Load("data/script/maptools/extra2comfort.lua");
 
 -- Load QSB
-Script.Load(gvBasePath.. "core/oop.lua");
-Script.Load(gvBasePath.. "core/questtools.lua");
-Script.Load(gvBasePath.. "core/questsync.lua");
-Script.Load(gvBasePath.. "core/bugfixes.lua");
-Script.Load(gvBasePath.. "core/questsystem.lua");
-Script.Load(gvBasePath.. "core/questbriefing.lua");
-Script.Load(gvBasePath.. "core/questdebug.lua");
+Script.Load(gvBasePath.. "qsb/core/oop.lua");
+Script.Load(gvBasePath.. "qsb/core/questtools.lua");
+Script.Load(gvBasePath.. "qsb/core/questsync.lua");
+Script.Load(gvBasePath.. "qsb/core/bugfixes.lua");
+Script.Load(gvBasePath.. "qsb/core/questsystem.lua");
+Script.Load(gvBasePath.. "qsb/core/questbriefing.lua");
+Script.Load(gvBasePath.. "qsb/core/questdebug.lua");
 
-Script.Load(gvBasePath.. "lib/libloader.lua");
-Script.Load(gvBasePath.. "ext/extraloader.lua");
+Script.Load(gvBasePath.. "qsb/lib/libloader.lua");
+Script.Load(gvBasePath.. "qsb/ext/extraloader.lua");
 
-Script.Load(gvBasePath.. "questbehavior.lua");
-Script.Load(gvBasePath.. "multiplayersystem.lua");
-Script.Load(gvBasePath.. "treasure.lua");
+Script.Load(gvBasePath.. "qsb/questbehavior.lua");
+Script.Load(gvBasePath.. "qsb/multiplayersystem.lua");
+Script.Load(gvBasePath.. "qsb/treasure.lua");
 
 -- Settings ----------------------------------------------------------------- --
 
