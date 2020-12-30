@@ -1883,6 +1883,25 @@ end
 
 -- -------------------------------------------------------------------------- --
 
+-- Defines the player colors
+DEFAULT_COLOR = -1;
+PLAYER_COLOR = 1;
+NEPHILIM_COLOR = 2;
+FRIENDLY_COLOR1 = 3;
+FRIENDLY_COLOR2 = 4;
+ENEMY_COLOR2 = 5;
+MERCENARY_COLOR = 6;
+ENEMY_COLOR3 = 7;
+FARMER_COLOR = 8;
+EVIL_GOVERNOR_COLOR = 9;
+TRADER_COLOR = 10;
+NPC_COLOR = 11;
+KERBEROS_COLOR = 12;
+ENEMY_COLOR1 = 13;
+ROBBERS_COLOR = 14;
+SAINT_COLOR = 15;
+FRIENDLY_COLOR3 = 16;
+
 ---
 -- Possible technology states for technology behavior.
 -- @within Constants
