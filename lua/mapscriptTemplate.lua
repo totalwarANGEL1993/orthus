@@ -46,7 +46,7 @@ function InitWeatherGfxSets()
 end
 
 function InitPlayerColorMapping()
-    -- Display.SetPlayerColor(PlayerID, ColorID);
+    -- Display.SetPlayerColorMapping(PlayerID, ColorID);
 end
 
 function FirstMapAction()
