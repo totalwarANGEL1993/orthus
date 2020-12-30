@@ -317,6 +317,50 @@ function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Sp
 end
 
 ---
+-- Sets the max amount of serfs the AI player will buy.
+--
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _Limit    Amount of serfs
+-- @within Methods
+--
+function AIPlayerChangeSerfLimit(_PlayerID, _Limit)
+    AI.Village_SetSerfLimit(_PlayerID, _Limit);
+end
+
+---
+-- Enables or disables the repair ability of an AI player.
+--
+-- @param[type=number]  _PlayerID ID of player
+-- @param[type=boolean] _Flag     Repair is disabled
+-- @within Methods
+--
+function AIPlayerDisableRepairAbility(_PlayerID, _Flag)
+    TroopGenerator.AI:SetDoesRepair(_PlayerID, not _Flag);
+end
+
+---
+-- Enables or disables the construction ability of an AI player.
+--
+-- @param[type=number]  _PlayerID ID of player
+-- @param[type=boolean] _Flag     Construction is disabled
+-- @within Methods
+--
+function AIPlayerDisableConstructAbility(_PlayerID, _Flag)
+    TroopGenerator.AI:SetDoesConstruct(_PlayerID, not _Flag);
+end
+
+---
+-- Enables or disables the rebuild ability of an AI player.
+--
+-- @param[type=number]  _PlayerID ID of player
+-- @param[type=boolean] _Flag     Rebuild is disabled
+-- @within Methods
+--
+function AIPlayerDisableRebuildAbility(_PlayerID, _Flag)
+    TroopGenerator.AI:SetDoesRebuild(_PlayerID, not _Flag);
+end
+
+---
 -- Hides an Entity from the AI or makes it visible again.
 --
 -- Hidden entities will under no circumstances be added to armies created with
@@ -327,7 +371,7 @@ end
 -- @param[type=boolean] _HiddenFlag Entity is hidden
 -- @within Methods
 --
-function HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag)
+function HideEntityFromAIPlayer(_PlayerID, _Entity, _HiddenFlag)
     TroopGenerator.AI:HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag);
 end
 
@@ -339,7 +383,7 @@ end
 -- @return[type=boolean] Entity is hidden
 -- @within Methods
 --
-function IsEntityHiddenFromAI(_PlayerID, _Entity)
+function IsEntityHiddenFromAIPlayer(_PlayerID, _Entity)
     return TroopGenerator.AI:IsEntityHidenFromAI(_PlayerID, _Entity);
 end
 
@@ -647,7 +691,7 @@ end
 function TroopGenerator.AI:SetDoesRebuild(_PlayerID, _Flag)
     if self[_PlayerID] then
         if _Flag == true then
-            AI.Entity_ActivateRebuildBehaviour(_PlayerID, 60, 0);
+            AI.Entity_ActivateRebuildBehaviour(_PlayerID, 2*60, 0);
         else
             AI.Village_DeactivateRebuildBehaviour(_PlayerID);
         end

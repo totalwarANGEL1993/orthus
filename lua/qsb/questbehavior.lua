@@ -2540,7 +2540,9 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Move);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Replaces an script entity with a new entity of the chosen type.
+-- Replaces an script entity with a new entity of the chosen type. You can set
+-- a new owner. If unchanged the entity will adopt the owner of the script
+-- entity.
 -- @param[type=string] _ScriptName Script name of entity
 -- @param[type=string] _EntityType Entity type name
 -- @within Rewards
@@ -2561,11 +2563,17 @@ function b_Reward_CreateEntity:AddParameter(_Index, _Parameter)
         self.Data.ScriptName = _Parameter;
     elseif _Index == 2 then
         self.Data.EntityType = Entities[_Parameter];
+    elseif _Index == 3 then
+        if _Parameter == "-" or _Parameter == nil then
+            self.Data.PlayerID = nil;
+            return;
+        end
+        self.Data.PlayerID = tonumber(_Parameter);
     end
 end
 
 function b_Reward_CreateEntity:GetRewardTable()
-    return {self.Data.Type, self.Data.ScriptName, self.Data.EntityType};
+    return {self.Data.Type, self.Data.ScriptName, self.Data.EntityType, self.Data.PlayerID};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_CreateEntity);
@@ -2573,7 +2581,9 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CreateEntity);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Replaces an script entity with a military group of the chosen type.
+-- Replaces an script entity with a military group of the chosen type. You can
+-- set a new owner. If unchanged the entity will adopt the owner of the script
+-- entity.
 -- @param[type=string] _ScriptName Script name of entity
 -- @param[type=string] _EntityType Entity type name
 -- @param[type=number] _Soldiers Amount of soldiers
@@ -2597,11 +2607,17 @@ function b_Reward_CreateGroup:AddParameter(_Index, _Parameter)
         self.Data.EntityType = Entities[_Parameter];
     elseif _Index == 3 then
         self.Data.SoldierCount = _Parameter;
+    elseif _Index == 4 then
+        if _Parameter == "-" or _Parameter == nil then
+            self.Data.PlayerID = nil;
+            return;
+        end
+        self.Data.PlayerID = tonumber(_Parameter);
     end
 end
 
 function b_Reward_CreateGroup:GetRewardTable()
-    return {self.Data.Type, self.Data.ScriptName, self.Data.EntityType, self.Data.SoldierCount};
+    return {self.Data.Type, self.Data.ScriptName, self.Data.EntityType, self.Data.SoldierCount, self.Data.PlayerID};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_CreateGroup);
@@ -4221,9 +4237,11 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_CloseMerchant);
 -- Initalising the AI is nessessary for usung the quest system behavior army
 -- controller.
 --
--- @param[type=number] _PlayerID  Id of player
--- @param[type=number] _TechLevel Technology level
--- @param[type=number] _SerfLimit Amount of serfs
+-- @param[type=number]  _PlayerID  Id of player
+-- @param[type=number]  _TechLevel Technology level
+-- @param[type=number]  _SerfLimit Amount of serfs
+-- @param[type=boolean] _Repair    Repair damaged buildings
+-- @param[type=boolean] _Rebuild   Rebuild destryoed buildings
 -- @within Rewards
 --
 function Reward_AI_CreateAIPlayer(...)
@@ -4244,6 +4262,10 @@ function b_Reward_AI_CreateAIPlayer:AddParameter(_Index, _Parameter)
         self.Data.TechLevel = _Parameter;
     elseif _Index == 3 then
         self.Data.SerfLimit = _Parameter;
+    elseif _Index == 4 then
+        self.Data.Repair = _Parameter;
+    elseif _Index == 5 then
+        self.Data.Rebuild = _Parameter;
     end
 end
 
@@ -4259,8 +4281,8 @@ function b_Reward_AI_CreateAIPlayer:CustomFunction(_Quest)
         self.Data.SerfLimit,
         nil,
         0,
-        true,
-        true
+        self.Data.Repair == true,
+        self.Data.Rebuild == true
     };
 end
 
@@ -4297,6 +4319,176 @@ function b_Reward_AI_CreateAIPlayer:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateAIPlayer);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Creates an AI player and let it creates any armies.
+--
+-- Armies will gather at the rally point and will automatically deployed on
+-- attack targets and patrol points by the AI.
+--
+-- @param[type=number]  _PlayerID   Id of player
+-- @param[type=number]  _TechLevel  Technology level
+-- @param[type=number]  _SerfLimit  Amount of serfs
+-- @param[type=string]  _RallyPoint Rally point for armies
+-- @param[type=number]  _ArmyAmount Amount of recruited armies
+-- @param[type=boolean] _Repair     Repair damaged buildings
+-- @param[type=boolean] _Rebuild    Rebuild destryoed buildings
+-- @within Rewards
+--
+function Reward_AI_SetupAIPlayer(...)
+    return b_Reward_AI_SetupAIPlayer:New(unpack(arg));
+end
+
+b_Reward_AI_SetupAIPlayer = {
+    Data = {
+        Name = "Reward_AI_SetupAIPlayer",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_AI_SetupAIPlayer:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    elseif _Index == 2 then
+        self.Data.TechLevel = _Parameter;
+    elseif _Index == 3 then
+        self.Data.SerfLimit = _Parameter;
+    elseif _Index == 4 then
+        self.Data.RallyPoint = _Parameter;
+    elseif _Index == 5 then
+        self.Data.ArmyAmount = _Parameter;
+    elseif _Index == 6 then
+        self.Data.Repair = _Parameter;
+    elseif _Index == 7 then
+        self.Data.Rebuild = _Parameter;
+    end
+end
+
+function b_Reward_AI_SetupAIPlayer:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_AI_SetupAIPlayer:CustomFunction(_Quest)
+    QuestTools.SaveCall{
+        CreateAIPlayer,
+        self.Data.PlayerID,
+        self.Data.TechLevel,
+        self.Data.SerfLimit,
+        self.Data.RallyPoint,
+        self.Data.ArmyAmount,
+        self.Data.Repair == true,
+        self.Data.Rebuild == true
+    };
+end
+
+function b_Reward_AI_SetupAIPlayer:Debug(_Quest)
+    if not self.Data.PlayerID or self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "Player ID must be between 1 and 8!");
+        return true;
+    end
+    if not self.Data.TechLevel or self.Data.TechLevel < 1 or self.Data.TechLevel > 4 then
+        dbg(_Quest, self, "Technology level must be between 1 and 4!");
+        return true;
+    end
+    if type(self.Data.SerfLimit) ~= "number" or self.Data.SerfLimit < 0 then
+        dbg(_Quest, self, "Serf limit must be a number >= 0!");
+        return true;
+    end
+    if not IsExisting(self.Data.RallyPoint) or Logic.GetSector(GetID(self.Data.RallyPoint)) == 0 then
+        dbg(_Quest, self, "Rally point does not exist or is in blocking!");
+        return true;
+    end
+    if type(self.Data.ArmyAmount) ~= "number" or self.Data.ArmyAmount <= 0 then
+        dbg(_Quest, self, "Army amount must be a number > 0!");
+        return true;
+    end
+    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] then
+        dbg(_Quest, self, "A player already exists for ID " ..tostring(self.Data.PlayerID));
+        return true;
+    end
+
+    -- Most expensive check last
+    local PlayerEntities = QuestTools.GetPlayerEntities(self.Data.PlayerID, 0);
+    for i= 1, table.getn(PlayerEntities), 1 do
+        if Logic.IsBuilding(PlayerEntities[i]) == 1 then
+            return false;
+        end
+    end
+    dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " must have at least 1 building!");
+    return true;
+end
+
+function b_Reward_AI_SetupAIPlayer:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_AI_SetupAIPlayer);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Commands an AI player to build a building at the position.
+--
+-- The AI will need serfs to heed the command!
+--
+-- @param[type=number] _PlayerID  Id of player
+-- @param[type=string] _Type      Type of building
+-- @param[type=string] _Position  Location of building
+-- @within Rewards
+--
+function Reward_AI_ConstructBuilding(...)
+    return b_Reward_AI_CreateArmy:New(unpack(arg));
+end
+
+b_Reward_AI_ConstructBuilding = {
+    Data = {
+        Name = "Reward_AI_ConstructBuilding",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_AI_ConstructBuilding:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    elseif _Index == 2 then
+        self.Data.BuildingType = Entities[_Parameter] or _Parameter;
+    elseif _Index == 3 then
+        self.Data.Position = _Parameter;
+    end
+end
+
+function b_Reward_AI_ConstructBuilding:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_AI_ConstructBuilding:CustomFunction(_Quest)
+    FeedAiWithConstructionPlanFile(
+        self.Data.PlayerID,
+        {type = self.Data.BuildingType, pos = GetPosition(self.Data.Position)}
+    );
+end
+
+function b_Reward_AI_ConstructBuilding:Debug(_Quest)
+    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == nil then
+        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
+        return true;
+    end
+    if not QuestTools.IsInTable(self.Data.BuildingType, Entities) then
+        dbg(_Quest, self, "Chosen type does not exist!");
+        return true;
+    end
+    if not IsExisting(self.Data.Position) then
+        dbg(_Quest, self, "Position " ..self.Data.Position.. " does not exist!");
+        return true;
+    end
+    return false;
+end
+
+function b_Reward_AI_ConstructBuilding:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_AI_ConstructBuilding);
 
 -- -------------------------------------------------------------------------- --
 

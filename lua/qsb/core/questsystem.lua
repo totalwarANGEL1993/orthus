@@ -848,16 +848,24 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
 
     elseif _Behavior[1] == Callbacks.CreateEntity then
         QuestTools.SaveCall{ReplaceEntity, _Behavior[2], _Behavior[3]};
+        if _Behavior[4] then
+            ChangePlayer(_Behavior[2], _Behavior[4]);
+        end
 
     elseif _Behavior[1] == Callbacks.CreateGroup then
         if not IsExisting(_Behavior[2]) then
             return;
         end
+        local PlayerID;
+        if _Behavior[5] then
+            PlayerID = _Behavior[5];
+        else
+            PlayerID = QuestTools.SaveCall{
+                GetPlayer, _Behavior[2],
+                ErrorHandler = function() return 1; end
+            };
+        end
         local Position = GetPosition(_Behavior[2]);
-        local PlayerID = QuestTools.SaveCall{
-            GetPlayer, _Behavior[2],
-            ErrorHandler = function() return 1; end
-        };
         local Orientation = Logic.GetEntityOrientation(GetID(_Behavior[2]));
         DestroyEntity(_Behavior[2]);       
         local ID = Logic.CreateEntity(_Behavior[3], Position.X, Position.Y, Orientation, PlayerID);
@@ -2294,8 +2302,9 @@ Objectives = {
 --
 -- @field CreateGroup
 -- Replaces a script entity with a military group. The group will have the
--- same owner and orientation as the script entity.
--- <pre>{Callbacks.CreateGroup, _ScriptName, _Type, _Soldiers}</pre>
+-- same owner and orientation as the script entity. You can set a differend
+-- owner.
+-- <pre>{Callbacks.CreateGroup, _ScriptName, _Type, _Soldiers, _PlayerID}</pre>
 --
 -- @field CreateEffect
 -- Creates an effect at the position.
@@ -2303,8 +2312,9 @@ Objectives = {
 --
 -- @field CreateEntity
 -- Replaces a script entity with a new entity. The new entity will have the
--- same owner and orientation as the script entity.
--- <pre>{Callbacks.CreateEntity, _ScriptName, _Type}</pre>
+-- same owner and orientation as the script entity. You can set a differend
+-- owner.
+-- <pre>{Callbacks.CreateEntity, _ScriptName, _Type, _PlayerID}</pre>
 --
 -- @field Resource
 -- Give or remove resources from the player.
