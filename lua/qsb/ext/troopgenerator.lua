@@ -1973,24 +1973,25 @@ GroupBehavior = {
 }
 
 GroupPriorityCannon = {
-    [EntityCategories.VillageCenter] = 4,
-    [EntityCategories.MilitaryBuilding] = 3,
-    [EntityCategories.Headquarters] = 2,
-    [EntityCategories.LongRange] = 1,
+    ["VillageCenter"] = 4,
+    ["MilitaryBuilding"] = 3,
+    ["EvilLeader"] = 3,
+    ["LongRange"] = 2,
+    ["Headquarters"] = 1,
 };
 GroupPriorityMelee = {
-    [EntityCategories.LongRange] = 3,
-    [EntityCategories.MilitaryBuilding] = 2,
-    [EntityCategories.Hero] = 1,
+    ["LongRange"] = 3,
+    ["MilitaryBuilding"] = 2,
+    ["Hero"] = 1,
 };
 GroupPriorityRanged = {
-    [EntityCategories.VillageCenter] = 6,
-    [EntityCategories.Headquarters] = 5,
-    [EntityCategories.MilitaryBuilding] = 4,
-    [EntityCategories.Military] = 3,
-    [EntityCategories.Hero] = 2,
-    [EntityCategories.Hero10] = 2,
-    [EntityCategories.Hero4] = 1,
+    ["VillageCenter"] = 6,
+    ["Headquarters"] = 5,
+    ["MilitaryBuilding"] = 4,
+    ["Military"] = 3,
+    ["Hero"] = 2,
+    ["Hero10"] = 2,
+    ["Hero4"] = 1,
 };
 
 TroopGenerator.Group = {
@@ -2022,12 +2023,12 @@ function TroopGenerator.Group:TargetEnemiesInSight(_EnemyList, _Function)
         local Sight     = (self:GetSight()+3000)/1000;
         local Distance1 = QuestTools.GetDistance(a, self.m_ScriptName) / 1000;
         local Priority1 = (Sight-Distance1);
-        for k, v in pairs(QuestTools.GetEntityCategories(a)) do
+        for k, v in pairs(QuestTools.GetEntityCategoriesAsString(a)) do
             Priority1 = Priority1 + (EnemyCategoryMap[v] or 0);
         end
         local Distance2 = QuestTools.GetDistance(b, self.m_ScriptName) / 1000;
         local Priority2 = (Sight-Distance2);
-        for k, v in pairs(QuestTools.GetEntityCategories(b)) do
+        for k, v in pairs(QuestTools.GetEntityCategoriesAsString(b)) do
             Priority2 = Priority2 + (EnemyCategoryMap[v] or 0);
         end
         return Priority1 > Priority2;
