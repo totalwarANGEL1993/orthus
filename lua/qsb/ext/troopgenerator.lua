@@ -93,6 +93,7 @@ ArmyBehaviors = {
 -- @field BlackKnight Black knight troop types
 -- @field Bandit Bandit troop types
 -- @field Barbarian Barbarian troop types
+-- @field Evil Evil troop types
 -- @within Constants
 --
 ArmyCategories = {
@@ -123,6 +124,10 @@ ArmyCategories = {
         UpgradeCategories.LeaderBarbarian,
         UpgradeCategories.LeaderCavalry,
         UpgradeCategories.LeaderHeavyCavalry
+    },
+    Evil = {
+        UpgradeCategories.Evil_LeaderBearman,
+        UpgradeCategories.Evil_LeaderSkirmisher
     },
 };
 
@@ -841,6 +846,12 @@ function TroopGenerator.AI:SetUnitsToBuild(_PlayerID, _CategoryList)
         -- Add cannon type
         local CannonType = Entities["PV_Cannon" ..self[_PlayerID].TechLevel];
         table.insert(self[_PlayerID].UnitsToBuild, CannonType);
+        -- Alter recruiting armies
+        for i= 1, table.getn(self[_PlayerID].Armies), 1 do
+            if not self[_PlayerID].Armies[i]:DoesRespawn() then
+                self[_PlayerID].Armies[i]:SetTroopCatalog(self[_PlayerID].UnitsToBuild);
+            end
+        end
     end
 end
 
@@ -1122,7 +1133,7 @@ function TroopGenerator.AI:EmployArmies(_PlayerID)
     end
 end
 
-function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID)
+function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID, _RallyPoint)
     if self[_PlayerID] then
         local Leader = {};
         Leader = copy(QuestTools.GetAllCannons(_PlayerID), Leader);
@@ -1135,6 +1146,8 @@ function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID)
             elseif AI.Entity_GetConnectedArmy(Leader[i]) ~= -1 then
                 table.remove(Leader, i);
             elseif self:IsEntityHidenFromAI(_PlayerID, Name) then
+                table.remove(Leader, i);
+            elseif not QuestTools.SameSector(Leader[i], _RallyPoint) then
                 table.remove(Leader, i);
             else
                 for j= 1, table.getn(self[_PlayerID].Armies), 1 do
@@ -1341,17 +1354,18 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
                     _Army:SetStrength(_Army:CalculateStrength());
                     _Army:SetState(ArmyStates.Decide);
                 else
-                    local UnemployedID = self:GetNextUnemployedLeader(_PlayerID);
+                    local UnemployedID = self:GetNextUnemployedLeader(_PlayerID, _Army:GetHomePosition());
                     if UnemployedID ~= 0 then
                         _Army:BindGroup(UnemployedID);
                     else
                         if self:IsNecessaryToHireLeader(_PlayerID) then
+                            local RallyPointPos = GetPosition(_Army:GetHomePosition());
                             _Army:OnTypeToRecruitSelectedBehavior(_Army:GetTroopCatalog());
-                            -- Using BB army in background to recruit troops
-                            AI.Army_BuyLeader(_PlayerID, 1, _Army:GetChosenTypeToRecruit());
-                            local UnemployedID = self:GetNextUnemployedLeader(_PlayerID);
+                            _Army:BuyUnit(_Army:GetChosenTypeToRecruit());
+                            local UnemployedID = self:GetNextUnemployedLeader(_PlayerID, _Army:GetHomePosition());
                             if UnemployedID ~= 0 then
                                 local Max = Logic.LeaderGetMaxNumberOfSoldiers(UnemployedID);
+                                self:CheatSoldierCosts(_Army:GetChosenTypeToRecruit(), Max);
                                 _Army:BindGroup(UnemployedID);
                             end
                         end
@@ -1431,6 +1445,54 @@ end
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 -- ~~~                     TroopGenerator.Army                       ~~~ --
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
+
+ArmyTroopTypeToBarracks = {
+    -- Barracks
+    ["BlackKnightLeaderMace1"] = UpgradeCategories.Barracks,
+    ["Evil_LeaderBearman"]     = UpgradeCategories.Barracks,
+    ["LeaderBandit"]           = UpgradeCategories.Barracks,
+    ["LeaderBarbarian"]        = UpgradeCategories.Barracks,
+    ["LeaderPoleArm"]          = UpgradeCategories.Barracks,
+    ["LeaderSword"]            = UpgradeCategories.Barracks,
+
+    -- Archery
+    ["Evil_LeaderSkirmisher"]  = UpgradeCategories.Archery,
+    ["LeaderBanditBow"]        = UpgradeCategories.Archery,
+    ["LeaderBow"]              = UpgradeCategories.Archery,
+    ["LeaderRifle"]            = UpgradeCategories.Archery,
+
+    -- Stables
+    ["LeaderCavalry"]          = UpgradeCategories.Stable,
+    ["LeaderHeavyCavalry"]     = UpgradeCategories.Stable,
+
+    -- Foundry
+    ["PV_Cannon1"]             = UpgradeCategories.Foundry,
+    ["PV_Cannon2"]             = UpgradeCategories.Foundry,
+    ["PV_Cannon3"]             = UpgradeCategories.Foundry,
+    ["PV_Cannon4"]             = UpgradeCategories.Foundry,
+}
+
+ArmyLeaderToSoldierUpgradeCategory = {
+    ["BlackKnightLeaderMace1"] = UpgradeCategories.BlackKnightSoldierMace1,
+    ["Evil_LeaderBearman"]     = UpgradeCategories.Evil_SoldierBearman,
+    ["Evil_LeaderSkirmisher"]  = UpgradeCategories.Evil_SoldierSkirmisher,
+    ["LeaderBandit"]           = UpgradeCategories.SoldierBandit,
+    ["LeaderBarbarian"]        = UpgradeCategories.SoldierBarbarian,
+    ["LeaderPoleArm"]          = UpgradeCategories.SoldierPoleArm,
+    ["LeaderSword"]            = UpgradeCategories.SoldoerSword,
+    ["LeaderBanditBow"]        = UpgradeCategories.SoldierBanditBow,
+    ["LeaderBow"]              = UpgradeCategories.SoldierBow,
+    ["LeaderRifle"]            = UpgradeCategories.SoldierRifle,
+    ["LeaderCavalry"]          = UpgradeCategories.SoldierCavalry,
+    ["LeaderHeavyCavalry"]     = UpgradeCategories.SoldierHeavyCavalry,
+}
+
+ArmyCannonTypeToUpgradeCategory = {
+    ["PV_Cannon1"]             = UpgradeCategories.Cannon1,
+    ["PV_Cannon2"]             = UpgradeCategories.Cannon2,
+    ["PV_Cannon3"]             = UpgradeCategories.Cannon3,
+    ["PV_Cannon4"]             = UpgradeCategories.Cannon4,
+}
 
 TroopGenerator.Army = {
     m_ID                = 0,
@@ -1979,6 +2041,89 @@ function TroopGenerator.Army:IsIndependedFromLifethread()
     return self.m_Independed == true;
 end
 
+function TroopGenerator.Army:GetFreeReachableBarracksInUpgradeCategory(_UnitType)
+    local List = {};
+    local Key;
+    if string.find(Logic.GetEntityTypeName(_UnitType), "Cannon") ~= nil then
+        Key = QuestTools.GetKeyByValue(_UnitType, Entities);
+    else
+        Key = QuestTools.GetKeyByValue(_UnitType, UpgradeCategories);
+    end
+    if Key then
+        local Types = {Logic.GetBuildingTypesInUpgradeCategory(ArmyTroopTypeToBarracks[Key])};
+        for i= 2, Types[1]+1, 1 do
+            local Buildings = {Logic.GetPlayerEntities(self:GetPlayerID(), Types[i], 16)};
+            for j= 2, Buildings[1]+1, 1 do
+                local x, y, z = Logic.EntityGetPos(Buildings[j]);
+                if  Logic.IsConstructionComplete(Buildings[j]) == 1
+                and not InterfaceTool_IsBuildingDoingSomething(Buildings[j])
+                and Logic.GetPlayerEntitiesInArea(self:GetPlayerID(), 0, x, y, 800, 4) < 4 then
+                    local Position = QuestTools.GetReachablePosition(self:GetHomePosition(), Buildings[j]);
+                    if Position then
+                        table.insert(List, Buildings[j]);
+                    end
+                end
+            end
+        end
+    end
+    return List;
+end
+
+function TroopGenerator.Army:BuyUnit(_UnitType)
+    local List = self:GetFreeReachableBarracksInUpgradeCategory(_UnitType);
+    if table.getn(List) > 0 then
+        local IsFoundry = string.find(Logic.GetEntityTypeName(Logic.GetEntityType(List[1])), "Foundry") ~= nil;
+        if not IsFoundry then
+            self:CheatLeaderCosts(_UnitType);
+            Logic.BarracksBuyLeader(List[1], _UnitType);
+        else
+            self:CheatCannonCosts(_UnitType);
+            local PlayerID = GUI.GetPlayerID();
+            local SelectedEntities = {GUI.GetSelectedEntities()};
+            GUI.SetControlledPlayer(self:GetPlayerID());
+            GUI.BuyCannon(List[1], _UnitType);
+            GUI.SetControlledPlayer(PlayerID);
+            Logic.PlayerSetGameStateToPlaying(PlayerID);
+            Logic.ForceFullExplorationUpdate();
+            for i = 1, table.getn(SelectedEntities), 1 do
+                GUI.SelectEntity(SelectedEntities[i]);
+            end
+        end
+    end
+end
+
+function TroopGenerator.Army:CheatLeaderCosts(_UnitType)
+    local LeaderCosts = {};
+    Logic.FillLeaderCostsTable(self:GetPlayerID(), _UnitType, LeaderCosts);
+    for k, v in pairs(LeaderCosts) do
+        Logic.AddToPlayersGlobalResource(self:GetPlayerID(), k, v);
+    end
+end
+
+function TroopGenerator.Army:CheatCannonCosts(_UnitType)
+    local CannonCosts = {};
+    local CannonUpCat = ArmyCannonTypeToUpgradeCategory[Logic.GetEntityTypeName(_UnitType)];
+    if CannonUpCat then
+        Logic.FillLeaderCostsTable(self:GetPlayerID(), CannonUpCat, CannonCosts);
+        for k, v in pairs(CannonCosts) do
+            Logic.AddToPlayersGlobalResource(self:GetPlayerID(), k, v);
+        end
+    end
+end
+
+function TroopGenerator.Army:CheatSoldierCosts(_UnitType, _Amount)
+    _Amount = Amount or 16;
+    if ArmyLeaderToSoldierUpgradeCategory[_UnitType] then
+        local SoldierCosts = {};
+        Logic.FillSoldierCostsTable(self:GetPlayerID(), ArmyLeaderToSoldierUpgradeCategory[_UnitType], SoldierCosts);
+        for i= 1, Amount, 1 do
+            for k, v in pairs(SoldierCosts) do
+                Logic.AddToPlayersGlobalResource(self:GetPlayerID(), k, v);
+            end
+        end
+    end
+end
+
 function TroopGenerator.Army:GetChosenTypeToRecruit()
     local CatalogSize = table.getn(self.m_TroopCatalog);
     if CatalogSize == 0 then
@@ -2171,8 +2316,13 @@ function TroopGenerator.Group:TargetEnemiesInSight(_EnemyList, _Army)
         return false;
     end
 
-    -- FIXME: Should there be different handling for evil leader?
-
+    -- Call evil units troop controller
+    if Logic.IsEntityInCategory(ID, EntityCategories.EvilLeader) == 1 then
+        if Logic.GetEntityType(ID) == Entities.CU_Evil_LeaderSkirmisher then
+            return self:TargetEnemiesInSightOfMember(_EnemyList, GroupTargetingPriorities.Ranged);
+        end
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupTargetingPriorities.Sword);
+    end
     -- Call heavy cavalry troop controller
     if Logic.IsEntityInCategory(ID, EntityCategories.CavalryHeavy) == 1 then
         return self:TargetEnemiesInSightOfMember(_EnemyList, GroupTargetingPriorities.HeavyCavalry);
