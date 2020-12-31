@@ -350,9 +350,9 @@ function QuestDebug:CreateScriptEvents()
             MessageText = MessageText .. "Decrease angle: CTRL + Num 1 @cr ";
             MessageText = MessageText .. "Increase zoom: CTRL + Num 5 @cr ";
             MessageText = MessageText .. "Decrease zoom: CTRL + Num 2 @cr ";
-            MessageText = MessageText .. "Toggle FoW: CTRL + F @cr ";
-            MessageText = MessageText .. "Toggle GUI: CTRL + G @cr ";
-            MessageText = MessageText .. "Toggle sky: CTRL + H @cr ";
+            MessageText = MessageText .. "Toggle FoW: CTRL + SHIFT + F @cr ";
+            MessageText = MessageText .. "Toggle GUI: CTRL + SHIFT + G @cr ";
+            MessageText = MessageText .. "Toggle sky: CTRL + SHIFT + H @cr ";
 
         elseif _Option == "game" then
             MessageText = "GAME CHEATS: @cr ";
@@ -371,9 +371,12 @@ function QuestDebug:CreateScriptEvents()
             MessageText = MessageText .. "Heal entity: SHIFT + H @cr ";
             MessageText = MessageText .. "Cheat swordmen: CTRL + ALT + 1 @cr ";
             MessageText = MessageText .. "Cheat bowmen: CTRL + ALT + 2 @cr ";
-            MessageText = MessageText .. "Cheat rifle: CTRL + ALT + 3 @cr ";
+            MessageText = MessageText .. "Cheat spearmen: CTRL + ALT + 3 @cr ";
             MessageText = MessageText .. "Cheat heavy cavalry: CTRL + ALT + 4 @cr ";
-            MessageText = MessageText .. "Cheat siege cannon: CTRL + ALT + 5 @cr ";
+            MessageText = MessageText .. "Cheat light cavalry: CTRL + ALT + 5 @cr ";
+            MessageText = MessageText .. "Cheat iron cannon: CTRL + ALT + 6 @cr ";
+            MessageText = MessageText .. "Cheat siege cannon: CTRL + ALT + 7 @cr ";
+            MessageText = MessageText .. "Cheat rifle: CTRL + ALT + 8 @cr ";
 
         elseif _Option == "resource" then
             MessageText = "RESOURCE CHEATS: @cr ";
@@ -428,29 +431,46 @@ function QuestDebug:CreateScriptEvents()
         local pos = {X= _X, Y= _Y};
         if QuestTools.IsValidPosition(pos) then
             if _Flag == 1 then
-                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderSword4, 8, pos.X , pos.Y ,0 );
+                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderSword4, 8, pos.X , pos.Y , 0);
                 if GUI.GetPlayerID() == _ExecutingPlayer then
                     Message("cheating unit PU_LeaderSword4!");
                 end
             elseif _Flag == 2 then
-                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderBow4, 8, pos.X , pos.Y ,0 );
+                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderBow4, 8, pos.X , pos.Y , 0);
                 if GUI.GetPlayerID() == _ExecutingPlayer then
                     Message("cheating unit PU_LeaderBow4!");
                 end
             elseif _Flag == 3 then
-                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderRifle2, 8, pos.X , pos.Y ,0 );
+                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderPoleArm4, 8, pos.X , pos.Y , 0);
                 if GUI.GetPlayerID() == _ExecutingPlayer then
-                    Message("cheating unit PU_LeaderRifle2!");
+                    Message("cheating unit PU_LeaderPoleArm4!");
                 end
             elseif _Flag == 4 then
-                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderHeavyCavalry2, 8, pos.X , pos.Y ,0 );
+                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderHeavyCavalry2, 3, pos.X , pos.Y , 0);
                 if GUI.GetPlayerID() == _ExecutingPlayer then
                     Message("cheating unit PU_LeaderHeavyCavalry2!");
                 end
             elseif _Flag == 5 then
-                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PV_Cannon4, 0, pos.X , pos.Y ,0 );
+                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderCavalry2, 3, pos.X , pos.Y , 0);
+                if GUI.GetPlayerID() == _ExecutingPlayer then
+                    Message("cheating unit PU_LeaderCavalry2!");
+                end
+            elseif _Flag == 6 then
+                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PV_Cannon3, 0, pos.X , pos.Y , 0);
+                if GUI.GetPlayerID() == _ExecutingPlayer then
+                    Message("cheating unit PV_Cannon3!");
+                end
+            elseif _Flag == 7 then
+                Tools.CreateGroup(GUI.GetPlayerID(), Entities.PV_Cannon4, 0, pos.X , pos.Y , 0);
                 if GUI.GetPlayerID() == _ExecutingPlayer then
                     Message("cheating unit PV_Cannon4!");
+                end
+            elseif _Flag == 8 then
+                if Entities.PU_LeaderRifle2 then
+                    Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderRifle2, 8, pos.X , pos.Y , 0);
+                    if GUI.GetPlayerID() == _ExecutingPlayer then
+                        Message("cheating unit PU_LeaderRifle2!");
+                    end
                 end
             end
         else
@@ -573,6 +593,9 @@ function QuestDebug:CreateCheats()
         Input.KeyBindDown(Keys.ModifierControl + Keys.ModifierAlt + Keys.D3, "Cheats_CreateUnitUnderMouse(3)", 2);
         Input.KeyBindDown(Keys.ModifierControl + Keys.ModifierAlt + Keys.D4, "Cheats_CreateUnitUnderMouse(4)", 2);
         Input.KeyBindDown(Keys.ModifierControl + Keys.ModifierAlt + Keys.D5, "Cheats_CreateUnitUnderMouse(5)", 2);
+        Input.KeyBindDown(Keys.ModifierControl + Keys.ModifierAlt + Keys.D6, "Cheats_CreateUnitUnderMouse(6)", 2);
+        Input.KeyBindDown(Keys.ModifierControl + Keys.ModifierAlt + Keys.D7, "Cheats_CreateUnitUnderMouse(7)", 2);
+        Input.KeyBindDown(Keys.ModifierControl + Keys.ModifierAlt + Keys.D8, "Cheats_CreateUnitUnderMouse(8)", 2);
 
         -- Cheat resources
         Input.KeyBindDown(Keys.ModifierControl + Keys.F1, "Cheats_AddResourcesToPlayer(ResourceType.GoldRaw, 100)", 2);
