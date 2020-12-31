@@ -625,6 +625,22 @@ end
 GetEntityCategories = QuestTools.GetEntityCategories;
 
 ---
+-- Returns all keys of the categories the entity is in.
+--
+-- @param _Entity Scriptname or ID
+-- @return[type=table] Category list
+-- @within Entities
+--
+function QuestTools.GetEntityCategoriesAsString(_Entity)
+    local Categories = {};
+    for k, v in pairs(QuestTools.GetEntityCategories(_Entity)) do
+        table.insert(Categories, QuestTools.GetKeyByValue(v));
+    end
+    return Categories;
+end
+GetEntityCategoriesAsString = QuestTools.GetEntityCategoriesAsString;
+
+---
 -- Returns the script name of the entity. If the entity do not have a name a
 -- unique ongoing name is added to the entity and returned
 --
