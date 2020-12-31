@@ -78,7 +78,6 @@ ArmyBehavior = {
 -- @field SelectSpawnedType Selects the next spawned type
 -- @field SelectAttackTarget Selects the attack target
 -- @field SelectPatrolTarget Selects the first patrol point
--- @field FormationIsChosen Selects the formation for members
 -- @within Constants
 --
 ArmySubBehavior = {
@@ -88,7 +87,6 @@ ArmySubBehavior = {
     SelectSpawnedType   = 4,
     SelectAttackTarget  = 5,
     SelectPatrolTarget  = 6,
-    FormationIsChosen   = 7,
 };
 
 ---
@@ -524,10 +522,6 @@ end
 -- The controller must set the path and the first waypoint. Army will loop
 -- over the waypoints starting from the selected one.</td>
 -- </tr>
--- <tr>
--- <td>FormationIsChosen</td>
--- <td></td>
--- </tr>
 -- </table>
 --
 -- @param[type=number] _PlayerID   ID of player
@@ -562,8 +556,6 @@ function ChangeArmySubBehavior(_PlayerID, _ArmyID, _Behavior, _Controller)
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnAttackTargetSelectedBehavior(_Controller);
     elseif ArmySubBehavior.SelectPatrolTarget == _Behavior then
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnWaypointSelectedBehavior(_Controller);
-    elseif ArmySubBehavior.FormationIsChosen == _Behavior then
-        TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnFormationChosenBehavior(_Controller);
     end
 end
 
@@ -1293,7 +1285,7 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
                 _Army:UnbindGroup(MemberList[i]);
             else
                 if MemberList[i]:GetState() == GroupBehavior.Default then
-                    MemberList[i]:OnFormationChosenBehavior(_Army:GetOnFormationChosenBehavior());
+                    MemberList[i]:ChoseFormation();
                     if _Army:GetState() == ArmyBehavior.Attack then
                         MemberList[i]:PrioritizedAttackController(_Army);
                         if MemberList[i]:IsFighting() and not MemberList[i]:IsAttackingPriorizedTarget() then
@@ -1846,15 +1838,6 @@ function TroopGenerator.Army:SetOnEnemiesInSightBehavior(_Behavior)
     return self;
 end
 
-function TroopGenerator.Army:GetOnFormationChosenBehavior()
-    return self.OnFormationChosenBehavior;
-end
-
-function TroopGenerator.Army:SetOnFormationChosenBehavior(_Behavior)
-    self.OnFormationChosenBehavior = _Behavior;
-    return self;
-end
-
 function TroopGenerator.Army:SetOnMemberIsAttackedBehavior(_Behavior)
     self.OnMemberIsAttackedBehavior = _Behavior;
     return self;
@@ -2069,7 +2052,7 @@ function TroopGenerator.Group:OnEnemiesInSightBehavior(_EnemyList, _Function)
     self:Attack(_EnemyList[1]);
 end
 
-function TroopGenerator.Group:OnFormationChosenBehavior(_Function)
+function TroopGenerator.Group:ChoseFormation(_Function)
     if _Function then
         _Function(self);
         return;
@@ -2090,11 +2073,6 @@ end
 
 function TroopGenerator.Group:SetOnEnemiesInSightBehavior(_Function)
     self.OnEnemiesInSightBehavior = _Function;
-    return self;
-end
-
-function TroopGenerator.Group:SetOnFormationChosenBehavior(_Function)
-    self.OnFormationChosenBehavior = _Function;
     return self;
 end
 
