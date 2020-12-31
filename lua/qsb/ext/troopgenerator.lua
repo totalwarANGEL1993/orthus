@@ -250,7 +250,6 @@ function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, _
         Strength        = _Strength or 8,
         RetreatStrength = 0.3, 
         HomePosition    = _Position,
-        FrontalAttack   = false,
         TroopCatalog    = _TroopTypes or TroopGenerator.AI[_PlayerID].UnitsToBuild,
     };
     if Instance then
@@ -314,7 +313,6 @@ function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Sp
         RodeLength               = _Area or 3000,
         Strength                 = _Strength or 8,
         HomePosition             = _Position,
-        FrontalAttack            = false,
         Lifethread               = _Spawner,
         IndependedFromLifethread = false,
         RespawnTime              = _Respawn,
@@ -983,7 +981,6 @@ function TroopGenerator.AI:CreateArmy(_Data)
         _Data.Strength or 8,
         _Data.RetreatStrength or 0.3, 
         _Data.HomePosition,
-        _Data.FrontalAttack == true,
         nil,
         true,
         0,
@@ -1006,7 +1003,6 @@ function TroopGenerator.AI:CreateSpawnArmy(_Data)
         _Data.Strength or 8,
         _Data.RetreatStrength or 0.3, 
         _Data.HomePosition,
-        _Data.FrontalAttack == true,
         _Data.Lifethread,
         _Data.IndependedFromLifethread == true,
         _Data.RespawnTime or 30,
@@ -1029,7 +1025,6 @@ function TroopGenerator.AI:EmployArmies(_PlayerID)
                         Strength		         = 8,
                         RetreatStrength          = 0.3, 
                         HomePosition             = self[_PlayerID].HomePosition,
-                        FrontalAttack            = false,
                         Lifethread               = nil,
                         IndependedFromLifethread = true,
                         RespawnTime              = 0,
@@ -1380,7 +1375,7 @@ TroopGenerator.Army = {
 
 function TroopGenerator.Army:construct(
     _ID, _PlayerID, _RodeLength, _Strength, _RetreatStrength, _Spawnpoint, 
-    _FrontalAttack, _Lifethread, _Independed, _RespawnTime, _TroopCatalog
+    _Lifethread, _Independed, _RespawnTime, _TroopCatalog
 )
     self.m_ID               = _ID;
     self.m_PlayerID         = _PlayerID;
@@ -1390,7 +1385,6 @@ function TroopGenerator.Army:construct(
     self.m_Strength         = 0;
     self.m_RetreatStrength  = _RetreatStrength;
     self.m_HomePosition       = _Spawnpoint;
-    self.m_FrontalAttack    = _FrontalAttack == true;
     self.m_Lifethread       = _Lifethread;
     self.m_Independed       = _Independed == true;
     self.m_DoesRespawn      = _RespawnTime ~= nil and _RespawnTime > 0;
@@ -1560,10 +1554,6 @@ function TroopGenerator.Army:SetDefenceAllowed(_Flag)
     return self;
 end
 
-function TroopGenerator.Army:DoesFrontalAttack()
-    return self.m_FrontalAttack == true;
-end
-
 function TroopGenerator.Army:GetTarget()
     return self.m_AttackTarget;
 end
@@ -1730,7 +1720,7 @@ end
 -- ~~~ Gathering ~~~ --
 
 function TroopGenerator.Army:IsAnyScattered()
-    if not self:IsFighting() and not self:DoesFrontalAttack() then
+    if not self:IsFighting() then
         local ArmyPosition = self:GetPosition();
         for k, v in pairs(self.m_Member) do
             if not v:IsNear(ArmyPosition, 3000) then
@@ -1742,7 +1732,7 @@ function TroopGenerator.Army:IsAnyScattered()
 end
 
 function TroopGenerator.Army:IsScattered()
-    if not self:IsFighting() and not self:DoesFrontalAttack() then
+    if not self:IsFighting() then
         local ArmyPosition = self:GetPosition();
         local ArmySize = table.getn(self.m_Member);
         for i= 1, ArmySize, 1 do
