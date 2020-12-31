@@ -245,7 +245,7 @@ function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, _
     local Instance = TroopGenerator.AI:CreateArmy {
         PlayerID        = _PlayerID,
         RodeLength      = _Area or 3000,
-        Strength        = _Strength or 8,
+        Strength        = _Strength or 12,
         RetreatStrength = 0.3, 
         HomePosition    = _Position,
         TroopCatalog    = _TroopTypes or TroopGenerator.AI[_PlayerID].UnitsToBuild,
@@ -309,7 +309,7 @@ function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Sp
     local Instance = TroopGenerator.AI:CreateSpawnArmy {
         PlayerID                 = _PlayerID,
         RodeLength               = _Area or 3000,
-        Strength                 = _Strength or 8,
+        Strength                 = _Strength or 12,
         HomePosition             = _Position,
         Lifethread               = _Spawner,
         IndependedFromLifethread = false,
@@ -963,7 +963,7 @@ function TroopGenerator.AI:CreateArmy(_Data)
         NewID,
         _Data.PlayerID,
         _Data.RodeLength or 3000,
-        _Data.Strength or 8,
+        _Data.Strength or 12,
         _Data.RetreatStrength or 0.3, 
         _Data.HomePosition,
         nil,
@@ -985,7 +985,7 @@ function TroopGenerator.AI:CreateSpawnArmy(_Data)
         NewID,
         _Data.PlayerID,
         _Data.RodeLength or 3000,
-        _Data.Strength or 8,
+        _Data.Strength or 12,
         _Data.RetreatStrength or 0.3, 
         _Data.HomePosition,
         _Data.Lifethread,
@@ -1007,7 +1007,7 @@ function TroopGenerator.AI:EmployArmies(_PlayerID)
                     TroopGenerator.AI:CreateArmy({
                         PlayerID		         = _PlayerID,
                         RodeLength               = 8000,
-                        Strength		         = 8,
+                        Strength		         = 12,
                         RetreatStrength          = 0.3, 
                         HomePosition             = self[_PlayerID].HomePosition,
                         Lifethread               = nil,
@@ -1281,27 +1281,28 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
                     MemberList[i]:ChoseFormation();
                     if _Army:GetState() == ArmyBehavior.Attack then
                         MemberList[i]:PrioritizedAttackController(_Army);
-                        if MemberList[i]:IsFighting() and not MemberList[i]:IsAttackingPriorizedTarget() then
-                            if not MemberList[i]:IsNear(_Army:GetPosition(), 4000) then
-                                MemberList[i]:SetState(GroupBehavior.Scattered);
-                                return;
-                            end
-                        else
+                        local EnemyList = MemberList[i]:GetEnemiesInSight();
+                        if table.getn(EnemyList) == 0 then
                             if not MemberList[i]:IsNear(_Army:GetPosition(), 1500) then
                                 MemberList[i]:SetState(GroupBehavior.Scattered);
-                                return;
-                            end
-                        end
-                        if not MemberList[i]:IsFighting() and not MemberList[i]:IsWalking() then
-                            local EnemyList = MemberList[i]:GetEnemiesInSight();
-                            if table.getn(EnemyList) > 0 then
-                                MemberList[i]:TargetEnemiesInSight(EnemyList);
                             else
-                                MemberList[i]:AttackMove(_Army:GetCurrentWaypoint());
+                                MemberList[i]:Move(_Army:GetCurrentWaypoint());
+                            end
+                        else
+                            if not MemberList[i]:IsNear(_Army:GetPosition(), 4500) then
+                                MemberList[i]:SetState(GroupBehavior.Scattered);
+                            else
+                                if not MemberList[i]:IsFighting() then
+                                    if not MemberList[i]:TargetEnemiesInSight(EnemyList, _Army) then
+                                        if not MemberList[i]:IsWalking() then
+                                            MemberList[i]:Move(_Army:GetCurrentWaypoint());
+                                        end
+                                    end
+                                end
                             end
                         end
                     elseif _Army:GetState() == ArmyBehavior.Guard then
-                        if not MemberList[i]:IsNear(_Army:GetPosition(), 3000) then
+                        if not MemberList[i]:IsNear(_Army:GetPosition(), 2000) then
                             MemberList[i]:SetState(GroupBehavior.Scattered);
                         end
                     elseif _Army:GetState() == ArmyBehavior.Retreat then
@@ -1311,7 +1312,7 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
                     if MemberList[i]:IsNear(_Army:GetPosition(), 500) then
                         MemberList[i]:SetState(GroupBehavior.Default);
                     else
-                        MemberList[i]:AttackMove(_Army:GetPosition());
+                        MemberList[i]:Move(_Army:GetPosition());
                     end
                 end
             end
@@ -1966,33 +1967,77 @@ end
 -- ~~~                       TroopGenerator.Group                         ~~~ --
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 
-GroupBehavior = {
-    Default     = 1,
-    Persecuting = 2,
-    Scattered   = 3,
-}
-
+-- Attack priority for cannons
 GroupPriorityCannon = {
+    ["EvilLeader"] = 5,
     ["VillageCenter"] = 4,
-    ["MilitaryBuilding"] = 3,
-    ["EvilLeader"] = 3,
-    ["LongRange"] = 2,
-    ["Headquarters"] = 1,
-};
-GroupPriorityMelee = {
-    ["LongRange"] = 3,
-    ["MilitaryBuilding"] = 2,
-    ["Hero"] = 1,
-};
-GroupPriorityRanged = {
-    ["VillageCenter"] = 6,
-    ["Headquarters"] = 5,
     ["MilitaryBuilding"] = 4,
-    ["Military"] = 3,
+    ["Headquarters"] = 3,
+    ["LongRange"] = 2,
+    ["Melee"] = 2,
+};
+
+-- Attack priority for heavy cavalry
+GroupPriorityHeavyCavalry = {
+    ["Hero"] = 4,
+    ["MilitaryBuilding"] = 3,
+    ["Cannon"] = 3,
+    ["Sword"] = 3,
+    ["LongRange"] = 3,
+    ["Hero10"] = 2,
+    ["Hero4"] = 1,
+    ["Spear"] = -3,
+};
+
+-- Attack priority for swordmen
+GroupPrioritySword = {
+    ["Hero"] = 4,
+    ["LongRange"] = 3,
+    ["Spear"] = 3,
+    ["Cannon"] = 3,
+    ["MilitaryBuilding"] = 1,
+};
+
+-- Attack priority for spearmen
+GroupPrioritySpear = {
+    ["CavalryHeavy"] = 4,
+    ["CavalryLight"] = 3,
+    ["MilitaryBuilding"] = 3,
+    ["Hero"] = 2,
+    ["Sword"] = -2,
+    ["LongRange"] = -4,
+};
+
+-- Attack priority for bowmen
+GroupPriorityRanged = {
+    ["MilitaryBuilding"] = 10,
+    ["VillageCenter"] = 4,
+    ["Headquarters"] = 4,
+    ["CavalryHeavy"] = 3,
+    ["CavalryLight"] = 2,
     ["Hero"] = 2,
     ["Hero10"] = 2,
     ["Hero4"] = 1,
+    ["Sword"] = -2,
 };
+
+-- Attack priority for marksmen
+GroupPriorityRifle = {
+    ["MilitaryBuilding"] = 10,
+    ["EvilLeader"] = 6,
+    ["VillageCenter"] = 4,
+    ["Headquarters"] = 4,
+    ["LongRange"] = 2,
+    ["Hero10"] = 2,
+    ["Cannon"] = 2,
+    ["Melee"] = -4,
+};
+
+-- States of an member
+GroupBehavior = {
+    Default     = 1,
+    Scattered   = 2,
+}
 
 TroopGenerator.Group = {
     m_PersecutionArea = 5000,
@@ -2010,31 +2055,80 @@ class(TroopGenerator.Group);
 
 -- ~~~ Behavior ~~~ --
 
-function TroopGenerator.Group:TargetEnemiesInSight(_EnemyList, _Function)
-    if _Function then
-        _Function(self, _EnemyList);
-        return;
+function TroopGenerator.Group:TargetEnemiesInSight(_EnemyList, _Army)
+    local ID = GetID(self.m_ScriptName);
+    -- Check if member is too far away from the army position
+    if QuestTools.GetDistance(_Army:GetAnchor(), _Army:GetPosition()) > _Army:GetRodeLength() then
+        if QuestTools.GetDistance(self.m_ScriptName, _Army:GetPosition()) > 3000 then
+            return false;
+        end
     end
-    if self:IsAttackingPriorizedTarget() then
-        return;
+    -- Call hero controller
+    if Logic.IsEntityInCategory(ID, EntityCategories.Hero) == 1 then
+        -- TODO: Implement
+        -- Heros need special treatment because they have to use their skills.
+        -- This is currently out of scoupe because heroes are not added to an
+        -- army by default.
+        return false;
     end
-    local EnemyCategoryMap = self:GetPriorityMap();
-    local Prioritize = function(a, b)
+
+    -- FIXME: Should there be different handling for evil leader?
+
+    -- Call heavy cavalry troop controller
+    if Logic.IsEntityInCategory(ID, EntityCategories.CavalryHeavy) == 1 then
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPriorityHeavyCavalry);
+    end
+    -- Call normal melee troop controller
+    if Logic.IsEntityInCategory(ID, EntityCategories.Sword) == 1 then
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPrioritySword);
+    end
+    -- Call normal melee troop controller
+    if Logic.IsEntityInCategory(ID, EntityCategories.Spear) == 1 then
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPrioritySpear);
+    end
+    -- Call rifle troop controller
+    if Logic.IsEntityInCategory(ID, EntityCategories.Rifle) == 1 then
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPriorityRifle);
+    end
+    -- Call bow troop controller
+    if Logic.IsEntityInCategory(ID, EntityCategories.LongRange) == 1 then
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPriorityRanged);
+    end
+    -- Call cannon troop controller
+    if Logic.IsEntityInCategory(ID, EntityCategories.Cannon) == 1 then
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPriorityCannon);
+    end
+    -- Default false
+    return false;
+end
+
+function TroopGenerator.Group:TargetEnemiesInSightOfMember(_EnemyList, _Priority)
+    if table.getn(_EnemyList) == 0 then
+        return false;
+    end
+    local EnemyList = self:SortEnemiesByPriority(_EnemyList, _Priority);
+    self:Attack(EnemyList[1]);
+    return true;
+end
+
+function TroopGenerator.Group:SortEnemiesByPriority(_EnemyList, _Priority)
+    local EnemyList = copy(_EnemyList);
+    local SortFunction = function(a, b)
         local Sight     = (self:GetSight()+3000)/1000;
         local Distance1 = QuestTools.GetDistance(a, self.m_ScriptName) / 1000;
         local Priority1 = (Sight-Distance1);
         for k, v in pairs(QuestTools.GetEntityCategoriesAsString(a)) do
-            Priority1 = Priority1 + (EnemyCategoryMap[v] or 0);
+            Priority1 = Priority1 + (_Priority[v] or 0);
         end
         local Distance2 = QuestTools.GetDistance(b, self.m_ScriptName) / 1000;
         local Priority2 = (Sight-Distance2);
         for k, v in pairs(QuestTools.GetEntityCategoriesAsString(b)) do
-            Priority2 = Priority2 + (EnemyCategoryMap[v] or 0);
+            Priority2 = Priority2 + (_Priority[v] or 0);
         end
         return Priority1 > Priority2;
     end
-    table.sort(_EnemyList, Prioritize);
-    self:Attack(_EnemyList[1]);
+    table.sort(EnemyList, SortFunction);
+    return EnemyList;
 end
 
 function TroopGenerator.Group:ChoseFormation(_Function)
@@ -2080,7 +2174,14 @@ function TroopGenerator.Group:GetEnemiesInSight()
             for j= 2, PlayerEntities[1]+1, 1 do
                 if  (Logic.IsBuilding(PlayerEntities[j]) == 1 or Logic.IsLeader(PlayerEntities[j]) == 1)
                 and Logic.GetEntityHealth(PlayerEntities[j]) > 0 then
-                    table.insert(AllEnemiesInSight, PlayerEntities[j]);
+                    local ArmyID = TroopGenerator.AI:GetArmyEntityIsEmployedIn(PlayerEntities[j]);
+                    if ArmyID == 0 then
+                        table.insert(AllEnemiesInSight, PlayerEntities[j]);
+                    else
+                        if TroopGenerator.AI[i].Armies[ArmyID] and TroopGenerator.AI[i].Armies[ArmyID]:GetState() ~= ArmyBehavior.Retreat then
+                            table.insert(AllEnemiesInSight, PlayerEntities[j]);
+                        end
+                    end
                 end
             end
         end

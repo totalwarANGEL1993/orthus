@@ -634,7 +634,7 @@ GetEntityCategories = QuestTools.GetEntityCategories;
 function QuestTools.GetEntityCategoriesAsString(_Entity)
     local Categories = {};
     for k, v in pairs(QuestTools.GetEntityCategories(_Entity)) do
-        table.insert(Categories, QuestTools.GetKeyByValue(v));
+        table.insert(Categories, v);
     end
     return Categories;
 end
