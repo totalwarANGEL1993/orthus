@@ -370,7 +370,11 @@
 <h2><a href="#Rewards">Rewards</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#Reward_AI_CreateAIPlayer">Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel, _SerfLimit)</a></td>
+	<td class="name" nowrap><a href="#Reward_AI_ConstructBuilding">Reward_AI_ConstructBuilding (_PlayerID, _Type, _Position)</a></td>
+	<td class="summary">Commands an AI player to build a building at the position.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_AI_CreateAIPlayer">Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel, _SerfLimit, _Repair, _Rebuild)</a></td>
 	<td class="summary">Creates an AI player but don't creates any armies.</td>
 	</tr>
 	<tr>
@@ -389,6 +393,10 @@
 	<tr>
 	<td class="name" nowrap><a href="#Reward_AI_EnableArmyPatrol">Reward_AI_EnableArmyPatrol (_PlayerID, _ArmyName, _Flag)</a></td>
 	<td class="summary">Disables or enables the patrol behavior for armies.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Reward_AI_SetupAIPlayer">Reward_AI_SetupAIPlayer (_PlayerID, _TechLevel, _SerfLimit, _RallyPoint, _ArmyAmount, _Repair, _Rebuild)</a></td>
+	<td class="summary">Creates an AI player and let it creates any armies.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Reward_Briefing">Reward_Briefing (_FunctionName)</a></td>
@@ -2296,8 +2304,39 @@
 
     <dl class="function">
     <dt>
+    <a name = "Reward_AI_ConstructBuilding"></a>
+    <strong>Reward_AI_ConstructBuilding (_PlayerID, _Type, _Position)</strong>
+    </dt>
+    <dd>
+    Commands an AI player to build a building at the position.
+<p> The AI will need serfs to heed the command!
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+          Id of player
+        </li>
+        <li><span class="parameter">_Type</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+              Type of building
+        </li>
+        <li><span class="parameter">_Position</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+          Location of building
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "Reward_AI_CreateAIPlayer"></a>
-    <strong>Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel, _SerfLimit)</strong>
+    <strong>Reward_AI_CreateAIPlayer (_PlayerID, _TechLevel, _SerfLimit, _Repair, _Rebuild)</strong>
     </dt>
     <dd>
     Creates an AI player but don't creates any armies.
@@ -2319,6 +2358,14 @@
         <li><span class="parameter">_SerfLimit</span>
             <span class="types"><span class="type">number</span></span>
          Amount of serfs
+        </li>
+        <li><span class="parameter">_Repair</span>
+            <span class="types"><span class="type">boolean</span></span>
+            Repair damaged buildings
+        </li>
+        <li><span class="parameter">_Rebuild</span>
+            <span class="types"><span class="type">boolean</span></span>
+           Rebuild destryoed buildings
         </li>
     </ul>
 
@@ -2511,6 +2558,55 @@
 
 </dd>
     <dt>
+    <a name = "Reward_AI_SetupAIPlayer"></a>
+    <strong>Reward_AI_SetupAIPlayer (_PlayerID, _TechLevel, _SerfLimit, _RallyPoint, _ArmyAmount, _Repair, _Rebuild)</strong>
+    </dt>
+    <dd>
+    Creates an AI player and let it creates any armies.
+<p> Armies will gather at the rally point and will automatically deployed on
+ attack targets and patrol points by the AI.
+<p> <b>Note:</b> Armies will have 12 groups instead of 8!
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+           Id of player
+        </li>
+        <li><span class="parameter">_TechLevel</span>
+            <span class="types"><span class="type">number</span></span>
+          Technology level
+        </li>
+        <li><span class="parameter">_SerfLimit</span>
+            <span class="types"><span class="type">number</span></span>
+          Amount of serfs
+        </li>
+        <li><span class="parameter">_RallyPoint</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Rally point for armies
+        </li>
+        <li><span class="parameter">_ArmyAmount</span>
+            <span class="types"><span class="type">number</span></span>
+         Amount of recruited armies
+        </li>
+        <li><span class="parameter">_Repair</span>
+            <span class="types"><span class="type">boolean</span></span>
+             Repair damaged buildings
+        </li>
+        <li><span class="parameter">_Rebuild</span>
+            <span class="types"><span class="type">boolean</span></span>
+            Rebuild destryoed buildings
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "Reward_Briefing"></a>
     <strong>Reward_Briefing (_FunctionName)</strong>
     </dt>
@@ -2653,7 +2749,9 @@
     <strong>Reward_CreateEntity (_ScriptName, _EntityType)</strong>
     </dt>
     <dd>
-    Replaces an script entity with a new entity of the chosen type.
+    Replaces an script entity with a new entity of the chosen type.  You can set
+ a new owner. If unchanged the entity will adopt the owner of the script
+ entity.
 
 
     <h3>Parameters:</h3>
@@ -2678,7 +2776,9 @@
     <strong>Reward_CreateGroup (_ScriptName, _EntityType, _Soldiers)</strong>
     </dt>
     <dd>
-    Replaces an script entity with a military group of the chosen type.
+    Replaces an script entity with a military group of the chosen type.  You can
+ set a new owner. If unchanged the entity will adopt the owner of the script
+ entity.
 
 
     <h3>Parameters:</h3>
@@ -4035,7 +4135,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2020-12-27 16:47:24 </i>
+<i style="float:right;">Last updated 2020-12-31 17:01:06 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

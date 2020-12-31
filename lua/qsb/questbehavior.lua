@@ -4328,6 +4328,8 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateAIPlayer);
 -- Armies will gather at the rally point and will automatically deployed on
 -- attack targets and patrol points by the AI.
 --
+-- <b>Note:</b> Armies will have 12 groups instead of 8!
+--
 -- @param[type=number]  _PlayerID   Id of player
 -- @param[type=number]  _TechLevel  Technology level
 -- @param[type=number]  _SerfLimit  Amount of serfs

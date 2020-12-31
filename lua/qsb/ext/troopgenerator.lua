@@ -62,7 +62,7 @@ TroopGenerator = {
 -- @field Refill Army is recruiting or respawning until full
 -- @within Constants
 --
-ArmyState = {
+ArmyStates = {
     Decide = 1,
     Attack  = 2,
     Guard   = 3,
@@ -72,7 +72,6 @@ ArmyState = {
 
 ---
 -- Table of army behavior.
--- @field EnemyIsInSight Enemies in sight of army
 -- @field MemberIsAttacked Enemies attacked a member of the army
 -- @field SelectPurchasedType Selects the next purchased type
 -- @field SelectSpawnedType Selects the next spawned type
@@ -80,8 +79,7 @@ ArmyState = {
 -- @field SelectPatrolTarget Selects the first patrol point
 -- @within Constants
 --
-ArmySubState = {
-    EnemyIsInSight      = 1,
+ArmyBehaviors = {
     MemberIsAttacked    = 2,
     SelectPurchasedType = 3,
     SelectSpawnedType   = 4,
@@ -138,6 +136,9 @@ ArmyCategories = {
 -- Use this function or the behavior to initalize the AI. An AI must first be
 -- initalized before an army can be created.
 --
+-- <b>Note:</b> If you decide to allow to recruit armies keep in mind that they
+-- will have 12 groups instead of 8!
+--
 -- @param[type=number] _PlayerID     PlayerID
 -- @param[type=number] _TechLevel    Technology level [1|4]
 -- @param[type=number] _SerfAmount   (optional) Amount of serfs
@@ -177,7 +178,7 @@ end
 -- @param[type=boolean] _Flag     Ability to attack
 -- @within Methods
 -- 
--- @usage ArmyDisableAttackAbility(2, 1, true)
+-- @usage ArmyDisableAttackAbility(2, 1, true);
 --
 function ArmyDisableAttackAbility(_PlayerID, _Army, _Flag)
     local ArmyID = TroopGenerator.AiArmyNameToId[_Army];
@@ -189,14 +190,15 @@ end
 
 ---
 -- Disables or enables the ability to patrol between positions. This
--- function can be force an army to stay on its spawnpoint.
+-- function can force an army to stay on its spawnpoint or to avoid to be put
+-- on guard duties.
 --
 -- @param[type=number]  _PlayerID ID of player
 -- @param               _Army     Name or ID of army
 -- @param[type=boolean] _Flag     Ability to attack
 -- @within Methods
 -- 
--- @usage ArmyDisablePatrolAbility(2, 1, true)
+-- @usage ArmyDisablePatrolAbility(2, 1, true);
 --
 function ArmyDisablePatrolAbility(_PlayerID, _Army, _Flag)
     local ArmyID = TroopGenerator.AiArmyNameToId[_Army];
@@ -328,6 +330,8 @@ end
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _Limit    Amount of serfs
 -- @within Methods
+-- 
+-- @usage AIPlayerChangeSerfLimit(2, 4);
 --
 function AIPlayerChangeSerfLimit(_PlayerID, _Limit)
     AI.Village_SetSerfLimit(_PlayerID, _Limit);
@@ -339,6 +343,8 @@ end
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=boolean] _Flag     Repair is disabled
 -- @within Methods
+-- 
+-- @usage AIPlayerDisableRepairAbility(2, true);
 --
 function AIPlayerDisableRepairAbility(_PlayerID, _Flag)
     TroopGenerator.AI:SetDoesRepair(_PlayerID, not _Flag);
@@ -350,6 +356,8 @@ end
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=boolean] _Flag     Construction is disabled
 -- @within Methods
+-- 
+-- @usage AIPlayerDisableConstructAbility(2, true);
 --
 function AIPlayerDisableConstructAbility(_PlayerID, _Flag)
     TroopGenerator.AI:SetDoesConstruct(_PlayerID, not _Flag);
@@ -361,9 +369,41 @@ end
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=boolean] _Flag     Rebuild is disabled
 -- @within Methods
+-- 
+-- @usage AIPlayerDisableRebuildAbility(2, true);
 --
 function AIPlayerDisableRebuildAbility(_PlayerID, _Flag)
     TroopGenerator.AI:SetDoesRebuild(_PlayerID, not _Flag);
+end
+
+---
+-- Alters update time and amount of updated cheat resources for the AI.
+--
+-- <b>Note:</b> Only needed if the player should by resources for themself.
+--
+-- @param[type=number] _PlayerID   ID of player
+-- @param[type=number] _UpdateTime Time between updates
+-- @param[type=number] _Gold       Amount of gold
+-- @param[type=number] _Clay       Amount of clay
+-- @param[type=number] _Wood       Amount of wood
+-- @param[type=number] _Stone      Amount of stone
+-- @param[type=number] _Iron       Amount of iron
+-- @param[type=number] _Sulfur     Amount of sulfur
+-- @within Methods
+-- 
+-- @usage AIPlayerChangeResourceRespawnRates(2, 5*60, 6500, 1000, 2500, 1000, 2500, 2500);
+--
+function AIPlayerChangeResourceRespawnRates(_PlayerID, _UpdateTime, _Gold, _Clay, _Wood, _Stone, _Iron, _Sulfur)
+    _Gold = _Gold or 0;
+    _Clay = _Clay or 0;
+    _Wood = _Wood or 0;
+    _Stone = _Stone or 0;
+    _Iron = _Iron or 0;
+    _Sulfur = _Sulfur or 0;
+    if not _UpdateTime then
+        return;
+    end
+    AI.Player_SetResourceRefreshRates(_PlayerID, _Gold, _Clay, _Iron, _Sulfur, _Stone, _Wood, _UpdateTime);
 end
 
 ---
@@ -376,6 +416,8 @@ end
 -- @param               _Entity Entity to hide (Scriptname or ID)
 -- @param[type=boolean] _HiddenFlag Entity is hidden
 -- @within Methods
+-- 
+-- @usage AIPlayerChangeResourceRespawnRates(2, "Dario", true);
 --
 function HideEntityFromAIPlayer(_PlayerID, _Entity, _HiddenFlag)
     TroopGenerator.AI:HideEntityFromAI(_PlayerID, _Entity, _HiddenFlag);
@@ -388,6 +430,10 @@ end
 -- @param               _Entity Entity to hide (Scriptname or ID)
 -- @return[type=boolean] Entity is hidden
 -- @within Methods
+-- 
+-- @usage if IsEntityHiddenFromAIPlayer(2, "Dario") then
+--     -- Do smething...
+-- end
 --
 function IsEntityHiddenFromAIPlayer(_PlayerID, _Entity)
     return TroopGenerator.AI:IsEntityHidenFromAI(_PlayerID, _Entity);
@@ -403,6 +449,8 @@ end
 -- @param              _Position Zielppsition
 -- @return[type=number] ID of target position
 -- @within Methods
+-- 
+-- @usage VeryImportantTargetID = CreateAIPlayerAttackTarget(2, "VeryImportantTarget");
 --
 function CreateAIPlayerAttackTarget(_PlayerID, _Position)
     if not TroopGenerator.CreatedAiPlayers[_PlayerID] then
@@ -418,6 +466,8 @@ end
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _ID       Zielppsition
 -- @within Methods
+-- 
+-- @usage DestroyAIPlayerAttackTarget(2, VeryImportantTargetID);
 --
 function DestroyAIPlayerAttackTarget(_PlayerID, _ID)
     if not TroopGenerator.CreatedAiPlayers[_PlayerID] then
@@ -437,6 +487,8 @@ end
 -- @param[type=number] _Position Zielppsition
 -- @return[type=number] ID of target position
 -- @within Methods
+-- 
+-- @usage VeryImportantTargetID = CreateAIPlayerPatrolPoint(2, "VeryImportantTarget");
 --
 function CreateAIPlayerPatrolPoint(_PlayerID, _Position)
     if not TroopGenerator.CreatedAiPlayers[_PlayerID] then
@@ -452,6 +504,8 @@ end
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _ID       Zielppsition
 -- @within Methods
+-- 
+-- @usage DestroyAIPlayerPatrolPoint(2, VeryImportantTargetID);
 --
 function DestroyAIPlayerPatrolPoint(_PlayerID, _ID)
     if not TroopGenerator.CreatedAiPlayers[_PlayerID] then
@@ -462,27 +516,9 @@ function DestroyAIPlayerPatrolPoint(_PlayerID, _ID)
 end
 
 ---
--- Restores all default sub behavior for the army.
--- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ArmyID   ID of army
--- @within Methods
+-- Overrides the behavior of the army with the given function.
 --
-function ResetArmySubStates(_PlayerID, _ArmyID)
-    if not TroopGenerator.AI[_PlayerID] then
-        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
-        return;
-    end
-    if not TroopGenerator.AI[_PlayerID].Armies[_ArmyID] then
-        assert(false, "Army " .._ArmyID.. " not initalized for player " .._PlayerID.. "!");
-        return;
-    end
-    TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:CreateDefaultBehavior();
-end
-
----
--- Overrides the sub behavior of the army with the given function.
---
--- <b>Note:</b> Only change sub behavior if you know what you are doing! You
+-- <b>Note:</b> Only change behavior if you know what you are doing! You
 -- might break the army controller!
 --
 -- <table border="1">
@@ -498,7 +534,8 @@ end
 -- <td>SelectPurchasedType</td>
 -- <td><b>Note:</b> Only used if the army purchases troops!</br>
 -- Passes the catalog to the controller. The controller must set the catalog
--- iterator.</td>
+-- iterator. Use this to change how an army recruits their members. You can
+-- prioritize certain types.</td>
 -- </tr>
 -- <tr>
 -- <td>SelectSpawnedType</td>
@@ -521,11 +558,13 @@ end
 --
 -- @param[type=number] _PlayerID   ID of player
 -- @param[type=number] _ArmyID     ID of army
--- @param[type=number] _Behavior   ID of sub behavior
+-- @param[type=number] _Behavior   ID of behavior
 -- @param[type=number] _Controller Controller function
 -- @within Methods
+-- 
+-- @usage ChangeArmyBehavior(2, FrontalAttackArmyID, ArmyBehaviors.SelectPurchasedType, CavalryOnlyRecruiter);
 --
-function ChangeArmySubState(_PlayerID, _ArmyID, _Behavior, _Controller)
+function ChangeArmyBehavior(_PlayerID, _ArmyID, _Behavior, _Controller)
     if not TroopGenerator.AI[_PlayerID] then
         assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
         return;
@@ -539,17 +578,79 @@ function ChangeArmySubState(_PlayerID, _ArmyID, _Behavior, _Controller)
         return;
     end
     
-    if ArmySubState.MemberIsAttacked == _Behavior then
+    if ArmyBehaviors.MemberIsAttacked == _Behavior then
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnMemberIsAttackedBehavior(_Controller);
-    elseif ArmySubState.SelectPurchasedType == _Behavior then
+    elseif ArmyBehaviors.SelectPurchasedType == _Behavior then
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnTypeToRecruitSelectedBehavior(_Controller);
-    elseif ArmySubState.SelectSpawnedType == _Behavior then
+    elseif ArmyBehaviors.SelectSpawnedType == _Behavior then
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnTypeToSpawnSelectedBehavior(_Controller);
-    elseif ArmySubState.SelectAttackTarget == _Behavior then
+    elseif ArmyBehaviors.SelectAttackTarget == _Behavior then
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnAttackTargetSelectedBehavior(_Controller);
-    elseif ArmySubState.SelectPatrolTarget == _Behavior then
+    elseif ArmyBehaviors.SelectPatrolTarget == _Behavior then
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnWaypointSelectedBehavior(_Controller);
     end
+end
+
+---
+-- Changes the unit types an AI player will recruit.
+--
+-- <b>Note:</b> The cannon type is automatically set by the technology level.
+-- 
+-- @param[type=number] _PlayerID     ID of player
+-- @param[type=table]  _CategoryList List of units to recruit
+-- @within Methods
+-- 
+-- @usage SetAIPlayerUnitsToBuild(2, {UpgradeCategories.LeaderBarbarian});
+--
+function SetAIPlayerUnitsToBuild(_PlayerID, _CategoryList)
+    if not TroopGenerator.AI[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return ArmyIDList;
+    end
+    TroopGenerator.AI:SetUnitsToBuild(_PlayerID, _CategoryList);
+end
+
+---
+-- Returns the IDs of all armies of the player.
+-- @param[type=number] _PlayerID ID of player
+-- @return[type=table] All armies of player
+-- @within Methods
+-- 
+-- @usage local AllArmies = GetAIPlayerArmies(2);
+--
+function GetAIPlayerArmies(_PlayerID)
+    local ArmyIDList = {};
+    if not TroopGenerator.AI[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return ArmyIDList;
+    end
+    for i= 1, table.getn(TroopGenerator.AI[_PlayerID].Armies), 1 do
+        table.insert(ArmyIDList, TroopGenerator.AI[_PlayerID].Armies[i]:GetID());
+    end
+    return ArmyIDList;
+end
+
+---
+-- Returns the IDs of all armies of the player that are currently in the state.
+-- @param[type=number] _PlayerID ID of player
+-- @return[type=table] Armies in state of player
+-- @within Methods
+-- @see ArmyStates
+-- 
+-- @usage local AllArmies = GetAIPlayerArmies(2, ArmyStates.Attack);
+--
+function GetAIPlayerArmiesByState(_PlayerID, _State)
+    local ArmyIDList = {};
+    if not TroopGenerator.AI[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return ArmyIDList;
+    end
+    for k, v in pairs(GetAIPlayerArmies(_PlayerID)) do
+        if TroopGenerator.AI[_PlayerID].Armies[v]:GetState() == _State then
+            table.insert(ArmyIDList, v);
+        end
+    end
+    return ArmyIDList;
 end
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
@@ -1111,59 +1212,59 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
         end
 
         -- Select action
-        if _Army:GetState() == ArmyState.Decide then
+        if _Army:GetState() == ArmyStates.Decide then
             if _Army:IsAttackAllowed() then
                 if _Army:GetTarget() == nil then
                     local TargetsAvailable = self:GetAllUnattendedAttackTargets(_PlayerID, _Army:GetID());
                     if table.getn(TargetsAvailable) > 0 then
                         _Army:OnAttackTargetSelectedBehavior(TargetsAvailable);
-                        _Army:SetState(ArmyState.Attack);
+                        _Army:SetState(ArmyStates.Attack);
                         return;
                     end
                 else
-                    _Army:SetState(ArmyState.Attack);
+                    _Army:SetState(ArmyStates.Attack);
                 end
             end
             if _Army:IsDefenceAllowed() then
                 local GuardPath = self:GetArmyDefencePositions(_PlayerID, _Army:GetID());
                 _Army:OnWaypointSelectedBehavior(GuardPath);
-                _Army:SetState(ArmyState.Guard);
+                _Army:SetState(ArmyStates.Guard);
             end
             return;
         end
 
         -- Attack enemies
-        if _Army:GetState() == ArmyState.Attack then
+        if _Army:GetState() == ArmyStates.Attack then
             local Enemies = _Army:GetEnemiesInRodeLength(_Army:GetAnchor());
             if _Army:GetTroopCount() == 0 or _Army:DoesRetreat() then
                 _Army:CancelState();
-                _Army:SetState(ArmyState.Retreat);
+                _Army:SetState(ArmyStates.Retreat);
             elseif table.getn(Enemies) == 0 then
                 _Army:CancelState();
-                _Army:SetState(ArmyState.Decide);
+                _Army:SetState(ArmyStates.Decide);
             end
             return;
         end
 
         -- Patrol between positions
-        if _Army:GetState() == ArmyState.Guard then
+        if _Army:GetState() == ArmyStates.Guard then
             if _Army:GetTroopCount() == 0 or _Army:DoesRetreat() then
                 _Army:CancelState();
-                _Army:SetState(ArmyState.Retreat);
+                _Army:SetState(ArmyStates.Retreat);
                 _Army:SetGuardStartTime(0);
             elseif not _Army:IsDefenceAllowed() then
                 _Army:CancelState();
-                _Army:SetState(ArmyState.Decide);
+                _Army:SetState(ArmyStates.Decide);
                 _Army:SetGuardStartTime(0);
             else
                 if _Army:IsAttackAllowed() then
                     if _Army:GetTarget() ~= nil then
-                        _Army:SetState(ArmyState.Attack);
+                        _Army:SetState(ArmyStates.Attack);
                     else
                         local TargetsAvailable = self:GetAllUnattendedAttackTargets(_PlayerID, _Army:GetID());
                         if table.getn(TargetsAvailable) > 0 then
                             _Army:CancelState();
-                            _Army:SetState(ArmyState.Decide);
+                            _Army:SetState(ArmyStates.Decide);
                             _Army:SetGuardStartTime(0);
                             return;
                         end
@@ -1172,7 +1273,7 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
                 if _Army:GetCurrentWaypoint() == nil then
                     local DefenceTargets = self:GetArmyDefencePositions(_PlayerID, _Army:GetID());
                     if table.getn(DefenceTargets) == 0 then
-                        _Army:SetState(ArmyState.Decide);
+                        _Army:SetState(ArmyStates.Decide);
                         _Army:SetGuardStartTime(0);
                     else
                         _Army:OnWaypointSelectedBehavior(DefenceTargets);
@@ -1203,22 +1304,22 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
         end
 
         -- Retreat
-        if _Army:GetState() == ArmyState.Retreat then
+        if _Army:GetState() == ArmyStates.Retreat then
             if table.getn(_Army:GetMembers()) == 0 then
                 _Army:SetLastRespawn(Logic.GetTime());
-                _Army:SetState(ArmyState.Refill);
+                _Army:SetState(ArmyStates.Refill);
             elseif QuestTools.GetDistance(_Army:GetPosition(), _Army:GetHomePosition()) <= 2000 then
                 _Army:SetLastRespawn(Logic.GetTime());
-                _Army:SetState(ArmyState.Refill);
+                _Army:SetState(ArmyStates.Refill);
             end
             return;
         end
 
         -- Refill
-        if _Army:GetState() == ArmyState.Refill then
+        if _Army:GetState() == ArmyStates.Refill then
             if _Army:DoesRespawn() then
                 if _Army:GetTroopCount() == _Army:GetMaxTroopCount() and _Army:HasFullStrength() then
-                    _Army:SetState(ArmyState.Decide);
+                    _Army:SetState(ArmyStates.Decide);
                 else
                     if _Army:IsInitialSpawn() then
                         _Army:SetHasInitialSpawned();
@@ -1238,7 +1339,7 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
             else
                 if _Army:GetTroopCount() == _Army:GetMaxTroopCount() and _Army:HasFullStrength() then
                     _Army:SetStrength(_Army:CalculateStrength());
-                    _Army:SetState(ArmyState.Decide);
+                    _Army:SetState(ArmyStates.Decide);
                 else
                     local UnemployedID = self:GetNextUnemployedLeader(_PlayerID);
                     if UnemployedID ~= 0 then
@@ -1273,18 +1374,22 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
             else
                 if MemberList[i]:GetState() == GroupState.Default then
                     MemberList[i]:ChoseFormation();
-                    if _Army:GetState() == ArmyState.Attack then
+                    if _Army:GetState() == ArmyStates.Attack then
                         if not MemberList[i]:PrioritizedAttackController(_Army) then
                             local EnemyList = MemberList[i]:GetEnemiesInSight();
                             if table.getn(EnemyList) == 0 then
                                 if not MemberList[i]:IsNear(_Army:GetPosition(), 1500) then
                                     MemberList[i]:SetState(GroupState.Scattered);
+                                    MemberList[i]:Stop();
                                 else
-                                    MemberList[i]:Move(_Army:GetCurrentWaypoint());
+                                    if not MemberList[i]:IsWalking() then
+                                        MemberList[i]:Move(_Army:GetCurrentWaypoint());
+                                    end
                                 end
                             else
                                 if not MemberList[i]:IsNear(_Army:GetPosition(), 4500) then
                                     MemberList[i]:SetState(GroupState.Scattered);
+                                    MemberList[i]:Stop();
                                 else
                                     if not MemberList[i]:IsFighting() then
                                         if not MemberList[i]:TargetEnemiesInSight(EnemyList, _Army) then
@@ -1296,20 +1401,26 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
                                 end
                             end
                         end
-                    elseif _Army:GetState() == ArmyState.Guard then
+                    elseif _Army:GetState() == ArmyStates.Guard then
                         if not MemberList[i]:PrioritizedAttackController(_Army) then
                             if not MemberList[i]:IsNear(_Army:GetPosition(), 2000) then
                                 MemberList[i]:SetState(GroupState.Scattered);
+                                MemberList[i]:Stop();
                             end
                         end
-                    elseif _Army:GetState() == ArmyState.Retreat then
-                        MemberList[i]:Move(_Army:GetHomePosition());
+                    elseif _Army:GetState() == ArmyStates.Retreat then
+                        if not MemberList[i]:IsWalking() then
+                            MemberList[i]:Move(_Army:GetHomePosition());
+                        end
                     end
                 elseif MemberList[i]:GetState() == GroupState.Scattered then
                     if MemberList[i]:IsNear(_Army:GetPosition(), 500) then
                         MemberList[i]:SetState(GroupState.Default);
+                        MemberList[i]:Stop();
                     else
-                        MemberList[i]:Move(_Army:GetPosition());
+                        if not MemberList[i]:IsWalking() then
+                            MemberList[i]:Move(_Army:GetPosition());
+                        end
                     end
                 end
             end
@@ -1362,7 +1473,7 @@ function TroopGenerator.Army:construct(
 )
     self.m_ID               = _ID;
     self.m_PlayerID         = _PlayerID;
-    self.m_State            = ArmyState.Decide;
+    self.m_State            = ArmyStates.Decide;
     self.m_TroopCount       = _Strength;
     self.m_RodeLength       = _RodeLength;
     self.m_Strength         = 0;
@@ -1700,42 +1811,15 @@ function TroopGenerator.Army:GetMembers()
     return self.m_Member;
 end
 
--- ~~~ Gathering ~~~ --
-
-function TroopGenerator.Army:IsAnyScattered()
-    if not self:IsFighting() then
-        local ArmyPosition = self:GetPosition();
-        for k, v in pairs(self.m_Member) do
-            if not v:IsNear(ArmyPosition, 3000) then
-                return true;
-            end
+function TroopGenerator.Army:CountMembersInCategory(_Category)
+    local Amount = 0;
+    for i= 1, table.getn(self.m_Member), 1 do
+        local ID = GetID(self.m_Member[i]);
+        if Logic.IsEntityInCategory(ID, _Category) == 1 then
+            Amount = Amount +1;
         end
     end
-    return false;
-end
-
-function TroopGenerator.Army:IsScattered()
-    if not self:IsFighting() then
-        local ArmyPosition = self:GetPosition();
-        local ArmySize = table.getn(self.m_Member);
-        for i= 1, ArmySize, 1 do
-            if QuestTools.GetDistance(ArmyPosition, self.m_Member[i]:GetScriptName()) > self.m_ScatterArea + 300 * (ArmySize/10) then
-                return true;
-            end
-        end
-    end
-    return false;
-end
-
-function TroopGenerator.Army:IsGathered()
-    local ArmyPosition = self:GetPosition();
-    local ArmySize = table.getn(self.m_Member);
-    for i= 1, ArmySize, 1 do
-        if QuestTools.GetDistance(ArmyPosition, self.m_Member[i]:GetScriptName()) > self.m_GatherArea + 300 * (ArmySize/10) then
-            return false;
-        end
-    end
-    return true;
+    return Amount;
 end
 
 -- ~~~ Soldiers ~~~ --
@@ -1964,30 +2048,54 @@ end
 -- ~~~                       TroopGenerator.Group                         ~~~ --
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 
--- Attack priority for cannons
-GroupPriorityCannon = {
+-- States of an member
+GroupState = {
+    Default     = 1,
+    Scattered   = 2,
+}
+
+---
+-- List of targeting priorities for the different categories of enemies. The
+-- higher the number the higher the priority. Negative values are setting the
+-- priority below the average. This can be used to ignore enemy categories
+-- if better targets are available.
+-- 
+-- <p><b>Note:</b> Use EntityCategories here!</p>
+--
+-- @field Cannon       Attack priority for cannons
+-- @field HeavyCavalry Attack priority for heavy cavalry
+-- @field Sword        Attack priority for swordsmen
+-- @field Spear        Attack priority for spearmen
+-- @field Ranged       Attack priority for bowmen and light cavalry
+-- @field Rifle        Attack priority for marksmen
+-- @within Constants
+--
+GroupTargetingPriorities = {};
+
+-- Attack priority for cannons.
+GroupTargetingPriorities.Cannon = {
+    ["MilitaryBuilding"] = 10,
     ["EvilLeader"] = 5,
     ["VillageCenter"] = 4,
-    ["MilitaryBuilding"] = 4,
     ["Headquarters"] = 3,
     ["LongRange"] = 2,
     ["Melee"] = 2,
 };
 
--- Attack priority for heavy cavalry
-GroupPriorityHeavyCavalry = {
-    ["Hero"] = 4,
-    ["MilitaryBuilding"] = 3,
+-- Attack priority for heavy cavalry.
+GroupTargetingPriorities.HeavyCavalry = {
+    ["Hero"] = 6,
+    ["MilitaryBuilding"] = 5,
     ["Cannon"] = 3,
     ["Sword"] = 3,
     ["LongRange"] = 3,
     ["Hero10"] = 2,
     ["Hero4"] = 1,
-    ["Spear"] = -3,
+    ["Spear"] = -10,
 };
 
--- Attack priority for swordmen
-GroupPrioritySword = {
+-- Attack priority for swordmen.
+GroupTargetingPriorities.Sword = {
     ["Hero"] = 4,
     ["LongRange"] = 3,
     ["Spear"] = 3,
@@ -1995,19 +2103,19 @@ GroupPrioritySword = {
     ["MilitaryBuilding"] = 1,
 };
 
--- Attack priority for spearmen
-GroupPrioritySpear = {
+-- Attack priority for spearmen.
+GroupTargetingPriorities.Spear = {
     ["CavalryHeavy"] = 4,
     ["CavalryLight"] = 3,
     ["MilitaryBuilding"] = 3,
     ["Hero"] = 2,
     ["Sword"] = -2,
-    ["LongRange"] = -4,
+    ["LongRange"] = -10,
 };
 
--- Attack priority for bowmen
-GroupPriorityRanged = {
-    ["MilitaryBuilding"] = 10,
+-- Attack priority for bowmen.
+GroupTargetingPriorities.Ranged = {
+    ["MilitaryBuilding"] = 15,
     ["VillageCenter"] = 4,
     ["Headquarters"] = 4,
     ["CavalryHeavy"] = 3,
@@ -2018,23 +2126,17 @@ GroupPriorityRanged = {
     ["Sword"] = -2,
 };
 
--- Attack priority for marksmen
-GroupPriorityRifle = {
-    ["MilitaryBuilding"] = 10,
+-- Attack priority for marksmen.
+GroupTargetingPriorities.Rifle = {
+    ["MilitaryBuilding"] = 15,
     ["EvilLeader"] = 6,
     ["VillageCenter"] = 4,
     ["Headquarters"] = 4,
     ["LongRange"] = 2,
     ["Hero10"] = 2,
     ["Cannon"] = 2,
-    ["Melee"] = -4,
+    ["Melee"] = -10,
 };
-
--- States of an member
-GroupState = {
-    Default     = 1,
-    Scattered   = 2,
-}
 
 TroopGenerator.Group = {
     m_PersecutionArea = 5000,
@@ -2073,27 +2175,27 @@ function TroopGenerator.Group:TargetEnemiesInSight(_EnemyList, _Army)
 
     -- Call heavy cavalry troop controller
     if Logic.IsEntityInCategory(ID, EntityCategories.CavalryHeavy) == 1 then
-        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPriorityHeavyCavalry);
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupTargetingPriorities.HeavyCavalry);
     end
     -- Call normal melee troop controller
     if Logic.IsEntityInCategory(ID, EntityCategories.Sword) == 1 then
-        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPrioritySword);
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupTargetingPriorities.Sword);
     end
     -- Call normal melee troop controller
     if Logic.IsEntityInCategory(ID, EntityCategories.Spear) == 1 then
-        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPrioritySpear);
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupTargetingPriorities.Spear);
     end
     -- Call rifle troop controller
     if Logic.IsEntityInCategory(ID, EntityCategories.Rifle) == 1 then
-        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPriorityRifle);
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupTargetingPriorities.Rifle);
     end
     -- Call bow troop controller
     if Logic.IsEntityInCategory(ID, EntityCategories.LongRange) == 1 then
-        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPriorityRanged);
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupTargetingPriorities.Ranged);
     end
     -- Call cannon troop controller
     if Logic.IsEntityInCategory(ID, EntityCategories.Cannon) == 1 then
-        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupPriorityCannon);
+        return self:TargetEnemiesInSightOfMember(_EnemyList, GroupTargetingPriorities.Cannon);
     end
     -- Default false
     return false;
@@ -2176,7 +2278,7 @@ function TroopGenerator.Group:GetEnemiesInSight()
                     if ArmyID == 0 then
                         table.insert(AllEnemiesInSight, PlayerEntities[j]);
                     else
-                        if TroopGenerator.AI[i].Armies[ArmyID] and TroopGenerator.AI[i].Armies[ArmyID]:GetState() ~= ArmyState.Retreat then
+                        if TroopGenerator.AI[i].Armies[ArmyID] and TroopGenerator.AI[i].Armies[ArmyID]:GetState() ~= ArmyStates.Retreat then
                             table.insert(AllEnemiesInSight, PlayerEntities[j]);
                         end
                     end
@@ -2199,11 +2301,11 @@ end
 function TroopGenerator.Group:GetPriorityMap()
     local ID = GetID(self.m_ScriptName);
     if Logic.IsEntityInCategory(ID, EntityCategories.Cannon) == 1 then
-        return GroupPriorityCannon;
+        return GroupTargetingPriorities.Cannon;
     elseif Logic.IsEntityInCategory(ID, EntityCategories.LongRange) == 1 then
-        return GroupPriorityRanged;
+        return GroupTargetingPriorities.Ranged;
     end
-    return GroupPriorityMelee;
+    return GroupTargetingPrioritiesMelee;
 end
 
 function TroopGenerator.Group:Move(_Position)
