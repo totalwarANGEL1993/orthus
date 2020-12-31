@@ -491,11 +491,6 @@ end
 -- <td><b>Description</b></td>
 -- </tr>
 -- <tr>
--- <td>EnemyIsInSight</td>
--- <td>Called when ever an enemy is in sight. Passes list of enemies to the
--- controller function.</td>
--- </tr>
--- <tr>
 -- <td>MemberIsAttacked</td>
 -- <td>Called when ever an enemy attacks an member of the army.</td>
 -- </tr>
@@ -544,9 +539,7 @@ function ChangeArmySubBehavior(_PlayerID, _ArmyID, _Behavior, _Controller)
         return;
     end
     
-    if ArmySubBehavior.EnemyIsInSight == _Behavior then
-        TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnEnemiesInSightBehavior(_Controller);
-    elseif ArmySubBehavior.MemberIsAttacked == _Behavior then
+    if ArmySubBehavior.MemberIsAttacked == _Behavior then
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnMemberIsAttackedBehavior(_Controller);
     elseif ArmySubBehavior.SelectPurchasedType == _Behavior then
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnTypeToRecruitSelectedBehavior(_Controller);
@@ -1302,7 +1295,7 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
                         if not MemberList[i]:IsFighting() and not MemberList[i]:IsWalking() then
                             local EnemyList = MemberList[i]:GetEnemiesInSight();
                             if table.getn(EnemyList) > 0 then
-                                MemberList[i]:OnEnemiesInSightBehavior(EnemyList, _Army:GetOnEnemiesInSightBehavior());
+                                MemberList[i]:TargetEnemiesInSight(EnemyList);
                             else
                                 MemberList[i]:AttackMove(_Army:GetCurrentWaypoint());
                             end
@@ -1829,15 +1822,6 @@ function TroopGenerator.Army:OnWaypointSelectedBehavior(_Waypoints)
     self:SetWaypoint(math.random(1, table.getn(_Waypoints)));
 end
 
-function TroopGenerator.Army:GetOnEnemiesInSightBehavior()
-    return self.OnEnemiesInSightBehavior;
-end
-
-function TroopGenerator.Army:SetOnEnemiesInSightBehavior(_Behavior)
-    self.OnEnemiesInSightBehavior = _Behavior;
-    return self;
-end
-
 function TroopGenerator.Army:SetOnMemberIsAttackedBehavior(_Behavior)
     self.OnMemberIsAttackedBehavior = _Behavior;
     return self;
@@ -2025,7 +2009,7 @@ class(TroopGenerator.Group);
 
 -- ~~~ Behavior ~~~ --
 
-function TroopGenerator.Group:OnEnemiesInSightBehavior(_EnemyList, _Function)
+function TroopGenerator.Group:TargetEnemiesInSight(_EnemyList, _Function)
     if _Function then
         _Function(self, _EnemyList);
         return;
@@ -2069,11 +2053,6 @@ function TroopGenerator.Group:ChoseFormation(_Function)
         return;
     end
     Logic.LeaderChangeFormationType(ID, 4);
-end
-
-function TroopGenerator.Group:SetOnEnemiesInSightBehavior(_Function)
-    self.OnEnemiesInSightBehavior = _Function;
-    return self;
 end
 
 -- ~~~ Methods ~~~ --
