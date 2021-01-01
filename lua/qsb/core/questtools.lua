@@ -607,6 +607,24 @@ end
 SoldierGetLeader = QuestTools.SoldierGetLeader;
 
 ---
+-- Returns true, if the entity has one of the passed entity types.
+--
+-- @param              _Entity Scriptname or ID
+-- @param[type=string] _Types  List of types
+-- @return[type=boolean] Has one type
+-- @within Entities
+--
+function QuestTools.HasEntityOneOfTypes(_Entity, _Types)
+    for k, v in pairs(_Types) do
+        if Logic.GetEntityType(GetID(_Entity)) == v then
+            return true;
+        end
+    end
+    return false;
+end
+HasEntityOneOfTypes = QuestTools.HasEntityOneOfTypes;
+
+---
 -- Returns all categories the entity is in.
 --
 -- @param _Entity Scriptname or ID
@@ -786,6 +804,155 @@ end
 StartSimpleHiResJobEx = QuestTools.StartSimpleHiResJobEx;
 
 -- AI --
+
+-- FillBuildingCostsTable
+
+---
+-- Returns a table with the costs of a building type.
+--
+-- @param[type=number] _EntityType Building type
+-- @return[type=table] Costs table
+-- @within AI
+--
+function QuestTools.GetBuildingCostsTable(_EntityType)
+    local BuildingCosts = {};
+    Logic.FillBuildingCostsTable(_EntityType, BuildingCosts);
+    return BuildingCosts;
+end
+GetBuildingCostsTable = QuestTools.GetBuildingCostsTable;
+
+---
+-- Returns a table with the upgrade costs of a building type.
+--
+-- @param[type=number] _EntityType Building type
+-- @return[type=table] Costs table
+-- @within AI
+--
+function QuestTools.GetBuildingUpgradeCostsTable(_EntityType)
+    local BuildingUpgradeCosts = {};
+    Logic.FillBuildingUpgradeCostsTable(_EntityType, BuildingUpgradeCosts);
+    return BuildingUpgradeCosts;
+end
+GetBuildingUpgradeCostsTable = QuestTools.GetBuildingUpgradeCostsTable;
+
+---
+-- Returns a table with the technology research costs.
+--
+-- @param[type=number] _Technology Technology
+-- @return[type=table] Costs table
+-- @within AI
+--
+function QuestTools.GetTechnologyCostsTable(_Technology)
+    local TechnologyCosts = {};
+    Logic.FillTechnologyCostsTable(_Technology, TechnologyCosts);
+    return TechnologyCosts;
+end
+GetTechnologyCostsTable = QuestTools.GetTechnologyCostsTable;
+
+---
+-- Returns a table with the soldier costs.
+--
+-- @param[type=number] _PlayerID     ID of player
+-- @param[type=number] _SoldierUpCat Upgrade category soldier
+-- @return[type=table] Costs table
+-- @within AI
+--
+function QuestTools.GetSoldierCostsTable(_PlayerID, _SoldierUpCat)
+    local SoldierCosts = {};
+    Logic.FillSoldierCostsTable(_PlayerID, SoldierUpCat, SoldierCosts);
+    return SoldierCosts;
+end
+GetSoldierCostsTable = QuestTools.GetSoldierCostsTable;
+
+---
+-- Returns a table with the leader costs.
+--
+-- @param[type=number] _PlayerID    ID of player
+-- @param[type=number] _LeaderUpCat Upgrade category leader
+-- @return[type=table] Costs table
+-- @within AI
+--
+function QuestTools.GetMilitaryCostsTable(_PlayerID, _LeaderUpCat)
+    local MilitaryCosts = {};
+    Logic.FillLeaderCostsTable(_PlayerID, _LeaderUpCat, MilitaryCosts);
+    return MilitaryCosts;
+end
+GetMilitaryCostsTable = QuestTools.GetMilitaryCostsTable;
+
+---
+-- Returns true if the player has enough resources.
+--
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=table]  _Costs    Costs table
+-- @return[type=boolean] Enough resources
+-- @within AI
+--
+function QuestTools.HasEnoughResources(_PlayerID, _Costs)
+	local Gold   = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Gold ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.GoldRaw);
+    local Clay   = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Clay ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.ClayRaw);
+	local Wood   = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Wood ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.WoodRaw);
+	local Iron   = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Iron ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.IronRaw);
+	local Stone  = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Stone ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.StoneRaw);
+    local Sulfur = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Sulfur ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.SulfurRaw);
+    
+	if _Costs[ResourceType.Gold] ~= nil and Gold < _Costs[ResourceType.Gold] then
+		return false;
+    end
+	if _Costs[ResourceType.Clay] ~= nil and Clay < _Costs[ResourceType.Clay]  then
+		return false;
+	end
+	if _Costs[ResourceType.Wood] ~= nil and Wood < _Costs[ResourceType.Wood]  then
+		return false;
+	end
+	if _Costs[ResourceType.Iron] ~= nil and Iron < _Costs[ResourceType.Iron] then		
+		return false;
+	end
+	if _Costs[ResourceType.Stone] ~= nil and Stone < _Costs[ResourceType.Stone] then		
+		return false;
+	end
+    if _Costs[ResourceType.Sulfur] ~= nil and Sulfur < _Costs[ResourceType.Sulfur] then		
+		return false;
+	end
+    return true;
+end
+HasEnoughResources = QuestTools.HasEnoughResources;
+
+---
+-- Removes Resources from the player by the given costs table.
+--
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=table]  _Costs    Costs table
+-- @return[type=boolean] Enough resources
+-- @within AI
+--
+function QuestTools.RemoveResourcesFromPlayer(_PlayerID, _Costs)
+	local Gold   = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Gold ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.GoldRaw);
+    local Clay   = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Clay ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.ClayRaw);
+	local Wood   = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Wood ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.WoodRaw);
+	local Iron   = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Iron ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.IronRaw);
+	local Stone  = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Stone ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.StoneRaw);
+    local Sulfur = Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.Sulfur ) + Logic.GetPlayersGlobalResource(_PlayerID, ResourceType.SulfurRaw);
+
+    if _Costs[ResourceType.Gold] ~= nil and _Costs[ResourceType.Gold] > 0 and Gold >= _Costs[ResourceType.Gold] then
+		AddGold(_PlayerID, _Costs[ResourceType.Gold] * (-1));
+    end
+	if _Costs[ResourceType.Clay] ~= nil and _Costs[ResourceType.Clay] > 0 and Clay >= _Costs[ResourceType.Clay]  then
+		AddClay(_PlayerID, _Costs[ResourceType.Clay] * (-1));
+	end
+	if _Costs[ResourceType.Wood] ~= nil and _Costs[ResourceType.Wood] > 0 and Wood >= _Costs[ResourceType.Wood]  then
+		AddWood(_PlayerID, _Costs[ResourceType.Wood] * (-1));
+	end
+	if _Costs[ResourceType.Iron] ~= nil and _Costs[ResourceType.Iron] > 0 and Iron >= _Costs[ResourceType.Iron] then		
+		AddIron(_PlayerID, _Costs[ResourceType.Iron] * (-1));
+	end
+	if _Costs[ResourceType.Stone] ~= nil and _Costs[ResourceType.Stone] > 0 and Stone >= _Costs[ResourceType.Stone] then		
+		AddStone(_PlayerID, _Costs[ResourceType.Stone] * (-1));
+	end
+    if _Costs[ResourceType.Sulfur] ~= nil and _Costs[ResourceType.Sulfur] > 0 and Sulfur >= _Costs[ResourceType.Sulfur] then		
+		AddSulfur(_PlayerID, _Costs[ResourceType.Sulfur] * (-1));
+	end
+end
+RemoveResourcesFromPlayer = QuestTools.RemoveResourcesFromPlayer;
 
 ---
 -- Checks, if the positions are in the same sector. If 2 possitions are not
