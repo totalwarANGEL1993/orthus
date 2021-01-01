@@ -658,6 +658,45 @@ function GetAIPlayerArmiesByState(_PlayerID, _State)
     return ArmyIDList;
 end
 
+---
+-- Sets if the AI player is ignoring the costs of units when recruiting or
+-- refreshing.
+-- 
+-- <p><b>Note:</b> This is active by default!</p>
+--
+-- @param[type=number]  _PlayerID ID of player
+-- @param[type=boolean] _Flag     Does ignore costs
+-- @within Methods
+-- 
+-- @usage SetAIPlayerIgnoreMilitaryCosts(2, false);
+--
+function SetAIPlayerIgnoreMilitaryCosts(_PlayerID, _Flag)
+    if not TroopGenerator.AI[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return;
+    end
+    TroopGenerator.AI:SetIgnoreMilitaryUnitCosts(_PlayerID, _Flag);
+end
+
+---
+-- Sets if the AI player is ignoring the attraction limit.
+-- 
+-- <p><b>Note:</b> This is active by default!</p>
+--
+-- @param[type=number]  _PlayerID ID of player
+-- @param[type=boolean] _Flag     Does ignore limit
+-- @within Methods
+-- 
+-- @usage SetAIPlayerIgnoreAttractionLimit(2, false);
+--
+function SetAIPlayerIgnoreAttractionLimit(_PlayerID, _Flag)
+    if not TroopGenerator.AI[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return;
+    end
+    TroopGenerator.AI:SetIgnoreVillageCenterLimit(_PlayerID, _Flag);
+end
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 -- ~~~                          TroopGenerator.AI                         ~~~ --
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
@@ -678,6 +717,8 @@ function TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Stre
         UnitsToBuild    = copy(TroopGenerator.DefaultUnitsToBuild),
         EmploysArmies   = _Strength > 0,
         Strength        = _Strength,
+        MilitaryCosts   = true,
+        VillageCenter   = true,
     };
     table.insert(self[_PlayerID].UnitsToBuild, Entities["PV_Cannon" .._TechLevel]);
     
@@ -853,6 +894,32 @@ function TroopGenerator.AI:SetUnitsToBuild(_PlayerID, _CategoryList)
             end
         end
     end
+end
+
+function TroopGenerator.AI:SetIgnoreMilitaryUnitCosts(_PlayerID, _Flag)
+    if self[_PlayerID] then
+        self[_PlayerID].MilitaryCosts = _Flag;
+    end
+end
+
+function TroopGenerator.AI:DoesIgnoreMilitaryCosts(_PlayerID)
+    if self[_PlayerID] then
+        return self[_PlayerID].MilitaryCosts == true;
+    end
+    return false;
+end
+
+function TroopGenerator.AI:SetIgnoreVillageCenterLimit(_PlayerID, _Flag)
+    if self[_PlayerID] then
+        self[_PlayerID].VillageCenter = _Flag;
+    end
+end
+
+function TroopGenerator.AI:DoesIgnoreVillageCenterLimit(_PlayerID)
+    if self[_PlayerID] then
+        return self[_PlayerID].VillageCenter == true;
+    end
+    return false;
 end
 
 -- ~~~ Detection ~~~ --
@@ -1346,7 +1413,7 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
                                 _Army:SetLastRespawn(Logic.GetTime());
                             end
                         end
-                        _Army:RefillWeakGroups();
+                        _Army:RefillWeakGroups(true);
                     end
                 end
             else
@@ -1365,12 +1432,14 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
                             local UnemployedID = self:GetNextUnemployedLeader(_PlayerID, _Army:GetHomePosition());
                             if UnemployedID ~= 0 then
                                 local Max = Logic.LeaderGetMaxNumberOfSoldiers(UnemployedID);
-                                self:CheatSoldierCosts(_Army:GetChosenTypeToRecruit(), Max);
+                                if self:DoesIgnoreMilitaryCosts(self:GetPlayerID()) then
+                                    self:CheatSoldierCosts(_Army:GetChosenTypeToRecruit(), Max);
+                                end
                                 _Army:BindGroup(UnemployedID);
                             end
                         end
                     end
-                    _Army:RefillWeakGroups();
+                    _Army:RefillWeakGroups(self:DoesIgnoreMilitaryCosts(_Army:GetPlayerID()));
                 end
             end
         end
@@ -2070,14 +2139,21 @@ function TroopGenerator.Army:GetFreeReachableBarracksInUpgradeCategory(_UnitType
 end
 
 function TroopGenerator.Army:BuyUnit(_UnitType)
+    if not self:HasSpaceForUnit(_UnitType) then
+        return;
+    end
     local List = self:GetFreeReachableBarracksInUpgradeCategory(_UnitType);
     if table.getn(List) > 0 then
         local IsFoundry = string.find(Logic.GetEntityTypeName(Logic.GetEntityType(List[1])), "Foundry") ~= nil;
         if not IsFoundry then
-            self:CheatLeaderCosts(_UnitType);
+            if TroopGenerator.AI:DoesIgnoreMilitaryCosts(self:GetPlayerID()) then
+                self:CheatLeaderCosts(_UnitType);
+            end
             Logic.BarracksBuyLeader(List[1], _UnitType);
         else
-            self:CheatCannonCosts(_UnitType);
+            if TroopGenerator.AI:DoesIgnoreMilitaryCosts(self:GetPlayerID()) then
+                self:CheatCannonCosts(_UnitType);
+            end
             local PlayerID = GUI.GetPlayerID();
             local SelectedEntities = {GUI.GetSelectedEntities()};
             GUI.SetControlledPlayer(self:GetPlayerID());
@@ -2092,34 +2168,70 @@ function TroopGenerator.Army:BuyUnit(_UnitType)
     end
 end
 
-function TroopGenerator.Army:CheatLeaderCosts(_UnitType)
-    local LeaderCosts = {};
-    Logic.FillLeaderCostsTable(self:GetPlayerID(), _UnitType, LeaderCosts);
-    for k, v in pairs(LeaderCosts) do
-        Logic.AddToPlayersGlobalResource(self:GetPlayerID(), k, v);
+function TroopGenerator.Army:HasSpaceForUnit(_UnitType)
+    if TroopGenerator.AI:DoesIgnoreVillageCenterLimit(self:GetPlayerID()) then
+        return true;
     end
+
+    -- Calculage current usage
+    local MaximumUsage = Logic.GetPlayerAttractionLimit(self:GetPlayerID());
+    local CurrentUsage = Logic.GetPlayerAttractionUsage(self:GetPlayerID());
+    local Usage = MaximumUsage -CurrentUsage;
+    -- Calculate future usage (reserved space for soldiers)
+    for k, v in pairs(QuestTools.GetAllLeader(self:GetPlayerID())) do
+        local MaximumSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(v);
+        local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(v);
+        Usage = Usage + (MaximumSoldiers - CurrentSoldiers);
+    end
+
+    return Usage >= self:GetSpaceNeededForUnit(_UnitType);
+end
+
+function TroopGenerator.Army:GetSpaceNeededForUnit(_UnitType)
+    if string.find(Logic.GetEntityTypeName(_UnitType), "Cannon") ~= nil then
+        return 5;
+    end
+    local LeaderType = Logic.GetSettlerTypeByUpgradeCategory(_UnitType, self:GetPlayerID());
+    local LeaderTypeName = Logic.GetEntityTypeName(LeaderType);
+    if string.find(LeaderTypeName, "Evil") ~= nil then
+        return 17;
+    end
+    if string.find(LeaderTypeName, "Cavalry") ~= nil then
+        return 8;
+    end
+    if string.find(LeaderTypeName, "Sword3") ~= nil or string.find(LeaderTypeName, "Sword4") ~= nil
+    or string.find(LeaderTypeName, "PoleArm3") ~= nil or string.find(LeaderTypeName, "PoleArm4") ~= nil
+    or string.find(LeaderTypeName, "Bow3") ~= nil or string.find(LeaderTypeName, "Bow4") ~= nil
+    or string.find(LeaderTypeName, "Rifle2") ~= nil then
+        return 9;
+    end
+    return 5;
+end
+
+function TroopGenerator.Army:CheatLeaderCosts(_UnitType)
+    QuestTools.RemoveResourcesFromPlayer(
+        self:GetPlayerID(),
+        QuestTools.GetMilitaryCostsTable(self:GetPlayerID(), _UnitType)
+    );
 end
 
 function TroopGenerator.Army:CheatCannonCosts(_UnitType)
     local CannonCosts = {};
     local CannonUpCat = ArmyCannonTypeToUpgradeCategory[Logic.GetEntityTypeName(_UnitType)];
     if CannonUpCat then
-        Logic.FillLeaderCostsTable(self:GetPlayerID(), CannonUpCat, CannonCosts);
-        for k, v in pairs(CannonCosts) do
-            Logic.AddToPlayersGlobalResource(self:GetPlayerID(), k, v);
-        end
+        QuestTools.RemoveResourcesFromPlayer(
+            self:GetPlayerID(),
+            QuestTools.GetMilitaryCostsTable(self:GetPlayerID(), CannonUpCat)
+        );
     end
 end
 
 function TroopGenerator.Army:CheatSoldierCosts(_UnitType, _Amount)
     _Amount = Amount or 16;
     if ArmyLeaderToSoldierUpgradeCategory[_UnitType] then
-        local SoldierCosts = {};
-        Logic.FillSoldierCostsTable(self:GetPlayerID(), ArmyLeaderToSoldierUpgradeCategory[_UnitType], SoldierCosts);
+        local SoldierCosts = QuestTools.GetSoldierCostsTable(self:GetPlayerID(), ArmyLeaderToSoldierUpgradeCategory[_UnitType]);
         for i= 1, Amount, 1 do
-            for k, v in pairs(SoldierCosts) do
-                Logic.AddToPlayersGlobalResource(self:GetPlayerID(), k, v);
-            end
+            QuestTools.RemoveResourcesFromPlayer(self:GetPlayerID(), SoldierCosts);
         end
     end
 end
@@ -2154,13 +2266,22 @@ function TroopGenerator.Army:SpawnTroop()
     return true;
 end
 
-function TroopGenerator.Army:RefillWeakGroups()
+function TroopGenerator.Army:RefillWeakGroups(_Cheat)
     for i= table.getn(self.m_Member), 1, -1 do
         local ScriptName = self.m_Member[i]:GetScriptName();
         if IsExisting(ScriptName) then
             if self.m_Member[i]:IsRefillable() then
                 if IsNear(ScriptName, self.m_HomePosition, 2000) then
-                    self.m_Member[i]:Refill();
+                    if _Cheat then
+                        self.m_Member[i]:Refill();
+                    else
+                        local SoldierUpCat = Logic.LeaderGetSoldierUpgradeCategory(GetID(self.m_Member[i]:GetScriptName()));
+                        local SoldierCosts = QuestTools.GetSoldierCostsTable(self:GetPlayerID(), SoldierUpCat);
+                        if QuestTools.HasEnoughResources(self:GetPlayerID(), SoldierCosts) then
+                            QuestTools.RemoveResourcesFromPlayer(_PlayerID, SoldierCosts);
+                            self.m_Member[i]:Refill();
+                        end
+                    end
                 else
                     local Position = QuestTools.GetReachablePosition(ScriptName, self.m_HomePosition);
                     if Position then
@@ -2532,7 +2653,19 @@ end
 
 function TroopGenerator.Group:Refill()
     if not self:IsFull() then
-        Tools.CreateSoldiersForLeader(GetID(self.m_ScriptName), 1);
+        local CanRecruit = true;
+        local PlayerID   = Logic.EntityGetPlayer(GetID(self.m_ScriptName));
+
+        -- Check attraction limit
+        if not TroopGenerator.AI:DoesIgnoreVillageCenterLimit(PlayerID) then
+            local MaximumUsage = Logic.GetPlayerAttractionLimit(PlayerID);
+            local CurrentUsage = Logic.GetPlayerAttractionUsage(PlayerID);
+            CanRecruit = (MaximumUsage - CurrentUsage) > 1;
+        end
+
+        if CanRecruit then
+            Tools.CreateSoldiersForLeader(GetID(self.m_ScriptName), 1);
+        end
     end
 end
 
