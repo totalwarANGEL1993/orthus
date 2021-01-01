@@ -607,6 +607,24 @@ end
 SoldierGetLeader = QuestTools.SoldierGetLeader;
 
 ---
+-- Returns true, if the entity has one of the passed entity types.
+--
+-- @param              _Entity Scriptname or ID
+-- @param[type=string] _Types  List of types
+-- @return[type=boolean] Has one type
+-- @within Entities
+--
+function QuestTools.HasEntityOneOfTypes(_Entity, _Types)
+    for k, v in pairs(_Types) do
+        if Logic.GetEntityType(GetID(_Entity)) == v then
+            return true;
+        end
+    end
+    return false;
+end
+HasEntityOneOfTypes = QuestTools.HasEntityOneOfTypes;
+
+---
 -- Returns all categories the entity is in.
 --
 -- @param _Entity Scriptname or ID
