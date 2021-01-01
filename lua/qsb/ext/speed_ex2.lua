@@ -167,11 +167,6 @@ end
 -- @local
 --
 function QuestSystem.GameSpeedSwitch:OnSaveGameLoaded()
-    -- Speed up is not allowed in multiplayer hence will not be loaded.
-    -- (if a multiplayer game is somehow saved...)
-    if XNetwork.Manager_DoesExist() == 1 then
-        return;
-    end
     XGUIEng.TransferMaterials("StatisticsWindowTimeScaleButton", "OnlineHelpButton" );
     XGUIEng.SetWidgetPositionAndSize("OnlineHelpButton",200,2,35,35);
     self:OverrideGUI();

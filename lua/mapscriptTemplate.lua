@@ -11,18 +11,9 @@ Script.Load("data/script/maptools/mapeditortools.lua");
 
 -- Load QSB
 gvBasePath = "data/maps/externalmap/";
-
-Script.Load(gvBasePath.. "qsb/core/oop.lua");
-Script.Load(gvBasePath.. "qsb/core/questtools.lua");
-Script.Load(gvBasePath.. "qsb/core/questsync.lua");
-Script.Load(gvBasePath.. "qsb/core/bugfixes.lua");
-Script.Load(gvBasePath.. "qsb/core/questsystem.lua");
-Script.Load(gvBasePath.. "qsb/core/questbriefing.lua");
-Script.Load(gvBasePath.. "qsb/core/questdebug.lua");
-
-Script.Load(gvBasePath.. "qsb/lib/libloader.lua");
-Script.Load(gvBasePath.. "qsb/ext/extraloader.lua");
-
+Script.Load(gvBasePath.. "qsb/core/loader.lua");
+Script.Load(gvBasePath.. "qsb/lib/loader.lua");
+Script.Load(gvBasePath.. "qsb/ext/loader.lua");
 Script.Load(gvBasePath.. "qsb/questbehavior.lua");
 Script.Load(gvBasePath.. "qsb/treasure.lua");
 
