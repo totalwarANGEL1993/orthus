@@ -1200,7 +1200,8 @@ function TroopGenerator.AI:EmployArmies(_PlayerID)
     end
 end
 
-function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID, _RallyPoint)
+function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID, _RallyPoint, _TroopTypes)
+    _TroopTypes = _TroopTypes or {};
     if self[_PlayerID] then
         local Leader = {};
         Leader = copy(QuestTools.GetAllCannons(_PlayerID), Leader);
@@ -1213,6 +1214,8 @@ function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID, _RallyPoint)
             elseif AI.Entity_GetConnectedArmy(Leader[i]) ~= -1 then
                 table.remove(Leader, i);
             elseif self:IsEntityHidenFromAI(_PlayerID, Name) then
+                table.remove(Leader, i);
+            elseif not self:IsLeaderAllowedTypeForArmy(Leader[i], _TroopTypes) then
                 table.remove(Leader, i);
             elseif not QuestTools.SameSector(Leader[i], _RallyPoint) then
                 table.remove(Leader, i);
@@ -1231,6 +1234,24 @@ function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID, _RallyPoint)
         end
     end
     return 0;
+end
+
+function TroopGenerator.AI:IsLeaderAllowedTypeForArmy(_Entity, _TroopTypes)
+    local ID = GetID(_Entity);
+    local PlayerID = Logic.EntityGetPlayer(ID);
+    local EntityType = Logic.GetEntityTypeName(ID);
+    if not _TroopTypes or table.getn(_TroopTypes) == 0 then
+        return true;
+    end
+    local TroopTypes = {};
+    for k, v in pairs(_TroopTypes) do
+        if string.find(Logic.GetEntityTypeName(v), "Cannon") ~= nil then
+            table.insert(TroopTypes, v);
+        else
+            table.insert(TroopTypes, Logic.GetSettlerTypeByUpgradeCategory(v, PlayerID));
+        end
+    end
+    return QuestTools.HasEntityOneOfTypes(ID, TroopTypes);
 end
 
 function TroopGenerator.AI:GetArmyEntityIsEmployedIn(_Entity)
