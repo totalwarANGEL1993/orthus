@@ -156,6 +156,10 @@
 	<td class="summary">Returns a reachable position for the entity or nil if no position was found.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#QuestTools.HasEntityOneOfTypes">QuestTools.HasEntityOneOfTypes (_Entity, _Types)</a></td>
+	<td class="summary">Returns true, if the entity has one of the passed entity types.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#QuestTools.IsBuildingBeingUpgraded">QuestTools.IsBuildingBeingUpgraded (_Entity)</a></td>
 	<td class="summary">Checks if a building is currently being upgraded.</td>
 	</tr>
@@ -213,6 +217,34 @@
 </table>
 <h2><a href="#AI">AI</a></h2>
 <table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetBuildingCostsTable">QuestTools.GetBuildingCostsTable (_EntityType)</a></td>
+	<td class="summary">Returns a table with the costs of a building type.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetBuildingUpgradeCostsTable">QuestTools.GetBuildingUpgradeCostsTable (_EntityType)</a></td>
+	<td class="summary">Returns a table with the upgrade costs of a building type.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetMilitaryCostsTable">QuestTools.GetMilitaryCostsTable (_PlayerID, _LeaderUpCat)</a></td>
+	<td class="summary">Returns a table with the leader costs.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetSoldierCostsTable">QuestTools.GetSoldierCostsTable (_PlayerID, _SoldierUpCat)</a></td>
+	<td class="summary">Returns a table with the soldier costs.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.GetTechnologyCostsTable">QuestTools.GetTechnologyCostsTable (_Technology)</a></td>
+	<td class="summary">Returns a table with the technology research costs.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.HasEnoughResources">QuestTools.HasEnoughResources (_PlayerID, _Costs)</a></td>
+	<td class="summary">Returns true if the player has enough resources.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#QuestTools.RemoveResourcesFromPlayer">QuestTools.RemoveResourcesFromPlayer (_PlayerID, _Costs)</a></td>
+	<td class="summary">Removes Resources from the player by the given costs table.</td>
+	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#QuestTools.SameSector">QuestTools.SameSector (_pos1, _pos2)</a></td>
 	<td class="summary">Checks, if the positions are in the same sector.</td>
@@ -742,6 +774,36 @@
 
 </dd>
     <dt>
+    <a name = "QuestTools.HasEntityOneOfTypes"></a>
+    <strong>QuestTools.HasEntityOneOfTypes (_Entity, _Types)</strong>
+    </dt>
+    <dd>
+    Returns true, if the entity has one of the passed entity types.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Entity</span>
+         Scriptname or ID
+        </li>
+        <li><span class="parameter">_Types</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+          List of types
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Has one type
+    </ol>
+
+
+
+
+</dd>
+    <dt>
     <a name = "QuestTools.IsBuildingBeingUpgraded"></a>
     <strong>QuestTools.IsBuildingBeingUpgraded (_Entity)</strong>
     </dt>
@@ -1122,6 +1184,211 @@
 
     <dl class="function">
     <dt>
+    <a name = "QuestTools.GetBuildingCostsTable"></a>
+    <strong>QuestTools.GetBuildingCostsTable (_EntityType)</strong>
+    </dt>
+    <dd>
+    Returns a table with the costs of a building type.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_EntityType</span>
+            <span class="types"><span class="type">number</span></span>
+         Building type
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Costs table
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetBuildingUpgradeCostsTable"></a>
+    <strong>QuestTools.GetBuildingUpgradeCostsTable (_EntityType)</strong>
+    </dt>
+    <dd>
+    Returns a table with the upgrade costs of a building type.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_EntityType</span>
+            <span class="types"><span class="type">number</span></span>
+         Building type
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Costs table
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetMilitaryCostsTable"></a>
+    <strong>QuestTools.GetMilitaryCostsTable (_PlayerID, _LeaderUpCat)</strong>
+    </dt>
+    <dd>
+    Returns a table with the leader costs.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+            ID of player
+        </li>
+        <li><span class="parameter">_LeaderUpCat</span>
+            <span class="types"><span class="type">number</span></span>
+         Upgrade category leader
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Costs table
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetSoldierCostsTable"></a>
+    <strong>QuestTools.GetSoldierCostsTable (_PlayerID, _SoldierUpCat)</strong>
+    </dt>
+    <dd>
+    Returns a table with the soldier costs.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+             ID of player
+        </li>
+        <li><span class="parameter">_SoldierUpCat</span>
+            <span class="types"><span class="type">number</span></span>
+         Upgrade category soldier
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Costs table
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.GetTechnologyCostsTable"></a>
+    <strong>QuestTools.GetTechnologyCostsTable (_Technology)</strong>
+    </dt>
+    <dd>
+    Returns a table with the technology research costs.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Technology</span>
+            <span class="types"><span class="type">number</span></span>
+         Technology
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Costs table
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.HasEnoughResources"></a>
+    <strong>QuestTools.HasEnoughResources (_PlayerID, _Costs)</strong>
+    </dt>
+    <dd>
+    Returns true if the player has enough resources.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         ID of player
+        </li>
+        <li><span class="parameter">_Costs</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+            Costs table
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Enough resources
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "QuestTools.RemoveResourcesFromPlayer"></a>
+    <strong>QuestTools.RemoveResourcesFromPlayer (_PlayerID, _Costs)</strong>
+    </dt>
+    <dd>
+    Removes Resources from the player by the given costs table.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         ID of player
+        </li>
+        <li><span class="parameter">_Costs</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+            Costs table
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+        Enough resources
+    </ol>
+
+
+
+
+</dd>
+    <dt>
     <a name = "QuestTools.SameSector"></a>
     <strong>QuestTools.SameSector (_pos1, _pos2)</strong>
     </dt>
@@ -1159,7 +1426,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2020-12-31 17:01:06 </i>
+<i style="float:right;">Last updated 2021-01-01 12:33:32 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 
