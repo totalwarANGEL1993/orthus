@@ -253,7 +253,7 @@ function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, _
         PlayerID        = _PlayerID,
         RodeLength      = _Area or 3000,
         Strength        = _Strength or 12,
-        RetreatStrength = 0.3, 
+        RetreatStrength = 0.1, 
         HomePosition    = _Position,
         TroopCatalog    = _TroopTypes or TroopGenerator.AI[_PlayerID].UnitsToBuild,
     };
@@ -550,14 +550,28 @@ end
 -- </tr>
 -- <tr>
 -- <td>SelectAttackTarget</td>
--- <td>Passes the list of reachable attack targets to the controller function.
--- The controller must select one position, set it as path and as target.</td>
+-- <td>Passes the list of reachable attack targets where no army has been send
+-- to yet to the controller function. The controller must order those targets by
+-- any criteria and return the sorted list. The army will take the first target
+-- in this list.<br>
+-- By default, the targets are sorted by distance. The first one is the closest
+-- to the home position.</td>
 -- </tr>
 -- <tr>
 -- <td>SelectPatrolTarget</td>
 -- <td>Passes the list of reachable patrol targets to the controller function.
--- The controller must set the path and the first waypoint. Army will loop
--- over the waypoints starting from the selected one.</td>
+-- The controller must create a list from those targets and set them as the
+-- path. Additionally it has to set the index of the first waypoint. Army will
+-- loop over the waypoints starting from the selected one.<br>
+-- By default, any position that is reachable from the home position of the
+-- army will be put into the list and the first waypoint is set by random.</td>
+-- </tr>
+-- <tr>
+-- <td>AttackFinished</td>
+-- <td>Checks, if the current attack has finished. The controller must return
+-- true when the attack is finished.<br>
+-- By default, an attack ends, after an area in size of the rode length of the
+-- army around the current target has been cleared from enemies.</td>
 -- </tr>
 -- </table>
 --
@@ -593,6 +607,8 @@ function ChangeArmyBehavior(_PlayerID, _ArmyID, _Behavior, _Controller)
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnAttackTargetSelectedBehavior(_Controller);
     elseif ArmyBehaviors.SelectPatrolTarget == _Behavior then
         TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnWaypointSelectedBehavior(_Controller);
+    elseif ArmyBehaviors.AttackFinished == _Behavior then
+        TroopGenerator.AI[_PlayerID].Armies[_ArmyID]:SetOnAttackTargetClearedBehavior(_Controller)
     end
 end
 
@@ -1143,7 +1159,7 @@ function TroopGenerator.AI:CreateArmy(_Data)
         _Data.PlayerID,
         _Data.RodeLength or 3000,
         _Data.Strength or 12,
-        _Data.RetreatStrength or 0.3, 
+        _Data.RetreatStrength or 0.1, 
         _Data.HomePosition,
         nil,
         true,
@@ -1165,7 +1181,7 @@ function TroopGenerator.AI:CreateSpawnArmy(_Data)
         _Data.PlayerID,
         _Data.RodeLength or 3000,
         _Data.Strength or 12,
-        _Data.RetreatStrength or 0.3, 
+        _Data.RetreatStrength or 0.1, 
         _Data.HomePosition,
         _Data.Lifethread,
         _Data.IndependedFromLifethread == true,
@@ -1187,7 +1203,7 @@ function TroopGenerator.AI:EmployArmies(_PlayerID)
                         PlayerID		         = _PlayerID,
                         RodeLength               = 8000,
                         Strength		         = 12,
-                        RetreatStrength          = 0.3, 
+                        RetreatStrength          = 0.1, 
                         HomePosition             = self[_PlayerID].HomePosition,
                         Lifethread               = nil,
                         IndependedFromLifethread = true,
@@ -1305,7 +1321,7 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
     if self[_PlayerID] then
         -- Destroy if lifethread is destroyed
         if _Army:DoesRespawn() then
-            if not IsExisting(_Army:GetLifethread()) then
+            if _Army:IsDead() then
                 local Kill = not _Army:IsIndependedFromLifethread();
                 self:DropArmy(_PlayerID, _Army:GetID(), Kill);
                 return;
@@ -1318,7 +1334,10 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
                 if _Army:GetTarget() == nil then
                     local TargetsAvailable = self:GetAllUnattendedAttackTargets(_PlayerID, _Army:GetID());
                     if table.getn(TargetsAvailable) > 0 then
-                        _Army:OnAttackTargetSelectedBehavior(TargetsAvailable);
+                        local TargetsSorted = _Army:OnAttackTargetSelectedBehavior(TargetsAvailable);
+                        _Army:SetPath({TargetsSorted[1]});
+                        _Army:SetWaypoint(1);
+                        _Army:SetTarget(_Army:GetCurrentWaypoint());
                         _Army:SetState(ArmyStates.Attack);
                         return;
                     end
@@ -1336,11 +1355,12 @@ function TroopGenerator.AI:ControlArmy(_PlayerID, _Army)
 
         -- Attack enemies
         if _Army:GetState() == ArmyStates.Attack then
-            local Enemies = _Army:GetEnemiesInRodeLength(_Army:GetAnchor());
             if _Army:GetTroopCount() == 0 or _Army:DoesRetreat() then
                 _Army:CancelState();
                 _Army:SetState(ArmyStates.Retreat);
-            elseif table.getn(Enemies) == 0 then
+                return;
+            end
+            if _Army:OnAttackTargetClearedBehavior() then
                 _Army:CancelState();
                 _Army:SetState(ArmyStates.Decide);
             end
@@ -1516,6 +1536,13 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
                         if not MemberList[i]:IsWalking() then
                             MemberList[i]:Move(_Army:GetHomePosition());
                         end
+                    elseif _Army:GetState() == ArmyStates.Refill then
+                        if not MemberList[i]:IsFighting() then
+                            local EnemyList = MemberList[i]:GetEnemiesInSight();
+                            if table.getn(EnemyList) > 0 then
+                                MemberList[i]:TargetEnemiesInSight(EnemyList, _Army);
+                            end
+                        end
                     end
                 elseif MemberList[i]:GetState() == GroupState.Scattered then
                     if MemberList[i]:IsNear(_Army:GetPosition(), 500) then
@@ -1630,8 +1657,7 @@ function TroopGenerator.Army:construct(
     self.m_RodeLength       = _RodeLength;
     self.m_Strength         = 0;
     self.m_RetreatStrength  = _RetreatStrength;
-    self.m_HomePosition       = _Spawnpoint;
-    self.m_Lifethread       = _Lifethread;
+    self.m_HomePosition     = _Spawnpoint;
     self.m_Independed       = _Independed == true;
     self.m_DoesRespawn      = _RespawnTime ~= nil and _RespawnTime > 0;
     self.m_RespawnTime      = _RespawnTime;
@@ -1639,6 +1665,8 @@ function TroopGenerator.Army:construct(
     self.m_TroopInterator   = (table.getn(self.m_TroopCatalog) > 0 and 1) or 0;
     self.m_Path             = {};
     self.m_Waypoint         = 0;
+
+    self:SetLifethread(_Lifethread);
 end
 class(TroopGenerator.Army);
 
@@ -1671,8 +1699,10 @@ end
 
 function TroopGenerator.Army:IsDead()
     if self:DoesRespawn() then
-        if IsExisting(self:GetLifethread()) then
-            return false;
+        for k, v in pairs(self:GetLifethread()) do
+            if IsExisting(v) then
+                return false;
+            end
         end
     else
         local PlayerEntities = QuestTools.GetPlayerEntities(self:GetPlayerID(), 0);
@@ -1731,7 +1761,7 @@ function TroopGenerator.Army:GetLifethread()
 end
 
 function TroopGenerator.Army:SetLifethread(_Lifethread)
-    self.m_Lifethread = _Lifethread;
+    self.m_Lifethread = (type(_Lifethread) ~= "table" and {_Lifethread}) or _Lifethread;
     return self;
 end
 
@@ -1907,12 +1937,28 @@ function TroopGenerator.Army:CalculateStrength()
     local CurrentStrength = 0;
     for i= 1, table.getn(self.m_Member), 1 do
         local ID = GetID(self.m_Member[i]:GetScriptName());
-        CurrentStrength = CurrentStrength +1;
+        CurrentStrength = CurrentStrength + self:GetUnitPowerLevel(Logic.GetEntityType(ID));
         if Logic.IsLeader(ID) == 1 then
             CurrentStrength = CurrentStrength + Logic.LeaderGetNumberOfSoldiers(ID);
         end
     end
     return CurrentStrength;
+end
+
+function TroopGenerator.Army:GetUnitPowerLevel(_EntityType)
+    if Logic.IsEntityTypeInCategory(_EntityType, EntityCategories.Cannon) == 1 then
+        if _EntityType == Entities.PV_Cannon2 then
+            return 3;
+        elseif _EntityType == Entities.PV_Cannon3 then
+            return 6;
+        elseif _EntityType == Entities.PV_Cannon4 then
+            return 10;
+        end
+    end
+    if Logic.IsEntityTypeInCategory(_EntityType, EntityCategories.CavalryHeavy) == 1 then
+        return 3;
+    end
+    return 1;
 end
 
 function TroopGenerator.Army:DoesRetreat()
@@ -2038,14 +2084,18 @@ function TroopGenerator.Army:OnTypeToSpawnSelectedBehavior(_Catalog)
     end
 end
 
+function TroopGenerator.Army:OnAttackTargetClearedBehavior()
+    local Enemies = self:GetEnemiesInRodeLength(self:GetAnchor());
+    return table.getn(Enemies) == 0;
+end
+
 function TroopGenerator.Army:OnAttackTargetSelectedBehavior(_TargetList)
+    local TargetList = copy(_TargetList);
     local sort = function(a, b)
         return QuestTools.GetDistance(a, self:GetHomePosition()) < QuestTools.GetDistance(b, self:GetHomePosition());
     end
-    table.sort(_TargetList, sort);
-    self:SetPath({_TargetList[1]});
-    self:SetWaypoint(1);
-    self:SetTarget(self:GetCurrentWaypoint());
+    table.sort(TargetList, sort);
+    return TargetList;
 end
 
 function TroopGenerator.Army:OnWaypointSelectedBehavior(_Waypoints)
@@ -2068,6 +2118,11 @@ end
 
 function TroopGenerator.Army:SetOnTypeToRecruitSelectedBehavior(_Behavior)
     self.OnTypeToRecruitSelectedBehavior = _Behavior;
+    return self;
+end
+
+function TroopGenerator.Army:SetOnAttackTargetClearedBehavior(_Behavior)
+    self.OnAttackTargetClearedBehavior = _Behavior;
     return self;
 end
 
@@ -2373,56 +2428,58 @@ GroupTargetingPriorities.Cannon = {
 GroupTargetingPriorities.HeavyCavalry = {
     ["Hero"] = 6,
     ["MilitaryBuilding"] = 5,
-    ["Cannon"] = 3,
+    ["Cannon"] = 5,
+    ["LongRange"] = 4,
+    ["Hero10"] = 4,
+    ["Hero4"] = 4,
     ["Sword"] = 3,
-    ["LongRange"] = 3,
-    ["Hero10"] = 2,
     ["Hero4"] = 1,
-    ["Spear"] = -10,
+    ["Spear"] = -100,
 };
 
 -- Attack priority for swordmen.
 GroupTargetingPriorities.Sword = {
-    ["Hero"] = 4,
+    ["Hero"] = 6,
+    ["Spear"] = 5,
+    ["Cannon"] = 5,
     ["LongRange"] = 3,
-    ["Spear"] = 3,
-    ["Cannon"] = 3,
     ["MilitaryBuilding"] = 1,
+    ["CavalryHeavy"] = -100,
 };
 
 -- Attack priority for spearmen.
 GroupTargetingPriorities.Spear = {
-    ["CavalryHeavy"] = 4,
+    ["CavalryHeavy"] = 6,
+    ["MilitaryBuilding"] = 5,
     ["CavalryLight"] = 3,
-    ["MilitaryBuilding"] = 3,
     ["Hero"] = 2,
     ["Sword"] = -2,
-    ["LongRange"] = -10,
+    ["LongRange"] = -100,
+    ["Sword"] = -100,
 };
 
 -- Attack priority for bowmen.
 GroupTargetingPriorities.Ranged = {
     ["MilitaryBuilding"] = 15,
+    ["Hero10"] = 6,
+    ["Hero4"] = 6,
     ["VillageCenter"] = 4,
     ["Headquarters"] = 4,
     ["CavalryHeavy"] = 3,
     ["CavalryLight"] = 2,
     ["Hero"] = 2,
-    ["Hero10"] = 2,
-    ["Hero4"] = 1,
-    ["Sword"] = -2,
 };
 
 -- Attack priority for marksmen.
 GroupTargetingPriorities.Rifle = {
     ["MilitaryBuilding"] = 15,
+    ["Hero10"] = 6,
     ["EvilLeader"] = 6,
     ["VillageCenter"] = 4,
     ["Headquarters"] = 4,
     ["LongRange"] = 2,
-    ["Hero10"] = 2,
     ["Cannon"] = 2,
-    ["Melee"] = -10,
+    ["Melee"] = -100,
 };
 
 TroopGenerator.Group = {
