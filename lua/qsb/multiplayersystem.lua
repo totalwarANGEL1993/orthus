@@ -16,6 +16,7 @@
 -- <ul>
 -- <li>qsb.lib.oop</li>
 -- <li>qsb.core.questsync</li>
+-- <li>qsb.core.questtools</li>
 -- <li>qsb.questbehavior</li>
 -- <li>qsb.ext.optionsmenu</li>
 -- <li>qsb.ext.timer</li>
@@ -1121,7 +1122,7 @@ function MultiplayerSystem:LogicEventOnEntityCreated(_Data, _PlayerID, _EntityID
             end
             if IsOk == false then
                 if GUI.GetPlayerID() == _PlayerID then
-                    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                    local Language = QuestTools.GetLanguage();
                     Message(ReplacePlacholders(self.Text.Messages.IllegalVillage[Language]));
                 end
                 Logic.HurtEntity(_EntityID, Logic.GetEntityHealth(_EntityID));
@@ -1314,7 +1315,7 @@ function Global_PeaceTimeReward(_Data, _Quest)
 end
 
 function MultiplayerSystem:CreateQuests(_Data)
-    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+    local Language = QuestTools.GetLanguage();
     local Players = QuestSync:GetActivePlayers();
 
     -- Peacetime goal and description

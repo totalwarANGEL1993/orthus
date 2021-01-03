@@ -16,6 +16,7 @@
 -- <ul>
 -- <li>qsb.oop</li>
 -- <li>qsb.questsync</li>
+-- <li>qsb.questtools</li>
 -- </ul>
 --
 -- @set sort=true
@@ -153,7 +154,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
     GUITooltip_NormalButton_Orig_WorkplaceMod = GUITooltip_NormalButton
 	GUITooltip_NormalButton = function(a)
 		GUITooltip_NormalButton_Orig_WorkplaceMod(a);
-        local lang = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+        local lang = QuestTools.GetLanguage();
 
 		if a == "MenuBuildingGeneric/setworkerfew" then
 			if not(QuestSystem.Workplace.UseMod == true) then
@@ -199,7 +200,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
     GUITooltip_ResearchTechnologies_Orig_WorkplaceMod = GUITooltip_ResearchTechnologies
 	GUITooltip_ResearchTechnologies = function(a,b,c,d)
 		GUITooltip_ResearchTechnologies_Orig_WorkplaceMod(a,b,c,d);
-		local lang = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+		local lang = QuestTools.GetLanguage();
 
 		if a == Technologies.GT_Literacy then
 			if Logic.GetTechnologyState(1,a) == 0 then

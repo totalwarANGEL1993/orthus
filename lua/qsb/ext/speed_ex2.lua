@@ -13,6 +13,7 @@
 -- <ul>
 -- <li>qsb.oop</li>
 -- <li>qsb.core.questsync</li>
+-- <li>qsb.core.questtools</li>
 -- <li>qsb.core.questsystem</li>
 -- </ul>
 --
@@ -131,7 +132,7 @@ function QuestSystem.GameSpeedSwitch:OverrideGUI()
         GUITooltip_Generic_Orig_GameSpeed = GUITooltip_Generic;
         GUITooltip_Generic = function(a)
             if a == "MenuMap/OnlineHelp" then
-                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                local Language = QuestTools.GetLanguage();
                 local Text;
                 if QuestSystem.GameSpeedSwitch.m_SpeedUpAllowed then
                     local Template = {

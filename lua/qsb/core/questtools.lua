@@ -41,7 +41,8 @@ end
 -- @within Utils
 --
 function QuestTools.GetLanguage()
-    return (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+    local ShortLang = string.lower(XNetworkUbiCom.Tool_GetCurrentLanguageShortName());
+    return (ShortLang == "de" and "de") or "en";
 end
 
 ---

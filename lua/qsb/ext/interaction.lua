@@ -28,6 +28,7 @@
 -- <ul>
 -- <li>qsb.core.oop</li>
 -- <li>qsb.core.questsync</li>
+-- <li>qsb.core.questtools</li>
 -- <li>qsb.core.questsystem</li>
 -- </ul>
 --
@@ -1170,7 +1171,7 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
     end
 
     local CostString = InterfaceTool_CreateCostString(Costs);
-    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+    local Language = QuestTools.GetLanguage();
     local Description;
 
     -- Mercenary

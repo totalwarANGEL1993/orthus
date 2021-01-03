@@ -300,7 +300,7 @@ function QuestSync:IsPlayerActive(_PlayerID)
     if self:IsMultiplayerGame() then
         return Logic.PlayerGetGameState(_PlayerID) == 1;
     end
-    return true;
+    return _PlayerID == GUI.GetPlayerID();
 end
 
 ---

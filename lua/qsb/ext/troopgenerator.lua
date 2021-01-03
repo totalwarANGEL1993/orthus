@@ -763,7 +763,7 @@ function TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Stre
     local Description = {
         serfLimit    = _SerfAmount or SerfLimit,
         constructing = _Construct == true,
-        repairing    = _Rebuild == true,
+        repairing    = true,
         
         resources = {
             gold   = 3500 + (600 * _Strength),
