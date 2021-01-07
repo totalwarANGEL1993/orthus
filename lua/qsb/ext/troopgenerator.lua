@@ -251,7 +251,7 @@ function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, _
     end
     local Instance = TroopGenerator.AI:CreateArmy {
         PlayerID        = _PlayerID,
-        RodeLength      = _Area or 3000,
+        RodeLength      = _Area or 4500,
         Strength        = _Strength or 12,
         RetreatStrength = 0.1, 
         HomePosition    = _Position,
@@ -315,7 +315,7 @@ function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Sp
     assert(table.getn(EntityTypes) > 0);
     local Instance = TroopGenerator.AI:CreateSpawnArmy {
         PlayerID                 = _PlayerID,
-        RodeLength               = _Area or 3000,
+        RodeLength               = _Area or 4500,
         Strength                 = _Strength or 12,
         HomePosition             = _Position,
         Lifethread               = _Spawner,
@@ -728,6 +728,7 @@ function TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Stre
         AttackPos       = {},
         ServedAttackPos = {},
         DefencePos      = {},
+        CreatedEntities = {},
         HomePosition    = _HomePosition,
         TechLevel       = _TechLevel,
         UnitsToBuild    = copy(TroopGenerator.DefaultUnitsToBuild),
@@ -764,6 +765,7 @@ function TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Stre
         serfLimit    = _SerfAmount or SerfLimit,
         constructing = _Construct == true,
         repairing    = true,
+        extracting   = 0,
         
         resources = {
             gold   = 3500 + (600 * _Strength),
@@ -791,6 +793,10 @@ function TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Stre
     -- Employ armies
     self:EmployArmies(_PlayerID);
 
+    QuestTools.StartInlineJob(Events.LOGIC_EVENT_ENTITY_CREATED, function(_PlayerID)
+        TroopGenerator.AI:LeaderEmployedController(_PlayerID);
+    end, _PlayerID);
+
     QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_PlayerID)
         TroopGenerator.AI:ArmyStateController(_PlayerID);
     end, _PlayerID);
@@ -798,6 +804,21 @@ function TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Stre
     QuestTools.StartInlineJob(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, function(_PlayerID)
         TroopGenerator.AI:ArmyAttackedController(_PlayerID);
     end, _PlayerID);
+end
+
+function TroopGenerator.AI:LeaderEmployedController(_PlayerID)
+    if self[_PlayerID] then
+        local EntityIDs = {Event.GetEntityID()};
+        for i= 1, table.getn(EntityIDs), 1 do
+            local PlayerID = Logic.EntityGetPlayer(EntityIDs[i]);
+            if _PlayerID == PlayerID then
+                if Logic.IsEntityInCategory(EntityIDs[i], EntityCategories.Cannon) == 1 
+                or Logic.IsLeader(EntityIDs[i]) == 1 then
+                    table.insert(self[_PlayerID].CreatedEntities, EntityIDs[i]);
+                end
+            end
+        end
+    end
 end
 
 function TroopGenerator.AI:ArmyStateController(_PlayerID)
@@ -1157,7 +1178,7 @@ function TroopGenerator.AI:CreateArmy(_Data)
         TroopGenerator.Army,
         NewID,
         _Data.PlayerID,
-        _Data.RodeLength or 3000,
+        _Data.RodeLength or 4500,
         _Data.Strength or 12,
         _Data.RetreatStrength or 0.1, 
         _Data.HomePosition,
@@ -1179,7 +1200,7 @@ function TroopGenerator.AI:CreateSpawnArmy(_Data)
         TroopGenerator.Army,
         NewID,
         _Data.PlayerID,
-        _Data.RodeLength or 3000,
+        _Data.RodeLength or 4500,
         _Data.Strength or 12,
         _Data.RetreatStrength or 0.1, 
         _Data.HomePosition,
@@ -1201,7 +1222,7 @@ function TroopGenerator.AI:EmployArmies(_PlayerID)
                 while (Strength > table.getn(self[_PlayerID].Armies)) do
                     TroopGenerator.AI:CreateArmy({
                         PlayerID		         = _PlayerID,
-                        RodeLength               = 8000,
+                        RodeLength               = 4500,
                         Strength		         = 12,
                         RetreatStrength          = 0.1, 
                         HomePosition             = self[_PlayerID].HomePosition,
@@ -1219,34 +1240,41 @@ end
 function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID, _RallyPoint, _TroopTypes)
     _TroopTypes = _TroopTypes or {};
     if self[_PlayerID] then
-        local Leader = {};
-        Leader = copy(QuestTools.GetAllCannons(_PlayerID), Leader);
-        Leader = copy(QuestTools.GetAllLeader(_PlayerID), Leader);
-        for i= table.getn(Leader), 1, -1 do
-            local Name = QuestTools.CreateNameForEntity(Leader[i]);
-            local Task = Logic.GetCurrentTaskList(Leader[i]);
-            if Task and (string.find(Task, "TRAIN") or string.find(Task, "BATTLE") or string.find(Task, "DIE")) then
-                table.remove(Leader, i);
-            elseif AI.Entity_GetConnectedArmy(Leader[i]) ~= -1 then
-                table.remove(Leader, i);
-            elseif self:IsEntityHidenFromAI(_PlayerID, Name) then
-                table.remove(Leader, i);
-            elseif not self:IsLeaderAllowedTypeForArmy(Leader[i], _TroopTypes) then
-                table.remove(Leader, i);
-            elseif not QuestTools.SameSector(Leader[i], _RallyPoint) then
-                table.remove(Leader, i);
-            else
-                for j= 1, table.getn(self[_PlayerID].Armies), 1 do
-                    for k, v in pairs(self[_PlayerID].Armies[j]:GetMembers()) do
-                        if GetID(v:GetScriptName()) == Leader[i] then
-                            table.remove(Leader, i);
-                        end
+        -- Try to find leader the created trigger missed
+        -- FIXME: Why does the trigger miss them?
+        if math.mod(Logic.GetTime(), 30) == 0 then
+            if table.getn(self[_PlayerID].CreatedEntities) == 0 then
+                local Leader = {};
+                Leader = copy(QuestTools.GetAllCannons(_PlayerID), Leader);
+                Leader = copy(QuestTools.GetAllLeader(_PlayerID), Leader);
+                for i= table.getn(Leader), 1, -1 do
+                    local Name = QuestTools.CreateNameForEntity(Leader[i]);
+                    if not self:IsEntityHidenFromAI(_PlayerID, Name) and self:GetArmyEntityIsEmployedIn(Leader[i]) == 0 then
+                        table.insert(self[_PlayerID].CreatedEntities, Leader[i]);
                     end
                 end
             end
         end
-        if table.getn(Leader) > 0 then
-            return Leader[1];
+        -- Go through leader list
+        local Leader = {};
+        for i= table.getn(self[_PlayerID].CreatedEntities), 1, -1 do
+            local LeaderID = self[_PlayerID].CreatedEntities[i];
+            local Name = QuestTools.CreateNameForEntity(LeaderID);
+            local Task = Logic.GetCurrentTaskList(LeaderID);
+            if not Task or (string.find(Task, "TRAIN") == nil and string.find(Task, "BATTLE") == nil and string.find(Task, "DIE")) == nil then
+                if AI.Entity_GetConnectedArmy(LeaderID) == -1 then
+                    if self:IsLeaderAllowedTypeForArmy(LeaderID, _TroopTypes) then
+                        if not self:IsEntityHidenFromAI(_PlayerID, Name) then
+                            if Logic.GetSector(LeaderID) == Logic.GetSector(GetID(_RallyPoint)) then
+                                if self:GetArmyEntityIsEmployedIn(LeaderID) == 0 then
+                                    table.remove(self[_PlayerID].CreatedEntities, i);
+                                    return LeaderID;
+                                end
+                            end
+                        end
+                    end
+                end
+            end
         end
     end
     return 0;

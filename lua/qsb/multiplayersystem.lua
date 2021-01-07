@@ -1085,8 +1085,8 @@ function MultiplayerSystem:ActivateLogicEventJobs()
     QuestTools.StartInlineJob(
         Events.LOGIC_EVENT_ENTITY_HURT_ENTITY,
         function()
-            local PlayerID = Event.GetPlayerID1();
             local EntityID = Event.GetEntityID1();
+            local PlayerID = Logic.EntityGetPlayer(EntityID);
             local VictimList = {Event.GetEntityID2()};
             MultiplayerSystem:LogicEventOnEntityHurtEntity(MPRuleset_Rules, PlayerID, EntityID, VictimList);
         end
