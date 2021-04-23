@@ -450,6 +450,8 @@ end
 -- Already generated armies will also add this position to the list of their
 -- possible targets.
 --
+-- An AI will send one army per attack target.
+--
 -- @param[type=number] _PlayerID ID of player
 -- @param              _Position Zielppsition
 -- @return[type=number] ID of target position
@@ -487,6 +489,8 @@ end
 --
 -- Already generated armies will also add this position to the list of their
 -- patrol waypoints.
+--
+-- An AI will send one army to an patrol waypoint.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _Position Zielppsition
@@ -1121,7 +1125,7 @@ end
 
 function TroopGenerator.AI:RemoveAttackTarget(_PlayerID, _Entity)
     if self[_PlayerID] then
-        for i= table.getn(self[_PlayerID].AttackPos), 1, 1 do
+        for i= table.getn(self[_PlayerID].AttackPos), 1, -1 do
             if self[_PlayerID].AttackPos[i] == _Entity then
                 table.remove(self[_PlayerID].AttackPos, i);
             end
@@ -1149,7 +1153,7 @@ end
 
 function TroopGenerator.AI:RemoveDefenceTarget(_PlayerID, _Entity)
     if self[_PlayerID] then
-        for i= table.getn(self[_PlayerID].DefencePos), 1, 1 do
+        for i= table.getn(self[_PlayerID].DefencePos), 1, -1 do
             if self[_PlayerID].DefencePos[i] == _Entity then
                 table.remove(self[_PlayerID].DefencePos, i);
             end
@@ -2444,7 +2448,7 @@ GroupTargetingPriorities = {};
 
 -- Attack priority for cannons.
 GroupTargetingPriorities.Cannon = {
-    ["MilitaryBuilding"] = 10,
+    ["MilitaryBuilding"] = 8,
     ["EvilLeader"] = 5,
     ["VillageCenter"] = 4,
     ["Headquarters"] = 3,
@@ -2488,7 +2492,7 @@ GroupTargetingPriorities.Spear = {
 
 -- Attack priority for bowmen.
 GroupTargetingPriorities.Ranged = {
-    ["MilitaryBuilding"] = 15,
+    ["MilitaryBuilding"] = 8,
     ["Hero10"] = 6,
     ["Hero4"] = 6,
     ["VillageCenter"] = 4,
@@ -2500,7 +2504,7 @@ GroupTargetingPriorities.Ranged = {
 
 -- Attack priority for marksmen.
 GroupTargetingPriorities.Rifle = {
-    ["MilitaryBuilding"] = 15,
+    ["MilitaryBuilding"] = 12,
     ["Hero10"] = 6,
     ["EvilLeader"] = 6,
     ["VillageCenter"] = 4,
