@@ -56,6 +56,7 @@ QuestBriefing = {
 function QuestBriefing:Install()
     self:CreateScriptEvents();
     self:OverrideBriefingFunctions();
+    self:OverrideSaveGameLoaded();
 
     self.m_Book.Job = StartSimpleHiResJobEx(function()
         QuestBriefing:ControlBriefing();
@@ -64,6 +65,7 @@ end
 
 function QuestBriefing:CreateScriptEvents()
     -- Player pressed escape
+    QuestSync:DeleteScriptEvent(self.Events.PostEscapePressed);
     self.Events.PostEscapePressed = QuestSync:CreateScriptEvent(function(_PlayerID)
         if not QuestSync:IsMultiplayerGame() and QuestBriefing:IsBriefingActive(_PlayerID) then
             if QuestBriefing:CanPageBeSkipped(_PlayerID) then
@@ -73,6 +75,7 @@ function QuestBriefing:CreateScriptEvents()
     end);
     
     -- Multiple choice option selected
+    QuestSync:DeleteScriptEvent(self.Events.PostOptionSelected);
     self.Events.PostOptionSelected = QuestSync:CreateScriptEvent(function(_PlayerID, _PageID, _OptionID)
         if QuestBriefing:IsBriefingActive(_PlayerID) then
             local Page = QuestBriefing.m_Book[_PlayerID][_PageID];
@@ -100,18 +103,33 @@ function QuestBriefing:CreateScriptEvents()
     end);
 
     -- Post players camera position to all
+    QuestSync:DeleteScriptEvent(self.Events.PostCameraPosition);
     self.Events.PostCameraPosition = QuestSync:CreateScriptEvent(function(_PlayerID, _X, _Y)
         QuestBriefing.m_Book[_PlayerID] = QuestBriefing.m_Book[PlayerID] or {};
         QuestBriefing.m_Book[_PlayerID].RestorePosition = {X= _X, Y= _Y};
     end);
 
     -- Post players selected entities to all
+    QuestSync:DeleteScriptEvent(self.Events.PostSelectedEntities);
     self.Events.PostSelectedEntities = QuestSync:CreateScriptEvent(function(_PlayerID, ...)
         if arg and table.getn(arg) > 0 then
             QuestBriefing.m_Book[_PlayerID] = QuestBriefing.m_Book[_PlayerID] or {};
             QuestBriefing.m_Book[_PlayerID].SelectedEntities = copy(arg);
         end
     end);
+end
+
+---
+-- Restores the script events after the game has been loaded.
+-- @local
+--
+function QuestBriefing:OverrideSaveGameLoaded()
+    Mission_OnSaveGameLoaded_Orig_QuestBriefing = Mission_OnSaveGameLoaded;
+    Mission_OnSaveGameLoaded = function()
+        Mission_OnSaveGameLoaded_Orig_QuestBriefing();
+
+        QuestBriefing:CreateScriptEvents();
+    end
 end
 
 function QuestBriefing:OverrideBriefingFunctions()
@@ -455,8 +473,10 @@ function QuestBriefing:AddPages(_Briefing)
         Page.RenderFoW = false;
         Page.RenderSky = true;
         Page.Signal    = false;
+        local AnswerID = 1;
         for i= 7, table.getn(arg), 2 do
-            table.insert(Page.MC, {arg[i], arg[i+1]});
+            table.insert(Page.MC, {ID = AnswerID, arg[i], arg[i+1]});
+            AnswerID = AnswerID +1;
         end
         return Page;
     end

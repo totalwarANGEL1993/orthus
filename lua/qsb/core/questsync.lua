@@ -66,6 +66,17 @@ function QuestSync:CreateScriptEvent(_Function)
 end
 
 ---
+-- Removes an script event.
+-- @param[type=number] _ID ID of event
+-- @see QuestSync:CreateScriptEvent
+--
+function QuestSync:DeleteScriptEvent(_ID)
+    if _ID and self.ScriptEvents[_ID] then
+        self.ScriptEvents[_ID] = nil;
+    end
+end
+
+---
 -- Calls the script event synchronous for all players.
 -- @param[type=number] _ID ID of script event
 -- @param              ... List of Parameters (String or Number)
