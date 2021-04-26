@@ -717,6 +717,37 @@ function SetAIPlayerIgnoreAttractionLimit(_PlayerID, _Flag)
     TroopGenerator.AI:SetIgnoreVillageCenterLimit(_PlayerID, _Flag);
 end
 
+---
+-- Sets if the army is independet from their lifethread.
+--
+-- Independed spawned armies will not be deleted if the lifethread is destroyed.
+-- 
+-- <p><b>Note:</b> This is active by default! Also this has no effect on
+-- armies that recrut their members.</p>
+--
+-- @param[type=number]  _PlayerID     ID of player
+-- @param               _ArmyNameOrID ID or Name of army
+-- @param[type=boolean] _Flag         Is independet
+-- @within Methods
+-- 
+-- @usage SetAIPlayerIgnoreAttractionLimit(2, false);
+--
+function ArmySetIndependetFromLifethread(_PlayerID, _ArmyNameOrID, _Flag)
+    local ArmyID = TroopGenerator.AiArmyNameToId[_ArmyNameOrID];
+    if not ArmyID then
+        ArmyID = _ArmyNameOrID;
+    end
+    if not TroopGenerator.AI[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return;
+    end
+    for i= 1, table.getn(self[_PlayerID].Armies), 1 do
+        if TroopGenerator.AI[_PlayerID].Armies[i]:GetID() == ArmyID then
+            TroopGenerator.AI[_PlayerID].Armies[i]:SetIndependedFromLifethread(_Flag == true);
+        end
+    end
+end
+
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
 -- ~~~                          TroopGenerator.AI                         ~~~ --
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
@@ -788,11 +819,15 @@ function TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Stre
             stone      = 10,
             wood       = 10,
         },
+        rebuild	= {
+            delay = 2*60
+        }
     };
-    if _Rebuild then
-        Description.rebuild	= {delay = 2*60};
-    end
     SetupPlayerAi(_PlayerID, Description);
+if not _Rebuild then
+    AI.Village_DeactivateRebuildBehaviour(_PlayerID);
+    AI.Village_EnableConstructing(_PlayerID, 0);
+end
 
     -- Employ armies
     self:EmployArmies(_PlayerID);
@@ -2218,6 +2253,10 @@ function TroopGenerator.Army:IsIndependedFromLifethread()
     return self.m_Independed == true;
 end
 
+function TroopGenerator.Army:SetIndependedFromLifethread(_Flag)
+    self.m_Independed = _Flag == true;
+end
+
 function TroopGenerator.Army:GetFreeReachableBarracksInUpgradeCategory(_UnitType)
     local List = {};
     local Key;
@@ -2281,16 +2320,17 @@ function TroopGenerator.Army:HasSpaceForUnit(_UnitType)
         return true;
     end
 
-    -- Calculage current usage
+    -- Get current usage
     local MaximumUsage = Logic.GetPlayerAttractionLimit(self:GetPlayerID());
     local CurrentUsage = Logic.GetPlayerAttractionUsage(self:GetPlayerID());
-    local Usage = MaximumUsage -CurrentUsage;
     -- Calculate future usage (reserved space for soldiers)
+    local FutureUsage = 0;
     for k, v in pairs(QuestTools.GetAllLeader(self:GetPlayerID())) do
         local MaximumSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(v);
         local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(v);
-        Usage = Usage + (MaximumSoldiers - CurrentSoldiers);
+        FutureUsage = FutureUsage + (MaximumSoldiers - CurrentSoldiers);
     end
+    local Usage = MaximumUsage - (CurrentUsage + FutureUsage);
 
     return Usage >= self:GetSpaceNeededForUnit(_UnitType);
 end
@@ -2317,7 +2357,7 @@ function TroopGenerator.Army:GetSpaceNeededForUnit(_UnitType)
 end
 
 function TroopGenerator.Army:CheatLeaderCosts(_UnitType)
-    QuestTools.RemoveResourcesFromPlayer(
+    QuestTools.AddResourcesToPlayer(
         self:GetPlayerID(),
         QuestTools.GetMilitaryCostsTable(self:GetPlayerID(), _UnitType)
     );
@@ -2327,7 +2367,7 @@ function TroopGenerator.Army:CheatCannonCosts(_UnitType)
     local CannonCosts = {};
     local CannonUpCat = ArmyCannonTypeToUpgradeCategory[Logic.GetEntityTypeName(_UnitType)];
     if CannonUpCat then
-        QuestTools.RemoveResourcesFromPlayer(
+        QuestTools.AddResourcesToPlayer(
             self:GetPlayerID(),
             QuestTools.GetMilitaryCostsTable(self:GetPlayerID(), CannonUpCat)
         );
@@ -2339,7 +2379,7 @@ function TroopGenerator.Army:CheatSoldierCosts(_UnitType, _Amount)
     if ArmyLeaderToSoldierUpgradeCategory[_UnitType] then
         local SoldierCosts = QuestTools.GetSoldierCostsTable(self:GetPlayerID(), ArmyLeaderToSoldierUpgradeCategory[_UnitType]);
         for i= 1, Amount, 1 do
-            QuestTools.RemoveResourcesFromPlayer(self:GetPlayerID(), SoldierCosts);
+            QuestTools.AddResourcesToPlayer(self:GetPlayerID(), SoldierCosts);
         end
     end
 end
@@ -2386,7 +2426,7 @@ function TroopGenerator.Army:RefillWeakGroups(_Cheat)
                         local SoldierUpCat = Logic.LeaderGetSoldierUpgradeCategory(GetID(self.m_Member[i]:GetScriptName()));
                         local SoldierCosts = QuestTools.GetSoldierCostsTable(self:GetPlayerID(), SoldierUpCat);
                         if QuestTools.HasEnoughResources(self:GetPlayerID(), SoldierCosts) then
-                            QuestTools.RemoveResourcesFromPlayer(_PlayerID, SoldierCosts);
+                            QuestTools.AddResourcesToPlayer(_PlayerID, SoldierCosts);
                             self.m_Member[i]:Refill();
                         end
                     end

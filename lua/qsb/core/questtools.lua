@@ -919,11 +919,39 @@ end
 HasEnoughResources = QuestTools.HasEnoughResources;
 
 ---
+-- Adds resources to the player by the given resource table.
+--
+-- @param[type=number] _PlayerID  ID of player
+-- @param[type=table]  _Resources Resource table
+-- @within AI
+--
+function QuestTools.AddResourcesToPlayer(_PlayerID, _Resources)
+    if _Resources[ResourceType.Gold] ~= nil then
+		AddGold(_PlayerID, _Resources[ResourceType.Gold]);
+    end
+	if _Resources[ResourceType.Clay] ~= nil then
+		AddClay(_PlayerID, _Resources[ResourceType.Clay]);
+	end
+	if _Resources[ResourceType.Wood] ~= nil then
+		AddWood(_PlayerID, _Resources[ResourceType.Wood]);
+	end
+	if _Resources[ResourceType.Iron] ~= nil then		
+		AddIron(_PlayerID, _Resources[ResourceType.Iron]);
+	end
+	if _Resources[ResourceType.Stone] ~= nil then		
+		AddStone(_PlayerID, _Resources[ResourceType.Stone]);
+	end
+    if _Resources[ResourceType.Sulfur] ~= nil then		
+		AddSulfur(_PlayerID, _Resources[ResourceType.Sulfur]);
+	end
+end
+AddResourcesToPlayer = QuestTools.AddResourcesToPlayer;
+
+---
 -- Removes Resources from the player by the given costs table.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=table]  _Costs    Costs table
--- @return[type=boolean] Enough resources
 -- @within AI
 --
 function QuestTools.RemoveResourcesFromPlayer(_PlayerID, _Costs)
