@@ -157,8 +157,6 @@ ArmyCategories = {
 --
 function CreateAIPlayer(_PlayerID, _TechLevel, _SerfAmount, _HomePosition, _Strength, _Construct, _Rebuild)
     _SerfAmount = _SerfAmount or 6;
-    _Construct = (_Construct ~= nil and _Construct) or true;
-    _Rebuild = (_Rebuild ~= nil and _Rebuild) or true;
     _Strength = _Strength or 0;
 
     if not TroopGenerator.CreatedAiPlayers[_PlayerID] then
@@ -824,13 +822,13 @@ function TroopGenerator.AI:CreateAI(_PlayerID, _SerfAmount, _HomePosition, _Stre
         }
     };
     SetupPlayerAi(_PlayerID, Description);
-if not _Rebuild then
-    AI.Village_DeactivateRebuildBehaviour(_PlayerID);
-    AI.Village_EnableConstructing(_PlayerID, 0);
-end
 
     -- Employ armies
     self:EmployArmies(_PlayerID);
+    -- Construct buildings
+    self:SetDoesConstruct(_PlayerID, _Construct == true);
+    -- Rebuild buildings
+    self:SetDoesRebuild(_PlayerID, _Rebuild == true);
 
     QuestTools.StartInlineJob(Events.LOGIC_EVENT_ENTITY_CREATED, function(_PlayerID)
         TroopGenerator.AI:LeaderEmployedController(_PlayerID);
