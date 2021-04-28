@@ -192,9 +192,10 @@ round = QuestTools.Round;
 -- @within Entities
 --
 function QuestTools.SetVisible(_Entity, _Flag)
+    local ID = GetID(_Entity);
     local VisibleFlag = (_Flag == true and 513) or 65793;
     local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
-    Logic.SetEntityScriptingValue(id, ValueIndex, VisibleFlag);
+    Logic.SetEntityScriptingValue(ID, ValueIndex, VisibleFlag);
 end
 
 ---
@@ -205,8 +206,9 @@ end
 -- @within Entities
 --
 function QuestTools.IsVisible(_Entity)
+    local ID = GetID(_Entity);
     local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
-    return Logic.GetEntityScriptingValue(id, ValueIndex, VisibleFlag) == 513;
+    return Logic.GetEntityScriptingValue(ID, ValueIndex, VisibleFlag) == 513;
 end
 
 ---

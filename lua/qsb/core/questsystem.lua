@@ -353,9 +353,12 @@ function QuestSystem:GetJornalByQuestID(_QuestID)
         return;
     end
     for i= 1, table.getn(Score.Player), 1 do
-        if  self.QuestDescriptions[Quest.m_Receiver][i] 
-        and self.QuestDescriptions[Quest.m_Receiver][i][1] == _QuestID then
-            return self.QuestDescriptions[Quest.m_Receiver][i], i;
+        if self.QuestDescriptions[Quest.m_Receiver][i] then
+            for j= 1, table.getn(self.QuestDescriptions[Quest.m_Receiver][i]), 1 do
+                if self.QuestDescriptions[Quest.m_Receiver][i][j] == _QuestID then
+                    return self.QuestDescriptions[Quest.m_Receiver][i], i;
+                end
+            end
         end
     end
 end
@@ -1001,11 +1004,14 @@ function QuestTemplate:Trigger()
     self:Reset();
 
     -- Add quest
-    if self.m_Description and self.m_Description.Visible then
-        if not self.m_Description.Position then
-            self:CreateQuest();
-        else
-            self:CreateQuestEx();
+    local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
+    if not Jornal then
+        if self.m_Description and self.m_Description.Visible then
+            if not self.m_Description.Position then
+                self:CreateQuest();
+            else
+                self:CreateQuestEx();
+            end
         end
     end
 
@@ -1104,10 +1110,9 @@ function QuestTemplate:Reset(_VanillaSpareDescription)
         self:RemoveQuest();
     end
 
-    -- Reset finish time
     self.m_FinishTime = nil;
-
-    -- Reset quest briefing
+    self.m_State = QuestStates.Inactive;
+    self.m_Result = QuestResults.Undecided;
     self.m_Briefing = nil;
 
     -- Reset objectives
@@ -1441,9 +1446,9 @@ function QuestTemplate:RemoveQuest()
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
         if Jornal then
             if QuestTools.GetExtensionNumber() > 2 then
-                mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, ID);
+                mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, Jornal[1]);
             else
-                Logic.RemoveQuest(self.m_Receiver, ID);
+                Logic.RemoveQuest(self.m_Receiver, Jornal[1]);
                 QuestSystem:InvalidateQuestAtJornalID(self.m_Receiver, ID);
             end
         end

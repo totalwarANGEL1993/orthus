@@ -518,12 +518,12 @@ function QuestDebug:EvaluateCommand(_Tokens)
 
         elseif Action == "start" then 
             local QuestID = GetQuestID(command[2]);
-            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestStates.Active);
+            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestState, GUI.GetPlayerID(), QuestID, QuestStates.Active);
             return true;
             
         elseif Action == "reset" then 
             local QuestID = GetQuestID(command[2]);
-            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, -1);
+            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestState, GUI.GetPlayerID(), QuestID, -1);
             return true;
 
         elseif Action == "wakeup" then 

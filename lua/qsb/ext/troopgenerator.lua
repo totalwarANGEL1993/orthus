@@ -451,35 +451,32 @@ end
 -- An AI will send one army per attack target.
 --
 -- @param[type=number] _PlayerID ID of player
--- @param              _Position Zielppsition
--- @return[type=number] ID of target position
+-- @param[type=string] _Position Zielppsition
 -- @within Methods
 -- 
--- @usage VeryImportantTargetID = CreateAIPlayerAttackTarget(2, "VeryImportantTarget");
+-- @usage AddAIPlayerAttackTarget(2, "VeryImportantTarget");
 --
-function CreateAIPlayerAttackTarget(_PlayerID, _Position)
+function AddAIPlayerAttackTarget(_PlayerID, _Position)
     if not TroopGenerator.CreatedAiPlayers[_PlayerID] then
         assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
-        return -1;
     end
     TroopGenerator.AI:AddAttackTarget(_PlayerID, _Position);
-    return GetID(_Position);
 end
 
 ---
 -- Removes the attack target from the AI player and all armies of said player.
 -- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ID       Zielppsition
+-- @param[type=string] _Position Zielppsition
 -- @within Methods
 -- 
--- @usage DestroyAIPlayerAttackTarget(2, VeryImportantTargetID);
+-- @usage RemoveAIPlayerAttackTarget(2, "VeryImportantTarget");
 --
-function DestroyAIPlayerAttackTarget(_PlayerID, _ID)
+function RemoveAIPlayerAttackTarget(_PlayerID, _Position)
     if not TroopGenerator.CreatedAiPlayers[_PlayerID] then
         assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
         return;
     end
-    TroopGenerator.AI:RemoveAttackTarget(_PlayerID, _ID);
+    TroopGenerator.AI:RemoveAttackTarget(_PlayerID, _Position);
 end
 
 ---
@@ -491,35 +488,32 @@ end
 -- An AI will send one army to an patrol waypoint.
 --
 -- @param[type=number] _PlayerID ID of player
--- @param[type=number] _Position Zielppsition
--- @return[type=number] ID of target position
+-- @param[type=string] _Position Zielposition
 -- @within Methods
 -- 
--- @usage VeryImportantTargetID = CreateAIPlayerPatrolPoint(2, "VeryImportantTarget");
+-- @usage AddAIPlayerPatrolPoint(2, "VeryImportantTarget");
 --
-function CreateAIPlayerPatrolPoint(_PlayerID, _Position)
+function AddAIPlayerPatrolPoint(_PlayerID, _Position)
     if not TroopGenerator.CreatedAiPlayers[_PlayerID] then
         assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
-        return -1;
     end
     TroopGenerator.AI:AddDefenceTarget(_PlayerID, _Position);
-    return GetID(_Position);
 end
 
 ---
 -- Removes the patrol waypoint from the AI player and all armies of said player.
 -- @param[type=number] _PlayerID ID of player
--- @param[type=number] _ID       Zielppsition
+-- @param[type=string] _Position       Zielppsition
 -- @within Methods
 -- 
--- @usage DestroyAIPlayerPatrolPoint(2, VeryImportantTargetID);
+-- @usage RemoveAIPlayerPatrolPoint(2, "VeryImportantTarget");
 --
-function DestroyAIPlayerPatrolPoint(_PlayerID, _ID)
+function RemoveAIPlayerPatrolPoint(_PlayerID, _Position)
     if not TroopGenerator.CreatedAiPlayers[_PlayerID] then
         assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
         return;
     end
-    TroopGenerator.AI:RemoveDefenceTarget(_PlayerID, _ID);
+    TroopGenerator.AI:RemoveDefenceTarget(_PlayerID, _Position);
 end
 
 ---

@@ -26,6 +26,12 @@
 
 -- Quests and tools --
 
+StageQuestResultType = {
+    Success = 1,
+    Failure = 2,
+    Ignored = 3,
+};
+
 ---
 -- Creates an quest from the given table. If the table contains a description,
 -- the quest will insert itself into the questbook when it is triggered and
@@ -64,6 +70,10 @@
 -- }
 --
 function CreateQuest(_Data)
+    if not _Data.Name then
+        Message("DEBUG: One quest has no name!");
+        return;
+    end
     local QuestName   = _Data.Name;
     local Receiver    = _Data.Receiver or 1;
     local Time        = _Data.Time;
@@ -87,6 +97,145 @@ function CreateQuest(_Data)
     end
 
     return new(QuestTemplate, QuestName, Receiver, Time, QuestObjectives, QuestConditions, QuestRewards, QuestReprisals, Description);
+end
+
+---
+-- Creates an quest together with an array of fragment quests from the given
+-- table. The fragments will be executed one after another. If the last fragment
+-- is over the quest is finally completed.
+--
+-- Possible entries for the master quest:
+-- <ul>
+-- <li><b>Name:</b> Name of master quest</li>
+-- <li><b>Receiver:</b> Player that receives the quest</li>
+-- <li><b>Time:</b> Time, until the quest is automatically over</li>
+-- <li><b>Description:</b> Quest information displayed in the quest book.
+-- (Mostly identical to Logic.CreateQuest or Logic.CreateQuestEx)</li>
+-- <li><b>Stages:</b> List of subquests</li>
+-- </ul>
+-- After the fields the behavior constructors for the master quest are called.
+--
+-- Inside the Stages attribute the sub quests are created. They are written as
+-- unnamed tables. They can contain the same fields as the master quest. The sub
+-- quests have always the same receiver as the master quest. It is possible to
+-- infinitely stack sub quests into each other.
+--
+-- <b>Note:</b> Staged quests can be used to structure the mission. Those quests
+-- can be manipulated as normal quests can.
+--
+-- @param[type=table] _Data Quest table
+-- @return[type=number] Quest id
+-- @return[type=table]  Quest instance
+-- @within Methods
+-- @see CreateQuest
+--
+-- @usage CreateQuest {
+--     Name = "VictoryCondition",
+--     Description = {
+--         Title = "Justice!",
+--         Text  = "Time for paybeck. Destroy your enemy!",
+--         Type  = MAINQUEST_OPEN,
+--         Info  = 1
+--     },
+--
+--     Goal_DestroyPlayer(2, "HQ2"),
+--     Reward_Victory(),
+--     Trigger_Time(0)
+-- }
+--
+function CreateStagedQuest(_Data)
+    if not _Data.Name then
+        Message("DEBUG: One quest has no name!");
+        return;
+    end
+    _Data.Receiver = _Data.Receiver or 1;
+    local QuestName = _Data.Name;
+
+    QuestSystemBehavior.Data.QuestNameToStages[QuestName] = {};
+
+    local LastQuestName = QuestName;
+    for i= 1, table.getn(_Data.Stages) do
+        -- configure stage
+        _Data.Stages[i].Name = _Data.Stages[i].Name or QuestName.. "@Stage" ..i;
+        _Data.Stages[i].Receiver = _Data.Receiver;
+        _Data.Stages[i].Expected = _Data.Stages[i].Expected or StageQuestResultType.Success;
+        if _Data.Stages[i].Description then
+            _Data.Stages[i].Description.Type = FRAGMENTQUEST_OPEN;
+            _Data.Stages[i].Description.Info = 1;
+        end
+        table.insert(_Data, Goal_NoChange());
+
+        -- configure stage
+        if i == 1 then
+            table.insert(_Data.Stages[i], Trigger_QuestActive(LastQuestName));
+            table.insert(_Data, Goal_WinQuest(_Data.Stages[i].Name));
+        else
+            -- Create links for failure type
+            if _Data.Stages[i].Expected == StageQuestResultType.Failure then
+                -- link to previous fragment
+                if QuestSystemBehavior:DoesStageContainReprisalQuestBriefing(_Data.Stages[i-1]) then
+                    table.insert(_Data.Stages[i], Trigger_Briefing(LastQuestName, "Failure"));
+                else
+                    table.insert(_Data.Stages[i], Trigger_QuestFailure(LastQuestName));
+                end
+                -- connect to master
+                table.insert(_Data, Goal_FailQuest(_Data.Stages[i].Name));
+            end
+
+            -- Create links for success type
+            if _Data.Stages[i].Expected == StageQuestResultType.Success then
+                -- link to previous fragment
+                if QuestSystemBehavior:DoesStageContainRewardQuestBriefing(_Data.Stages[i-1]) then
+                    table.insert(_Data.Stages[i], Trigger_Briefing(LastQuestName, "Success"));
+                else
+                    table.insert(_Data.Stages[i], Trigger_QuestSuccess(LastQuestName));
+                end
+                -- connect to master
+                table.insert(_Data, Goal_WinQuest(_Data.Stages[i].Name));
+            end
+
+            -- Create links for ignored result
+            if _Data.Stages[i].Expected == StageQuestResultType.Ignored then
+                -- link to previous fragment
+                if QuestSystemBehavior:DoesStageContainRewardQuestBriefing(_Data.Stages[i-1])
+                or QuestSystemBehavior:DoesStageContainRewardQuestBriefing(_Data.Stages[i-1]) then
+                    table.insert(_Data.Stages[i], Trigger_Briefing(LastQuestName, "Any"));
+                else
+                    table.insert(_Data.Stages[i], Trigger_QuestOver(LastQuestName));
+                end
+                -- connect to master
+                table.insert(_Data, Goal_CompleteQuest(_Data.Stages[i].Name));
+            end
+
+            -- handle failure and success of master
+            if i == table.getn(_Data.Stages) then
+                if _Data.Stages[i].Expected == StageQuestResultType.Failure then
+                    table.insert(_Data.Stages[i], Reprisal_QuestSucceed(QuestName));
+                elseif _Data.Stages[i].Expected == StageQuestResultType.Success then
+                    table.insert(_Data.Stages[i], Reward_QuestSucceed(QuestName));
+                else
+                    table.insert(_Data.Stages[i], Reward_QuestSucceed(QuestName));
+                    table.insert(_Data.Stages[i], Reprisal_QuestSucceed(QuestName));
+                end
+            end
+            if _Data.Stages[i].Expected == StageQuestResultType.Failure then
+                table.insert(_Data.Stages[i], Reward_QuestFail(QuestName));
+            end
+            if _Data.Stages[i].Expected == StageQuestResultType.Success then
+                table.insert(_Data.Stages[i], Reprisal_QuestFail(QuestName));
+            end
+        end
+
+        -- create quest for stage
+        LastQuestName = _Data.Stages[i].Name;
+        table.insert(QuestSystemBehavior.Data.QuestNameToStages[QuestName], LastQuestName);
+        -- onion quests are bad style but I will support it
+        if _Data.Stages[i].Stages then
+            CreateStagedQuest(_Data.Stages[i]);
+        end
+        CreateQuest(_Data.Stages[i]);
+    end
+    return CreateQuest(_Data);
 end
 
 ---
@@ -145,16 +294,51 @@ end
 -- @within Methods
 --
 function FailQuest(_Quest)
+    -- Message("Fail quest " .._Quest);
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Fail();
 end
 
+
 ---
--- Wins the quest.
+-- Fails the staged quest.
+-- @param _QuestName Quest name or ID
+-- @within Methods
+--
+function FailStagedQuest(_QuestName)
+    if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
+        FailQuest(_QuestName);
+        return;
+    end
+    for i= 1, table.getn(QuestSystemBehavior.Data.QuestNameToStages[_QuestName]), 1 do
+        FailQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
+    end
+    FailQuest(_QuestName);
+end
+
+---
+-- Triggers the quest.
 -- @param _Quest Quest name or ID
 -- @within Methods
 --
 function StartQuest(_Quest)
+    -- Message("Start quest " .._Quest);
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Trigger();
+end
+
+---
+-- Triggers the staged quest.
+-- @param _QuestName Quest name or ID
+-- @within Methods
+--
+function StartStagedQuest(_QuestName)
+    if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
+        StartQuest(_QuestName);
+        return;
+    end
+    for i= 1, table.getn(QuestSystemBehavior.Data.QuestNameToStages[_QuestName]), 1 do
+        StartQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
+    end
+    StartQuest(_QuestName);
 end
 
 ---
@@ -163,7 +347,24 @@ end
 -- @within Methods
 --
 function StopQuest(_Quest)
+    -- Message("Stop quest " .._Quest);
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Interrupt();
+end
+
+---
+-- Interrupts the staged quest.
+-- @param _QuestName Quest name or ID
+-- @within Methods
+--
+function StopStagedQuest(_QuestName)
+    if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
+        StopQuest(_QuestName);
+        return;
+    end
+    for i= 1, table.getn(QuestSystemBehavior.Data.QuestNameToStages[_QuestName]), 1 do
+        StopQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
+    end
+    StopQuest(_QuestName);
 end
 
 ---
@@ -172,7 +373,26 @@ end
 -- @within Methods
 --
 function ResetQuest(_Quest)
+    -- Message("Reset quest " .._Quest);
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset();
+    Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", QuestSystem.QuestLoop, 1, {}, {GetQuestID(_Quest)});
+end
+
+---
+-- Resets the staged quest.
+-- @param _QuestName Quest name or ID
+-- @within Methods
+--
+function ResetStagedQuest(_QuestName)
+    if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
+        ResetQuest(_QuestName);
+        return;
+    end
+    for i= 1, table.getn(QuestSystemBehavior.Data.QuestNameToStages[_QuestName]), 1 do
+        StopQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
+        ResetQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
+    end
+    ResetQuest(_QuestName);
 end
 
 ---
@@ -181,7 +401,27 @@ end
 -- @within Methods
 --
 function RestartQuest(_Quest)
-    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset():Trigger();
+    -- Message("Restart quest " .._Quest);
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Reset()
+    Trigger.RequestTrigger(Events.LOGIC_EVENT_EVERY_SECOND, "", QuestSystem.QuestLoop, 1, {}, {GetQuestID(_Quest)});
+    QuestSystemBehavior:GetQuestByNameOrID(_Quest):Trigger();
+end
+
+---
+-- Resets the staged quest and activates it immediately.
+-- @param _QuestName Quest name or ID
+-- @within Methods
+--
+function RestartStagedQuest(_QuestName)
+    for i= 1, table.getn(QuestSystemBehavior.Data.QuestNameToStages[_QuestName]), 1 do
+        StopQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
+        if i == 1 then
+            RestartQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
+        else
+            ResetQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
+        end
+    end
+    RestartQuest(_QuestName);
 end
 
 ---
@@ -190,7 +430,24 @@ end
 -- @within Methods
 --
 function WinQuest(_Quest)
+    -- Message("Win quest " .._Quest);
     QuestSystemBehavior:GetQuestByNameOrID(_Quest):Success();
+end
+
+---
+-- Wins the staged quest.
+-- @param _QuestName Quest name or ID
+-- @within Methods
+--
+function WinStagedQuest(_QuestName)
+    if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
+        WinQuest(_QuestName);
+        return;
+    end
+    for i= 1, table.getn(QuestSystemBehavior.Data.QuestNameToStages[_QuestName]), 1 do
+        WinQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
+    end
+    WinQuest(_QuestName);
 end
 
 -- Behavior --
@@ -202,6 +459,7 @@ QuestSystemBehavior = {
         S5HookInitalized = false,
         Version = "1.3.0",
 
+        QuestNameToStages = {},
         SaveLoadedActions = {},
         PlayerColorAssigment = {},
         AiPlayerAttackTargets = {},
@@ -271,6 +529,81 @@ function QuestSystemBehavior:PrepareQuestSystem()
     end
 end
 
+function QuestDebug:CreateScriptEvents()
+    QuestSync:DeleteScriptEvent(QuestDebug.ScriptEvents.AlterQuestResult);
+    QuestDebug.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
+        if QuestID == 0 then
+            if GUI.GetPlayerID() == _ExecutingPlayer then
+                Message("Can not find quest: " ..command[2]);
+            end
+            return;
+        end
+        if QuestSystem.Quests[_QuestID] then
+            local QuestName = QuestSystem.Quests[_QuestID].m_QuestName;
+            if _Result == QuestResults.Success then
+                if GUI.GetPlayerID() == _ExecutingPlayer then
+                    Message("Succeed quest: " ..command[2]);
+                end     
+                if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
+                    WinStagedQuest(QuestName);
+                else
+                    WinQuest(QuestName);
+                end
+            elseif _Result == QuestResults.Failure then
+                if GUI.GetPlayerID() == _ExecutingPlayer then
+                    Message("Fail quest: " ..command[2]);
+                end
+                if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
+                    FailStagedQuest(QuestName);
+                else
+                    FailQuest(QuestName);
+                end
+            elseif _Result == QuestResults.Interrupted then
+                if GUI.GetPlayerID() == _ExecutingPlayer then
+                    Message("Stop quest: " ..command[2]);
+                end           
+                if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
+                    StopStagedQuest(QuestName);
+                else
+                    StopQuest(QuestName);
+                end
+            end
+        end
+    end);
+
+    QuestSync:DeleteScriptEvent(QuestDebug.ScriptEvents.AlterQuestState);
+    QuestDebug.ScriptEvents.AlterQuestState = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _State)
+        if QuestID == 0 then
+            if GUI.GetPlayerID() == _ExecutingPlayer then
+                Message("Can not find quest: " ..command[2]);
+            end
+            return;
+        end
+        if QuestSystem.Quests[_QuestID] then
+            local QuestName = QuestSystem.Quests[_QuestID].m_QuestName;
+            if _State == QuestStates.Active then
+                if GUI.GetPlayerID() == _ExecutingPlayer then
+                    Message("Start quest: " ..command[2]);
+                end
+                if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
+                    StartStagedQuest(QuestName);
+                else
+                    StartQuest(QuestName);
+                end
+            elseif _State == -1 then
+                if GUI.GetPlayerID() == _ExecutingPlayer then
+                    Message("Restart quest: " ..command[2]);
+                end
+                if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
+                    RestartStagedQuest(QuestName);
+                else
+                    RestartQuest(QuestName);
+                end
+            end
+        end
+    end);
+end
+
 ---
 -- Returns the quest or a generated null save fallback quest if the desired
 -- quest does not exist.
@@ -290,6 +623,28 @@ function QuestSystemBehavior:GetQuestByNameOrID(_Subject)
         Goal_InstantSuccess(),
         Trigger_NeverTriggered()
     }
+end
+
+function QuestSystemBehavior:DoesStageContainReprisalQuestBriefing(_Description)
+    for i= 1, table.getn(_Description), 1 do
+        if _Description[i][2] and _Description[i][2].Data and _Description[i][2].Data.Name then
+            if _Description[i][2].Data.Name == "Reprisal_Briefing" then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+function QuestSystemBehavior:DoesStageContainRewardQuestBriefing(_Description)
+    for i= 1, table.getn(_Description), 1 do
+        if _Description[i][2] and _Description[i][2].Data and _Description[i][2].Data.Name then
+            if _Description[i][2].Data.Name == "Reward_Briefing" then
+                return true;
+            end
+        end
+    end
+    return false;
 end
 
 ---
