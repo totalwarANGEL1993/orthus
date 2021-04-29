@@ -220,19 +220,22 @@ end
 -- The AI player must be initalized first!
 --
 -- Use script entities named with PlayerX_AttackTargetY to define positions
--- that will be attacked by the army. Replace X with the player ID and Y with
+-- that will be attacked by the AI. Replace X with the player ID and Y with
 -- a unique number starting by 1.
 --
--- Also you can use entities named with PlayerX_PatrolPointY to define
--- positions were the army will patrol. Also replace X with the player ID and
+-- You can also use entities named with PlayerX_PatrolPointY to define
+-- positions were the AI will patrol. Also replace X with the player ID and
 -- Y with a unique number starting by 1.
+--
+-- <b>Note:</b> The AI will decide to which targets an army is send to. There
+-- isn't a direct connection for one army and one target.
 --
 -- @param[type=string] _ArmyName   Army identifier
 -- @param[type=number] _PlayerID   Owner of army
 -- @param[type=number] _Strength   Strength of army [1|8]
 -- @param[type=string] _Position   Home Position of army
 -- @param[type=number] _Area Action range of the army
--- @param[type=table] _TroopTypes  Upgrade categories to recruit
+-- @param[type=table] _TroopTypes  (Optional) Upgrade categories to recruit
 -- @return[type=number] Army ID
 -- @within Methods
 --
@@ -273,12 +276,15 @@ end
 -- spawrned as long as the generator exists.
 --
 -- Use script entities named with PlayerX_AttackTargetY to define positions
--- that will be attacked by the army. Replace X with the player ID and Y with
+-- that will be attacked by the AI. Replace X with the player ID and Y with
 -- a unique number starting by 1.
 --
--- Also you can use entities named with PlayerX_PatrolPointY to define
--- positions were the army will patrol. Also replace X with the player ID and
+-- You can also use entities named with PlayerX_PatrolPointY to define
+-- positions were the AI will patrol. Also replace X with the player ID and
 -- Y with a unique number starting by 1.
+--
+-- <b>Note:</b> The AI will decide to which targets an army is send to. There
+-- isn't a direct connection for one army and one target.
 --
 -- @param[type=string] _ArmyName    Army identifier
 -- @param[type=number] _PlayerID    Owner of army.
@@ -291,7 +297,7 @@ end
 -- @within Methods
 --
 -- @usage CreateAIPlayerSpawnArmy(
---     "Bar", 2, 8, "armyPos1", "lifethread", 5000,
+--     "Bar", 2, 8, "armyPos1", "lifethread", 5000, 2*60,
 --     {Entities.PU_LeaderSword2, 3},
 --     {Entities.PU_LeaderBow2, 3},
 --     {Entities.PV_Cannon2, 0}
@@ -410,7 +416,7 @@ function AIPlayerChangeResourceRespawnRates(_PlayerID, _UpdateTime, _Gold, _Clay
 end
 
 ---
--- Hides an Entity from the AI or makes it visible again.
+-- Hides an Entity from the AI or makes it visible for them again.
 --
 -- Hidden entities will under no circumstances be added to armies created with
 -- code from this library.
@@ -445,10 +451,9 @@ end
 ---
 -- Registers an attack target position for the player.
 --
--- Already generated armies will also add this position to the list of their
--- possible targets.
---
--- An AI will send one army per attack target.
+-- <b>Note:</b> An AI will send one army per attack target. Which army is send
+-- is decided by the AI. Armies can not be connected to attack positions. By
+-- default the AI chooses the target for an army that is closest to it.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=string] _Position Zielppsition
@@ -482,10 +487,9 @@ end
 ---
 -- Registers an patrol waypoint position for the player.
 --
--- Already generated armies will also add this position to the list of their
--- patrol waypoints.
---
--- An AI will send one army to an patrol waypoint.
+-- <b>Note:</b> An AI will send one army per patrol waypoint. Which army is send
+-- is decided by the AI. Armies can not be connected to patrol waypoints. By
+-- default the AI chooses the position for an army that is closest to it.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=string] _Position Zielposition
@@ -519,7 +523,7 @@ end
 ---
 -- Overrides the behavior of the army with the given function.
 --
--- <b>Note:</b> Only change behavior if you know what you are doing! You
+-- <b>Note:</b> Only change behavior IF YOU KNOW WHAT YOU ARE DOING! You
 -- might break the army controller!
 --
 -- <table border="1">
@@ -674,7 +678,8 @@ end
 -- Sets if the AI player is ignoring the costs of units when recruiting or
 -- refreshing.
 -- 
--- <p><b>Note:</b> This is active by default!</p>
+-- <p><b>Note:</b> This is active by default! You can deactivate it if you
+-- want the AI to be restricted to the resources.</p>
 --
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=boolean] _Flag     Does ignore costs
@@ -693,7 +698,8 @@ end
 ---
 -- Sets if the AI player is ignoring the attraction limit.
 -- 
--- <p><b>Note:</b> This is active by default!</p>
+-- <p><b>Note:</b> This is active by default! You can deactivate it if you
+-- want the AI to ignore the settler limit.</p>
 --
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=boolean] _Flag     Does ignore limit
