@@ -500,6 +500,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
         Interaction:Install();
         self:CreateBehaviorConstructors();
         self:OverwriteMapClosingFunctions();
+        self:CreateScriptEvents();
         if QuestSystem.GameSpeedSwitch then
             QuestSystem.GameSpeedSwitch:Install();
         end
@@ -529,7 +530,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
     end
 end
 
-function QuestDebug:CreateScriptEvents()
+function QuestSystemBehavior:CreateScriptEvents()
     QuestSync:DeleteScriptEvent(QuestDebug.ScriptEvents.AlterQuestResult);
     QuestDebug.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
         if QuestID == 0 then
