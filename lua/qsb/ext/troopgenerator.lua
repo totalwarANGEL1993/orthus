@@ -1277,9 +1277,15 @@ end
 function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID, _RallyPoint, _TroopTypes)
     _TroopTypes = _TroopTypes or {};
     if self[_PlayerID] then
+        for i= table.getn(self[_PlayerID].CreatedEntities), 1, -1 do
+            if not IsExisting(LeaderID) then
+                table.remove(self[_PlayerID].CreatedEntities, i);
+            end
+        end
+        
         -- Try to find leader the created trigger missed
         -- FIXME: Why does the trigger miss them?
-        if math.mod(Logic.GetTime(), 30) == 0 then
+        if math.mod(Logic.GetTime(), 5) == 0 then
             if table.getn(self[_PlayerID].CreatedEntities) == 0 then
                 local Leader = {};
                 Leader = copy(QuestTools.GetAllCannons(_PlayerID), Leader);
@@ -2841,7 +2847,16 @@ end
 
 function TroopGenerator.Group:IsRefillable()
     local ID = GetID(self.m_ScriptName);
+    if not IsExisting(ID) then
+        return false;
+    end
     if Logic.IsLeader(ID) == 0 or Logic.LeaderGetMaxNumberOfSoldiers(ID) == 0 then
+        return false;
+    end
+    if Logic.LeaderGetBarrack(ID) ~= nil and Logic.LeaderGetBarrack(ID) ~= 0 then
+        return false;
+    end
+    if Logic.IsEntityInCategory(ID, EntityCategories.Cannon) == 1 then
         return false;
     end
     if not self:IsAlive() or self:IsFighting() or self:IsTraining() or self:IsFull() then
