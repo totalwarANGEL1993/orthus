@@ -57,7 +57,7 @@
   <li><a href="../modules/ext.speed_ex2.html">ext.speed_ex2</a></li>
   <li><a href="../modules/ext.troopgenerator.html">ext.troopgenerator</a></li>
   <li><a href="../modules/ext.workplace_ex2.html">ext.workplace_ex2</a></li>
-  <li><a href="../modules/lib.libloader.html">lib.libloader</a></li>
+  <li><a href="../modules/lib.loader.html">lib.loader</a></li>
   <li><a href="../modules/multiplayersystem.html">multiplayersystem</a></li>
   <li><strong>questbehavior</strong></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
@@ -97,8 +97,17 @@
 	<td class="summary">Creates an quest from the given table.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#CreateStagedQuest">CreateStagedQuest (_Data)</a></td>
+	<td class="summary">Creates an quest together with an array of fragment quests from the given
+ table.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#FailQuest">FailQuest (_Quest)</a></td>
 	<td class="summary">Fails the quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#FailStagedQuest">FailStagedQuest (_QuestName)</a></td>
+	<td class="summary">Fails the staged quest.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#IsS5HookInstalled">IsS5HookInstalled ()</a></td>
@@ -118,20 +127,40 @@
 	<td class="summary">Resets the quest.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#ResetStagedQuest">ResetStagedQuest (_QuestName)</a></td>
+	<td class="summary">Resets the staged quest.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#RestartQuest">RestartQuest (_Quest)</a></td>
 	<td class="summary">Resets the quest and activates it immediately.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#RestartStagedQuest">RestartStagedQuest (_QuestName)</a></td>
+	<td class="summary">Resets the staged quest and activates it immediately.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#StartQuest">StartQuest (_Quest)</a></td>
-	<td class="summary">Wins the quest.</td>
+	<td class="summary">Triggers the quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#StartStagedQuest">StartStagedQuest (_QuestName)</a></td>
+	<td class="summary">Triggers the staged quest.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#StopQuest">StopQuest (_Quest)</a></td>
 	<td class="summary">Interrupts the quest.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#StopStagedQuest">StopStagedQuest (_QuestName)</a></td>
+	<td class="summary">Interrupts the staged quest.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#WinQuest">WinQuest (_Quest)</a></td>
 	<td class="summary">Wins the quest.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#WinStagedQuest">WinStagedQuest (_QuestName)</a></td>
+	<td class="summary">Wins the staged quest.</td>
 	</tr>
 </table>
 <h2><a href="#Goals">Goals</a></h2>
@@ -736,6 +765,75 @@
 
 </dd>
     <dt>
+    <a name = "CreateStagedQuest"></a>
+    <strong>CreateStagedQuest (_Data)</strong>
+    </dt>
+    <dd>
+    Creates an quest together with an array of fragment quests from the given
+ table.  The fragments will be executed one after another. If the last fragment
+ is over the quest is finally completed.
+<p> Possible entries for the master quest:
+ <ul>
+ <li><b>Name:</b> Name of master quest</li>
+ <li><b>Receiver:</b> Player that receives the quest</li>
+ <li><b>Time:</b> Time, until the quest is automatically over</li>
+ <li><b>Description:</b> Quest information displayed in the quest book.
+ (Mostly identical to Logic.CreateQuest or Logic.CreateQuestEx)</li>
+ <li><b>Stages:</b> List of subquests</li>
+ </ul>
+ After the fields the behavior constructors for the master quest are called.
+<p> Inside the Stages attribute the sub quests are created. They are written as
+ unnamed tables. They can contain the same fields as the master quest. The sub
+ quests have always the same receiver as the master quest. It is possible to
+ infinitely stack sub quests into each other.
+<p> <b>Note:</b> Staged quests can be used to structure the mission. Those quests
+ can be manipulated as normal quests can.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_Data</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+         Quest table
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+        <li>
+           <span class="types"><span class="type">number</span></span>
+        Quest id</li>
+        <li>
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
+        Quest instance</li>
+    </ol>
+
+
+    <h3>See also:</h3>
+    <ul>
+         <a href="../modules/questbehavior.html#CreateQuest">CreateQuest</a>
+    </ul>
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">CreateQuest {
+    Name = <span class="string">"VictoryCondition"</span>,
+    Description = {
+        Title = <span class="string">"Justice!"</span>,
+        Text  = <span class="string">"Time for paybeck. Destroy your enemy!"</span>,
+        Type  = MAINQUEST_OPEN,
+        Info  = <span class="number">1</span>
+    },
+
+    Goal_DestroyPlayer(<span class="number">2</span>, <span class="string">"HQ2"</span>),
+    Reward_Victory(),
+    Trigger_Time(<span class="number">0</span>)
+}</pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "FailQuest"></a>
     <strong>FailQuest (_Quest)</strong>
     </dt>
@@ -746,6 +844,26 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Quest</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "FailStagedQuest"></a>
+    <strong>FailStagedQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    Fails the staged quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
          Quest name or ID
         </li>
     </ul>
@@ -840,6 +958,26 @@
 
 </dd>
     <dt>
+    <a name = "ResetStagedQuest"></a>
+    <strong>ResetStagedQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    Resets the staged quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "RestartQuest"></a>
     <strong>RestartQuest (_Quest)</strong>
     </dt>
@@ -860,16 +998,56 @@
 
 </dd>
     <dt>
+    <a name = "RestartStagedQuest"></a>
+    <strong>RestartStagedQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    Resets the staged quest and activates it immediately.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "StartQuest"></a>
     <strong>StartQuest (_Quest)</strong>
     </dt>
     <dd>
-    Wins the quest.
+    Triggers the quest.
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Quest</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "StartStagedQuest"></a>
+    <strong>StartStagedQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    Triggers the staged quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
          Quest name or ID
         </li>
     </ul>
@@ -900,6 +1078,26 @@
 
 </dd>
     <dt>
+    <a name = "StopStagedQuest"></a>
+    <strong>StopStagedQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    Interrupts the staged quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
     <a name = "WinQuest"></a>
     <strong>WinQuest (_Quest)</strong>
     </dt>
@@ -910,6 +1108,26 @@
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">_Quest</span>
+         Quest name or ID
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "WinStagedQuest"></a>
+    <strong>WinStagedQuest (_QuestName)</strong>
+    </dt>
+    <dd>
+    Wins the staged quest.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_QuestName</span>
          Quest name or ID
         </li>
     </ul>
@@ -4135,7 +4353,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2021-01-01 12:33:32 </i>
+<i style="float:right;">Last updated 2021-04-30 16:35:48 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 

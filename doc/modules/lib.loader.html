@@ -49,8 +49,8 @@
   <li><a href="../modules/ext.speed_ex2.html">ext.speed_ex2</a></li>
   <li><a href="../modules/ext.troopgenerator.html">ext.troopgenerator</a></li>
   <li><a href="../modules/ext.workplace_ex2.html">ext.workplace_ex2</a></li>
-  <li><a href="../modules/lib.loader.html">lib.loader</a></li>
-  <li><strong>multiplayersystem</strong></li>
+  <li><strong>lib.loader</strong></li>
+  <li><a href="../modules/multiplayersystem.html">multiplayersystem</a></li>
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
 </ul>
@@ -59,21 +59,17 @@
 
 <div id="content">
 
-<h1>Module <code>multiplayersystem</code></h1>
-<p>This module aims to create a ruleset for multiplayer for the vanilla game
- and the History Edition but also be able to use the EMS ruleset from the
- community server if the map is published there.</p>
+<h1>Module <code>lib.loader</code></h1>
+<p>Loads libraries used by the QSB if they are not already present.</p>
 <p>
-<p> Just copy the content of MultiplayerRules_Default into your mapscript and rename
- the table there to MPRuleset_Rules.
-<p> <b>Required modules:</b>
+<p> Libraries loaded (in this order):
  <ul>
- <li>qsb.lib.oop</li>
- <li>qsb.core.questsync</li>
- <li>qsb.core.questtools</li>
- <li>qsb.questbehavior</li>
- <li>qsb.ext.optionsmenu</li>
- <li>qsb.ext.timer</li>
+ <li>LuaBit - Lua 5.0 implementation of lua bit.</li>
+ <li>EntityFind - Library to find all entities.</li>
+ <li>MD5 - Library to create simple MD5 hashes.</li>
+ <li>Metatable (S5 Community) - Makes metatables savable.</li>
+ <li>S5Hook (S5 Community) - Allows basic memory manipulation (not compatible
+ to History Edition).</li>
  </ul>
 </p>
 

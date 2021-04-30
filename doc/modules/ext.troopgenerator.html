@@ -54,7 +54,7 @@
   <li><a href="../modules/ext.speed_ex2.html">ext.speed_ex2</a></li>
   <li><strong>ext.troopgenerator</strong></li>
   <li><a href="../modules/ext.workplace_ex2.html">ext.workplace_ex2</a></li>
-  <li><a href="../modules/lib.libloader.html">lib.libloader</a></li>
+  <li><a href="../modules/lib.loader.html">lib.loader</a></li>
   <li><a href="../modules/multiplayersystem.html">multiplayersystem</a></li>
   <li><a href="../modules/questbehavior.html">questbehavior</a></li>
   <li><a href="../modules/treasure.html">treasure</a></li>
@@ -107,12 +107,24 @@
 	<td class="summary">Enables or disables the repair ability of an AI player.</td>
 	</tr>
 	<tr>
+	<td class="name" nowrap><a href="#AddAIPlayerAttackTarget">AddAIPlayerAttackTarget (_PlayerID, _Position)</a></td>
+	<td class="summary">Registers an attack target position for the player.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#AddAIPlayerPatrolPoint">AddAIPlayerPatrolPoint (_PlayerID, _Position)</a></td>
+	<td class="summary">Registers an patrol waypoint position for the player.</td>
+	</tr>
+	<tr>
 	<td class="name" nowrap><a href="#ArmyDisableAttackAbility">ArmyDisableAttackAbility (_PlayerID, _Army, _Flag)</a></td>
 	<td class="summary">Disables or enables the ability to attack for the army.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#ArmyDisablePatrolAbility">ArmyDisablePatrolAbility (_PlayerID, _Army, _Flag)</a></td>
 	<td class="summary">Disables or enables the ability to patrol between positions.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#ArmySetIndependetFromLifethread">ArmySetIndependetFromLifethread (_PlayerID, _ArmyNameOrID, _Flag)</a></td>
+	<td class="summary">Sets if the army is independet from their lifethread.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#ChangeArmyBehavior">ChangeArmyBehavior (_PlayerID, _ArmyID, _Behavior, _Controller)</a></td>
@@ -127,24 +139,8 @@
 	<td class="summary">Initalizes an army that is recruited by the AI player.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerAttackTarget">CreateAIPlayerAttackTarget (_PlayerID, _Position)</a></td>
-	<td class="summary">Registers an attack target position for the player.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#CreateAIPlayerPatrolPoint">CreateAIPlayerPatrolPoint (_PlayerID, _Position)</a></td>
-	<td class="summary">Registers an patrol waypoint position for the player.</td>
-	</tr>
-	<tr>
 	<td class="name" nowrap><a href="#CreateAIPlayerSpawnArmy">CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)</a></td>
 	<td class="summary">Initalizes an army that is spawned until a generator entity is destroyed.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#DestroyAIPlayerAttackTarget">DestroyAIPlayerAttackTarget (_PlayerID, _ID)</a></td>
-	<td class="summary">Removes the attack target from the AI player and all armies of said player.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#DestroyAIPlayerPatrolPoint">DestroyAIPlayerPatrolPoint (_PlayerID, _ID)</a></td>
-	<td class="summary">Removes the patrol waypoint from the AI player and all armies of said player.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#GetAIPlayerArmies">GetAIPlayerArmies (_PlayerID)</a></td>
@@ -156,11 +152,19 @@
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#HideEntityFromAIPlayer">HideEntityFromAIPlayer (_PlayerID, _Entity, _HiddenFlag)</a></td>
-	<td class="summary">Hides an Entity from the AI or makes it visible again.</td>
+	<td class="summary">Hides an Entity from the AI or makes it visible for them again.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#IsEntityHiddenFromAIPlayer">IsEntityHiddenFromAIPlayer (_PlayerID, _Entity)</a></td>
 	<td class="summary">Returns true if the entity is hidden from the AI of the given player ID.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#RemoveAIPlayerAttackTarget">RemoveAIPlayerAttackTarget (_PlayerID, _Position)</a></td>
+	<td class="summary">Removes the attack target from the AI player and all armies of said player.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#RemoveAIPlayerPatrolPoint">RemoveAIPlayerPatrolPoint (_PlayerID, _Position)</a></td>
+	<td class="summary">Removes the patrol waypoint from the AI player and all armies of said player.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#SetAIPlayerIgnoreAttractionLimit">SetAIPlayerIgnoreAttractionLimit (_PlayerID, _Flag)</a></td>
@@ -375,6 +379,72 @@
 
 </dd>
     <dt>
+    <a name = "AddAIPlayerAttackTarget"></a>
+    <strong>AddAIPlayerAttackTarget (_PlayerID, _Position)</strong>
+    </dt>
+    <dd>
+    Registers an attack target position for the player.
+<p> <b>Note:</b> An AI will send one army per attack target. Which army is send
+ is decided by the AI. Armies can not be connected to attack positions. By
+ default the AI chooses the target for an army that is closest to it.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         ID of player
+        </li>
+        <li><span class="parameter">_Position</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Zielppsition
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">AddAIPlayerAttackTarget(<span class="number">2</span>, <span class="string">"VeryImportantTarget"</span>);</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "AddAIPlayerPatrolPoint"></a>
+    <strong>AddAIPlayerPatrolPoint (_PlayerID, _Position)</strong>
+    </dt>
+    <dd>
+    Registers an patrol waypoint position for the player.
+<p> <b>Note:</b> An AI will send one army per patrol waypoint. Which army is send
+ is decided by the AI. Armies can not be connected to patrol waypoints. By
+ default the AI chooses the position for an army that is closest to it.
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         ID of player
+        </li>
+        <li><span class="parameter">_Position</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Zielposition
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">AddAIPlayerPatrolPoint(<span class="number">2</span>, <span class="string">"VeryImportantTarget"</span>);</pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "ArmyDisableAttackAbility"></a>
     <strong>ArmyDisableAttackAbility (_PlayerID, _Army, _Flag)</strong>
     </dt>
@@ -444,12 +514,49 @@
 
 </dd>
     <dt>
+    <a name = "ArmySetIndependetFromLifethread"></a>
+    <strong>ArmySetIndependetFromLifethread (_PlayerID, _ArmyNameOrID, _Flag)</strong>
+    </dt>
+    <dd>
+    Sets if the army is independet from their lifethread.
+<p> Independed spawned armies will not be deleted if the lifethread is destroyed.
+
+ <p><b>Note:</b> This is active by default! Also this has no effect on
+ armies that recrut their members.</p>
+
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+             ID of player
+        </li>
+        <li><span class="parameter">_ArmyNameOrID</span>
+         ID or Name of army
+        </li>
+        <li><span class="parameter">_Flag</span>
+            <span class="types"><span class="type">boolean</span></span>
+                 Is independet
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">SetAIPlayerIgnoreAttractionLimit(<span class="number">2</span>, <span class="keyword">false</span>);</pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "ChangeArmyBehavior"></a>
     <strong>ChangeArmyBehavior (_PlayerID, _ArmyID, _Behavior, _Controller)</strong>
     </dt>
     <dd>
     Overrides the behavior of the army with the given function.
-<p> <b>Note:</b> Only change behavior if you know what you are doing! You
+<p> <b>Note:</b> Only change behavior IF YOU KNOW WHAT YOU ARE DOING! You
  might break the army controller!
 <p> <table border="1">
  <tr>
@@ -475,14 +582,28 @@
  </tr>
  <tr>
  <td>SelectAttackTarget</td>
- <td>Passes the list of reachable attack targets to the controller function.
- The controller must select one position, set it as path and as target.</td>
+ <td>Passes the list of reachable attack targets where no army has been send
+ to yet to the controller function. The controller must order those targets by
+ any criteria and return the sorted list. The army will take the first target
+ in this list.<br>
+ By default, the targets are sorted by distance. The first one is the closest
+ to the home position.</td>
  </tr>
  <tr>
  <td>SelectPatrolTarget</td>
  <td>Passes the list of reachable patrol targets to the controller function.
- The controller must set the path and the first waypoint. Army will loop
- over the waypoints starting from the selected one.</td>
+ The controller must create a list from those targets and set them as the
+ path. Additionally it has to set the index of the first waypoint. Army will
+ loop over the waypoints starting from the selected one.<br>
+ By default, any position that is reachable from the home position of the
+ army will be put into the list and the first waypoint is set by random.</td>
+ </tr>
+ <tr>
+ <td>AttackFinished</td>
+ <td>Checks, if the current attack has finished. The controller must return
+ true when the attack is finished.<br>
+ By default, an attack ends, after an area in size of the rode length of the
+ army around the current target has been cleared from enemies.</td>
  </tr>
  </table>
 
@@ -582,11 +703,13 @@
  The army name must be unique for the player!
 <p> The AI player must be initalized first!
 <p> Use script entities named with PlayerX_AttackTargetY to define positions
- that will be attacked by the army. Replace X with the player ID and Y with
+ that will be attacked by the AI. Replace X with the player ID and Y with
  a unique number starting by 1.
-<p> Also you can use entities named with PlayerX_PatrolPointY to define
- positions were the army will patrol. Also replace X with the player ID and
+<p> You can also use entities named with PlayerX_PatrolPointY to define
+ positions were the AI will patrol. Also replace X with the player ID and
  Y with a unique number starting by 1.
+<p> <b>Note:</b> The AI will decide to which targets an army is send to. There
+ isn't a direct connection for one army and one target.
 
 
 
@@ -614,7 +737,7 @@
         </li>
         <li><span class="parameter">_TroopTypes</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
-          Upgrade categories to recruit
+          (Optional) Upgrade categories to recruit
         </li>
     </ul>
 
@@ -634,81 +757,6 @@
 
 </dd>
     <dt>
-    <a name = "CreateAIPlayerAttackTarget"></a>
-    <strong>CreateAIPlayerAttackTarget (_PlayerID, _Position)</strong>
-    </dt>
-    <dd>
-    Registers an attack target position for the player.
-<p> Already generated armies will also add this position to the list of their
- possible targets.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_Position</span>
-         Zielppsition
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">number</span></span>
-        ID of target position
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">VeryImportantTargetID = CreateAIPlayerAttackTarget(<span class="number">2</span>, <span class="string">"VeryImportantTarget"</span>);</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "CreateAIPlayerPatrolPoint"></a>
-    <strong>CreateAIPlayerPatrolPoint (_PlayerID, _Position)</strong>
-    </dt>
-    <dd>
-    Registers an patrol waypoint position for the player.
-<p> Already generated armies will also add this position to the list of their
- patrol waypoints.
-
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_Position</span>
-            <span class="types"><span class="type">number</span></span>
-         Zielppsition
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">number</span></span>
-        ID of target position
-    </ol>
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">VeryImportantTargetID = CreateAIPlayerPatrolPoint(<span class="number">2</span>, <span class="string">"VeryImportantTarget"</span>);</pre>
-    </ul>
-
-</dd>
-    <dt>
     <a name = "CreateAIPlayerSpawnArmy"></a>
     <strong>CreateAIPlayerSpawnArmy (_ArmyName, _PlayerID, _Strength, _Position, _Spawner, _Area, _Respawn, ...)</strong>
     </dt>
@@ -721,11 +769,13 @@
 <p> Define a list of troops that are sparned in this order. Troops will be
  spawrned as long as the generator exists.
 <p> Use script entities named with PlayerX_AttackTargetY to define positions
- that will be attacked by the army. Replace X with the player ID and Y with
+ that will be attacked by the AI. Replace X with the player ID and Y with
  a unique number starting by 1.
-<p> Also you can use entities named with PlayerX_PatrolPointY to define
- positions were the army will patrol. Also replace X with the player ID and
+<p> You can also use entities named with PlayerX_PatrolPointY to define
+ positions were the AI will patrol. Also replace X with the player ID and
  Y with a unique number starting by 1.
+<p> <b>Note:</b> The AI will decide to which targets an army is send to. There
+ isn't a direct connection for one army and one target.
 
 
 
@@ -770,69 +820,11 @@
     <h3>Usage:</h3>
     <ul>
         <pre class="example">CreateAIPlayerSpawnArmy(
-    <span class="string">"Bar"</span>, <span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="string">"lifethread"</span>, <span class="number">5000</span>,
+    <span class="string">"Bar"</span>, <span class="number">2</span>, <span class="number">8</span>, <span class="string">"armyPos1"</span>, <span class="string">"lifethread"</span>, <span class="number">5000</span>, <span class="number">2</span>*<span class="number">60</span>,
     {Entities.PU_LeaderSword2, <span class="number">3</span>},
     {Entities.PU_LeaderBow2, <span class="number">3</span>},
     {Entities.PV_Cannon2, <span class="number">0</span>}
 );</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "DestroyAIPlayerAttackTarget"></a>
-    <strong>DestroyAIPlayerAttackTarget (_PlayerID, _ID)</strong>
-    </dt>
-    <dd>
-    Removes the attack target from the AI player and all armies of said player.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_ID</span>
-            <span class="types"><span class="type">number</span></span>
-               Zielppsition
-        </li>
-    </ul>
-
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">DestroyAIPlayerAttackTarget(<span class="number">2</span>, VeryImportantTargetID);</pre>
-    </ul>
-
-</dd>
-    <dt>
-    <a name = "DestroyAIPlayerPatrolPoint"></a>
-    <strong>DestroyAIPlayerPatrolPoint (_PlayerID, _ID)</strong>
-    </dt>
-    <dd>
-    Removes the patrol waypoint from the AI player and all armies of said player.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">_PlayerID</span>
-            <span class="types"><span class="type">number</span></span>
-         ID of player
-        </li>
-        <li><span class="parameter">_ID</span>
-            <span class="types"><span class="type">number</span></span>
-               Zielppsition
-        </li>
-    </ul>
-
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">DestroyAIPlayerPatrolPoint(<span class="number">2</span>, VeryImportantTargetID);</pre>
     </ul>
 
 </dd>
@@ -907,7 +899,7 @@
     <strong>HideEntityFromAIPlayer (_PlayerID, _Entity, _HiddenFlag)</strong>
     </dt>
     <dd>
-    Hides an Entity from the AI or makes it visible again.
+    Hides an Entity from the AI or makes it visible for them again.
 <p> Hidden entities will under no circumstances be added to armies created with
  code from this library.
 
@@ -974,13 +966,72 @@
 
 </dd>
     <dt>
+    <a name = "RemoveAIPlayerAttackTarget"></a>
+    <strong>RemoveAIPlayerAttackTarget (_PlayerID, _Position)</strong>
+    </dt>
+    <dd>
+    Removes the attack target from the AI player and all armies of said player.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         ID of player
+        </li>
+        <li><span class="parameter">_Position</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         Zielppsition
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">RemoveAIPlayerAttackTarget(<span class="number">2</span>, <span class="string">"VeryImportantTarget"</span>);</pre>
+    </ul>
+
+</dd>
+    <dt>
+    <a name = "RemoveAIPlayerPatrolPoint"></a>
+    <strong>RemoveAIPlayerPatrolPoint (_PlayerID, _Position)</strong>
+    </dt>
+    <dd>
+    Removes the patrol waypoint from the AI player and all armies of said player.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">_PlayerID</span>
+            <span class="types"><span class="type">number</span></span>
+         ID of player
+        </li>
+        <li><span class="parameter">_Position</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+               Zielppsition
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">RemoveAIPlayerPatrolPoint(<span class="number">2</span>, <span class="string">"VeryImportantTarget"</span>);</pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "SetAIPlayerIgnoreAttractionLimit"></a>
     <strong>SetAIPlayerIgnoreAttractionLimit (_PlayerID, _Flag)</strong>
     </dt>
     <dd>
     Sets if the AI player is ignoring the attraction limit.
 
- <p><b>Note:</b> This is active by default!</p>
+ <p><b>Note:</b> This is active by default! You can deactivate it if you
+ want the AI to ignore the settler limit.</p>
 
 
 
@@ -1013,7 +1064,8 @@
     Sets if the AI player is ignoring the costs of units when recruiting or
  refreshing.
 
- <p><b>Note:</b> This is active by default!</p>
+ <p><b>Note:</b> This is active by default! You can deactivate it if you
+ want the AI to be restricted to the resources.</p>
 
 
 
@@ -1217,7 +1269,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2021-01-01 12:33:32 </i>
+<i style="float:right;">Last updated 2021-04-30 16:35:48 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 
