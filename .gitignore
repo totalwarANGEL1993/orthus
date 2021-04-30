@@ -1,4 +1,5 @@
 ldoc/*
 target/*
+doc/*
 .project
 .settings

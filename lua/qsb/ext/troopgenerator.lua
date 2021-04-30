@@ -1277,9 +1277,15 @@ end
 function TroopGenerator.AI:GetNextUnemployedLeader(_PlayerID, _RallyPoint, _TroopTypes)
     _TroopTypes = _TroopTypes or {};
     if self[_PlayerID] then
+        for i= table.getn(self[_PlayerID].CreatedEntities), 1, -1 do
+            if not IsExisting(LeaderID) then
+                table.remove(self[_PlayerID].CreatedEntities, i);
+            end
+        end
+        
         -- Try to find leader the created trigger missed
         -- FIXME: Why does the trigger miss them?
-        if math.mod(Logic.GetTime(), 30) == 0 then
+        if math.mod(Logic.GetTime(), 5) == 0 then
             if table.getn(self[_PlayerID].CreatedEntities) == 0 then
                 local Leader = {};
                 Leader = copy(QuestTools.GetAllCannons(_PlayerID), Leader);
@@ -1598,7 +1604,12 @@ function TroopGenerator.AI:ControlArmyMember(_PlayerID, _Army)
                             end
                         end
                     elseif _Army:GetState() == ArmyStates.Retreat then
-                        if not MemberList[i]:IsWalking() then
+                        if IsExisting(MemberList[i]:GetScriptName()) and not MemberList[i]:IsWalking() then
+                            -- TODO: This causes crashes!
+                            -- local ClosestRefiller, Position = TroopGenerator.Army:GetClosestRefillerBuilding(MemberList[i]);
+                            -- if QuestTools.IsValidPosition(Position) then
+                            --     MemberList[i]:Move(Position);
+                            -- end
                             MemberList[i]:Move(_Army:GetHomePosition());
                         end
                     elseif _Army:GetState() == ArmyStates.Refill then
@@ -2417,23 +2428,26 @@ function TroopGenerator.Army:RefillWeakGroups(_Cheat)
         local ScriptName = self.m_Member[i]:GetScriptName();
         if IsExisting(ScriptName) then
             if self.m_Member[i]:IsRefillable() then
-                if IsNear(ScriptName, self.m_HomePosition, 2000) then
-                    if _Cheat then
-                        self.m_Member[i]:Refill();
-                    else
-                        local SoldierUpCat = Logic.LeaderGetSoldierUpgradeCategory(GetID(self.m_Member[i]:GetScriptName()));
-                        local SoldierCosts = QuestTools.GetSoldierCostsTable(self:GetPlayerID(), SoldierUpCat);
-                        if QuestTools.HasEnoughResources(self:GetPlayerID(), SoldierCosts) then
-                            QuestTools.AddResourcesToPlayer(_PlayerID, SoldierCosts);
-                            self.m_Member[i]:Refill();
-                        end
-                    end
+                local RefillerBuilding, Position = self:GetClosestRefillerBuilding(self.m_Member[i]);
+                if not RefillerBuilding then
+                    self.m_Member[i]:Kill();
                 else
-                    local Position = QuestTools.GetReachablePosition(ScriptName, self.m_HomePosition);
-                    if Position then
-                        self.m_Member[i]:Move(Position)
+                    if IsNear(ScriptName, RefillerBuilding, 2000) then
+                        if _Cheat then
+                            self.m_Member[i]:Refill();
+                        else
+                            local SoldierUpCat = Logic.LeaderGetSoldierUpgradeCategory(GetID(ScriptName));
+                            local SoldierCosts = QuestTools.GetSoldierCostsTable(self:GetPlayerID(), SoldierUpCat);
+                            if QuestTools.HasEnoughResources(self:GetPlayerID(), SoldierCosts) then
+                                QuestTools.AddResourcesToPlayer(_PlayerID, SoldierCosts);
+                                self.m_Member[i]:Refill();
+                            end
+                        end
                     else
-                        self.m_Member[i]:Kill();
+                        local Position = QuestTools.GetReachablePosition(ScriptName, RefillerBuilding);
+                        if QuestTools.IsValidPosition(Position) then
+                            self.m_Member[i]:Move(Position);
+                        end
                     end
                 end
             end
@@ -2454,6 +2468,40 @@ function TroopGenerator.Army:CreateGroup(_PlayerID, _LeaderType, _MaxSoldiers, _
         _Experience,
         _MaxSoldiers
     );
+end
+
+function TroopGenerator.Army:GetRefillerBuildingForTroop(_Troop)
+    local Type = Logic.GetEntityType(GetID(_Troop:GetScriptName()));
+    local Refiller = self:GetFreeReachableBarracksInUpgradeCategory(Type);
+    table.insert(Refiller, self.m_HomePosition);
+    return Refiller;
+end
+
+function TroopGenerator.Army:GetClosestRefillerBuilding(_Troop)
+    local ScriptName = _Troop:GetScriptName();
+    local Distance = Logic.WorldGetSize();
+    local Closest  = nil;
+    for k, v in pairs(self:GetRefillerBuildingForTroop(_Troop)) do
+        local Position = QuestTools.GetReachablePosition(ScriptName, v);
+        if Position then
+            local NewDistance = QuestTools.GetDistance(v, ScriptName);
+            if NewDistance < Distance then
+                Distance = NewDistance;
+                Closest  = v;
+            end
+        end
+    end
+    return Closest, Position;
+end
+
+function TroopGenerator.Army:IsRefillerBuildingNear(_Troop)
+    local ScriptName = _Troop:GetScriptName();
+    for k, v in pairs(self:GetRefillerBuildingForTroop(_Troop)) do
+        if IsNear(ScriptName, v, 2000) then
+            return true;
+        end
+    end
+    return false;
 end
 
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ --
@@ -2842,6 +2890,12 @@ end
 function TroopGenerator.Group:IsRefillable()
     local ID = GetID(self.m_ScriptName);
     if Logic.IsLeader(ID) == 0 or Logic.LeaderGetMaxNumberOfSoldiers(ID) == 0 then
+        return false;
+    end
+    if Logic.LeaderGetBarrack(ID) ~= 0 then
+        return false;
+    end
+    if Logic.IsEntityInCategory(ID, EntityCategories.Cannon) == 1 then
         return false;
     end
     if not self:IsAlive() or self:IsFighting() or self:IsTraining() or self:IsFull() then
