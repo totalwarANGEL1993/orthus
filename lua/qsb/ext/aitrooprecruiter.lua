@@ -162,7 +162,7 @@ function AiTroopRecruiter:Initalize()
     return self;
 end
 
-function AiTroopRecruiter:GetToop()
+function AiTroopRecruiter:GetTroop()
     for i= table.getn(self.Troops.Created), 1, -1 do
         local ID = self.Troops.Created[i];
         if IsExisting(ID) then
