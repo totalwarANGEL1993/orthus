@@ -4,13 +4,49 @@
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
 
+
+
+function CreateTroopRecruiter(_Data)
+    if not AiTroopRecruiterList[_Data.ScriptName] then
+        new(AiTroopRecruiter, _Data.ScriptName);
+        local Recruiter = GetTroopRecruiter(_Data.ScriptName);
+        Recruiter:SetCheatCosts(_Data.Cheat == true);
+        Recruiter:SetDelay(_Data.Delay or 5);
+        for i= 1, table.getn(_Data.Types), 1 do
+            AiTroopRecruiter:AddType(_Data.Types[i]);
+        end
+    end
+    return AiTroopRecruiterList[_Data.ScriptName];
+end
+
+function DropTroopRecruiter(_ScriptName)
+    if AiTroopRecruiterList[_ScriptName] then
+        if JobIsRunning(AiTroopRecruiterList[_ScriptName].CreationJobID) then
+            EndJob(AiTroopRecruiterList[_ScriptName].CreationJobID);
+        end
+        if JobIsRunning(AiTroopRecruiterList[_ScriptName].AllocationJobID) then
+            EndJob(AiTroopRecruiterList[_ScriptName].AllocationJobID);
+        end
+        if JobIsRunning(AiTroopRecruiterList[_ScriptName].SoldierJobID) then
+            EndJob(AiTroopRecruiterList[_ScriptName].SoldierJobID);
+        end
+        AiTroopRecruiterList[_ScriptName] = nil;
+    end
+end
+
+function GetTroopRecruiter(_ScriptName)
+    if AiTroopRecruiterList[_ScriptName] then
+        return AiTroopRecruiterList[_ScriptName];
+    end
+end
+
 -- -------------------------------------------------------------------------- --
 
 AiTroopRecruiter = {
     ScriptName = nil,
     LastRecruitedTime = 0,
     Cheat = true,
-    Delay = 30,
+    Delay = 5,
     Troops = {
         Selector = function(self)
             local Size = table.getn(self.Troops.Types);
@@ -51,13 +87,15 @@ AiTroopRecruiter = {
 AiTroopRecruiterList = {};
 AiTroopRecruiterCreated = {};
 
-function AiTroopRecruiter:New(_ScriptName)
-    local Recruiter = copy(AiTroopRecruiter);
-    Recruiter.ScriptName = _ScriptName;
-    AiTroopRecruiterList[_ScriptName] = Recruiter;
+function AiTroopRecruiter:construct(_ScriptName)
+    self.ScriptName = _ScriptName;
+    self:Initalize();
+    AiTroopRecruiterList[_ScriptName] = self;
+end;
+class(AiTroopRecruiter);
 
-    Recruiter:Initalize();
-    return Recruiter;
+function AiTroopRecruiter:IsAlive()
+    return IsExisting(self.ScriptName);
 end
 
 function AiTroopRecruiter:AddType(_Type)
@@ -198,7 +236,11 @@ function AiTroopRecruiter:IsReady()
             if Logic.IsConstructionComplete(ID) == 1 then
                 if self:IsRecruiterBuilding() then
                     local x, y, z = Logic.EntityGetPos(ID);
-                    if Logic.GetPlayerEntitiesInArea(PlayerID, 0, x, y, 800, 4) < 4 then
+                    local Distance = 850;
+                    if string.find(Logic.GetEntityTypeName(Logic.GetEntityType(ID)), "PB_Stable") then
+                        Distance = 1000;
+                    end
+                    if Logic.GetPlayerEntitiesInArea(PlayerID, 0, x, y, Distance, 4) < 4 then
                         return true;
                     end
                 end
@@ -208,36 +250,38 @@ function AiTroopRecruiter:IsReady()
     return false;
 end
 
-function AiTroopRecruiter:CreateTroop()
+function AiTroopRecruiter:CreateTroop(_IgnoreCreated)
     if self:IsReady() then
-        if table.getn(self.Troops.Types) > 0 then
-            local TroopType = self.Troops.Selector(self);
-            if self:IsSuitableBuilding(TroopType) then
-                local ID = GetID(self.ScriptName);
-                local BuildingType = Logic.GetEntityTypeName(Logic.GetEntityType(ID));
-                if string.find(BuildingType, "PB_Foundry") then
-                    if self.Cheat then
-                        self:CheatCannonCosts(TroopType);
+        if table.getn(self.Troops.Created) == 0 or _IgnoreCreated then
+            if table.getn(self.Troops.Types) > 0 then
+                local TroopType = self.Troops.Selector(self);
+                if self:IsSuitableBuilding(TroopType) then
+                    local ID = GetID(self.ScriptName);
+                    local BuildingType = Logic.GetEntityTypeName(Logic.GetEntityType(ID));
+                    if string.find(BuildingType, "PB_Foundry") then
+                        if self.Cheat then
+                            self:CheatCannonCosts(TroopType);
+                        end
+                        local ControllingPlayerID = GUI.GetPlayerID();
+                        local PlayerID = Logic.EntityGetPlayer(ID);
+                        local SelectedEntities = {GUI.GetSelectedEntities()};
+                        GUI.ClearSelection();
+                        GUI.SetControlledPlayer(PlayerID);
+                        GUI.BuyCannon(ID, TroopType);
+                        GUI.SetControlledPlayer(ControllingPlayerID);
+                        Logic.PlayerSetGameStateToPlaying(ControllingPlayerID);
+                        Logic.ForceFullExplorationUpdate();
+                        for i = 1, table.getn(SelectedEntities), 1 do
+                            GUI.SelectEntity(SelectedEntities[i]);
+                        end
+                    else
+                        if self.Cheat then
+                            self:CheatLeaderCosts(TroopType);
+                        end
+                        Logic.BarracksBuyLeader(ID, TroopType);
                     end
-                    local ControllingPlayerID = GUI.GetPlayerID();
-                    local PlayerID = Logic.EntityGetPlayer(ID);
-                    local SelectedEntities = {GUI.GetSelectedEntities()};
-                    GUI.ClearSelection();
-                    GUI.SetControlledPlayer(PlayerID);
-                    GUI.BuyCannon(ID, TroopType);
-                    GUI.SetControlledPlayer(ControllingPlayerID);
-                    Logic.PlayerSetGameStateToPlaying(ControllingPlayerID);
-                    Logic.ForceFullExplorationUpdate();
-                    for i = 1, table.getn(SelectedEntities), 1 do
-                        GUI.SelectEntity(SelectedEntities[i]);
-                    end
-                else
-                    if self.Cheat then
-                        self:CheatLeaderCosts(TroopType);
-                    end
-                    Logic.BarracksBuyLeader(ID, TroopType);
+                    self.LastRecruitedTime = Logic.GetTime();
                 end
-                self.LastRecruitedTime = Logic.GetTime();
             end
         end
     end
