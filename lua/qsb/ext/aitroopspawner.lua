@@ -4,13 +4,38 @@
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
 
+---
+-- This module creates troop producer for armies or other purposes.
+--
+-- This producer type is an spawner. This means it will spawn the troops when
+-- they are requested. The AI won't need the resources to build them and they
+-- can be spawned at any building type.
+-- You do not need to set the spawn position. It is calculated automatically.
+-- If you with to change the position, it is possible to do so. Once a unit is
+-- created it is added to the list of created entities.
+--
+-- Finished units can be obtained by requesting one of them from the created
+-- entities. If no troops are available the create command must be called.
+--
+-- <b>Required modules:</b>
+-- <ul>
+-- <li>qsb.oop</li>
+-- <li>qsb.core.questsync</li>
+-- <li>qsb.core.questtools</li>
+-- </ul>
+--
+-- @set sort=true
+--
 
-
-
+---
+-- Creates an new producer that creates units by spawning them.
+--
+-- @param[type=table] _Data Description
+-- @return[type=table] Created instance
+--
 function CreateTroopGenerator(_Data)
     if not AiTroopSpawnerList[_Data.ScriptName] then
-        new(AiTroopSpawner, _Data.ScriptName);
-        local Spawner = GetTroopGenerator(_Data.ScriptName);
+        local Spawner = new(AiTroopSpawner, _Data.ScriptName);
         Spawner:SetDelay(_Data.Delay or 90);
         if _Data.Spawnpoint then
             Spawner:SetApproachPosition(GetPosition(_Data.Spawnpoint));
@@ -25,12 +50,28 @@ function CreateTroopGenerator(_Data)
     return AiTroopSpawnerList[_Data.ScriptName];
 end
 
+---
+-- Destroys an producer.
+-- 
+-- <b>Note</b>: The producer should first be removed from all armies!
+--
+-- @param[type=string] _ScriptName Script name of building
+--
 function DropTroopGenerator(_ScriptName)
     if AiTroopSpawnerList[_ScriptName] then
+        if JobIsRunning(AiTroopSpawnerList[_ScriptName].SoldierJobID) then
+            EndJob(AiTroopSpawnerList[_ScriptName].SoldierJobID);
+        end
         AiTroopSpawnerList[_ScriptName] = nil;
     end
 end
 
+---
+-- Returns the instance of the producer if it exists.
+--
+-- @param[type=string] _ScriptName Script name of building
+-- @return[type=table] Producer instance
+--
 function GetTroopGenerator(_ScriptName)
     if AiTroopSpawnerList[_ScriptName] then
         return AiTroopSpawnerList[_ScriptName];
@@ -41,6 +82,7 @@ end
 
 AiTroopSpawner = {
     ScriptName = nil,
+    IsSpawner = true,
     LastRecruitedTime = 0,
     Delay = 30,
     Troops = {
@@ -72,6 +114,44 @@ function AiTroopSpawner:Initalize()
         local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, Position.X, Position.Y, 0, 0, 0, 0);
         self.ApproachPosition = GetPosition(ID);
         DestroyEntity(ID);
+
+        -- Buys soldiers for the leader
+        self.SoldierJobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_ScriptName)
+            if not IsExisting(_ScriptName) then
+                return true;
+            end
+            if AiTroopSpawnerList[_ScriptName] then
+                AiTroopSpawnerList[_ScriptName]:HandleSoldierRefill();
+            end
+        end, self.ScriptName);
+    end
+end
+
+function AiTroopSpawner:HandleSoldierRefill()
+    for i= table.getn(self[_ScriptName].Troops.Created), 1, -1 do
+        local ID = self[_ScriptName].Troops.Created[i];
+        if IsExisting(ID) then
+            local Task = Logic.GetCurrentTaskList(ID);
+            local BarracksID = Logic.LeaderGetBarrack(ID);
+            if BarracksID == 0 and not string.find(Task, "BATTLE") then
+                local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
+                local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
+                if CurrentSoldiers < MaxSoldiers then
+                    if QuestTools.GetDistance(ID, self[_ScriptName].ApproachPosition) < 1200 then
+                        Tools.CreateSoldiersForLeader(ID, 1);
+                    else
+                        local Position = AiTroopRecruiterList[_ScriptName].ApproachPosition;
+                        if Logic.IsEntityMoving(ID) == false and QuestTools.GetReachablePosition(ID, Position) ~= nil then
+                            Logic.MoveSettler(ID, Position.X, Position.Y);
+                        else
+                            DestoryEntity(ID);
+                        end
+                    end
+                end
+            end
+        else
+            table.remove(self[_ScriptName].Troops.Created, i);
+        end
     end
 end
 
@@ -82,6 +162,15 @@ end
 function AiTroopSpawner:AddType(_Type, _Exp)
     table.insert(self.Troops.Types, {_Type, _Exp});
     return self;
+end
+
+function AiTroopSpawner:IsInTypeList(_Type)
+    for i= 1, table.getn(self.Troops.Types), 1 do
+        if self.Troops.Types[i][1] == _Type then
+            return true;
+        end
+    end
+    return false;
 end
 
 function AiTroopSpawner:ClearTypes()
@@ -99,7 +188,7 @@ function AiTroopSpawner:SetMaxTroops(_Max)
     return self;
 end
 
-function AiTroopRecruiter:SetDelay(_Time)
+function AiTroopSpawner:SetDelay(_Time)
     self.Delay = _Time;
     return self;
 end
@@ -117,8 +206,15 @@ end
 
 function AiTroopSpawner:GetTroop()
     for i= table.getn(self.Troops.Created), 1, -1 do
-        if IsExisting(self.Troops.Created[i]) then
-            return table.remove(self.Troops.Created, i);
+        local ID = self.Troops.Created[i];
+        if IsExisting(ID) then
+            local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
+            local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
+            if CurrentSoldiers == MaxSoldiers then
+                return table.remove(self.Troops.Created, i);
+            else
+                return -1;
+            end
         else
             table.remove(self.Troops.Created, i);
         end
