@@ -355,10 +355,11 @@ end
 function AiArmy:DispatchTroopsToProducers(_Troops)
     local Troops = copy(_Troops);
     -- add to producers
+    -- TODO: dispatch the troops more evenly among the producers 
     for i= table.getn(Troops), 1, -1 do
         local TroopType = Logic.GetEntityType(Troops[i]);
         for k, v in pairs(self.Producers) do
-            if v and v:IsAlive() then
+            if v and v:IsAlive() and QuestTools.IsInTable(Troops[i], v.ApproachPosition) then
                 local ProducerType = Logic.GetEntityType(GetID(v.ScriptName));
                 if v.IsSpawner and v:IsInTypeList(TroopType) then
                     table.insert(v.Troops.Created, table.remove(Troops, i));
