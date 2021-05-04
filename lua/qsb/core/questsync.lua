@@ -96,7 +96,7 @@ function QuestSync:SnchronizedCall(_ID, ...)
     if CNetwork then
         CNetwork.SendCommand(
             "QuestSync_CNetwork_SnchronizedCall",
-            GUI.GetPlayerID(),
+            PlayerID,
             _ID,
             unpack(arg)
         );

@@ -179,7 +179,7 @@ end
 --
 function Interaction:CreateNpcMerchantScriptEvents()
     -- Buy Units
-    Interaction.Event.BuyUnit = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _EntityType, _X, _Y, _SlotIndex, _Costs)
+    self.Event.BuyUnit = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _EntityType, _X, _Y, _SlotIndex, _Costs)
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             local ID = AI.Entity_CreateFormation(_PlayerID, _EntityType, 0, 0, _X, _Y, 0, 0, 3, 0);
@@ -191,7 +191,7 @@ function Interaction:CreateNpcMerchantScriptEvents()
         end
     end);
     -- Buy Resources
-    Interaction.Event.BuyRes = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _GoodType, _Amount, _SlotIndex, _Costs)
+    self.Event.BuyRes = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _GoodType, _Amount, _SlotIndex, _Costs)
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             Logic.AddToPlayersGlobalResource(_PlayerID, _GoodType, _Amount);
@@ -200,7 +200,7 @@ function Interaction:CreateNpcMerchantScriptEvents()
         end
     end);
     -- Buy Technology
-    Interaction.Event.BuyTech = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _TechType, _SlotIndex, _Costs)
+    self.Event.BuyTech = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _TechType, _SlotIndex, _Costs)
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             ResearchTechnology(_TechType, _PlayerID);
@@ -209,7 +209,7 @@ function Interaction:CreateNpcMerchantScriptEvents()
         end
     end);
     -- Buy Custom
-    Interaction.Event.BuyFunc = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _SlotIndex, _Costs)
+    self.Event.BuyFunc = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _SlotIndex, _Costs)
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             Instance.m_Offers[_SlotIndex].Good(

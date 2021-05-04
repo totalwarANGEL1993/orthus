@@ -195,26 +195,27 @@ end
 
 function QuestDebug:CreateScriptEvents()
     self.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
-        if QuestID == 0 then
+        if _QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
-                Message("Can not find quest: " ..command[2]);
+                Message("Can not find quest!");
             end
             return;
         end
         if QuestSystem.Quests[_QuestID] then
+            local QuestName = QuestSystem.Quests[_QuestID].m_QuestName;
             if _Result == QuestResults.Success then
                 if GUI.GetPlayerID() == _ExecutingPlayer then
-                    Message("Succeed quest: " ..command[2]);
+                    Message("Succeed quest: " ..QuestName);
                 end
                 QuestSystem.Quests[_QuestID]:Success();
             elseif _Result == QuestResults.Failure then
                 if GUI.GetPlayerID() == _ExecutingPlayer then
-                    Message("Fail quest: " ..command[2]);
+                    Message("Fail quest: " ..QuestName);
                 end
                 QuestSystem.Quests[_QuestID]:Fail();
             elseif _Result == QuestResults.Interrupted then
                 if GUI.GetPlayerID() == _ExecutingPlayer then
-                    Message("Stop quest: " ..command[2]);
+                    Message("Stop quest: " ..QuestName);
                 end
                 QuestSystem.Quests[_QuestID]:Interrupt();
             end
@@ -222,21 +223,22 @@ function QuestDebug:CreateScriptEvents()
     end);
 
     self.ScriptEvents.AlterQuestState = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _State)
-        if QuestID == 0 then
+        if _QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
-                Message("Can not find quest: " ..command[2]);
+                Message("Can not find quest!");
             end
             return;
         end
         if QuestSystem.Quests[_QuestID] then
+            local QuestName = QuestSystem.Quests[_QuestID].m_QuestName;
             if _State == QuestStates.Active then
                 if GUI.GetPlayerID() == _ExecutingPlayer then
-                    Message("Start quest: " ..command[2]);
+                    Message("Start quest: " ..QuestName);
                 end
                 QuestSystem.Quests[_QuestID]:Trigger();
             elseif _State == -1 then
                 if GUI.GetPlayerID() == _ExecutingPlayer then
-                    Message("Restart quest: " ..command[2]);
+                    Message("Restart quest: " ..QuestName);
                 end
                 Trigger.RequestTrigger(
                     Events.LOGIC_EVENT_EVERY_SECOND,
