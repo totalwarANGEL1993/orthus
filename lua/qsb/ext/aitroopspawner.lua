@@ -128,8 +128,8 @@ function AiTroopSpawner:Initalize()
 end
 
 function AiTroopSpawner:HandleSoldierRefill()
-    for i= table.getn(self[_ScriptName].Troops.Created), 1, -1 do
-        local ID = self[_ScriptName].Troops.Created[i];
+    for i= table.getn(self.Troops.Created), 1, -1 do
+        local ID = self.Troops.Created[i];
         if IsExisting(ID) then
             local Task = Logic.GetCurrentTaskList(ID);
             local BarracksID = Logic.LeaderGetBarrack(ID);
@@ -137,10 +137,10 @@ function AiTroopSpawner:HandleSoldierRefill()
                 local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
                 local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
                 if CurrentSoldiers < MaxSoldiers then
-                    if QuestTools.GetDistance(ID, self[_ScriptName].ApproachPosition) < 1200 then
+                    if QuestTools.GetDistance(ID, self.ApproachPosition) < 1200 then
                         Tools.CreateSoldiersForLeader(ID, 1);
                     else
-                        local Position = AiTroopRecruiterList[_ScriptName].ApproachPosition;
+                        local Position = self.ApproachPosition;
                         if Logic.IsEntityMoving(ID) == false and QuestTools.GetReachablePosition(ID, Position) ~= nil then
                             Logic.MoveSettler(ID, Position.X, Position.Y);
                         else
@@ -150,7 +150,7 @@ function AiTroopSpawner:HandleSoldierRefill()
                 end
             end
         else
-            table.remove(self[_ScriptName].Troops.Created, i);
+            table.remove(self.Troops.Created, i);
         end
     end
 end
@@ -193,9 +193,9 @@ function AiTroopSpawner:SetDelay(_Time)
     return self;
 end
 
-function AiTroopSpawner:IsReady()
+function AiTroopSpawner:IsReady(_Initial)
     if self.ScriptName and IsExisting(self.ScriptName) then
-        if Logic.GetTime() > self.LastRecruitedTime + self.Delay then
+        if _Initial or Logic.GetTime() > self.LastRecruitedTime + self.Delay then
             if table.getn(self.Troops.Created) < self.Troops.Maximum then
                 return true;
             end
@@ -222,8 +222,8 @@ function AiTroopSpawner:GetTroop()
     return 0;
 end
 
-function AiTroopSpawner:CreateTroop(_IgnoreCreated)
-    if self:IsReady() then
+function AiTroopSpawner:CreateTroop(_IgnoreCreated, _Initial)
+    if self:IsReady(_Initial) then
         if table.getn(self.Troops.Created) == 0 or _IgnoreCreated then
             if table.getn(self.Troops.Types) > 0 then
                 local TroopType = self.Troops.Selector(self);

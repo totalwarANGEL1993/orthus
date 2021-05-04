@@ -451,8 +451,8 @@ end
 
 function AiTroopRecruiter:IsSuitableUnitType(_Type)
     local LeaderTypeToBarracksType = {
-        ["CU_Bandit_LeaderSword1"]     = {Entities.PB_Barracks1, Entities.PB_Barracks2},
-        ["CU_Bandit_LeaderSword2"]     = {Entities.PB_Barracks1, Entities.PB_Barracks2},
+        ["CU_BanditLeaderSword1"]      = {Entities.PB_Barracks1, Entities.PB_Barracks2},
+        ["CU_BanditLeaderSword2"]      = {Entities.PB_Barracks1, Entities.PB_Barracks2},
         ["CU_Barbarian_LeaderClub1"]   = {Entities.PB_Barracks1, Entities.PB_Barracks2},
         ["CU_Barbarian_LeaderClub2"]   = {Entities.PB_Barracks1, Entities.PB_Barracks2},
         ["CU_BlackKnight_LeaderMace1"] = {Entities.PB_Barracks1, Entities.PB_Barracks2},
