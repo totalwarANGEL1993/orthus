@@ -654,8 +654,10 @@ GetEntityCategories = QuestTools.GetEntityCategories;
 --
 function QuestTools.GetEntityCategoriesAsString(_Entity)
     local Categories = {};
-    for k, v in pairs(QuestTools.GetEntityCategories(_Entity)) do
-        table.insert(Categories, v);
+    for k, v in pairs(EntityCategories) do
+        if Logic.IsEntityInCategory(GetID(_Entity), v) == 1 then
+            table.insert(Categories, k);
+        end
     end
     return Categories;
 end
