@@ -262,19 +262,23 @@ function AiArmy:MoveToPositionIfToFarAway(_Positon, _MaxDistance)
 end
 
 function AiArmy:CalculateStrength()
-    local Strength = 0;
+    local CurStrength = 0;
+    local MaxStrength = 0;
     for i= table.getn(self.Troops), 1, -1 do
-        local TroopStrength = 1;
-        if Logic.IsLeader(self.Troops[i]) == 1 then
-            local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(self.Troops[i]);
-            if MaxSoldiers > 0 then
-                local CurSoldiers = Logic.LeaderGetNumberOfSoldiers(self.Troops[i]);
-                TroopStrength = TroopStrength * (CurSoldiers/MaxSoldiers);
-            end
+        MaxStrength = MaxStrength + 1;
+        CurStrength = CurStrength + 1;
+        if Logic.IsEntityInCategory(self.Troops[i], EntityCategories.Cannon) == 1 then
+            MaxStrength = MaxStrength + 5;
+            CurStrength = CurStrength + 5;
+        elseif Logic.IsLeader(self.Troops[i]) == 1 then
+            MaxStrength = MaxStrength + Logic.LeaderGetMaxNumberOfSoldiers(self.Troops[i]);
+            CurStrength = CurStrength + Logic.LeaderGetNumberOfSoldiers(self.Troops[i]);
         end
-        Strength = Strength + TroopStrength;
     end
-    return Strength;
+    if MaxStrength == 0 then
+        return 0;
+    end
+    return CurStrength/MaxStrength;
 end
 
 -- -------------------------------------------------------------------------- --
@@ -424,30 +428,6 @@ function AiArmy.AttackBehavior(_Army)
         _Army.State = ArmyStates.Decide;
         return;
     end
-
-    -- move to target
-    local Range = _Army.RodeLength + _Army.OuterRange;
-    local InnerRange = _Army.RodeLength;
-    if QuestTools.GetDistance(_Army:GetArmyPosition(), _Army.AttackTarget) > Range then
-        for i= table.getn(_Army.Troops), 1, -1 do
-            if not string.find(Logic.GetCurrentTaskList(_Army.Troops[i]), "BATTLE") then
-                AiArmy:MoveTroop(_Army.Troops[i], _Army.AttackTarget);
-            end
-            if QuestTools.GetDistance(_Army.Troops[i], _Army:GetArmyPosition()) > InnerRange then
-                AiArmy:MoveTroop(_Army.Troops[i], _Army:GetArmyPosition());
-            else
-                if not _Army:TroopAttackPrioritizedTarget(_Army.Troops[i], _Army:GetArmyPosition()) then
-                    _Army.TroopTargets[_Army.Troops[i]] = nil;
-                end
-            end
-        end
-
-    -- attack target
-    else 
-
-
-
-    end
 end
 
 function AiArmy:TroopAttackPrioritizedTarget(_TroopID, _Position)
@@ -525,16 +505,6 @@ function AiArmy.DefenceBehavior(_Army)
             _Army.GuardTarget = nil;
             _Army.State = ArmyStates.Retreat;
             return;
-        end
-    end
-
-    -- control troops
-    for i= table.getn(_Army.Troops), 1, -1 do
-        local Range = _Army.RodeLength + _Army.OuterRange;
-        if QuestTools.GetDistance(_Army.Troops[i], _Army:GetArmyPosition()) > Range then
-            AiArmy:MoveTroop(_Army.Troops[i], _Army:GetArmyPosition());
-        else
-            _Army:TroopAttackPrioritizedTarget(_Army.Troops[i], _Army:GetArmyPosition());
         end
     end
 end
@@ -635,9 +605,11 @@ function AiArmy.RefillBehavior(_Army)
                                 table.insert(_Army.Troops, ID);
                             end
                         else
-                            AiArmyList[_Army.ArmyID].InitialSpawned = true;
                             break;
                         end
+                    end
+                    if table.getn(_Army.Troops) >= _Army.TroopCount then
+                        AiArmyList[_Army.ArmyID].InitialSpawned = true;
                     end
                 end
                 return;
@@ -692,68 +664,68 @@ GroupTargetingPriorities = {};
 
 -- Attack priority for cannons.
 GroupTargetingPriorities.Cannon = {
-    ["MilitaryBuilding"] = 10,
-    ["EvilLeader"] = 6,
-    ["VillageCenter"] = 5,
-    ["Headquarters"] = 5,
-    ["LongRange"] = 4,
-    ["Melee"] = 0.1,
+    ["MilitaryBuilding"] = 1.0,
+    ["EvilLeader"] = 0.8,
+    ["VillageCenter"] = 0.6,
+    ["Headquarters"] = 0.5,
+    ["LongRange"] = 0.3,
+    ["Melee"] = 0.01,
 };
 
 -- Attack priority for heavy cavalry.
 GroupTargetingPriorities.HeavyCavalry = {
-    ["Cannon"] = 8,
-    ["LongRange"] = 7,
-    ["Sword"] = 6,
-    ["Hero10"] = 8,
-    ["Hero4"] = 6,
-    ["MilitaryBuilding"] = 5,
-    ["Hero"] = 4,
-    ["Spear"] = 0.1,
+    ["Cannon"] = 1.0,
+    ["LongRange"] = 0.8,
+    ["Sword"] = 0.7,
+    ["Hero10"] = 0.6,
+    ["Hero4"] = 0.5,
+    ["MilitaryBuilding"] = 0.4,
+    ["Hero"] = 0.3,
+    ["Spear"] = 0.01,
 };
 
 -- Attack priority for swordmen.
 GroupTargetingPriorities.Sword = {
-    ["Cannon"] = 7,
-    ["MilitaryBuilding"] = 6,
-    ["Spear"] = 5,
-    ["LongRange"] = 6,
-    ["Hero"] = 4,
-    ["CavalryHeavy"] = 0.1,
+    ["Cannon"] = 1.0,
+    ["MilitaryBuilding"] = 0.9,
+    ["Spear"] = 0.8,
+    ["LongRange"] = 0.7,
+    ["Hero"] = 0.7,
+    ["CavalryHeavy"] = 0.01,
 };
 
 -- Attack priority for spearmen.
 GroupTargetingPriorities.Spear = {
-    ["CavalryHeavy"] = 8,
-    ["MilitaryBuilding"] = 6,
-    ["CavalryLight"] = 4,
+    ["CavalryHeavy"] = 1.0,
+    ["MilitaryBuilding"] = 0.9,
+    ["CavalryLight"] = 0.8,
     ["Hero"] = 0.5,
     ["LongRange"] = 0.1,
-    ["Sword"] = 0.1,
+    ["Sword"] = 0.01,
 };
 
 -- Attack priority for bowmen.
 GroupTargetingPriorities.Ranged = {
-    ["MilitaryBuilding"] = 10,
-    ["Hero10"] = 8,
-    ["Hero4"] = 7,
-    ["Hero"] = 5,
-    ["VillageCenter"] = 4,
-    ["Headquarters"] = 4,
-    ["CavalryHeavy"] = 4,
-    ["CavalryLight"] = 0.1,
+    ["MilitaryBuilding"] = 1.0,
+    ["Hero10"] = 0.9,
+    ["Hero4"] = 0.8,
+    ["Hero"] = 0.7,
+    ["VillageCenter"] = 0.4,
+    ["Headquarters"] = 0.4,
+    ["CavalryHeavy"] = 0.4,
+    ["CavalryLight"] = 0.01,
 };
 
 -- Attack priority for marksmen.
 GroupTargetingPriorities.Rifle = {
-    ["MilitaryBuilding"] = 10,
-    ["Hero10"] = 7,
-    ["EvilLeader"] = 6,
-    ["VillageCenter"] = 5,
-    ["Headquarters"] = 5,
-    ["LongRange"] = 4,
-    ["Cannon"] = 4,
-    ["Melee"] = 0.1,
+    ["MilitaryBuilding"] = 1.0,
+    ["Hero10"] = 0.9,
+    ["EvilLeader"] = 0.8,
+    ["VillageCenter"] = 0.7,
+    ["Headquarters"] = 0.7,
+    ["Cannon"] = 0.6,
+    ["LongRange"] = 0.4,
+    ["Melee"] = 0.01,
 };
 
 function AiArmy:GetEnemyPriorityForTroop(_EntityID)
@@ -789,51 +761,69 @@ end
 
 function AiArmy:GetPrioritizedAttackTarget(_Position, _TroopID, _Priority)
     if IsExisting(_TroopID) then
-        local Exploration = self.RodeLength + self.OuterRange;
-        local EnemyList = self:GetEnemiesInSight(self.PlayerID, _Position);
-        if self.TroopTargets[_TroopID] ~= nil and IsExisting(self.TroopTargets[_TroopID]) then
-            if not QuestTools.IsInTable(self.TroopTargets[_TroopID], EnemyList) then
-                table.insert(EnemyList, self.TroopTargets[_TroopID]);
+        local Range = self.RodeLength + self.OuterRange;
+        local Priority = self:GetEnemyPriorityForTroop(_TroopID);
+        local TargetToPriorityList = self:GetEnemiesWithTheirPriority(_TroopID, Priority, Range);
+        if table.getn(TargetToPriorityList) == 0 then
+            return 0;
+        end
+
+        local Comperator = function(a, b)
+            if a == nil or b == nil then
+                return false;
+            elseif a[2] > b[2] then
+                return true;
+            elseif a[2] > b[2] then
+                return false;
             end
         end
-        if EnemyList[1] then
-            local Comperator = function(a, b)
-                if a == nil and b ~= nil then
-                    return false;
-                elseif a ~= nil and b == nil then
-                    return true;
-                elseif b == nil and a == nil then
-                    return true;
-                end
-
-                local Sight     = Exploration/1000;
-                local Distance1 = QuestTools.GetDistance(a, _Position) / 1000;
-                local Priority1 = (Sight-Distance1);
-                for k, v in pairs(QuestTools.GetEntityCategoriesAsString(a)) do
-                    Priority1 = Priority1 + (_Priority[v] or 1);
-                end
-                if a == self.TroopTargets[_TroopID] then
-                    Priority1 = Priority1 * 0.1;
-                end
-                local Distance2 = QuestTools.GetDistance(b, _Position) / 1000;
-                local Priority2 = (Sight-Distance2);
-                for k, v in pairs(QuestTools.GetEntityCategoriesAsString(b)) do
-                    Priority2 = Priority2 * (_Priority[v] or 1);
-                end
-                if b == self.TroopTargets[_TroopID] then
-                    Priority2 = Priority2 * 10;
-                end
-
-                if Priority1 < Priority2 then
-                    return true;
-                elseif Priority1 > Priority2 then
-                    return false;
-                end
-            end
-            table.sort(EnemyList, Comperator);
-            return EnemyList[1];
-        end
+        table.sort(TargetToPriorityList, Comperator);
+        return TargetToPriorityList[1][1];
     end
     return 0;
+end
+
+function AiArmy:GetEnemiesWithTheirPriority(_EntityID, _Priority, _AreaSize)
+    local PlayerID = Logic.EntityGetPlayer(_EntityID);
+    local Enemies = self:GetEnemiesInSight(PlayerID, _EntityID);
+    local Targets = {};
+
+    local AlreadyAddTarget = false;
+    for i= 1, table.getn(Enemies) do
+        local TargetPriority = self:CalculateTargetPriority(_EntityID, Enemies[i], _AreaSize, _Priority);
+        table.insert(Targets, {Enemies[i], TargetPriority});
+        if self.TroopTargets[_EntityID] == Enemies[i] then
+            AlreadyAddTarget = true;
+        end
+    end
+    if not AlreadyAddTarget and self.TroopTargets[_EntityID] then
+        local TargetPriority = self:CalculateTargetPriority(_EntityID, self.TroopTargets[_EntityID], _AreaSize, _Priority);
+        table.insert(Targets, {self.TroopTargets[_EntityID], TargetPriority});
+    end
+
+    return Targets;
+end
+
+function AiArmy:CalculateTargetPriority(_EntityID, _TargetID, _AreaSize, _Priority)
+    local Priority = 0;
+    local Distance = QuestTools.GetDistance(_EntityID, _TargetID);
+    if Distance >= _AreaSize then
+        return Priority;
+    end
+    Priority = 1;
+    -- Soldiers factor
+    if Logic.IsLeader(_TargetID) == 1 then
+        local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(_TargetID);
+        local CurSoldiers = Logic.LeaderGetNumberOfSoldiers(_TargetID);
+        Priority = Priority * (CurSoldiers/MaxSoldiers);
+    end
+    -- Type factor
+    for k, v in pairs(QuestTools.GetEntityCategoriesAsString(_TargetID)) do
+        Priority = (v and Priority * (_Priority[v] or 1)) or Priority;
+    end
+    if self.TroopTargets[_EntityID] == _TargetID then
+        Priority = Priority * 0.5;
+    end
+    return Priority;
 end
 
