@@ -141,10 +141,12 @@ function AiTroopSpawner:HandleSoldierRefill()
                         Tools.CreateSoldiersForLeader(ID, 1);
                     else
                         local Position = self.ApproachPosition;
-                        if Logic.IsEntityMoving(ID) == false and QuestTools.GetReachablePosition(ID, Position) ~= nil then
-                            Logic.MoveSettler(ID, Position.X, Position.Y);
-                        else
-                            DestoryEntity(ID);
+                        if Logic.IsEntityMoving(ID) == false then
+                            if QuestTools.GetReachablePosition(ID, Position) ~= nil then
+                                Logic.MoveSettler(ID, Position.X, Position.Y);
+                            else
+                                Logic.DestroyGroupByLeader(ID);
+                            end
                         end
                     end
                 end
