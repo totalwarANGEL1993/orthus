@@ -112,10 +112,14 @@ AiTroopRecruiter = {
         UpgradeCategories.LeaderHeavyCavalry,
     },
     Foundry1Units = {
+        UpgradeCategories.Cannon1,
+        UpgradeCategories.Cannon2,
         Entities.PV_Cannon1,
         Entities.PV_Cannon2,
     },
     Foundry2Units = {
+        UpgradeCategories.Cannon3,
+        UpgradeCategories.Cannon4,
         Entities.PV_Cannon3,
         Entities.PV_Cannon4,
     },
@@ -142,6 +146,13 @@ function AiTroopRecruiter:AddType(_Type)
     return self;
 end
 
+function AiTroopRecruiter:AddTypes(_List)
+    for i= 1, table.getn(_List), 1 do
+        self:AddType(_List[i]);
+    end
+    return self;
+end
+
 function AiTroopRecruiter:ClearTypes()
     self.Troops.Types = {};
     return self;
@@ -154,6 +165,11 @@ end
 
 function AiTroopRecruiter:SetDelay(_Time)
     self.Delay = _Time;
+    return self;
+end
+
+function AiTroopRecruiter:SetSelector(_Selector)
+    self.Troops.Selector = _Selector;
     return self;
 end
 
@@ -241,32 +257,36 @@ end
 function AiTroopRecruiter:HandleSoldierRefill()
     for i= table.getn(self.Troops.Created), 1, -1 do
         local ID = self.Troops.Created[i];
-        if IsExisting(ID) then
-            local Task = Logic.GetCurrentTaskList(ID);
-            local BarracksID = Logic.LeaderGetBarrack(ID);
-            if BarracksID == 0 and not string.find(Task, "BATTLE") then
-                local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
-                local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
-                if CurrentSoldiers < MaxSoldiers then
-                    if QuestTools.GetDistance(ID, self.ApproachPosition) < 1200 then
-                        if self.Cheat then
-                            Tools.CreateSoldiersForLeader(ID, 1);
-                        else
-                            local PlayerID = Logic.EntityGetPlayer(ID);
-                            local SoldierType = Logic.LeaderGetSoldiersType(ID);
-                            local SoldierCosts = QuestTools.GetSoldierCostsTable(PlayerID, SoldierType);
-                            if QuestTools.HasEnoughResources(PlayerID, SoldierCosts) then
-                                QuestTools.RemoveResourcesFromPlayer(PlayerID, SoldierCosts)
-                                Tools.CreateSoldiersForLeader(ID, 1);
-                            end
-                        end
-                    else
-                        local Position = self.ApproachPosition;
-                        if Logic.IsEntityMoving(ID) == false then
-                            if QuestTools.GetReachablePosition(ID, Position) ~= nil then
-                                Logic.MoveSettler(ID, Position.X, Position.Y);
+        local Task = Logic.GetCurrentTaskList(ID);
+        if IsExisting(ID) and (not Task or not string.find(Task, "DIE")) then
+            if not QuestTools.AreEnemiesInArea(GetPlayer(ID), GetPosition(ID), 2000) then
+                local BarracksID = Logic.LeaderGetBarrack(ID);
+                if BarracksID == 0 then
+                    if not Task or not string.find(Task, "BATTLE") then
+                        local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
+                        local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
+                        if CurrentSoldiers < MaxSoldiers then
+                            if QuestTools.GetDistance(ID, self.ApproachPosition) < 1200 then
+                                if self.Cheat then
+                                    Tools.CreateSoldiersForLeader(ID, 1);
+                                else
+                                    local PlayerID = Logic.EntityGetPlayer(ID);
+                                    local SoldierType = Logic.LeaderGetSoldiersType(ID);
+                                    local SoldierCosts = QuestTools.GetSoldierCostsTable(PlayerID, SoldierType);
+                                    if QuestTools.HasEnoughResources(PlayerID, SoldierCosts) then
+                                        QuestTools.RemoveResourcesFromPlayer(PlayerID, SoldierCosts)
+                                        Tools.CreateSoldiersForLeader(ID, 1);
+                                    end
+                                end
                             else
-                                Logic.DestroyGroupByLeader(ID);
+                                local Position = self.ApproachPosition;
+                                if Logic.IsEntityMoving(ID) == false then
+                                    if QuestTools.GetReachablePosition(ID, Position) ~= nil then
+                                        Logic.MoveSettler(ID, Position.X, Position.Y);
+                                    else
+                                        Logic.DestroyGroupByLeader(ID);
+                                    end
+                                end
                             end
                         end
                     end
@@ -333,36 +353,39 @@ function AiTroopRecruiter:CreateTroop(_IgnoreCreated)
         if self:CountTrainingTroops() < 3 or _IgnoreCreated then
             if table.getn(self.Troops.Types) > 0 then
                 local TroopType = self.Troops.Selector(self);
-                if self:IsSuitableBuilding(TroopType) then
-                    local ID = GetID(self.ScriptName);
-                    local BuildingType = Logic.GetEntityTypeName(Logic.GetEntityType(ID));
-                    if string.find(BuildingType, "PB_Foundry") then
-                        if  not InterfaceTool_IsBuildingDoingSomething(ID)
-                        and Logic.GetCannonProgress(ID) == 100 then
+                -- currently not used because it makes AI to easy
+                -- if self:HasSpaceForUnit(TroopType) then
+                    if self:IsSuitableBuilding(TroopType) then
+                        local ID = GetID(self.ScriptName);
+                        local BuildingType = Logic.GetEntityTypeName(Logic.GetEntityType(ID));
+                        if string.find(BuildingType, "PB_Foundry") then
+                            if  not InterfaceTool_IsBuildingDoingSomething(ID)
+                            and Logic.GetCannonProgress(ID) == 100 then
+                                if self.Cheat then
+                                    self:CheatCannonCosts(TroopType);
+                                end
+                                local ControllingPlayerID = GUI.GetPlayerID();
+                                local PlayerID = Logic.EntityGetPlayer(ID);
+                                local SelectedEntities = {GUI.GetSelectedEntities()};
+                                GUI.ClearSelection();
+                                GUI.SetControlledPlayer(PlayerID);
+                                GUI.BuyCannon(ID, TroopType);
+                                GUI.SetControlledPlayer(ControllingPlayerID);
+                                Logic.PlayerSetGameStateToPlaying(ControllingPlayerID);
+                                Logic.ForceFullExplorationUpdate();
+                                for i = 1, table.getn(SelectedEntities), 1 do
+                                    GUI.SelectEntity(SelectedEntities[i]);
+                                end
+                            end
+                        else
                             if self.Cheat then
-                                self:CheatCannonCosts(TroopType);
+                                self:CheatLeaderCosts(TroopType);
                             end
-                            local ControllingPlayerID = GUI.GetPlayerID();
-                            local PlayerID = Logic.EntityGetPlayer(ID);
-                            local SelectedEntities = {GUI.GetSelectedEntities()};
-                            GUI.ClearSelection();
-                            GUI.SetControlledPlayer(PlayerID);
-                            GUI.BuyCannon(ID, TroopType);
-                            GUI.SetControlledPlayer(ControllingPlayerID);
-                            Logic.PlayerSetGameStateToPlaying(ControllingPlayerID);
-                            Logic.ForceFullExplorationUpdate();
-                            for i = 1, table.getn(SelectedEntities), 1 do
-                                GUI.SelectEntity(SelectedEntities[i]);
-                            end
+                            Logic.BarracksBuyLeader(ID, TroopType);
                         end
-                    else
-                        if self.Cheat then
-                            self:CheatLeaderCosts(TroopType);
-                        end
-                        Logic.BarracksBuyLeader(ID, TroopType);
+                        self.LastRecruitedTime = Logic.GetTime();
                     end
-                    self.LastRecruitedTime = Logic.GetTime();
-                end
+                -- end
             end
         end
     end

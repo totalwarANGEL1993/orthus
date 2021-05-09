@@ -84,7 +84,7 @@ AiTroopSpawner = {
     ScriptName = nil,
     IsSpawner = true,
     LastRecruitedTime = 0,
-    Delay = 30,
+    Delay = 2*60,
     Troops = {
         Maximum = 999,
         Selector = function(self)
@@ -130,22 +130,26 @@ end
 function AiTroopSpawner:HandleSoldierRefill()
     for i= table.getn(self.Troops.Created), 1, -1 do
         local ID = self.Troops.Created[i];
-        if IsExisting(ID) then
-            local Task = Logic.GetCurrentTaskList(ID);
-            local BarracksID = Logic.LeaderGetBarrack(ID);
-            if BarracksID == 0 and not string.find(Task, "BATTLE") then
-                local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
-                local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
-                if CurrentSoldiers < MaxSoldiers then
-                    if QuestTools.GetDistance(ID, self.ApproachPosition) < 1200 then
-                        Tools.CreateSoldiersForLeader(ID, 1);
-                    else
-                        local Position = self.ApproachPosition;
-                        if Logic.IsEntityMoving(ID) == false then
-                            if QuestTools.GetReachablePosition(ID, Position) ~= nil then
-                                Logic.MoveSettler(ID, Position.X, Position.Y);
+        local Task = Logic.GetCurrentTaskList(ID);
+        if IsExisting(ID) and (not Task or not string.find(Task, "DIE")) then
+            if not QuestTools.AreEnemiesInArea(GetPlayer(ID), GetPosition(ID), 2000) then
+                local BarracksID = Logic.LeaderGetBarrack(ID);
+                if BarracksID == 0 then
+                    if not Task or not string.find(Task, "BATTLE") then
+                        local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
+                        local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
+                        if CurrentSoldiers < MaxSoldiers then
+                            if QuestTools.GetDistance(ID, self.ApproachPosition) < 1200 then
+                                Tools.CreateSoldiersForLeader(ID, 1);
                             else
-                                Logic.DestroyGroupByLeader(ID);
+                                local Position = self.ApproachPosition;
+                                if Logic.IsEntityMoving(ID) == false then
+                                    if QuestTools.GetReachablePosition(ID, Position) ~= nil then
+                                        Logic.MoveSettler(ID, Position.X, Position.Y);
+                                    else
+                                        Logic.DestroyGroupByLeader(ID);
+                                    end
+                                end
                             end
                         end
                     end

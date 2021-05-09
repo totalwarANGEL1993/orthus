@@ -1247,7 +1247,6 @@ function MultiplayerSystem:LogicEventOnEveryTurn(_Data)
 end
 
 function MultiplayerSystem:CheckUnitOrBuildingLimit(_PlayerID, _UpgradeCategory, _Limit)
-    local Players = QuestSync:GetActivePlayers();
     local Amount = 0;
     local Members = {Logic.GetBuildingTypesInUpgradeCategory(_UpgradeCategory)};
     if Members[1] > 0 and self.Maps.EntityTypeToTechnologyType[Members[2]] then
