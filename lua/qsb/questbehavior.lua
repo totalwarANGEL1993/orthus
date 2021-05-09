@@ -495,7 +495,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
             QuestSystemBehavior:InstallS5Hook();
         end
 
-        Camera.ZoomSetFactorMax(1.5);
+        Camera.ZoomSetFactorMax(2.0);
         QuestSystem:InstallQuestSystem();
         Interaction:Install();
         self:CreateBehaviorConstructors();
@@ -516,7 +516,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
         Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
         Mission_OnSaveGameLoaded = function()
             Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior();
-            Camera.ZoomSetFactorMax(1.5);
+            Camera.ZoomSetFactorMax(2.0);
             QuestSystemBehavior:CallSaveLoadActions();
         end
 
