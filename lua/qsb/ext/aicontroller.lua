@@ -57,8 +57,8 @@ AiControllerArmyNameToID = {};
 --
 -- @param[type=number] _PlayerID     PlayerID
 -- @param[type=number] _TechLevel    Technology level [1|4]
--- @param[type=string] _HomePosition Default army home position
 -- @param[type=number] _SerfAmount   (optional) Amount of serfs
+-- @param[type=string] _HomePosition (optional) Default army home position
 -- @param[type=number] _Strength     (optional) Armies to recruit (0 = off)
 -- @param[type=boolean] _Construct   (optional) AI can construct buildings
 -- @param[type=boolean] _Rebuild     (optional) AI rebuilds (construction required)
@@ -66,9 +66,14 @@ AiControllerArmyNameToID = {};
 --
 -- @usage CreateAIPlayer(2, 4, 8, "HomeP2");
 --
-function CreateAIPlayer(_PlayerID, _TechLevel, _HomePosition, _SerfAmount, _Strength, _Construct, _Rebuild)
+function CreateAIPlayer(_PlayerID, _TechLevel, _SerfAmount, _HomePosition, _Strength, _Construct, _Rebuild)
     _SerfAmount = _SerfAmount or 6;
     _Strength = _Strength or 0;
+
+    if _Strength > 0 and (not _HomePosition or not IsExisting(_HomePosition)) then
+        Message("DEBUG: If strength is > 0 then a home position mus be set!");
+        return;
+    end
 
     if not AiController.Players[_PlayerID] then
         local PlayerEntities = QuestTools.GetPlayerEntities(_PlayerID, 0);
@@ -1135,7 +1140,8 @@ function AiController:AddProducerBuilding(_PlayerID, _Entity)
     if not self.Players[_PlayerID] then
         return;
     end
-    if QuestTools.GetReachablePosition(self.Players[_PlayerID].HomePosition, _Entity) ~= nil then
+    local HomePosition = self.Players[_PlayerID].HomePosition;
+    if not HomePosition or QuestTools.GetReachablePosition(HomePosition, _Entity) ~= nil then
         local Recruiter = self:CreateRecruiter(_PlayerID, _Entity);
         if Recruiter then
             table.insert(self.Players[_PlayerID].Producers, Recruiter);
