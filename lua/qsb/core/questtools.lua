@@ -555,7 +555,7 @@ function QuestTools.GetAngleBetween(_Pos1,_Pos2)
 	end
 	delta_X = _Pos1.X - _Pos2.X
 	delta_Y = _Pos1.Y - _Pos2.Y
-	if delta_X == 0 and delta_Y == 0 then -- Gleicher Punkt
+	if delta_X == 0 and delta_Y == 0 then
 		return 0
 	end
 	alpha = math.deg(math.asin(math.abs(delta_X)/(math.sqrt(__pow(delta_X, 2)+__pow(delta_Y, 2)))))

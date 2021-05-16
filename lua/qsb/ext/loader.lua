@@ -19,5 +19,8 @@ end
 -- Load allways
 Script.Load(gvBasePath.. "qsb/ext/optionsmenu.lua");
 Script.Load(gvBasePath.. "qsb/ext/interaction.lua");
-Script.Load(gvBasePath.. "qsb/ext/troopgenerator.lua");
+Script.Load(gvBasePath.. "qsb/ext/aitrooprecruiter.lua");
+Script.Load(gvBasePath.. "qsb/ext/aitroopspawner.lua");
+Script.Load(gvBasePath.. "qsb/ext/aiarmy.lua");
+Script.Load(gvBasePath.. "qsb/ext/aicontroller.lua");
 
