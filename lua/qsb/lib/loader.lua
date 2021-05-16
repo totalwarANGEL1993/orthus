@@ -36,6 +36,10 @@ end
 if metatable == nil then
     Script.Load(gvBasePath.. "qsb/lib/metatable.lua");
 end
+-- Scripting Values
+if SV == nil then
+    Script.Load(gvBasePath.. "qsb/lib/scriptingvalue.lua");
+end
 -- Load S5Hook
 if S5Hook == nil and (not initEMS or not initEMS()) then
     Script.Load(gvBasePath.. "qsb/lib/s5hook.lua");

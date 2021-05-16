@@ -1,5 +1,5 @@
 -- ########################################################################## --
--- #  AI Troop Recruiter                                                    # --
+-- #  AI Troop Spawner                                                      # --
 -- #  --------------------------------------------------------------------  # --
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
@@ -11,7 +11,7 @@
 -- they are requested. The AI won't need the resources to build them and they
 -- can be spawned at any building type.
 -- You do not need to set the spawn position. It is calculated automatically.
--- If you with to change the position, it is possible to do so. Once a unit is
+-- If you wish to change the position, it is possible to do so. Once a unit is
 -- created it is added to the list of created entities.
 --
 -- Finished units can be obtained by requesting one of them from the created
@@ -210,6 +210,14 @@ function AiTroopSpawner:IsReady(_Initial)
     return false;
 end
 
+---
+-- Obtains the next unit from the producer.
+--
+-- If there is no troops ready 0 is returned.
+--
+-- @return[type=number] ID of troop or 0 if not available
+-- @within AiTroopSpawner
+--
 function AiTroopSpawner:GetTroop()
     for i= table.getn(self.Troops.Created), 1, -1 do
         local ID = self.Troops.Created[i];
@@ -228,6 +236,13 @@ function AiTroopSpawner:GetTroop()
     return 0;
 end
 
+---
+-- Creates an new unit.
+--
+-- @param[type=string] _IgnoreCreated Ignore already created units
+-- @param[type=string] _Initial       Do initial spawns
+-- @within AiTroopSpawner
+--
 function AiTroopSpawner:CreateTroop(_IgnoreCreated, _Initial)
     if self:IsReady(_Initial) then
         if table.getn(self.Troops.Created) == 0 or _IgnoreCreated then

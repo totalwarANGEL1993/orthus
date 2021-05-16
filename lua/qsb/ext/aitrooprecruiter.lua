@@ -298,6 +298,14 @@ function AiTroopRecruiter:HandleSoldierRefill()
     end
 end
 
+---
+-- Obtains the next unit from the producer.
+--
+-- If there is no troops ready 0 is returned.
+--
+-- @return[type=number] ID of troop or 0 if not available
+-- @within AiTroopSpawner
+--
 function AiTroopRecruiter:GetTroop()
     for i= table.getn(self.Troops.Created), 1, -1 do
         local ID = self.Troops.Created[i];
@@ -348,6 +356,12 @@ function AiTroopRecruiter:IsReady()
     return false;
 end
 
+---
+-- Creates an new unit.
+--
+-- @param[type=string] _IgnoreCreated Ignore already created units
+-- @within AiTroopSpawner
+--
 function AiTroopRecruiter:CreateTroop(_IgnoreCreated)
     if self:IsReady() then
         if self:CountTrainingTroops() < 3 or _IgnoreCreated then
