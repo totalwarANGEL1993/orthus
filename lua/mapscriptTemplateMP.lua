@@ -20,6 +20,9 @@ MPRuleset_Rules = {
     
     -- Rules can be changed
     Changeable = true,
+    
+    -- Set to true to deactivate default defeat and victory conditions
+    DisableStandardVictoryCondition = false,
 
     Callbacks = {
         -- After the map has been loaded on all machines.

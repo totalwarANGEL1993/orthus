@@ -861,6 +861,11 @@ function MultiplayerSystem:Install()
         MPRuleset_Rules = MultiplayerRules_Default;
         Rules = MPRuleset_Rules;
     end
+    -- Disable default victory
+    if Rules.DisableStandardVictoryCondition then
+        VC_Deathmatch = function() end
+    end
+
     -- Select the rules
     self:OverrideUIStuff();
     self:SuspendEverythingAtGameStart();
@@ -1440,6 +1445,8 @@ end
 MultiplayerRules_Default = {
     -- Rules can be changed
     Changeable = true,
+    -- Set to true to deactivate default defeat and victory conditions
+    DisableStandardVictoryCondition = false,
 
     Callbacks = {
         -- After the map has been loaded on all machines.
