@@ -10,18 +10,12 @@ Script.Load("data/script/maptools/main.lua");
 Script.Load("data/script/maptools/mapeditortools.lua");
 
 -- Load QSB
-gvBasePath = "data/maps/externalmap/qsb/";
-
-Script.Load(gvBasePath.. "lib/libloader.lua");
-Script.Load(gvBasePath.. "core/mpsync.lua");
-Script.Load(gvBasePath.. "core/bugfixes.lua");
-Script.Load(gvBasePath.. "core/questsystem.lua");
-Script.Load(gvBasePath.. "core/questdebug.lua");
-
-Script.Load(gvBasePath.. "ext/extraloader.lua");
-
-Script.Load(gvBasePath.. "questbehavior.lua");
-Script.Load(gvBasePath.. "treasure.lua");
+gvBasePath = "data/maps/externalmap/";
+Script.Load(gvBasePath.. "qsb/core/loader.lua");
+Script.Load(gvBasePath.. "qsb/lib/loader.lua");
+Script.Load(gvBasePath.. "qsb/ext/loader.lua");
+Script.Load(gvBasePath.. "qsb/questbehavior.lua");
+Script.Load(gvBasePath.. "qsb/treasure.lua");
 
 -- Settings ----------------------------------------------------------------- --
 
@@ -43,7 +37,7 @@ function InitWeatherGfxSets()
 end
 
 function InitPlayerColorMapping()
-    -- Display.SetPlayerColor(PlayerID, ColorID);
+    -- Display.SetPlayerColorMapping(PlayerID, ColorID);
 end
 
 function FirstMapAction()

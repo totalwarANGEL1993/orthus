@@ -11,6 +11,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
+-- <li>qsb.core.questtools</li>
 -- <li>qsb.core.questsystem</li>
 -- </ul>
 --
@@ -108,7 +109,7 @@ function OptionMenu:Install()
 end
 
 function OptionMenu:CreateScriptEvents()
-    self.Events.OptionConfirmed = MPSync:CreateScriptEvent(function(_Count)
+    self.Events.OptionConfirmed = QuestSync:CreateScriptEvent(function(_Count)
         OptionMenu:OnOptionSelected(_Count);
     end);
 end
@@ -219,7 +220,7 @@ function OptionMenu:OverrideGroupSelection()
             if OptionMenu.Menu.ControllingPlayer ~= GUI.GetPlayerID() then
                 return;
             end
-            MPSync:SnchronizedCall(OptionMenu.Events.OptionConfirmed, _Count);
+            QuestSync:SnchronizedCall(OptionMenu.Events.OptionConfirmed, _Count);
         end
     end
 end
@@ -314,7 +315,7 @@ OptionMenuPage = {
 };
 
 function OptionMenuPage:construct(_Identifier, _Parent, _Title, _Description, _OnClose, _NoBack, _Options)
-    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+    local Language = QuestTools.GetLanguage();
     if type(_Title) == "table" then
         _Title = _Title[Language];
     end
@@ -413,7 +414,7 @@ OptionMenuOption = {
 };
 
 function OptionMenuOption:construct(_Index, _Key, _Text, _Target, _Data)
-    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+    local Language = QuestTools.GetLanguage();
     if type(_Text) == "table" then
         _Text = _Text[Language];
     end

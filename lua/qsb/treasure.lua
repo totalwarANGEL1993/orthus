@@ -16,6 +16,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
+-- <li>qsb.questtools</li>
 -- <li>qsb.questsystem</li>
 -- <li>qsb.questbehavior</li>
 -- </ul>
@@ -201,7 +202,7 @@ end
 function TreasureTemplate:GiveTreasureReward(_PlayerID)
     Tools.GiveResources(_PlayerID, unpack(self.m_Rewards));
     
-    local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+    local Language = QuestTools.GetLanguage();
     local RewardString = "";
     if GUI.GetPlayerID() == _PlayerID then
         -- Gold
@@ -251,7 +252,7 @@ end
 -- @local
 --
 function TreasureTemplate:StartController()
-    return QSBTools.StartSimpleJobEx(function(_ScriptName)
+    return QuestTools.StartSimpleJobEx(function(_ScriptName)
         local Chest = QuestSystemBehavior.Data.Treasure[_ScriptName];
         if not Chest then
             return true;

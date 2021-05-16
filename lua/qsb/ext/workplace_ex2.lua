@@ -15,7 +15,8 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.mpsync</li>
+-- <li>qsb.questsync</li>
+-- <li>qsb.questtools</li>
 -- </ul>
 --
 -- @set sort=true
@@ -66,13 +67,10 @@ end
 -- @local
 --
 function QuestSystem.Workplace:PrepareWorkerAmountEvent()
-	self.ScriptEvent = MPSync:CreateScriptEvent(function(_BuildingID, _Amount, _State, ...)
-		local ScriptName = QSBTools.CreateNameForEntity(_BuildingID);
-		local PlayerID   = Logic.EntityGetPlayer(_BuildingID);
+	self.ScriptEvent = QuestSync:CreateScriptEvent(function(_BuildingID, _Amount, _State)
+		local ScriptName = QuestTools.CreateNameForEntity(_BuildingID);
 		QuestSystem.Workplace.WorkplaceStates[ScriptName] = _State;
-		if MPSync:IsCNetwork() then
-			SendEvent.SetCurrentMaxNumWorkersInBuilding(_BuildingID, _Amount);
-		end
+		Logic.SetCurrentMaxNumWorkersInBuilding(_BuildingID, _Amount);
 	end);
 end
 
@@ -92,8 +90,8 @@ function QuestSystem.Workplace:OverrideInterfaceAction()
 			XGUIEng.HighLightButton("SetWorkersAmountFew", 1);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
             XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
-			MPSync:SnchronizedCall(EventID, BuildingID, 0, _State, unpack(WorkerIDs));
-			if not MPSync:IsCNetwork() then
+			QuestSync:SnchronizedCall(EventID, BuildingID, 0, _State, unpack(WorkerIDs));
+			if not QuestSync:IsCNetwork() then
 				GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, 0);
 			end
 		elseif _State == "half" then
@@ -101,8 +99,8 @@ function QuestSystem.Workplace:OverrideInterfaceAction()
 			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf", 1);
             XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
-			MPSync:SnchronizedCall(EventID, BuildingID, Amount, _State, unpack(WorkerIDs));
-			if not MPSync:IsCNetwork() then
+			QuestSync:SnchronizedCall(EventID, BuildingID, Amount, _State, unpack(WorkerIDs));
+			if not QuestSync:IsCNetwork() then
 				GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, Amount);
 			end
 		elseif _State == "full" then
@@ -110,8 +108,8 @@ function QuestSystem.Workplace:OverrideInterfaceAction()
 			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
 			XGUIEng.HighLightButton("SetWorkersAmountFull", 1);
-			MPSync:SnchronizedCall(EventID, BuildingID, Amount, _State, unpack(WorkerIDs));
-			if not MPSync:IsCNetwork() then
+			QuestSync:SnchronizedCall(EventID, BuildingID, Amount, _State, unpack(WorkerIDs));
+			if not QuestSync:IsCNetwork() then
 				GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, Amount);
 			end
 		end
@@ -156,7 +154,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
     GUITooltip_NormalButton_Orig_WorkplaceMod = GUITooltip_NormalButton
 	GUITooltip_NormalButton = function(a)
 		GUITooltip_NormalButton_Orig_WorkplaceMod(a);
-        local lang = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+        local lang = QuestTools.GetLanguage();
 
 		if a == "MenuBuildingGeneric/setworkerfew" then
 			if not(QuestSystem.Workplace.UseMod == true) then
@@ -202,7 +200,7 @@ function QuestSystem.Workplace:OverrideInterfaceTooltip()
     GUITooltip_ResearchTechnologies_Orig_WorkplaceMod = GUITooltip_ResearchTechnologies
 	GUITooltip_ResearchTechnologies = function(a,b,c,d)
 		GUITooltip_ResearchTechnologies_Orig_WorkplaceMod(a,b,c,d);
-		local lang = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+		local lang = QuestTools.GetLanguage();
 
 		if a == Technologies.GT_Literacy then
 			if Logic.GetTechnologyState(1,a) == 0 then
@@ -284,24 +282,22 @@ function QuestSystem.Workplace:OverrideInterfaceUpdate()
 	end
 
 	GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod = GameCallback_OnBuildingUpgradeComplete
-	GameCallback_OnBuildingUpgradeComplete = function(a,b)
-		GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod(a,b);
-		local eName = QSBTools.CreateNameForEntity(b);
-		if QuestSystem.Workplace.WorkplaceStates[eName] then
-			local backupSel = {GUI.GetSelectedEntities()};
-			GUI.ClearSelection();
-
-			GUI.SelectEntity(b);
-			GUIAction_SetAmountOfWorkers(QuestSystem.Workplace.WorkplaceStates[eName]);
-			GUI.DeselectEntity(b);
-
-			if table.getn(backupSel) > 0 then
-				for i=1,table.getn(backupSel)do
-					if IsExisting(backupSel[i])then
-						GUI.SelectEntity(backupSel[i]);
-					end
-				end
+	GameCallback_OnBuildingUpgradeComplete = function(_OldID, _NewID)
+		GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod(_OldID, _NewID);
+		local ScriptName = QuestTools.CreateNameForEntity(_NewID);
+		if QuestSystem.Workplace.WorkplaceStates[ScriptName] then
+			local MaxNumberOfworkers = Logic.GetMaxNumWorkersInBuilding(_NewID);
+			local CurrentWorkerAmount = 0;
+			if QuestSystem.Workplace.WorkplaceStates[ScriptName] == "half" then
+				CurrentWorkerAmount = math.ceil(MaxNumberOfworkers/2);
+			elseif QuestSystem.Workplace.WorkplaceStates[ScriptName] == "full" then
+				CurrentWorkerAmount = MaxNumberOfworkers;
 			end
+			QuestSync:SnchronizedCall(
+				QuestSystem.Workplace.ScriptEvent,
+				_NewID, CurrentWorkerAmount,
+				QuestSystem.Workplace.WorkplaceStates[ScriptName]
+			);
 		end
 	end
 end
@@ -316,7 +312,7 @@ function QuestSystem.Workplace:UpdateDisplay()
 	if sel then
 		local inTable = false;
 		for k,v in pairs(self.WorkplaceStates)do
-			local eName = QSBTools.CreateNameForEntity(sel);
+			local eName = QuestTools.CreateNameForEntity(sel);
 			if eName == tostring(k) then
 				inTable = true;
 				if IsExisting(eName)then

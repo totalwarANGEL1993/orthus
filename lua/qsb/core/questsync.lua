@@ -14,13 +14,13 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
--- <li>qsb.lib.qsbtools</li>
+-- <li>qsb.lib.questtools</li>
 -- </ul>
 --
 -- @set sort=true
 --
 
-MPSync = {
+QuestSync = {
     ScriptEvents = {},
     Transactions = {},
     TransactionParameter = {},
@@ -30,15 +30,15 @@ MPSync = {
 
 ---
 -- Installs the module.
--- @within MPSync
+-- @within QuestSync
 -- @local
 --
-function MPSync:Install()
+function QuestSync:Install()
     self:OverrideMessageReceived();
     self:ActivateTributePaidTrigger();
 
     if CNetwork then
-        CNetwork.SetNetworkHandler("MPSync_CNetwork_SnchronizedCall", function(_Name, _PlayerID, _ID, ...)
+        CNetwork.SetNetworkHandler("QuestSync_CNetwork_SnchronizedCall", function(_Name, _PlayerID, _ID, ...)
             if CNetwork.IsAllowedToManipulatePlayer(_Name, _PlayerID) then
                 if self.ScriptEvents[_ID] then
                     arg = arg or {};
@@ -53,9 +53,9 @@ end
 -- Creates an script event and returns the event ID. Use the ID to call the
 -- created event.
 -- @param[type=function] _Function Function to call
--- @see MPSync:SnchronizedCall
+-- @see QuestSync:SnchronizedCall
 --
-function MPSync:CreateScriptEvent(_Function)
+function QuestSync:CreateScriptEvent(_Function)
     self.UniqueActionCounter = self.UniqueActionCounter +1;
     local ActionIndex = self.UniqueActionCounter;
 
@@ -66,12 +66,23 @@ function MPSync:CreateScriptEvent(_Function)
 end
 
 ---
--- Calls the script event synchronous for all players.
--- @param[type=number] _Function ID of script event
--- @param              ...       List of Parameters (String or Number)
--- @see MPSync:CreateScriptEvent
+-- Removes an script event.
+-- @param[type=number] _ID ID of event
+-- @see QuestSync:CreateScriptEvent
 --
-function MPSync:SnchronizedCall(_ID, ...)
+function QuestSync:DeleteScriptEvent(_ID)
+    if _ID and self.ScriptEvents[_ID] then
+        self.ScriptEvents[_ID] = nil;
+    end
+end
+
+---
+-- Calls the script event synchronous for all players.
+-- @param[type=number] _ID ID of script event
+-- @param              ... List of Parameters (String or Number)
+-- @see QuestSync:CreateScriptEvent
+--
+function QuestSync:SnchronizedCall(_ID, ...)
     arg = arg or {};
     local Msg = "";
     if table.getn(arg) > 0 then
@@ -84,8 +95,8 @@ function MPSync:SnchronizedCall(_ID, ...)
     
     if CNetwork then
         CNetwork.SendCommand(
-            "MPSync_CNetwork_SnchronizedCall",
-            GUI.GetPlayerID(),
+            "QuestSync_CNetwork_SnchronizedCall",
+            PlayerID,
             _ID,
             unpack(arg)
         );
@@ -94,10 +105,10 @@ function MPSync:SnchronizedCall(_ID, ...)
     end
 end
 -- This is a dummy function needed to be called only on the community server.
-function MPSync_CNetwork_SnchronizedCall(_PlayerID, _ID, ...)
+function QuestSync_CNetwork_SnchronizedCall(_PlayerID, _ID, ...)
 end
 
-function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
+function QuestSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
     -- Create message
     _Msg = _Msg or "";
     local PreHashedMsg = "".._ID..":::" .._PlayerID..":::" .._Time.. ":::" .._Msg;
@@ -111,27 +122,27 @@ function MPSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
         MPGame_ApplicationCallback_ReceivedChatMessage(TransMsg, 0, _PlayerID);
     end
     -- Wait for ack
-    QSBTools.StartSimpleHiResJobEx(function(_PlayerID, _Hash, _Time, ...)
+    QuestTools.StartSimpleHiResJobEx(function(_PlayerID, _Hash, _Time, ...)
         if _Time +2 < Logic.GetTime() then
             -- Message("DEBUG: Timeout for " .._Hash);
             return true;
         end
-        local ActivePlayers = MPSync:GetActivePlayers();
+        local ActivePlayers = QuestSync:GetActivePlayers();
         local AllAcksReceived = true;
         for i= 1, table.getn(ActivePlayers), 1 do
-            if _PlayerID ~= ActivePlayers[i] and not MPSync.Transactions[Hash][ActivePlayers[i]] then
+            if _PlayerID ~= ActivePlayers[i] and not QuestSync.Transactions[Hash][ActivePlayers[i]] then
                 AllAcksReceived = false;
             end
         end
         if AllAcksReceived == true then
-            local ID = MPSync:CreateTribute(_PlayerID, _ID, unpack(_Parameter));
-            MPSync:PayTribute(_PlayerID, ID);
+            local ID = QuestSync:CreateTribute(_PlayerID, _ID, unpack(_Parameter));
+            QuestSync:PayTribute(_PlayerID, ID);
             return true;
         end
     end, _PlayerID, Hash, Logic.GetTime(), unpack(_Parameter));
 end
 
-function MPSync:TransactionAcknowledge(_Hash, _Time)
+function QuestSync:TransactionAcknowledge(_Hash, _Time)
     -- Create message
     local PlayerID = GUI.GetPlayerID();
     local TransMsg = "___MPAcknowledge:::" .._Hash.. ":::" ..PlayerID.. ":::" .._Time.. ":::";
@@ -143,7 +154,7 @@ function MPSync:TransactionAcknowledge(_Hash, _Time)
     end
 end
 
-function MPSync:TransactionManage(_Type, _Msg)
+function QuestSync:TransactionManage(_Type, _Msg)
     -- Handle received request
     if _Type == 1 then
         local Parameters      = self:TransactionSplitMessage(_Msg);
@@ -153,7 +164,7 @@ function MPSync:TransactionManage(_Type, _Msg)
         local Timestamp       = table.remove(Parameters, 1);
         if SendingPlayerID ~= GUI.GetPlayerID() then
             self:TransactionAcknowledge(Hash, Timestamp);
-            MPSync:CreateTribute(SendingPlayerID, Action, unpack(Parameters));
+            QuestSync:CreateTribute(SendingPlayerID, Action, unpack(Parameters));
         end
     -- Handle received client ack
     elseif _Type == 2 then
@@ -166,7 +177,7 @@ function MPSync:TransactionManage(_Type, _Msg)
     end
 end
 
-function MPSync:TransactionSplitMessage(_Msg)
+function QuestSync:TransactionSplitMessage(_Msg)
     local MsgParts = {};
     local Msg = _Msg;
     repeat
@@ -180,7 +191,7 @@ function MPSync:TransactionSplitMessage(_Msg)
     return MsgParts;
 end
 
-function MPSync:CreateTribute(_PlayerID, _ID, ...)
+function QuestSync:CreateTribute(_PlayerID, _ID, ...)
     self.UniqueTributeCounter = self.UniqueTributeCounter +1;
     Logic.AddTribute(_PlayerID, self.UniqueTributeCounter, 0, 0, "", {[ResourceType.Gold] = 0});
     self.TransactionParameter[self.UniqueTributeCounter] = {
@@ -190,20 +201,20 @@ function MPSync:CreateTribute(_PlayerID, _ID, ...)
     return self.UniqueTributeCounter;
 end
 
-function MPSync:PayTribute(_PlayerID, _TributeID)
+function QuestSync:PayTribute(_PlayerID, _TributeID)
     GUI.PayTribute(_PlayerID, _TributeID);
 end
 
-function MPSync:ActivateTributePaidTrigger()
-    QSBTools.StartInlineJob(
+function QuestSync:ActivateTributePaidTrigger()
+    QuestTools.StartInlineJob(
         Events.LOGIC_EVENT_TRIBUTE_PAID,
         function()
-            MPSync:OnTributePaidTrigger(Event.GetTributeUniqueID());
+            QuestSync:OnTributePaidTrigger(Event.GetTributeUniqueID());
         end
     );
 end
 
-function MPSync:OnTributePaidTrigger(_ID)
+function QuestSync:OnTributePaidTrigger(_ID)
     if self.TransactionParameter[_ID] then
         local ActionID  = self.TransactionParameter[_ID].Action;
         local Parameter = self.TransactionParameter[_ID].Parameter;
@@ -213,28 +224,28 @@ function MPSync:OnTributePaidTrigger(_ID)
     end
 end
 
-function MPSync:OverrideMessageReceived()
+function QuestSync:OverrideMessageReceived()
     if self.IsActive then
         return true;
     end
     self.IsActive = true;
 
-    MPGame_ApplicationCallback_ReceivedChatMessage_Orig_MPSync = MPGame_ApplicationCallback_ReceivedChatMessage
+    MPGame_ApplicationCallback_ReceivedChatMessage_Orig_QuestSync = MPGame_ApplicationCallback_ReceivedChatMessage
     MPGame_ApplicationCallback_ReceivedChatMessage = function(_Message, _AlliedOnly, _SenderPlayerID)
         -- Receive transaction
         local s, e = string.find(_Message, "___MPTransact:::");
         if e then
-            MPSync:TransactionManage(1, string.sub(_Message, e+1));
+            QuestSync:TransactionManage(1, string.sub(_Message, e+1));
             return;
         end
         -- Receive ack
         local s, e = string.find(_Message, "___MPAcknowledge:::");
         if e then
-            MPSync:TransactionManage(2, string.sub(_Message, e+1));
+            QuestSync:TransactionManage(2, string.sub(_Message, e+1));
             return;
         end
         -- Execute callback
-        MPGame_ApplicationCallback_ReceivedChatMessage_Orig_MPSync(_Message, _AlliedOnly, _SenderPlayerID);
+        MPGame_ApplicationCallback_ReceivedChatMessage_Orig_QuestSync(_Message, _AlliedOnly, _SenderPlayerID);
     end
 end
 
@@ -243,7 +254,7 @@ end
 -- @return[type=boolean] Mission runs in multiplayer
 -- @local
 --
-function MPSync:IsMultiplayerGame()
+function QuestSync:IsMultiplayerGame()
     return XNetwork.Manager_DoesExist() == 1;
 end
 
@@ -252,7 +263,7 @@ end
 -- @return[type=boolean] Game is History Edition
 -- @local
 --
-function MPSync:IsHistoryEdition()
+function QuestSync:IsHistoryEdition()
     return XNetwork.Manager_IsNATReady ~= nil;
 end
 
@@ -262,7 +273,7 @@ end
 -- @return[type=boolean] Game is Community Edition
 -- @local
 --
-function MPSync:IsCNetwork()
+function QuestSync:IsCNetwork()
     return CNetwork ~= nil;
 end
 
@@ -271,7 +282,7 @@ end
 -- @return[type=boolean] Game is Original Edition
 -- @local
 --
-function MPSync:IsOriginal()
+function QuestSync:IsOriginal()
     return not self:IsHistoryEdition() and not self:IsCNetwork();
 end
 
@@ -282,7 +293,7 @@ end
 -- @return[type=boolean] Game has latest patch
 -- @local
 --
-function MPSync:IsPatched()
+function QuestSync:IsPatched()
     if not self:IsOriginal() then
         return true;
     end
@@ -295,12 +306,12 @@ end
 -- @return[type=boolean] Player is active
 -- @local
 --
-function MPSync:IsPlayerActive(_PlayerID)
+function QuestSync:IsPlayerActive(_PlayerID)
     local Players = {};
     if self:IsMultiplayerGame() then
         return Logic.PlayerGetGameState(_PlayerID) == 1;
     end
-    return true;
+    return _PlayerID == GUI.GetPlayerID();
 end
 
 ---
@@ -308,7 +319,7 @@ end
 -- @return[type=number] ID of Player
 -- @local
 --
-function MPSync:GetHostPlayerID()
+function QuestSync:GetHostPlayerID()
     if self:IsMultiplayerGame() then
         for k, v in pairs(self:GetActivePlayers()) do
             local HostNetworkAddress   = XNetwork.Host_UserInSession_GetHostNetworkAddress();
@@ -325,7 +336,7 @@ end
 -- @return[type=boolean] Player is host
 -- @local
 --
-function MPSync:IsPlayerHost(_PlayerID)
+function QuestSync:IsPlayerHost(_PlayerID)
     if self:IsMultiplayerGame() then
         local HostNetworkAddress   = XNetwork.Host_UserInSession_GetHostNetworkAddress();
         local PlayerNetworkAddress = XNetwork.GameInformation_GetNetworkAddressByPlayerID(_PlayerID);
@@ -337,9 +348,9 @@ end
 ---
 -- Returns the number of human players. In Singleplayer this will always be 1.
 -- @return[type=number] Amount of humans
--- @within MPSync
+-- @within QuestSync
 --
-function MPSync:GetActivePlayers()
+function QuestSync:GetActivePlayers()
     local Players = {};
     if self:IsMultiplayerGame() then
         -- TODO: Does that fix everything for Community Server?
@@ -358,9 +369,9 @@ end
 -- Returns the team the player is in.
 -- @param[type=number] _PlayerID ID of player
 -- @return[type=number] Team of player
--- @within MPSync
+-- @within QuestSync
 --
-function MPSync:GetTeamOfPlayer(_PlayerID)
+function QuestSync:GetTeamOfPlayer(_PlayerID)
     if self:IsMultiplayerGame() then
         return XNetwork.GameInformation_GetPlayerTeam(_PlayerID);
     else

@@ -1,0 +1,2 @@
+#!/bin/bash
+lua lua/ldoc/ldoc.lua -d doc lua/qsb

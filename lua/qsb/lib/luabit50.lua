@@ -1,10 +1,10 @@
---[[---------------
+--[[ ---------------
 LuaBit v0.4
--------------------
+-- -----------------
 a bitwise operation lib for lua.
 http://luaforge.net/projects/bit/
 How to use:
--------------------
+-- -----------------
  bit.bnot(n) -- bitwise not (~n)
  bit.band(m, n) -- bitwise and (m & n)
  bit.bor(m, n) -- bitwise or (m | n)
@@ -19,10 +19,10 @@ Please note that bit.brshift and bit.blshift only support number within
  bit.tobits(n) -- convert n into a bit table(which is a 1/0 sequence)
                -- high bits first
  bit.tonumb(bit_tbl) -- convert a bit table into a number 
--------------------
+-- -----------------
 Under the MIT license.
 copyright(c) 2006~2007 hanzhao (abrash_han@hotmail.com)
---]]---------------
+--]] ---------------
 
 --do
 

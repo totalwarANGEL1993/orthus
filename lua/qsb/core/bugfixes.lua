@@ -28,7 +28,7 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
--- <li>qsb.core.mpsync</li>
+-- <li>qsb.core.questsync</li>
 -- <li>qsb.core.questsystem</li>
 -- </ul>
 --
@@ -180,20 +180,20 @@ function Bugfixes:Install()
 end
 
 function Bugfixes:CreateScriptEvents()
-    self.ScriptEvents.PostPlayerBlessed = MPSync:CreateScriptEvent(function(_PlayerID, _Time, _Bless)
+    self.ScriptEvents.PostPlayerBlessed = QuestSync:CreateScriptEvent(function(_PlayerID, _Time, _Bless)
         Bugfixes.BlessLimit[_Bless][_PlayerID] = _Time;
     end);
-    self.ScriptEvents.PostWeatherChanged = MPSync:CreateScriptEvent(function(_Time)
+    self.ScriptEvents.PostWeatherChanged = QuestSync:CreateScriptEvent(function(_Time)
         Bugfixes.WeatherChangeLimit.Last = _Time;
     end);
 end
 
 function Bugfixes:PostPlayerBlessed(_PlayerID, _Time, _Bless)
-    MPSync:SnchronizedCall(self.ScriptEvents.PostPlayerBlessed, _PlayerID, _Time, _Bless);
+    QuestSync:SnchronizedCall(self.ScriptEvents.PostPlayerBlessed, _PlayerID, _Time, _Bless);
 end
 
 function Bugfixes:PostWeatherChanged(_Time)
-    MPSync:SnchronizedCall(self.ScriptEvents.PostWeatherChanged, _Time);
+    QuestSync:SnchronizedCall(self.ScriptEvents.PostWeatherChanged, _Time);
 end
 
 function Bugfixes:OverrideGuiSellBuilding()
@@ -357,8 +357,8 @@ function Bugfixes:UpdateFindViewButtons()
         if Entities.PU_Thief then
             ThiefAmount = Logic.GetNumberOfEntitiesOfTypeOfPlayer(PlayerID, Entities.PU_Thief);
         end
-        local AllCannons  = QSBTools.GetAllCannons(PlayerID);
-        local AllLeader   = QSBTools.GetAllLeader(PlayerID);
+        local AllCannons  = QuestTools.GetAllCannons(PlayerID);
+        local AllLeader   = QuestTools.GetAllLeader(PlayerID);
 
         local ExistingMap = {}
         for i= 1, table.getn(AllLeader), 1 do

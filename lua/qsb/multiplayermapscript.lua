@@ -1,32 +1,31 @@
 -- Default mapscript for Multiplayer.
 
 -- Include globals
-Script.Load("data/script/maptools/main.lua");
 Script.Load("data/script/maptools/ai/support.lua");
 Script.Load("data/script/maptools/multiplayer/multiplayertools.lua");
 Script.Load("data/script/maptools/tools.lua");
 Script.Load("data/script/maptools/weathersets.lua");
 Script.Load("data/script/maptools/comfort.lua");
-Script.Load("data/script/maptools/mapeditortools.lua");
+Script.Load("data/script/maptools/dynamicfog.lua");
+Script.Load("data/script/maptools/extra2comfort.lua");
 
 -- Load QSB
-Script.Load(gvBasePath.. "lib/libloader.lua");
-Script.Load(gvBasePath.. "core/mpsync.lua");
-Script.Load(gvBasePath.. "core/bugfixes.lua");
-Script.Load(gvBasePath.. "core/questsystem.lua");
-Script.Load(gvBasePath.. "core/questdebug.lua");
-
-Script.Load(gvBasePath.. "ext/extraloader.lua");
-
-Script.Load(gvBasePath.. "questbehavior.lua");
-Script.Load(gvBasePath.. "multiplayersystem.lua");
-Script.Load(gvBasePath.. "treasure.lua");
+Script.Load(gvBasePath.. "qsb/core/loader.lua");
+Script.Load(gvBasePath.. "qsb/lib/loader.lua");
+Script.Load(gvBasePath.. "qsb/ext/loader.lua");
+Script.Load(gvBasePath.. "qsb/questbehavior.lua");
+Script.Load(gvBasePath.. "qsb/multiplayersystem.lua");
+Script.Load(gvBasePath.. "qsb/treasure.lua");
 
 -- Settings ----------------------------------------------------------------- --
 
+function Mission_InitWeatherGfxSets()
+    SetupHighlandWeatherGfxSet();
+end
+
 function GameCallback_OnGameStart()
     -- Weather
-    SetupHighlandWeatherGfxSet();
+    Mission_InitWeatherGfxSets();
     AddPeriodicSummer(10);
 
     -- Music 
@@ -37,7 +36,7 @@ function GameCallback_OnGameStart()
     MultiplayerTools.SetUpGameLogicOnMPGameConfig();
     
     -- Singleplayer
-    if not MPSync or not MPSync:IsMultiplayerGame() then
+    if not QuestSync or not QuestSync:IsMultiplayerGame() then
 		for i=1, 8, 1 do
 			MultiplayerTools.DeleteFastGameStuff(i);
 		end

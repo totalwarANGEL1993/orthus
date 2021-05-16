@@ -12,7 +12,8 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.core.mpsync</li>
+-- <li>qsb.core.questsync</li>
+-- <li>qsb.core.questtools</li>
 -- <li>qsb.core.questsystem</li>
 -- </ul>
 --
@@ -53,14 +54,11 @@ end
 -- @local
 --
 function QuestSystem.GameSpeedSwitch:Install()
-    -- Speed up is not allowed in multiplayer hence will not be started.
-    if XNetwork.Manager_DoesExist() == 1 then
-        return;
-    end
     if not self.m_Installed then
         self.m_Installed = true;
         self:OnSaveGameLoaded();
         self:OverrideGUI();
+        self:SetSpeedUpAllowed(XNetwork.Manager_DoesExist() == 0);
         AddOnSaveLoadedAction(function()
             QuestSystem.GameSpeedSwitch:OnSaveGameLoaded()
         end);
@@ -134,7 +132,7 @@ function QuestSystem.GameSpeedSwitch:OverrideGUI()
         GUITooltip_Generic_Orig_GameSpeed = GUITooltip_Generic;
         GUITooltip_Generic = function(a)
             if a == "MenuMap/OnlineHelp" then
-                local Language = (XNetworkUbiCom.Tool_GetCurrentLanguageShortName() == "de" and "de") or "en";
+                local Language = QuestTools.GetLanguage();
                 local Text;
                 if QuestSystem.GameSpeedSwitch.m_SpeedUpAllowed then
                     local Template = {
@@ -170,11 +168,6 @@ end
 -- @local
 --
 function QuestSystem.GameSpeedSwitch:OnSaveGameLoaded()
-    -- Speed up is not allowed in multiplayer hence will not be loaded.
-    -- (if a multiplayer game is somehow saved...)
-    if XNetwork.Manager_DoesExist() == 1 then
-        return;
-    end
     XGUIEng.TransferMaterials("StatisticsWindowTimeScaleButton", "OnlineHelpButton" );
     XGUIEng.SetWidgetPositionAndSize("OnlineHelpButton",200,2,35,35);
     self:OverrideGUI();
