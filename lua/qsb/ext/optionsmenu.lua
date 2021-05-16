@@ -109,7 +109,8 @@ function OptionMenu:Install()
 end
 
 function OptionMenu:CreateScriptEvents()
-    self.Events.OptionConfirmed = QuestSync:CreateScriptEvent(function(_Count)
+    self.Events.OptionConfirmed = QuestSync:CreateScriptEvent(function(name, _Count)
+        -- TODO: Check current user name
         OptionMenu:OnOptionSelected(_Count);
     end);
 end

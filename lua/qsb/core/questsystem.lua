@@ -101,10 +101,12 @@ function QuestSystem:InstallQuestSystem()
             self.QuestDescriptions[i] = {};
         end
 
-        -- Real random numbers
-        local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
-        if QuestSync:IsPlayerHost(GUI.GetPlayerID()) then
-            QuestSync:SnchronizedCall(self.MathRandomSeedScriptEvent, TimeString);
+        -- Real random numbers (not needed for CNetwork)
+        if not CNetwork then
+            local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
+            if QuestSync:IsPlayerHost(GUI.GetPlayerID()) then
+                QuestSync:SnchronizedCall(self.MathRandomSeedScriptEvent, TimeString);
+            end
         end
 
         -- Quest event trigger

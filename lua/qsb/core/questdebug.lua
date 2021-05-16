@@ -194,7 +194,7 @@ function QuestDebug:TokenizeCommand(_Message)
 end
 
 function QuestDebug:CreateScriptEvents()
-    self.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
+    self.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _QuestID, _Result)
         if _QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
                 Message("Can not find quest!");
@@ -222,7 +222,7 @@ function QuestDebug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.AlterQuestState = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _State)
+    self.ScriptEvents.AlterQuestState = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _QuestID, _State)
         if _QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
                 Message("Can not find quest!");
@@ -255,7 +255,7 @@ function QuestDebug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.WakeUpHero = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Hero)
+    self.ScriptEvents.WakeUpHero = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _Hero)
         if Logic.IsHero(GetID(_Hero)) == 1 then
             local ID = ReplaceEntity(_Hero, Logic.GetEntityType(GetID(_Hero)));
             if GUI.GetPlayerID() == _ExecutingPlayer then
@@ -264,7 +264,7 @@ function QuestDebug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.AlterDiplomacyState = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Player1, _Player2, _State)
+    self.ScriptEvents.AlterDiplomacyState = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _Player1, _Player2, _State)
         local Exploration = (_State == Diplomacy.Friendly and 1) or 0;
         Logic.SetShareExplorationWithPlayerFlag(_Player1, _Player2, Exploration);
         Logic.SetShareExplorationWithPlayerFlag(_Player2, _Player1, Exploration);	
@@ -274,13 +274,13 @@ function QuestDebug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.ClearNotes = QuestSync:CreateScriptEvent(function(_ExecutingPlayer)
+    self.ScriptEvents.ClearNotes = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer)
         if GUI.GetPlayerID() == _ExecutingPlayer then
             GUI.ClearNotes();
         end
     end);
 
-    self.ScriptEvents.ShowQuestStatus = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Option, _Quest)
+    self.ScriptEvents.ShowQuestStatus = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _Option, _Quest)
         if GUI.GetPlayerID() ~= _ExecutingPlayer then
             return;
         end
@@ -320,7 +320,7 @@ function QuestDebug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.ShowCheatCodes = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Option)
+    self.ScriptEvents.ShowCheatCodes = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _Option)
         if GUI.GetPlayerID() ~= _ExecutingPlayer then
             return;
         end
@@ -395,7 +395,7 @@ function QuestDebug:CreateScriptEvents()
         GUI.AddStaticNote(MessageText);
     end);
 
-    self.ScriptEvents.ChangeEntityPlayer = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Entity, _Player)
+    self.ScriptEvents.ChangeEntityPlayer = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _Entity, _Player)
         if IsExisting(_Entity) then
             if Logic.IsLeader(_Entity) == 1 then
                 Tools.ChangeGroupPlayerID(_Entity, _Player);
@@ -409,7 +409,7 @@ function QuestDebug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.ChangeEntityHealth = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Entity, _Flag)
+    self.ScriptEvents.ChangeEntityHealth = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _Entity, _Flag)
         if IsExisting(_Entity) then
             if _Flag == 0 then
                 if Logic.IsLeader(_Entity) == 1 then
@@ -429,7 +429,7 @@ function QuestDebug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.CheatUnitAtMousePosition = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _X, _Y, _Flag)
+    self.ScriptEvents.CheatUnitAtMousePosition = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _X, _Y, _Flag)
         local pos = {X= _X, Y= _Y};
         if QuestTools.IsValidPosition(pos) then
             if _Flag == 1 then
@@ -482,11 +482,11 @@ function QuestDebug:CreateScriptEvents()
         end
     end);
 
-    self.ScriptEvents.AddResourcesToPlayer = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _Type, _Amount)
+    self.ScriptEvents.AddResourcesToPlayer = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _Type, _Amount)
         Logic.AddToPlayersGlobalResource(_ExecutingPlayer, _Type, _Amount);
     end);
 
-    self.ScriptEvents.CheatTechnologies = QuestSync:CreateScriptEvent(function(_ExecutingPlayer)
+    self.ScriptEvents.CheatTechnologies = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer)
         CheatTechnologies(_ExecutingPlayer)
     end);
 end

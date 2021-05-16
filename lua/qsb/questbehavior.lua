@@ -532,7 +532,7 @@ end
 
 function QuestSystemBehavior:CreateScriptEvents()
     QuestSync:DeleteScriptEvent(QuestDebug.ScriptEvents.AlterQuestResult);
-    QuestDebug.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
+    QuestDebug.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _QuestID, _Result)
         if QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
                 Message("Can not find quest: " ..command[2]);
@@ -573,7 +573,7 @@ function QuestSystemBehavior:CreateScriptEvents()
     end);
 
     QuestSync:DeleteScriptEvent(QuestDebug.ScriptEvents.AlterQuestState);
-    QuestDebug.ScriptEvents.AlterQuestState = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _State)
+    QuestDebug.ScriptEvents.AlterQuestState = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _QuestID, _State)
         if QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
                 Message("Can not find quest: " ..command[2]);
