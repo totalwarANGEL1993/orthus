@@ -592,6 +592,7 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
         UnitsToBuild    = copy(self.DefaultUnitsToBuild),
         EmploysArmies   = _Strength > 0,
         Strength        = _Strength,
+        RodeLength      = 4000,
         MilitaryCosts   = false,
     };
     table.insert(self.Players[_PlayerID].UnitsToBuild, Entities["PV_Cannon" .._TechLevel]);
@@ -910,14 +911,15 @@ end
 
 function AiController:ControlPlayerAssault(_PlayerID, _Position)
     -- no enemies there
-    local Enemies = AiArmy:GetEnemiesInArea(_Position, 4500, _PlayerID);
+    local Enemies = AiArmy:GetEnemiesInArea(_Position, self.Players[_PlayerID].RodeLength, _PlayerID);
     if table.getn(Enemies) == 0 then
         return;
     end
 
     -- check occupied
     for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
-        if self.Players[_PlayerID].Armies[i].AttackTarget == _Position then
+        local Army = self.Players[_PlayerID].Armies[i];
+        if Army:GetAttackTarget() and Army:GetAttackTarget()[1] == _Position then
             return;
         end
     end
@@ -1047,7 +1049,7 @@ function AiController:EmployArmies(_PlayerID)
                     "EmployArmy_Player" .._PlayerID.. "_ID_" ..Index,
                     _PlayerID,
                     self.Players[_PlayerID].HomePosition,
-                    4000,
+                    self.Players[_PlayerID].RodeLength,
                     12
                 );
                 ArmyDisableAttackAbility(ArmyID, math.mod(Index, 3) ~= 0);
