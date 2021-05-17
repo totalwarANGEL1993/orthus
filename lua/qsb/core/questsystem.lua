@@ -803,14 +803,16 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
             Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
         end
         Logic.PlayerSetGameStateToLost(self.m_Receiver);
-        Trigger.DisableTriggerSystem(1);
+        if XNetwork.Manager_DoesExist() == 0 then
+            Trigger.DisableTriggerSystem(1);
+        end
 
     elseif _Behavior[1] == Callbacks.Victory then
         if self.m_Receiver == GUI.GetPlayerID() then
             Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
         end
         Logic.PlayerSetGameStateToWon(self.m_Receiver);
-        if XNetwork.Manager_DoesExist() == 1 then
+        if XNetwork.Manager_DoesExist() == 0 then
             Trigger.DisableTriggerSystem(1);
         end
 

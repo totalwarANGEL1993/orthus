@@ -129,19 +129,46 @@ end
 -- @within Methods
 -- @see CreateQuest
 --
--- @usage CreateQuest {
---     Name = "VictoryCondition",
---     Description = {
---         Title = "Justice!",
---         Text  = "Time for paybeck. Destroy your enemy!",
---         Type  = MAINQUEST_OPEN,
---         Info  = 1
---     },
---
---     Goal_DestroyPlayer(2, "HQ2"),
---     Reward_Victory(),
---     Trigger_Time(0)
--- }
+-- @usage CreateStagedQuest {
+-- 	Name 		= "StagedTraderQuest",
+-- 	Description = {
+-- 		Title = "Die Händler abklappern",
+-- 		Text  = "Sprecht mit allen Händlern und sichert Euch Handelsverträge.",
+-- 		Type  = MAINQUEST_OPEN,
+-- 		Info  = 1,
+-- 	},
+-- 	Stages      = {
+-- 		{
+-- 			Description = {
+-- 				Title = "Sprecht mit dem ersten Händler",
+-- 				Text  = "",
+-- 			},
+-- 			Goal_NPC("trader1"),
+-- 			Reward_Briefing("Trader1Briefing"),
+-- 		},
+-- 		{
+-- 			Description = {
+-- 				Title = "Sprecht mit dem zweiten Händler",
+-- 				Text  = "",
+-- 			},
+-- 			Goal_NPC("trader2"),
+-- 			Reward_Briefing("Trader1Briefing"),
+-- 		},
+-- 		{
+-- 			Description = {
+-- 				Title = "Sprecht mit dem dritten Händler",
+-- 				Text  = "",
+-- 			},
+-- 			Goal_NPC("trader3"),
+-- 			Reward_Briefing("Trader1Briefing"),
+-- 		},
+-- 		{
+-- 			Goal_InstantSuccess(),
+-- 			Trigger_QuestSuccess("StagedTraderQuest@Stage3", 5),
+-- 		}
+-- 	},
+-- 	Trigger_Time(5),
+-- };
 --
 function CreateStagedQuest(_Data)
     if not _Data.Name then

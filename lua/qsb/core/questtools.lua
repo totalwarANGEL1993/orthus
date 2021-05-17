@@ -185,6 +185,24 @@ round = QuestTools.Round;
 -- Entities --
 
 ---
+-- Returns the relative health of the entity.
+--
+-- @param               _Entity Skriptname or ID of entity
+-- @return[type=number] Relative health
+-- @within Entities
+--
+function QuestTools.GetHealth(_Entity)
+    local EntityID = GetEntityId(_Entity);
+    if not Tools.IsEntityAlive(EntityID) then
+        return 0;
+    end
+    local MaxHealth = Logic.GetEntityMaxHealth(EntityID);
+    local Health = Logic.GetEntityHealth(EntityID);
+    return (Health / MaxHealth) * 100;
+end
+GetHealth = QuestTools.GetHealth;
+
+---
 -- Sets the visibility of the entity.
 --
 -- @param               _Entity Skriptname or ID of entity

@@ -355,6 +355,26 @@ function QuestSync:GetActivePlayers()
 end
 
 ---
+-- Returns all active teams.
+-- @return[type=number] List of teams
+-- @within QuestSync
+--
+function QuestSync:GetActiveTeams()
+    if self:IsMultiplayerGame() then
+        local Teams = {};
+        for k, v in pairs(self:GetActivePlayers()) do
+            local Team = self:GetTeamOfPlayer(v);
+            if not QuestTools.IsInTable(Team, Teams) then
+                table.insert(Teams, Team);
+            end
+        end
+        return Teams;
+    else
+        return {1};
+    end
+end
+
+---
 -- Returns the team the player is in.
 -- @param[type=number] _PlayerID ID of player
 -- @return[type=number] Team of player
