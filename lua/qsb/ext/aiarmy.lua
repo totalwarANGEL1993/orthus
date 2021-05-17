@@ -781,7 +781,7 @@ function AiArmy:AdvanceStateController()
         end
         return;
     end
-    self:Assemble(500);
+    self:Assemble(300);
 end
 
 -- -------------------------------------------------------------------------- --
@@ -1082,7 +1082,7 @@ end
 
 function AiArmy:Assemble(_Area)
     local IsScattered = false;
-    local PositionMap = AiArmy:GetArmyBlockPositonMap(self:GetArmyPosition());
+    local PositionMap = self:GetArmyBlockPositonMap(self:GetArmyPosition());
     for i= 1, table.getn(self.Troops), 1 do
         if self.State ~= ArmySubStates.Assemble then
             if GetDistance(self.Troops[i], PositionMap[self.Troops[i]]) > _Area then
@@ -1107,17 +1107,17 @@ end
 
 function AiArmy:Advance(_Enemies)
     local AreaSize = self.RodeLength;
-    self:ControlTroops(self:GetArmyPosition(), AreaSize);
+    self:ControlTroops(self:GetArmyPosition(), AreaSize, _Enemies);
 end
 
 function AiArmy:Assault(_Enemies)
     local AreaSize = self.RodeLength + self.OuterRange;
-    self:ControlTroops(self:GetArmyPosition(), AreaSize);
+    self:ControlTroops(self:GetArmyPosition(), AreaSize, _Enemies);
 end
 
 function AiArmy:Defend(_Enemies)
     local AreaSize = self.RodeLength + self.OuterRange;
-    self:ControlTroops(self:GetArmyPosition(), AreaSize);
+    self:ControlTroops(self:GetArmyPosition(), AreaSize, _Enemies);
 end
 
 function AiArmy:ControlTroops(_Position, _Area, _Enemies)
