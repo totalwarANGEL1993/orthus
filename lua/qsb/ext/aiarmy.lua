@@ -740,7 +740,7 @@ function AiArmy:AdvanceStateController()
     -- (workaround that they don't loop between advance and battle infinitly)
     local Enemies;
     if self:IsMoving() or self:IsFighting() then
-        Enemies = self:GetEnemiesInArea(self:GetArmyFrontPosition(), self.RodeLength);
+        Enemies = self:GetEnemiesInArea(self:GetArmyFrontPosition(), self.RodeLength + self.OuterRange);
     else
         Enemies = self:GetEnemiesInArea(self:GetArmyPosition(), self.RodeLength);
     end
@@ -781,7 +781,7 @@ function AiArmy:AdvanceStateController()
         end
         return;
     end
-    self:Assemble(2500);
+    self:Assemble(2000);
 end
 
 -- -------------------------------------------------------------------------- --
@@ -1081,32 +1081,11 @@ end
 -- -------------------------------------------------------------------------- --
 
 function AiArmy:Assemble(_Area)
-    -- local IsScattered = false;
-    -- local PositionMap = self:GetArmyBlockPositonMap(self:GetArmyPosition());
-    -- for i= 1, table.getn(self.Troops), 1 do
-    --     if self.SubState ~= ArmySubStates.Assemble then
-    --         if GetDistance(self.Troops[i], PositionMap[self.Troops[i]]) > _Area then
-    --             IsScattered = true;
-    --             break;
-    --         end
-    --     end
-    -- end
-    -- if IsScattered then
-    --     if self.SubState ~= ArmySubStates.Assemble then
-    --         self:MoveAsBlock(self:GetArmyPosition(), false, true);
-    --         self.SubState = ArmySubStates.Assemble;
-    --     end
-    -- else
-    --     if self.SubState == ArmySubStates.Assemble then
-    --         self.SubState = ArmySubStates.None;
-    --     end
-    -- end
-
     local IsScattered = false;
-    local Position = self:GetArmyPosition();
+    local PositionMap = self:GetArmyBlockPositonMap(self:GetArmyPosition());
     for i= 1, table.getn(self.Troops), 1 do
         if self.SubState ~= ArmySubStates.Assemble then
-            if GetDistance(self.Troops[i], Position) > _Area then
+            if GetDistance(self.Troops[i], PositionMap[self.Troops[i]]) > _Area then
                 IsScattered = true;
                 break;
             end
@@ -1122,6 +1101,27 @@ function AiArmy:Assemble(_Area)
             self.SubState = ArmySubStates.None;
         end
     end
+
+    -- local IsScattered = false;
+    -- local Position = self:GetArmyPosition();
+    -- for i= 1, table.getn(self.Troops), 1 do
+    --     if self.SubState ~= ArmySubStates.Assemble then
+    --         if GetDistance(self.Troops[i], Position) > _Area then
+    --             IsScattered = true;
+    --             break;
+    --         end
+    --     end
+    -- end
+    -- if IsScattered then
+    --     if self.SubState ~= ArmySubStates.Assemble then
+    --         self:MoveAsBlock(self:GetArmyPosition(), false, true);
+    --         self.SubState = ArmySubStates.Assemble;
+    --     end
+    -- else
+    --     if self.SubState == ArmySubStates.Assemble then
+    --         self.SubState = ArmySubStates.None;
+    --     end
+    -- end
 end
 
 -- -------------------------------------------------------------------------- --
@@ -1409,11 +1409,11 @@ GroupTargetingPriorities.Cannon = {
 GroupTargetingPriorities.LightCavalry = {
     ["Hero"] = 6,
     ["Cannon"] = 5,
+    ["MilitaryBuilding"] = 4,
     ["Spear"] = 3,
     ["Sword"] = 3,
     ["Hero10"] = 3,
     ["Hero4"] = 3,
-    ["MilitaryBuilding"] = 0,
     ["EvilLeader"] = 0,
     ["LongRange"] = 0,
     ["Rifle"] = 0,
