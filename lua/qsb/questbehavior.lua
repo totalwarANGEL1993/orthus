@@ -3903,7 +3903,7 @@ end
 function b_Goal_DestroyPlayer:CustomFunction(_Quest)
     if not IsExisting(self.Data.Headquarter) then
         if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] then
-            AI.Player_DisableAi(self.Data.PlayerID);
+            AiController:DestroyPlayer(self.Data.PlayerID);
         end
 
         local PlayerEntities = QuestTools.GetPlayerEntities(self.Data.PlayerID, 0);
@@ -4704,10 +4704,60 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateAIPlayer);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Creates an AI player and let it creates any armies.
+-- Destroys an AI player and all of their created armies.
+--
+-- <b>Note</b>: All armies of the player will be deleted. Even those that are
+-- hidden from the AI's control.
+--
+-- @param[type=number]  _PlayerID  Id of player
+-- @within Rewards
+--
+function Reward_AI_DestroyAIPlayer(...)
+    return b_Reward_AI_DestroyAIPlayer:New(unpack(arg));
+end
+
+b_Reward_AI_DestroyAIPlayer = {
+    Data = {
+        Name = "Reward_AI_DestroyAIPlayer",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_AI_DestroyAIPlayer:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    end
+end
+
+function b_Reward_AI_DestroyAIPlayer:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_AI_DestroyAIPlayer:CustomFunction(_Quest)
+    QuestTools.SaveCall{DestroyAIPlayer, self.Data.PlayerID};
+end
+
+function b_Reward_AI_DestroyAIPlayer:Debug(_Quest)
+    if not self.Data.PlayerID or self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "Player ID must be between 1 and 8!");
+        return true;
+    end
+    return true;
+end
+
+function b_Reward_AI_DestroyAIPlayer:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_AI_DestroyAIPlayer);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Creates an AI player and let it creates their own armies.
 --
 -- Armies will gather at the rally point and will automatically deployed on
--- attack targets and patrol points by the AI.
+-- attack targets and patrol points by the AI. The AI will need accessable
+-- recruiting facilities to buy troops.
 --
 -- <b>Note:</b> Armies will have 12 groups instead of 8!
 --
@@ -4813,7 +4863,11 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_SetupAIPlayer);
 ---
 -- Commands an AI player to build a building at the position.
 --
--- The AI will need serfs to heed the command!
+-- The AI will need serfs to heed the command.
+--
+-- <b>Note</b>: If you wish to perform more complicated construction commands
+-- to let the AI build up a base or something similar then you should use the
+-- classic method by calling an script callback.
 --
 -- @param[type=number] _PlayerID  Id of player
 -- @param[type=string] _Type      Type of building
@@ -5109,6 +5163,58 @@ function b_Reward_AI_CreateSpawnArmy:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateSpawnArmy);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Destroys an army and all existing troops of this army.
+--
+-- @param[type=string] _ArmyName Army identifier
+-- @within Rewards
+--
+function Reward_AI_DestroyArmy(...)
+    return b_Reward_AI_DestroyArmy:New(unpack(arg));
+end
+
+b_Reward_AI_DestroyArmy = {
+    Data = {
+        Name = "Reward_AI_DestroyArmy",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_AI_DestroyArmy:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.ArmyName = _Parameter;
+    end
+end
+
+function b_Reward_AI_DestroyArmy:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_AI_DestroyArmy:CustomFunction(_Quest)
+    if AiControllerArmyNameToID[self.Data.ArmyName] then
+        QuestTools.SaveCall{ArmyDisband, self.Data.ArmyName, true, false};
+    end
+end
+
+function b_Reward_AI_DestroyArmy:Debug(_Quest)
+    if self.Data.ArmyName == "" or self.Data.ArmyName == nil then
+        dbg(_Quest, self, "An army got an invalid identifier!");
+        return true;
+    end
+    if not AiControllerArmyNameToID[self.Data.ArmyName] then
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
+        return true;
+    end
+    return false;
+end
+
+function b_Reward_AI_DestroyArmy:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_AI_DestroyArmy);
 
 -- -------------------------------------------------------------------------- --
 

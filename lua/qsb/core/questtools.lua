@@ -739,9 +739,6 @@ AreAlliesInArea = QuestTools.AreAlliesInArea;
 -- Checks the area for entities of other parties with a diplomatic state to
 -- the player.
 --
--- The first 16 player entities in the area will be evaluated. If they're not
--- settler, heroes or buldings, they will be ignored.
---
 -- @param[type=number] _player   Player ID
 -- @param[type=table]  _position Area center
 -- @param[type=number] _range    Area size
@@ -749,20 +746,22 @@ AreAlliesInArea = QuestTools.AreAlliesInArea;
 -- @return[type=boolean] Entities near
 -- @within Diplomacy
 --
-function QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state)
+QuestTools.EnemyCategoryTypes = {
+    "DefendableBuilding",
+    "Hero",
+    "Headquarters",
+    "Military",
+    "MilitaryBuilding",
+};
+function QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _Position, _range, _state)
 	for i = 1,8 do
         if Logic.GetDiplomacyState(_player, i) == _state then
-            local Data = {Logic.GetPlayerEntitiesInArea(i, 0, _position.X, _position.Y, _range, 16)};
-            table.remove(Data, 1);
-            for j= table.getn(Data), 1, -1 do
-                if Logic.IsSettler(Data[j]) == 0 and Logic.IsBuilding(Data[j]) == 0 and Logic.IsHero(Data[j]) == 0 then
-                    table.remove(Data, j);
+            for k, v in pairs(QuestTools.EnemyCategoryTypes) do
+                if Logic.IsPlayerEntityOfCategoryInArea(i, _Position.X, _Position.Y, _range, v) == 1 then
+                    return true;
                 end
             end
-            if table.getn(Data) > 0 then
-				return true;
-			end
-		end
+        end
 	end
 	return false;
 end
