@@ -132,7 +132,7 @@ function AiArmy:DropProducer(_ScriptName)
         end
     end
     if Index > 0 then
-        self.Producers[k] = nil;
+        self.Producers[Index] = nil;
     end
     table.sort(self.Producers);
     return self;
@@ -289,11 +289,11 @@ function AiArmy:SetHiddenFromAI(_Flag)
     return self;
 end
 
-function AiArmy:GetAttackTarget(_Target)
+function AiArmy:GetAttackTarget()
     return self.AttackTarget;
 end
 
-function AiArmy:GetAttackTargetIndex(_Target)
+function AiArmy:GetAttackTargetIndex()
     if self.AttackTarget then
         return self.AttackTarget.Current;
     end
@@ -332,7 +332,7 @@ function AiArmy:SetGuardTarget(_Target)
 end
 
 function AiArmy:SetGuardPosList(_List)
-    self.GuardPosList = List;
+    self.GuardPosList = _List;
     self.GuardPosList.Visited = {};
     return self;
 end
@@ -543,7 +543,6 @@ function AiArmy:DispatchTroopsToProducers(_Troops)
         for k, v in pairs(self.Producers) do
             if Logic.IsHero(v) == 0 then
                 if v and v:IsAlive() and not QuestTools.IsInTable(Troops[i], v.Troops.Created) then
-                    local ProducerType = Logic.GetEntityType(GetID(v.ScriptName));
                     if v.IsSpawner and v:IsInTypeList(TroopType) then
                         AiArmy:MoveTroop(Troops[i], v.ApproachPosition, true);
                         self:SetTroopSpeed(Troops[i], 1.0);
@@ -784,7 +783,7 @@ function AiArmy:BattleStateController()
         return;
     else
         local Enemies = self:GetEnemiesInArea(AreaCenter, AreaSize);
-        self:ControlTroops(AreaCenter, AreaSize, Enemies);
+        self:ControlTroops(AreaCenter, Enemies);
     end
     self:Assemble(self.RodeLength);
 end
@@ -818,7 +817,7 @@ function AiArmy:ObliberateStateController()
         return;
     else
         local Enemies = self:GetEnemiesInArea(AreaCenter, AreaSize);
-        self:ControlTroops(AreaCenter, AreaSize, Enemies);
+        self:ControlTroops(AreaCenter, Enemies);
     end
     self:Assemble(AreaSize);
 end
@@ -860,7 +859,7 @@ function AiArmy:GuardStateController()
         return;
     else
         local Enemies = self:GetEnemiesInArea(AreaCenter, AreaSize);
-        self:ControlTroops(AreaCenter, AreaSize, Enemies);
+        self:ControlTroops(AreaCenter, Enemies);
     end
     self:Assemble(AreaSize);
 end
@@ -907,22 +906,20 @@ function AiArmy:RefillStateController()
         if self.IsRespawningArmy then
             if not self.InitialSpawned then
                 local Spawner = self:GetSpawnerProducers();
-                if table.getn(Spawner) > 0 then                    
-                    for i= table.getn(Spawner), 1, -1 do
-                        if Spawner[i]:IsAlive() and table.getn(self.Troops) < self.TroopCount then
-                            Spawner[i]:CreateTroop(true, true);
-                            local ID = Spawner[i]:GetTroop();
-                            if ID > 0 then
-                                self:ChoseFormation(ID);
-                                table.insert(self.Troops, ID);
-                            end
-                        else
-                            break;
+                for i= table.getn(Spawner), 1, -1 do
+                    if Spawner[i]:IsAlive() and table.getn(self.Troops) < self.TroopCount then
+                        Spawner[i]:CreateTroop(true, true);
+                        local ID = Spawner[i]:GetTroop();
+                        if ID > 0 then
+                            self:ChoseFormation(ID);
+                            table.insert(self.Troops, ID);
                         end
+                    else
+                        break;
                     end
-                    if table.getn(self.Troops) >= self.TroopCount then
-                        self.InitialSpawned = true;
-                    end
+                end
+                if table.getn(self.Troops) >= self.TroopCount then
+                    self.InitialSpawned = true;
                 end
                 return;
             end
@@ -1036,10 +1033,10 @@ end
 
 -- -------------------------------------------------------------------------- --
 
-function AiArmy:ControlTroops(_Position, _Area, _Enemies)
+function AiArmy:ControlTroops(_Position, _Enemies)
     local Position = _Position or self:GetArmyPosition();
     for i= 1, table.getn(self.Troops), 1 do
-        if Logic.IsEntityInCategory(_TroopID, EntityCategories.Cannon) == 0 then
+        if Logic.IsEntityInCategory(self.Troops[i], EntityCategories.Cannon) == 0 then
             if self:IsTroopFighting() then
                 return;
             end
@@ -1049,7 +1046,7 @@ function AiArmy:ControlTroops(_Position, _Area, _Enemies)
             Time    = 0,
             Command = 0
         };
-        self:ControlSingleTroop(self.Troops[i], Position, Enemies);
+        self:ControlSingleTroop(self.Troops[i], Position, _Enemies);
     end
 end
 
@@ -1217,7 +1214,7 @@ function AiArmy:GetTargetCostFactorForTroop(_TargetID, _TroopID)
     local Priority = self:GetTargetCostFactors(_TargetID);
     for k, v in pairs(QuestTools.GetEntityCategoriesAsString(_TargetID)) do
         if Priority[v] and Priority[v] > 0 then
-            Factor = Factor * (1/Priority[v] or 1);
+            Factor = Factor * ((1/Priority[v]) or 1);
         else
             Factor = 0;
             break;
@@ -1236,40 +1233,40 @@ function AiArmy:GetTargetCostFactorForTroop(_TargetID, _TroopID)
 end
 
 function AiArmy:GetTargetCostFactors(_TargetID)
-    if Logic.IsEntityInCategory(_TroopID, EntityCategories.Hero) == 1 then
-        if Logic.GetEntityType(_TroopID) == Entities.PU_Hero5 then
+    if Logic.IsEntityInCategory(_TargetID, EntityCategories.Hero) == 1 then
+        if Logic.GetEntityType(_TargetID) == Entities.PU_Hero5 then
             return GroupTargetingPriorities.Ranged;
-        elseif Logic.GetEntityType(_TroopID) == Entities.PU_Hero10 then
+        elseif Logic.GetEntityType(_TargetID) == Entities.PU_Hero10 then
             return GroupTargetingPriorities.Rifle;
         else
             return GroupTargetingPriorities.Sword;
         end
     end
-    if Logic.IsEntityInCategory(_TroopID, EntityCategories.EvilLeader) == 1 then
-        if Logic.GetEntityType(_TroopID) == Entities.CU_Evil_LeaderSkirmisher then
+    if Logic.IsEntityInCategory(_TargetID, EntityCategories.EvilLeader) == 1 then
+        if Logic.GetEntityType(_TargetID) == Entities.CU_Evil_LeaderSkirmisher then
             return GroupTargetingPriorities.Ranged;
         end
         return GroupTargetingPriorities.Sword;
     end
-    if Logic.IsEntityInCategory(_TroopID, EntityCategories.CavalryHeavy) == 1 then
+    if Logic.IsEntityInCategory(_TargetID, EntityCategories.CavalryHeavy) == 1 then
         return GroupTargetingPriorities.HeavyCavalry;
     end
-    if Logic.IsEntityInCategory(_TroopID, EntityCategories.CavalryLight) == 1 then
+    if Logic.IsEntityInCategory(_TargetID, EntityCategories.CavalryLight) == 1 then
         return GroupTargetingPriorities.LightCavalry;
     end
-    if Logic.IsEntityInCategory(_TroopID, EntityCategories.Sword) == 1 then
+    if Logic.IsEntityInCategory(_TargetID, EntityCategories.Sword) == 1 then
         return GroupTargetingPriorities.Sword;
     end
-    if Logic.IsEntityInCategory(_TroopID, EntityCategories.Spear) == 1 then
+    if Logic.IsEntityInCategory(_TargetID, EntityCategories.Spear) == 1 then
         return GroupTargetingPriorities.Spear;
     end
-    if Logic.IsEntityInCategory(_TroopID, EntityCategories.Rifle) == 1 then
+    if Logic.IsEntityInCategory(_TargetID, EntityCategories.Rifle) == 1 then
         return GroupTargetingPriorities.Rifle;
     end
-    if Logic.IsEntityInCategory(_TroopID, EntityCategories.LongRange) == 1 then
+    if Logic.IsEntityInCategory(_TargetID, EntityCategories.LongRange) == 1 then
         return GroupTargetingPriorities.Ranged;
     end
-    if Logic.IsEntityInCategory(_TroopID, EntityCategories.Cannon) == 1 then
+    if Logic.IsEntityInCategory(_TargetID, EntityCategories.Cannon) == 1 then
         return GroupTargetingPriorities.Cannon;
     end
     return {};

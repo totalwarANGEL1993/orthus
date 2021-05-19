@@ -87,7 +87,7 @@ function QuestSync:SnchronizedCall(_ID, ...)
         end
     end
     if CNetwork then
-        local Name = self.ScriptEvents[ActionIndex].CNetwork;
+        local Name = self.ScriptEvents[_ID].CNetwork;
         CNetwork.SendCommand(Name, unpack(arg));
     else
         local PlayerID = GUI.GetPlayerID();

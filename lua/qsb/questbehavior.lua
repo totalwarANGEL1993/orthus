@@ -24,6 +24,9 @@
 -- @set sort=true
 --
 
+---@diagnostic disable: undefined-global
+---@diagnostic disable: lowercase-global
+
 -- Quests and tools --
 
 StageQuestResultType = {

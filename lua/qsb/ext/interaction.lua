@@ -557,7 +557,7 @@ function NonPlayerCharacter:Controller()
             local CurrentTime = Logic.GetTime();
             if self.m_Waypoints.LastTime < CurrentTime then
                 -- Check each 2 minutes
-                self.m_Waypoints.LastTime = CurrentTime + (self.m_Waittime or 2*60);
+                self.m_Waypoints.LastTime = CurrentTime + (self.m_Waittime or (2*60));
                 -- Set waypoint
                 if IsNear(self.m_ScriptName, self.m_Waypoints[self.m_Waypoints.Current], self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
                     self.m_Waypoints.Current = self.m_Waypoints.Current +1;
@@ -581,7 +581,7 @@ function NonPlayerCharacter:Controller()
             if not self:GetNearestHero(NPC_LOOK_AT_HERO_DISTANCE) then
                 local CurrentTime = Logic.GetTime();
                 if self.m_Wanderer.LastTime < CurrentTime then
-                    self.m_Wanderer.LastTime = CurrentTime + (self.m_Waittime or 5*60);
+                    self.m_Wanderer.LastTime = CurrentTime + (self.m_Waittime or (5*60));
                     if IsNear(self.m_ScriptName, self.m_Wanderer[self.m_Wanderer.Current], self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
                         -- Select random waypoint
                         local NewWaypoint;
@@ -818,7 +818,7 @@ end
 -- @within NonPlayerMerchant
 --
 function NonPlayerMerchant:SetPlayer(_Player)
-    self.m_Player = _Hero;
+    self.m_Player = _Player;
     return self;
 end
 

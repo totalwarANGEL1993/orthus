@@ -226,7 +226,7 @@ end
 function QuestTools.IsVisible(_Entity)
     local ID = GetID(_Entity);
     local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
-    return Logic.GetEntityScriptingValue(ID, ValueIndex, VisibleFlag) == 513;
+    return Logic.GetEntityScriptingValue(ID, ValueIndex) == 513;
 end
 
 ---
@@ -564,29 +564,29 @@ GetCirclePosition = QuestTools.GetCirclePosition;
 function QuestTools.GetAngleBetween(_Pos1,_Pos2)
 	local delta_X = 0;
 	local delta_Y = 0;
-	local alpha   = 0
+	local alpha   = 0;
 	if type (_Pos1) == "string" or type (_Pos1) == "number" then
 		_Pos1 = GetPosition(GetEntityId(_Pos1));
 	end
 	if type (_Pos2) == "string" or type (_Pos2) == "number" then
 		_Pos2 = GetPosition(GetEntityId(_Pos2));
 	end
-	delta_X = _Pos1.X - _Pos2.X
-	delta_Y = _Pos1.Y - _Pos2.Y
+	delta_X = _Pos1.X - _Pos2.X;
+	delta_Y = _Pos1.Y - _Pos2.Y;
 	if delta_X == 0 and delta_Y == 0 then
-		return 0
+		return 0;
 	end
-	alpha = math.deg(math.asin(math.abs(delta_X)/(math.sqrt(__pow(delta_X, 2)+__pow(delta_Y, 2)))))
+	alpha = math.deg(math.asin(math.abs(delta_X)/(math.sqrt(delta_X^2 + delta_Y^2))));
 	if delta_X >= 0 and delta_Y > 0 then
-		alpha = 270 - alpha 
+		alpha = 270 - alpha ;
 	elseif delta_X < 0 and delta_Y > 0 then
-		alpha = 270 + alpha
+		alpha = 270 + alpha;
 	elseif delta_X < 0 and delta_Y <= 0 then
-		alpha = 90  - alpha
+		alpha = 90  - alpha;
 	elseif delta_X >= 0 and delta_Y <= 0 then
-		alpha = 90  + alpha
+		alpha = 90  + alpha;
 	end
-	return alpha
+	return alpha;
 end
 GetAngleBetween = QuestTools.GetAngleBetween;
 Winkel = QuestTools.GetAngleBetween;
@@ -881,7 +881,7 @@ GetTechnologyCostsTable = QuestTools.GetTechnologyCostsTable;
 --
 function QuestTools.GetSoldierCostsTable(_PlayerID, _SoldierUpCat)
     local SoldierCosts = {};
-    Logic.FillSoldierCostsTable(_PlayerID, SoldierUpCat, SoldierCosts);
+    Logic.FillSoldierCostsTable(_PlayerID, _SoldierUpCat, SoldierCosts);
     return SoldierCosts;
 end
 GetSoldierCostsTable = QuestTools.GetSoldierCostsTable;
@@ -947,23 +947,24 @@ HasEnoughResources = QuestTools.HasEnoughResources;
 -- @within AI
 --
 function QuestTools.AddResourcesToPlayer(_PlayerID, _Resources)
+
     if _Resources[ResourceType.Gold] ~= nil then
-		AddGold(_PlayerID, _Resources[ResourceType.Gold]);
+		AddGold(_PlayerID, _Resources[ResourceType.Gold] or _Resources[ResourceType.GoldRaw]);
     end
 	if _Resources[ResourceType.Clay] ~= nil then
-		AddClay(_PlayerID, _Resources[ResourceType.Clay]);
+		AddClay(_PlayerID, _Resources[ResourceType.Clay] or _Resources[ResourceType.ClayRaw]);
 	end
 	if _Resources[ResourceType.Wood] ~= nil then
-		AddWood(_PlayerID, _Resources[ResourceType.Wood]);
+		AddWood(_PlayerID, _Resources[ResourceType.Wood] or _Resources[ResourceType.WoodRaw]);
 	end
 	if _Resources[ResourceType.Iron] ~= nil then		
-		AddIron(_PlayerID, _Resources[ResourceType.Iron]);
+		AddIron(_PlayerID, _Resources[ResourceType.Iron] or _Resources[ResourceType.IronRaw]);
 	end
 	if _Resources[ResourceType.Stone] ~= nil then		
-		AddStone(_PlayerID, _Resources[ResourceType.Stone]);
+		AddStone(_PlayerID, _Resources[ResourceType.Stone] or _Resources[ResourceType.StoneRaw]);
 	end
     if _Resources[ResourceType.Sulfur] ~= nil then		
-		AddSulfur(_PlayerID, _Resources[ResourceType.Sulfur]);
+		AddSulfur(_PlayerID, _Resources[ResourceType.Sulfur] or _Resources[ResourceType.SulfurRaw]);
 	end
 end
 AddResourcesToPlayer = QuestTools.AddResourcesToPlayer;

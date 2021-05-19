@@ -110,7 +110,7 @@ function QuestBriefing:CreateScriptEvents()
         if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
             return;
         end
-        QuestBriefing.m_Book[_PlayerID] = QuestBriefing.m_Book[PlayerID] or {};
+        QuestBriefing.m_Book[_PlayerID] = QuestBriefing.m_Book[_PlayerID] or {};
         QuestBriefing.m_Book[_PlayerID].RestorePosition = {X= _X, Y= _Y};
     end);
 
@@ -605,7 +605,7 @@ function QuestBriefing:NextPage(_PlayerID, _FirstPage)
     if Page.Target and Page.Explore and Page.Explore > 0 then
         local Position = GetPosition(Page.Target);
         local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, 0, _PlayerID);
-        Logic.SetEntityExplorationRange(ViewCenter, math.ceil(Page.Explore/10));
+        Logic.SetEntityExplorationRange(Position, math.ceil(Page.Explore/10));
         table.insert(self.m_Book[_PlayerID].Exploration, ID);
     end
     -- Start Fader
@@ -1183,7 +1183,7 @@ function QuestBriefing:SetPageApperance(_PlayerID, _DisableMap)
     local titleSize = (size[1]-200);
     local choiceHeight = round(46*(768/size[2]));
     local choiceWidth  = round(800*(1024/size[1]));
-    local choicePosX   = round(((Is4To3 and 112) or 112*1.4)*(size[1]/1024));
+    local choicePosX   = round(((Is4To3 and 112) or (112*1.4))*(size[1]/1024));
     local choicePosY   = round(((size[2]*(768/size[2]))/2) - ((self.MCButtonAmount/2)*(choiceHeight+10)));
 
     -- Set widget apperance

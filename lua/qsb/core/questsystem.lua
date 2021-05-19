@@ -131,7 +131,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
         for i= 1, table.getn(Defenders), 1 do
             local Soldiers;
             if Logic.IsLeader(Defenders[i]) == 1 then
-                Soldiers = {Logic.GetSoldiersAttachedToLeader(leaderID)};
+                Soldiers = {Logic.GetSoldiersAttachedToLeader(Defenders[i])};
                 table.remove(Soldiers, 1);
             end
             QuestSystem.HurtEntities[Defenders[i]] = {Attacker, Logic.GetTime(), Soldiers};
@@ -1758,7 +1758,7 @@ function QuestSystem:ReplaceKeyValuePlaceholders(_Message)
         end
         if string.find(Placeholder, "val:") then
             local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
-            if type(Value) == "string" or type(value) == "number" then
+            if type(Value) == "string" or type(Value) == "number" then
                 _Message = Before .. Value .. After;
             end
         end

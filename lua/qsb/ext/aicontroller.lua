@@ -279,7 +279,7 @@ function ArmySetHiddenFromAI(_Army, _Flag)
             :SetSubState(ArmySubStates.None)
             :SetAttackTarget(nil)
             :SetGuardTarget(nil)
-            :UpdateDefenceTargetsOfArmy(Army.PlayerID, _ArmyID);
+            :UpdateDefenceTargetsOfArmy(Army.PlayerID, Army.ArmyID);
     end
 end
 
@@ -371,7 +371,6 @@ function ArmyDisableAttackAbility(_Army, _Flag)
     if Army then
         Army:SetAttackAllowed(_Flag == true);
     end
-    return self;
 end
 
 ---
@@ -390,7 +389,6 @@ function ArmyDisablePatrolAbility(_Army, _Flag)
     if Army then
         Army:SetDefenceAllowed(_Flag == true);
     end
-    return self;
 end
 
 ---
@@ -561,7 +559,7 @@ end
 function SetAIPlayerUnitsToBuild(_PlayerID, _CategoryList)
     if not AiController.Players[_PlayerID] then
         assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
-        return ArmyIDList;
+        return;
     end
     AiController:SetUnitsToBuild(_PlayerID, _CategoryList);
 end

@@ -40,7 +40,7 @@ end
 ---
 --
 --
-function CloseOptionMenu(_Data)
+function CloseOptionMenu()
     if OptionMenu:IsShown() then
         OptionMenu:Close();
     end

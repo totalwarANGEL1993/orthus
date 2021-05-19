@@ -1457,7 +1457,7 @@ GameMode_PvP_Peacetime_Goal = function(_Data, _Quest)
 end;
 GameMode_PvP_Peacetime_Reward = function(_Data, _Quest)
     -- Show Info
-    if MPRuleset_Rules.Modes.Peacetime > 0 and _Data.m_Receiver == GUI.GetPlayerID() then
+    if MPRuleset_Rules.Modes.Peacetime > 0 and _Quest.m_Receiver == GUI.GetPlayerID() then
         Message(ReplacePlacholders(MultiplayerSystem.Text.Messages.PeacetimeOver[QuestTools.GetLanguage()]));
     end
     MultiplayerSystem:SetupDiplomacy();
@@ -1572,7 +1572,7 @@ GameMode_SD_DeathTimer_Trigger = function(_Behavior, _Quest)
 end
 
 GameMode_SD_DeathTimer_Reward = function(_Behavior, _Quest)
-    if _Data.m_Receiver == GUI.GetPlayerID() then
+    if _Quest.m_Receiver == GUI.GetPlayerID() then
         Message(ReplacePlacholders(MultiplayerSystem.Text.Messages.ImpendingDeath[QuestTools.GetLanguage()]));
     end
 end
