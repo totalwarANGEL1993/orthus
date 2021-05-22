@@ -825,6 +825,105 @@ function QuestTools.StartSimpleHiResJobEx(_Function, ...)
 end
 StartSimpleHiResJobEx = QuestTools.StartSimpleHiResJobEx;
 
+---
+-- Creates an classic countdown in the top left of the screen. A counter ticks
+-- down to 0 and can trigger an optional callback function.
+--
+-- @param[type=number]   _Limit    Time in seconds
+-- @param[type=function] _Callback Callback function on counter finishes
+-- @param[type=boolean]  _Show     Countdown is visible
+-- @return[type=number] Counter ID
+-- @within Jobs
+--
+function QuestTools.StartCountdown(_Limit, _Callback, _Show)
+    assert(type(_Limit) == "number");
+    assert( not _Callback or type(_Callback) == "function" );
+    Counter.Index = (Counter.Index or 0) + 1;
+    if _Show and QuestTools.CountdownIsVisisble() then
+        assert(false, "StartCountdown: A countdown is already visible");
+    end
+    Counter["counter" .. Counter.Index] = {
+        Limit = _Limit, 
+        TickCount = 0, 
+        Callback = _Callback, 
+        Show = _Show, 
+        Finished = false
+    };
+    if _Show then
+        MapLocal_StartCountDown(_Limit);
+    end
+    if Counter.JobId == nil then
+        Counter.JobId = StartSimpleJobEx(QuestTools.CountdownTick);
+    end
+    return Counter.Index;
+end
+StartCountdown = QuestTools.StartCountdown;
+
+---
+-- Stops an running countdown.
+--
+-- @param[type=number]   _Id Index of Counter to stop
+-- @within Jobs
+--
+function QuestTools.StopCountdown(_Id)
+    if Counter.Index == nil then
+        return;
+    end
+    if _Id == nil then
+        for i = 1, Counter.Index do
+            if Counter.IsValid("counter" .. i) then
+                if Counter["counter" .. i].Show then
+                    MapLocal_StopCountDown();
+                end
+                Counter["counter" .. i] = nil;
+            end
+        end
+    else
+        if Counter.IsValid("counter" .. _Id) then
+            if Counter["counter" .. _Id].Show then
+                MapLocal_StopCountDown();
+            end
+            Counter["counter" .. _Id] = nil;
+        end
+    end
+end
+StopCountdown = QuestTools.StopCountdown;
+
+function QuestTools.CountdownTick()
+    local empty = true;
+    for i = 1, Counter.Index do
+        if Counter.IsValid("counter" .. i) then
+            if Counter.Tick("counter" .. i) then
+                Counter["counter" .. i].Finished = true;
+            end
+            if Counter["counter" .. i].Finished and not IsBriefingActive() then
+                if Counter["counter" .. i].Show then
+                    MapLocal_StopCountDown();
+                end
+                if type(Counter["counter" .. i].Callback) == "function" then
+                    Counter["counter" .. i].Callback();
+                end
+                Counter["counter" .. i] = nil;
+            end
+            empty = false;
+        end
+    end
+    if empty then
+        Counter.JobId = nil;
+        Counter.Index = nil;
+        return true;
+    end
+end
+function QuestTools.CountdownIsVisisble()
+    for i = 1, Counter.Index do
+        if Counter.IsValid("counter" .. i) and Counter["counter" .. i].Show then
+            return true;
+        end
+    end
+    return false;
+end
+CountdownIsVisisble = QuestTools.CountdownIsVisisble;
+
 -- AI --
 
 -- FillBuildingCostsTable

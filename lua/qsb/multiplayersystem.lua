@@ -310,6 +310,8 @@ MultiplayerSystem = {
                         Title = MultiplayerSystem.Text.Quests.GameModePvP.Title[Language];
                     elseif MPRuleset_Rules.Modes.Selected == 2 then
                         Title = MultiplayerSystem.Text.Quests.GameModeSuddenDeath.Title[Language];
+                    elseif MPRuleset_Rules.Modes.Selected == 3 then
+                        Title = MultiplayerSystem.Text.Quests.GameModePointGame.Title[Language];
                     end
                     return ((Language == "de" and "Modus: ") or "Mode: ") .. Title;
                  end,
@@ -326,6 +328,8 @@ MultiplayerSystem = {
                         Mode = "Rule_Mode_PvP";
                     elseif MPRuleset_Rules.Modes.Selected == 2 then
                         Mode = "Rule_Mode_SD";
+                    elseif MPRuleset_Rules.Modes.Selected == 3 then
+                        Mode = "Rule_Mode_PG";
                     end
                     return Mode;
                  end},
@@ -404,6 +408,39 @@ MultiplayerSystem = {
                  Target = function()
                     MultiplayerSystem:RuleChangeAlterValue("Modes", "SuddenDeath", 1, 5, 30);
                     return "Rule_Mode_SD";
+                 end},
+            }
+        },
+        {
+            Identifier  = "Rule_Mode_PG",
+            Parent      = "Rule_Modes",
+            Title       = {
+                de = "Punktspiel", en = "Point Game"
+            },
+            Description = {
+                de = "Spieler treten einzeln oder in Teams gegeneinander an. Um zu gewinnen müssen zuerst alle Punkte erreicht werden.",
+                en = "The players play alone or in teams against each other. To win a team must collect all points before the others.",
+            },
+            Options     = {
+                {Text   = function()
+                    local Language = QuestTools.GetLanguage();
+                    local Title = MultiplayerSystem.Text.Quests.Peacetime.Title[Language];
+                    local Time = (MPRuleset_Rules.Modes.Peacetime > 0 and MPRuleset_Rules.Modes.Peacetime) or "-";
+                    return Title .. ": " ..Time.. " min";
+                 end,
+                 Target = function()
+                    MultiplayerSystem:RuleChangeAlterValue("Modes", "Peacetime", 5, 0, 60);
+                    return "Rule_Mode_PG";
+                 end},
+                {Text   = function()
+                    local Language = QuestTools.GetLanguage();
+                    local Title = MultiplayerSystem.Text.Quests.Points.Title[Language];
+                    local Points = (MPRuleset_Rules.Modes.Points > 0 and MPRuleset_Rules.Modes.Points) or "-";
+                    return Title .. ": " ..Points.. "";
+                 end,
+                 Target = function()
+                    MultiplayerSystem:RuleChangeAlterValue("Modes", "Points", 5000, 10000, 1000000);
+                    return "Rule_Mode_PG";
                  end},
             }
         },
@@ -890,6 +927,12 @@ MultiplayerSystem = {
             },
         },
         Quests = {
+            Points = {
+                Title = {
+                    de = "Punkte",
+                    en = "Points",
+                },
+            },
             Peacetime = {
                 Title = {
                     de = "Friedenszeit",
@@ -924,6 +967,12 @@ MultiplayerSystem = {
                 Title = {
                     de = "Sudden Death",
                     en = "Sudden Death",
+                },
+            },
+            GameModePointGame = {
+                Title = {
+                    de = "Punktspiel",
+                    en = "Point Game",
                 },
             },
         }
@@ -1426,13 +1475,17 @@ function MultiplayerSystem:StartGameModePvP()
 
     for k, v in pairs(QuestSync:GetActivePlayers()) do
         CreateQuest {
-            Name = "GameMode_PvP_QuestPeacetime_Player" ..v,
+            Name = "GameMode_PvP_Quest_PeacetimeStart_Player" ..v,
+            Receiver = v,
+            Goal_InstantSuccess(),
+            Reward_MapScriptFunction("GameMode_PvP_PeacetimeStart_Reward"),
+            Trigger_MapScriptFunction("GameMode_PvP_Peacetime_Trigger"),
+        };
+
+        CreateQuest {
+            Name = "GameMode_PvP_Quest_Peacetime_Player" ..v,
             Receiver = v,
             Time = MPRuleset_Rules.Modes.Peacetime * 60,
-            Description = {
-                Visible = false,
-                Title   = self.Text.Quests.Peacetime.Title[Language],
-            },
             Goal_MapScriptFunction("GameMode_PvP_Peacetime_Goal"),
             Reward_MapScriptFunction("GameMode_PvP_Peacetime_Reward"),
             Trigger_MapScriptFunction("GameMode_PvP_Peacetime_Trigger"),
@@ -1444,11 +1497,21 @@ function MultiplayerSystem:StartGameModePvP()
             Goal_MapScriptFunction("GameMode_PvP_Victory_Goal"),
             Reward_Victory(),
             Reprisal_Defeat(),
-            Trigger_QuestSuccess("GameMode_PvP_QuestPeacetime_Player" ..v),
+            Trigger_QuestOver("GameMode_PvP_Quest_Peacetime_Player" ..v),
         };
     end
 end
 
+GameMode_PvP_PeacetimeStart_Reward = function(_Data, _Quest)
+    if MultiplayerSystem.Data.PeacetimeCounter or MPRuleset_Rules.Modes.Peacetime == 0 then
+        return;
+    end
+    MultiplayerSystem.Data.PeacetimeCounter = QuestTools.StartCountdown(
+        (MPRuleset_Rules.Modes.Peacetime * 60) -1,
+        function() end,
+        true
+    );
+end;
 GameMode_PvP_Peacetime_Goal = function(_Data, _Quest)
     if MPRuleset_Rules.Modes.Peacetime > 0 then
         return;
@@ -1496,13 +1559,16 @@ function MultiplayerSystem:StartGameModeSuddenDeath()
 
     for k, v in pairs(QuestSync:GetActivePlayers()) do
         CreateQuest {
+            Name = "GameMode_SD_Quest_PeacetimeStart_Player" ..v,
+            Receiver = v,
+            Goal_InstantSuccess(),
+            Reward_MapScriptFunction("GameMode_PvP_PeacetimeStart_Reward"),
+            Trigger_MapScriptFunction("GameMode_PvP_Peacetime_Trigger"),
+        };
+        CreateQuest {
             Name = "GameMode_SD_Quest_Peacetime_Player" ..v,
             Receiver = v,
             Time = MPRuleset_Rules.Modes.Peacetime * 60,
-            Description = {
-                Visible = false,
-                Title   = self.Text.Quests.Peacetime.Title[Language],
-            },
             Goal_MapScriptFunction("GameMode_PvP_Peacetime_Goal"),
             Reward_MapScriptFunction("GameMode_PvP_Peacetime_Reward"),
             Trigger_MapScriptFunction("GameMode_PvP_Peacetime_Trigger"),
@@ -1518,37 +1584,53 @@ function MultiplayerSystem:StartGameModeSuddenDeath()
             Reprisal_QuestInterrupt("GameMode_SD_Quest_SD_Start_Player" ..v),
             Reprisal_QuestInterrupt("GameMode_SD_Quest_SD_Tick_Player" ..v),
             Reprisal_Defeat(),
-            Trigger_QuestSuccess("GameMode_SD_Quest_Peacetime_Player" ..v),
+            Trigger_QuestOver("GameMode_SD_Quest_Peacetime_Player" ..v),
         };
 
+        CreateQuest {
+            Name = "GameMode_SD_Quest_SD_StartTimer_Player" ..v,
+            Receiver = v,
+            Goal_InstantSuccess(),
+            Reward_MapScriptFunction("GameMode_SD_DeathTimerStart_Reward"),
+            Trigger_MapScriptFunction("GameMode_SD_DeathTimer_Trigger"),
+        };
         CreateQuest {
             Name = "GameMode_SD_Quest_SD_Start_Player" ..v,
             Receiver = v,
             Time = MPRuleset_Rules.Modes.DeathTimer * 60,
-            Description = {
-                Visible = false,
-                Title   = self.Text.Quests.DeathTimer.Title[Language],
-            },
             Goal_NoChange(),
             Reward_MapScriptFunction("GameMode_SD_DeathTimer_Reward"),
             Trigger_MapScriptFunction("GameMode_SD_DeathTimer_Trigger"),
         };
 
         CreateQuest {
+            Name = "GameMode_SD_Quest_SD_StartTimer_Player" ..v,
+            Receiver = v,
+            Goal_InstantSuccess(),
+            Reward_MapScriptFunction("GameMode_SD_BurnDownStart_Reward"),
+            Trigger_QuestOver("GameMode_SD_Quest_SD_Start_Player" ..v),
+        };
+        CreateQuest {
             Name = "GameMode_SD_Quest_SD_Tick_Player" ..v,
             Receiver = v,
             Time = MPRuleset_Rules.Modes.SuddenDeath * 60,
-            Description = {
-                Visible = false,
-                Title   = self.Text.Quests.BurnTimer.Title[Language],
-            },
             Goal_MapScriptFunction("GameMode_SD_BurnDown_Goal"),
             Reprisal_QuestFail("GameMode_SD_Quest_Victory_Player" ..v),
-            Trigger_QuestSuccess("GameMode_SD_Quest_SD_Start_Player" ..v),
+            Trigger_QuestOver("GameMode_SD_Quest_SD_Start_Player" ..v),
         };
     end
 end
 
+GameMode_SD_BurnDownStart_Reward = function(_Data, _Quest)
+    if MultiplayerSystem.Data.SuddenDeathCounter or MPRuleset_Rules.Modes.SuddenDeath == 0 then
+        return;
+    end
+    MultiplayerSystem.Data.SuddenDeathCounter = QuestTools.StartCountdown(
+        (MPRuleset_Rules.Modes.SuddenDeath * 60) -1,
+        function() end,
+        true
+    );
+end;
 GameMode_SD_BurnDown_Goal = function(_Behavior, _Quest)
     local HQID = MultiplayerSystem:GetFirstHQOfPlayer(_Quest.m_Receiver);
     if HQID == 0 then
@@ -1565,6 +1647,16 @@ GameMode_SD_BurnDown_Goal = function(_Behavior, _Quest)
     end
 end
 
+GameMode_SD_DeathTimerStart_Reward = function(_Data, _Quest)
+    if MultiplayerSystem.Data.DeathTimerCounter or MPRuleset_Rules.Modes.DeathTimer == 0 then
+        return;
+    end
+    MultiplayerSystem.Data.DeathTimerCounter = QuestTools.StartCountdown(
+        (MPRuleset_Rules.Modes.DeathTimer * 60) -1,
+        function() end,
+        true
+    );
+end;
 GameMode_SD_DeathTimer_Trigger = function(_Behavior, _Quest)
     local QuestName = "GameMode_SD_Quest_Peacetime_Player" .._Quest.m_Receiver;
     local Quest = QuestSystem.Quests[GetQuestID(QuestName)];
@@ -1580,17 +1672,53 @@ end
 -- -------------------------------------------------------------------------- --
 
 function MultiplayerSystem:StartGameModePointGame()
-    if table.getn(QuestSync:GetActiveTeams()) > 6 then
-        Message("DEBUG: Only up to 6 teams are allowed!");
+    if table.getn(QuestSync:GetActiveTeams()) > 8 then
+        Message("DEBUG: Only up to 8 teams are allowed!");
         return;
     end
-    -- TODO: Implement
+    for k, v in pairs(QuestSync:GetActivePlayers()) do
+        CreateQuest {
+            Name = "GameMode_PG_Quest_PeacetimeStart_Player" ..v,
+            Receiver = v,
+            Goal_InstantSuccess(),
+            Reward_MapScriptFunction("GameMode_PvP_PeacetimeStart_Reward"),
+            Trigger_MapScriptFunction("GameMode_PvP_Peacetime_Trigger"),
+        };
+        CreateQuest {
+            Name = "GameMode_PG_Quest_Peacetime_Player" ..v,
+            Receiver = v,
+            Time = MPRuleset_Rules.Modes.Peacetime * 60,
+            Goal_MapScriptFunction("GameMode_PvP_Peacetime_Goal"),
+            Reward_MapScriptFunction("GameMode_PvP_Peacetime_Reward"),
+            Trigger_MapScriptFunction("GameMode_PvP_Peacetime_Trigger"),
+        };
+
+        CreateQuest {
+            Name = "GameMode_PG_Quest_Victory_Player" ..v,
+            Receiver = v,
+            Goal_MapScriptFunction("GameMode_PG_Points_Goal"),
+            Reprisal_Defeat(),
+            Reward_Victory(),
+            Trigger_QuestOver("GameMode_PG_Quest_Peacetime_Player" ..v),
+        };
+        for _,Team in pairs(QuestSync:GetActiveTeams()) do
+            CreateQuest {
+                Name = "GameMode_PG_Quest_Team" ..Team.. "Progress_Player" ..v,
+                Receiver = v,
+                Goal_MapScriptFunction("GameMode_PG_PointsTeam"..Team.."Progress_Goal"),
+                Trigger_QuestOver("GameMode_PG_Quest_Peacetime_Player" ..v),
+            };
+        end
+    end
 end
 
 PointGame_AddTeamPoints = function(_PlayerID, _Points)
     local Team = QuestSync:GetTeamOfPlayer(_PlayerID);
     if MultiplayerSystem.Data.Points[Team] then
         MultiplayerSystem.Data.Points[Team] = MultiplayerSystem.Data.Points[Team] + _Points;
+        if MultiplayerSystem.Data.Points[Team] > MPRuleset_Rules.Modes.Points then
+            MultiplayerSystem.Data.Points[Team] = MPRuleset_Rules.Modes.Points;
+        end
     end
 end
 
@@ -1599,7 +1727,93 @@ GameMode_PG_Points_Goal = function(_Behavior, _Quest)
     if HQID == 0 then
         return false;
     end
-    
+    local Team = QuestSync:GetTeamOfPlayer(_PlayerID);
+    if MultiplayerSystem.Data.Points[Team] then
+        if MultiplayerSystem.Data.Points[Team] == -1 then
+            return false;
+        end
+        if MultiplayerSystem.Data.Points[Team] == MPRuleset_Rules.Modes.Points then
+            for k, v in pairs(MultiplayerSystem.Data.Points) do
+                if k ~= Team then
+                    MultiplayerSystem.Data.Points[k] = -1;
+                end
+            end
+            return true;
+        end
+    end
+end
+
+GameMode_PG_PointsTeam1Progress_Goal = function(_Behavior, _Quest)
+    if MultiplayerSystem.Data.Points[1] then
+        SetBehaviorProgress(
+            _Behavior,
+            MultiplayerSystem.Data.Points[1],
+            MPRuleset_Rules.Modes.Points
+        );
+    end
+end
+GameMode_PG_PointsTeam2Progress_Goal = function(_Behavior, _Quest)
+    if MultiplayerSystem.Data.Points[2] then
+        SetBehaviorProgress(
+            _Behavior,
+            MultiplayerSystem.Data.Points[2],
+            MPRuleset_Rules.Modes.Points
+        );
+    end
+end
+GameMode_PG_PointsTeam3Progress_Goal = function(_Behavior, _Quest)
+    if MultiplayerSystem.Data.Points[3] then
+        SetBehaviorProgress(
+            _Behavior,
+            MultiplayerSystem.Data.Points[3],
+            MPRuleset_Rules.Modes.Points
+        );
+    end
+end
+GameMode_PG_PointsTeam4Progress_Goal = function(_Behavior, _Quest)
+    if MultiplayerSystem.Data.Points[4] then
+        SetBehaviorProgress(
+            _Behavior,
+            MultiplayerSystem.Data.Points[4],
+            MPRuleset_Rules.Modes.Points
+        );
+    end
+end
+GameMode_PG_PointsTeam5Progress_Goal = function(_Behavior, _Quest)
+    if MultiplayerSystem.Data.Points[5] then
+        SetBehaviorProgress(
+            _Behavior,
+            MultiplayerSystem.Data.Points[5],
+            MPRuleset_Rules.Modes.Points
+        );
+    end
+end
+GameMode_PG_PointsTeam6Progress_Goal = function(_Behavior, _Quest)
+    if MultiplayerSystem.Data.Points[6] then
+        SetBehaviorProgress(
+            _Behavior,
+            MultiplayerSystem.Data.Points[6],
+            MPRuleset_Rules.Modes.Points
+        );
+    end
+end
+GameMode_PG_PointsTeam7Progress_Goal = function(_Behavior, _Quest)
+    if MultiplayerSystem.Data.Points[7] then
+        SetBehaviorProgress(
+            _Behavior,
+            MultiplayerSystem.Data.Points[7],
+            MPRuleset_Rules.Modes.Points
+        );
+    end
+end
+GameMode_PG_PointsTeam8Progress_Goal = function(_Behavior, _Quest)
+    if MultiplayerSystem.Data.Points[8] then
+        SetBehaviorProgress(
+            _Behavior,
+            MultiplayerSystem.Data.Points[8],
+            MPRuleset_Rules.Modes.Points
+        );
+    end
 end
 
 -- -------------------------------------------------------------------------- --
@@ -1674,11 +1888,11 @@ MultiplayerRules_Default = {
         -- Minutes until headquarters burns down
         SuddenDeath         = 10,
         -- Points needed for team victory
-        Points              = 500000,
+        Points              = 80000,
     },
 
     Fixes = {
-        -- Crush building glitch fixed. Buildings will deselect the building
+        -- Crush building glitch fixed. Crushing will deselect the building
         -- and then destroy it right away without warning. (0 = off)
         CrushBuilding       = 1,
 
@@ -1702,7 +1916,7 @@ MultiplayerRules_Default = {
         AssociateVillages   = 0,
 
         -- Block HQ rush (0 = off)
-        -- Player HQs can not be damaged until the player has village
+        -- Player HQs can not be damaged while the player has village
         -- centers left.
         HQRushBlock         = 1,
 

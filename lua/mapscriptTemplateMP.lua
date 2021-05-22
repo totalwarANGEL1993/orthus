@@ -99,13 +99,15 @@ MPRuleset_Rules = {
         DeathTimer          = 30,
         -- Minutes until headquarters burns down
         SuddenDeath         = 10,
+        -- Points needed for team victory
+        Points              = 80000,
     },
 
     --~~ Bugfixes
     --~~ Fixes some bugs in the game.
 
     Fixes = {
-        -- Crush building glitch fixed. Buildings will deselect the building
+        -- Crush building glitch fixed. Crushing will deselect the building
         -- and then destroy it right away without warning. (0 = off)
         CrushBuilding       = 1,
 
@@ -133,7 +135,7 @@ MPRuleset_Rules = {
         AssociateVillages   = 0,
 
         -- Block HQ rush (0 = off)
-        -- Player HQs can not be damaged until the player has village
+        -- Player HQs can not be damaged while the player has village
         -- centers left.
         HQRushBlock         = 1,
 
