@@ -288,6 +288,51 @@ function ArmySetHiddenFromAI(_Army, _Flag)
 end
 
 ---
+-- Adds an manual controller to an army.
+--
+-- When the controller is set the army is automatically hidden from the AI. If
+-- the controller is invalidated by passin nil the army is returned to the AI.
+--
+-- If the controller is add successfully the ID of the created job is returned.
+-- Otherwise nil is returned.
+--
+-- The controller is called each second and the ID of the army is passed. To
+-- access the army data index AiArmyList with the army ID. The controller must
+-- not change the state of the army. This will be handled by the army itself.
+-- Controllers must only provide attack or guard positions.
+--
+-- <b>Note:</b> This feature is considered advanced level. In most cases the
+-- normal AI controller is sufficient to do the job. Use this if you need
+-- multiple bases for one AI which will not work with the controller.
+--
+-- <b>Note:</b> See documentation of AiArmy for futher information.
+--
+-- @param                _Army     Name or ID of army
+-- @param[type=function] _Function Controller function
+-- @return[type=number] Job ID of controller
+-- @within Methods
+-- 
+-- @usage -- Function reference
+-- ArmySetController("SomeArmy", MyControllerFunction);
+-- -- Inline function
+-- ArmySetController("SomeArmy", function(_ArmyID)
+--     -- Do something here
+-- end);
+--
+function ArmySetController(_Army, _Function)
+    if _Function == nil then
+        ArmySetHiddenFromAI(_Army, false);
+        return;
+    end
+    ArmySetHiddenFromAI(_Army, true);
+
+    local Army = GetArmy(_Army);
+    if Army then
+        return QuestTools.StartSimpleJobEx(_Function, Army.ArmyID);
+    end
+end
+
+---
 -- Changes the home of the army.
 --
 -- The home position must be the name of an reachable script entity or any other
@@ -397,7 +442,7 @@ end
 function ArmyDisablePatrolAbility(_Army, _Flag)
     local Army = GetArmy(_Army);
     if Army then
-        Army:SetDefenceAllowed(_Flag == true);
+        Army:SetGuardAllowed(_Flag == true);
     end
 end
 
@@ -924,7 +969,7 @@ function AiController:SetAttackAllowed(_PlayerID, _ArmyID, _Flag)
     end
 end
 
-function AiController:SetDefenceAllowed(_PlayerID, _ArmyID, _Flag)
+function AiController:SetGuardAllowed(_PlayerID, _ArmyID, _Flag)
     if self.Players[_PlayerID] then
         self.Players[_PlayerID].DefenceAllowed = _Flag == true;
         for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do

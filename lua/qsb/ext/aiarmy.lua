@@ -82,6 +82,7 @@ AiArmy = {
 
 AiArmyIdSequence = 0;
 AiArmyList = {};
+AiArmyMemberAssignment = {};
 
 -- -------------------------------------------------------------------------- --
 
@@ -117,6 +118,12 @@ function AiArmy:StartControllerJob()
     end, self.ArmyID);
 end
 
+---
+-- Adds the producer to the army.
+--
+-- @param[type=table] _Producer Producer instance
+-- @within Properties
+--
 function AiArmy:AddProducer(_Producer)
     if not _Producer.IsSpawner and self.IsRespawningArmy then
         return;
@@ -133,6 +140,12 @@ function AiArmy:AddProducer(_Producer)
     return self;
 end
 
+---
+-- Removes the producer from the army.
+--
+-- @param[type=string] _ScriptName Name of producer
+-- @within Properties
+--
 function AiArmy:DropProducer(_ScriptName)
     local Index = 0;
     for k, v in pairs(self.Producers) do
@@ -202,6 +215,12 @@ function AiArmy:IsActive()
     return self.ArmyIsPaused ~= true;
 end
 
+---
+-- Checks if an army is dead.
+--
+-- @return[type=boolean] Army is dead
+-- @within Properties
+--
 function AiArmy:IsDead()
     if self.ArmyIsDead == true then
         return true;
@@ -217,11 +236,24 @@ function AiArmy:IsDead()
     return true;
 end
 
+---
+-- Sets the IsDead flag of the army.
+--
+-- @param[type=boolean] _Flag Army defeated flag
+-- @within Properties
+--
 function AiArmy:SetIsDead(_Flag)
     self.ArmyIsDead = _Flag == true;
     return self;
 end
 
+---
+-- Checks if an army is fighting. If any member is fighting then the army is
+-- fighting.
+--
+-- @return[type=boolean] Army is fighting
+-- @within Properties
+--
 function AiArmy:IsFighting()
     for i= table.getn(self.Troops), 1, -1 do
         local Task = Logic.GetCurrentTaskList(self.Troops[i]);
@@ -232,6 +264,12 @@ function AiArmy:IsFighting()
     return false;
 end
 
+---
+-- Checks if an army is moving.
+--
+-- @return[type=boolean] Army is moving
+-- @within Properties
+--
 function AiArmy:IsMoving()
     for i= table.getn(self.Troops), 1, -1 do
         if Logic.IsEntityMoving(self.Troops[i]) == true then
@@ -241,6 +279,13 @@ function AiArmy:IsMoving()
     return false;
 end
 
+---
+-- Checks if a troop of the army is fighting.
+--
+-- @param[type=number] _TroopID ID of troop
+-- @return[type=boolean] Troop is fighting
+-- @within Properties
+--
 function AiArmy:IsTroopFighting(_TroopID)
     if IsExisting(_TroopID) then
         local Task = Logic.GetCurrentTaskList(_TroopID);
@@ -251,11 +296,31 @@ end
 
 -- -------------------------------------------------------------------------- --
 
+---
+-- Checks if the passed entity ID is member of the army.
+--
+-- @param[type=number] _TroopID ID of troop
+-- @return[type=number] Current army members
+-- @within Properties
+--
 function AiArmy:GetArmyTroops()
     return self.Troops;
 end
 
+---
+-- Checks if the passed entity ID is member of the army.
+--
+-- @param[type=number] _TroopID ID of troop
+-- @return[type=boolean] Is in army
+-- @within Properties
+--
 function AiArmy:IsInArmy(_TroopID)
+    if AiArmyMemberAssignment[_TroopID] then
+        if IsExisting(_TroopID) then
+            return AiArmyMemberAssignment[_TroopID] == self.ArmyID;
+        end
+        AiArmyMemberAssignment[_TroopID] = nil;
+    end
     for i= 1, table.getn(self.Troops), 1 do
         if self.Troops[i] == _TroopID then
             return true;
@@ -264,15 +329,44 @@ function AiArmy:IsInArmy(_TroopID)
     return false;
 end
 
+---
+-- Hides the army from the AI.
+--
+-- @param[type=boolean] _Flag Hidden flag
+-- @within Properties
+--
 function AiArmy:SetHiddenFromAI(_Flag)
     self.IsHiddenFromAI = _Flag == true;
     return self;
 end
 
+---
+-- Returns the current target of the army. The target might be the attack target
+-- or the guard target.
+--
+-- @return[type=number] Current target
+-- @within Properties
+--
+function AiArmy:GetTarget()
+    return self.Target;
+end
+
+---
+-- Returns the current attack target or attack target path.
+--
+-- @return[type=table] Current attack target
+-- @within Properties
+--
 function AiArmy:GetAttackTarget()
     return self.AttackTarget;
 end
 
+---
+-- Returns the current attack target index.
+--
+-- @return[type=number] Index of attack target
+-- @within Properties
+--
 function AiArmy:GetAttackTargetIndex()
     if self.AttackTarget then
         return self.AttackTarget.Current;
@@ -280,6 +374,16 @@ function AiArmy:GetAttackTargetIndex()
     return 0;
 end
 
+---
+-- Sets the attack target.
+--
+-- The target can also be a table of positions. In this case only the last
+-- entry is the target position. The others before are the path the army
+-- will walk while moving to the destination.
+--
+-- @param _Target Entity or table with path
+-- @within Properties
+--
 function AiArmy:SetAttackTarget(_Target)
     if _Target ~= nil and type(_Target) ~= "table" then
         _Target = {_Target};
@@ -291,6 +395,13 @@ function AiArmy:SetAttackTarget(_Target)
     return self;
 end
 
+---
+-- Sets the index of the current attack target. This is only relevant if a
+-- path was set as attack target.
+--
+-- @param[type=number] _Index Index of current waypoint
+-- @within Properties
+--
 function AiArmy:SetAttackTargetIndex(_Index)
     if self.AttackTarget then
         self.AttackTarget.Current = _Index;
@@ -301,37 +412,102 @@ function AiArmy:SetAttackTargetIndex(_Index)
     return self;
 end
 
+---
+-- Returns if the army is allowed to attack.
+--
+-- @return[type=boolean] Attack is allowed
+-- @within Properties
+--
+function AiArmy:IsAttackAllowed()
+    return self.AttackAllowed == true;
+end
+
+---
+-- Set the flag if the army is allowed to attack. This must be taken into
+-- account by the extern army controller.
+--
+-- @param[type=boolean] _Flag Attack allowed flag
+-- @within Properties
+--
 function AiArmy:SetAttackAllowed(_Flag)
     self.AttackAllowed = _Flag == true;
     return self;
 end
 
+---
+-- Sets the current guard target of the army.
+--
+-- @param[type=number] _Target Current guard target
+-- @within Properties
+--
 function AiArmy:SetGuardTarget(_Target)
     self.GuardTarget = _Target;
     return self;
 end
 
+---
+-- Sets how long a guard position is guarded before the army returns to the
+-- home base. Set this to -1 to let them guard forever.
+--
+-- @param[type=number] _Time Guard time in seconds
+-- @within Properties
+--
+function AiArmy:SetGuardDuration(_Time)
+    self.GuardMaximumTime = _Time;
+    return self;
+end
+
+---
+-- Sets the List of guard positions.
+--
+-- @param[type=table] _List List of guard positions
+-- @within Properties
+--
 function AiArmy:SetGuardPosList(_List)
     self.GuardPosList = _List;
     self.GuardPosList.Visited = {};
     return self;
 end
 
+---
+-- Registers a guard position to be visited.
+--
+-- @param[type=number] _Position Position to be registered
+-- @within Properties
+--
 function AiArmy:AddVisitedGuardPosition(_Position)
     table.insert(self.GuardPosList.Visited, _Position);
     return self;
 end
 
+---
+-- Clears the list of visited guard positions.
+--
+-- @within Properties
+--
 function AiArmy:ClearVisitedGuardPositions()
     self.GuardPosList.Visited = {};
     return self;
 end
 
-function AiArmy:IsDefenceAllowed()
+---
+-- Returns if the army is allowed to defend.
+--
+-- @return[type=boolean] Defend is allowed
+-- @within Properties
+--
+function AiArmy:IsGuardAllowed()
     return self.DefendAllowed == true;
 end
 
-function AiArmy:SetDefenceAllowed(_Flag)
+---
+-- Set the flag if the army is allowed to defend. This must be taken into
+-- account by the extern army controller.
+--
+-- @param[type=boolean] _Flag Defend allowed flag
+-- @within Properties
+--
+function AiArmy:SetGuardAllowed(_Flag)
     self.DefendAllowed = _Flag == true;
     return self;
 end
@@ -349,10 +525,17 @@ end
 -- -------------------------------------------------------------------------- --
 
 function AiArmy:CallGetArmyOrientation()
-    if not self.GetArmyOrientation then
-        return self.DefaultGetArmyOrientation(self);
+    if self.ArmyOrientationCache then
+        return self.ArmyOrientationCache;
     end
-    return self.GetArmyOrientation(self);
+    local Orientation;
+    if not self.GetArmyOrientation then
+        Orientation = self.DefaultGetArmyOrientation(self);
+    else
+        Orientation = self.GetArmyOrientation(self);
+    end
+    self.ArmyOrientationCache = Orientation;
+    return Orientation;
 end
 
 ---
@@ -368,7 +551,7 @@ end
 --
 -- @param[type=function] _Function Calculate army rotation
 -- @return[type=number] Army rotation
--- @within AiArmy
+-- @within Behavior
 --
 function AiArmy:SetArmyOrientationCalculator(_Function)
     self.GetArmyOrientation = _Function;
@@ -398,11 +581,17 @@ end
 -- -------------------------------------------------------------------------- --
 
 function AiArmy:GetArmyPosition()
-    if table.getn(self.Troops) == 0 then
-        return self.HomePosition;
-    else
-        return QuestTools.GetGeometricFocus(unpack(self.Troops));
+    if self.ArmyPositionCache then
+        return self.ArmyPositionCache;
     end
+    local Position;
+    if table.getn(self.Troops) == 0 then
+        Position = self.HomePosition;
+    else
+        Position = QuestTools.GetGeometricFocus(unpack(self.Troops));
+    end
+    self.ArmyPositionCache = Position;
+    return Position;
 end
 
 function AiArmy:CallGetArmyFront()
@@ -424,7 +613,7 @@ end
 --
 -- @param[type=function] _Function Calculate army front
 -- @return[type=number] Front position of army
--- @within AiArmy
+-- @within Behavior
 --
 function AiArmy:SetArmyFrontCalculator(_Function)
     self.GetArmyOrientation = _Function;
@@ -445,7 +634,7 @@ function AiArmy:DefaultGetArmyFront()
         end
         local Rotation = self:CallGetArmyOrientation();
         local Position = QuestTools.GetCirclePosition(
-            ArmyPosition, MaxDistance * 1.25, Rotation
+            ArmyPosition, MaxDistance * 1.5, Rotation
         );
         -- Uncomment for debug reasons
         -- if self.FrontPositionMarker then
@@ -459,6 +648,9 @@ end
 -- -------------------------------------------------------------------------- --
 
 function AiArmy:GetArmyBlockPositonMap(_Position)
+    if self.ArmyFormationCache then
+        return self.ArmyFormationCache;
+    end
     local Position = _Position or self:GetArmyPosition();
     if type(_Position) ~= "table" then
         Position = GetPosition(_Position);
@@ -505,6 +697,7 @@ function AiArmy:GetArmyBlockPositonMap(_Position)
             PositionMap[Temp[i]] = FormationPos;
         end
     end
+    self.ArmyFormationCache = PositionMap;
     return PositionMap
 end
 
@@ -623,14 +816,13 @@ end
 
 function AiArmy:GetWeakTroops()
     local Weak = {};
-    for k, v in pairs(self.Troops) do
-        if v then
-            local Cur = Logic.LeaderGetNumberOfSoldiers(v);
-            local Max = Logic.LeaderGetMaxNumberOfSoldiers(v);
-            if Max > 0 and Cur < Max then
-                table.insert(Weak, v);
-                self.Troops[k] = nil;
-            end
+    for i= table.getn(self.Troops), 1, -1 do
+        local Cur = Logic.LeaderGetNumberOfSoldiers(self.Troops[i]);
+        local Max = Logic.LeaderGetMaxNumberOfSoldiers(self.Troops[i]);
+        if Max > 0 and Cur < Max then
+            table.insert(Weak, self.Troops[i]);
+            AiArmyMemberAssignment[self.Troops[i]] = nil;
+            table.remove(self.Troops, i);
         end
     end
     return Weak;
@@ -665,6 +857,7 @@ function AiArmy:DispatchTroopsToProducers(_Troops)
     end
     -- destroy rest
     for i= table.getn(Troops), 1, -1 do
+        AiArmyMemberAssignment[Troops[i]] = nil;
         DestroyEntity(Troops[i]);
     end
 end
@@ -693,15 +886,19 @@ end
 
 function AiArmy:ClearDeadTroops()
     for i= table.getn(self.Troops), 1, -1 do
-        if Logic.IsHero(self.Troops[i]) == 0 then
-            if not IsExisting(self.Troops[i]) then
-                table.remove(self.Troops, i);
-            end
-        else
-            if not IsExisting(self.Troops[i]) or Logic.GetEntityHealth(self.Troops[i]) == 0 then
-                -- TODO: What should we do with a drunken sailor?
-                -- SetPosition(self.Troops[i], GetPosition(self.HomePosition));
-                table.remove(self.Troops, i);
+        if self.Troops[i] then
+            if Logic.IsHero(self.Troops[i]) == 0 then
+                if not IsExisting(self.Troops[i]) then
+                    local ID = table.remove(self.Troops, i);
+                    AiArmyMemberAssignment[ID] = nil;
+                end
+            else
+                if not IsExisting(self.Troops[i]) or Logic.GetEntityHealth(self.Troops[i]) == 0 then
+                    -- TODO: What should we do with a drunken sailor?
+                    -- SetPosition(self.Troops[i], GetPosition(self.HomePosition));
+                    local ID = table.remove(self.Troops, i);
+                    AiArmyMemberAssignment[ID] = nil;
+                end
             end
         end
     end
@@ -709,15 +906,17 @@ end
 
 function AiArmy:ClearDeadTroopTargets()
     for i= table.getn(self.Troops), 1, -1 do
-        if not IsExisting(self.Troops[i]) then
-            self.TroopProperties[self.Troops[i]] = nil;
-        else
-            if self.TroopProperties[self.Troops[i]] then
-                if self.TroopProperties[self.Troops[i]].Target ~= 0 then
-                    local ID = self.TroopProperties[self.Troops[i]].Target;
-                    if not IsExisting(ID) or Logic.GetEntityHealth(ID) == 0 then
-                        self.TroopProperties[self.Troops[i]].Target = 0;
-                        self.TroopProperties[self.Troops[i]].Time   = 0;
+        if self.Troops[i] then
+            if not IsExisting(self.Troops[i]) then
+                self.TroopProperties[self.Troops[i]] = nil;
+            else
+                if self.TroopProperties[self.Troops[i]] then
+                    if self.TroopProperties[self.Troops[i]].Target ~= 0 then
+                        local ID = self.TroopProperties[self.Troops[i]].Target;
+                        if not IsExisting(ID) or Logic.GetEntityHealth(ID) == 0 then
+                            self.TroopProperties[self.Troops[i]].Target = 0;
+                            self.TroopProperties[self.Troops[i]].Time   = 0;
+                        end
                     end
                 end
             end
@@ -736,6 +935,10 @@ end
 -- -------------------------------------------------------------------------- --
 
 function AiArmy:Operate()
+    self.ArmyOrientationCache = nil;
+    self.ArmyPositionCache = nil;
+    self.ArmyFormationCache = nil;
+
     if self.ArmyIsDead then
         return true;
     end
@@ -789,6 +992,7 @@ function AiArmy.ArmyAttackedReactionController(_ID)
         end
         if VictimID and QuestTools.IsInTable(VictimID, AiArmyList[_ID].Troops) then
             AiArmyList[_ID].State = ArmyStates.Battle;
+            AiArmyList[_ID].BattleTarget = GetPosition(EntityID);
             for j= table.getn(AiArmyList[_ID].Troops), 1, -1 do
                 local TroopID = AiArmyList[_ID].Troops[j];
                 if not AiArmyList[_ID].TroopProperties[TroopID] then
@@ -828,6 +1032,10 @@ function AiArmy:IdleStateController()
         self:ClearTargets();
         return;
     end
+    self.State = ArmyStates.Advance;
+    self.Target = self.HomePosition;
+    self:NormalizedArmySpeed();
+    self:ClearTargets();
 end
 
 -- -------------------------------------------------------------------------- --
@@ -853,7 +1061,7 @@ function AiArmy:AdvanceStateController()
 
     -- find enemies
     local Position = self:CallGetArmyFront();
-    local Enemies = self:CallGetEnemiesInArea(Position, self.RodeLength);
+    local Enemies = self:CallGetEnemiesInArea(Position, 4000);
     if table.getn(Enemies) > 0 then
         self.BattleTarget = Position;
         self.State = ArmyStates.Battle;
@@ -865,7 +1073,6 @@ function AiArmy:AdvanceStateController()
     -- advance to target
     if QuestTools.GetDistance(self.Target, self:GetArmyPosition()) > 1500 then
         if not self:IsMoving() and not self:IsFighting() then
-            -- self:Move(self.Target);
             self:MoveAsBlock(self.Target, false, false);
         end
     else
@@ -908,9 +1115,8 @@ function AiArmy:BattleStateController()
     end
 
     -- find enemies
-    local AreaSize = self.RodeLength;
-    local AreaCenter = self:CallGetArmyFront();
-    local Enemies = self:CallGetEnemiesInArea(AreaCenter, AreaSize);
+    local AreaSize = 4000; --self.RodeLength;
+    local Enemies = self:CallGetEnemiesInArea(self.BattleTarget, AreaSize);
     if table.getn(Enemies) == 0 then
         self.BattleTarget = nil;
         self.State = ArmyStates.Advance;
@@ -919,10 +1125,9 @@ function AiArmy:BattleStateController()
         self:MoveAsBlock(self.Target, false, true);
         return;
     else
-        local Enemies = self:CallGetEnemiesInArea(AreaCenter, AreaSize);
-        self:ControlTroops(AreaCenter, Enemies);
+        self:ControlTroops(self.BattleTarget, Enemies);
     end
-    self:Assemble(self.RodeLength);
+    self:Assemble(AreaSize);
 end
 
 -- -------------------------------------------------------------------------- --
@@ -953,7 +1158,6 @@ function AiArmy:ObliberateStateController()
         self.Target = nil;
         return;
     else
-        local Enemies = self:CallGetEnemiesInArea(AreaCenter, AreaSize);
         self:ControlTroops(AreaCenter, Enemies);
     end
     self:Assemble(AreaSize);
@@ -995,7 +1199,6 @@ function AiArmy:GuardStateController()
         self:Assemble(self.RodeLength / 2);
         return;
     else
-        local Enemies = self:CallGetEnemiesInArea(AreaCenter, AreaSize);
         self:ControlTroops(AreaCenter, Enemies);
     end
     self:Assemble(self.RodeLength);
@@ -1049,6 +1252,7 @@ function AiArmy:RefillStateController()
                         local ID = Spawner[i]:GetTroop();
                         if ID > 0 then
                             self:CallChoseFormation(ID);
+                            AiArmyMemberAssignment[ID] = self.ArmyID;
                             table.insert(self.Troops, ID);
                         end
                     else
@@ -1072,6 +1276,7 @@ function AiArmy:RefillStateController()
                         local ID = v:GetTroop();
                         if ID > 0 then
                             self:CallChoseFormation(ID);
+                            AiArmyMemberAssignment[ID] = self.ArmyID;
                             table.insert(self.Troops, ID);
                         elseif ID == 0 then
                             if self:CountUnpickedProducerTroops() < self.TroopCount - table.getn(self.Troops) then
@@ -1213,7 +1418,8 @@ function AiArmy:ControlSingleTroop(_TroopID, _Position, _Enemies)
 end
 
 function AiArmy:CannonTroopAttackTarget(_TroopID, _EnemyID)
-    if self.TroopProperties[_TroopID].Command +1 < Logic.GetTime() then
+    local Command = self.TroopProperties[_TroopID].Command;
+    if not Command or Command +1 < Logic.GetTime() then
         local Sight = Logic.GetEntityExplorationRange(_TroopID) * 100;
         if  QuestTools.GetDistance(_TroopID, _EnemyID) < Sight then
             if not self:IsTroopFighting(_TroopID) then
@@ -1248,7 +1454,7 @@ end
 -- </table>
 --
 -- @param[type=function] _Function Function to detect enemies
--- @within AiArmy
+-- @within Behavior
 --
 function AiArmy:SetTroopFormationSelector(_Function)
     self.GetEnemiesInArea = _Function;
@@ -1270,10 +1476,13 @@ end
 -- -------------------------------------------------------------------------- --
 
 function AiArmy:CallGetEnemiesInArea(_Position, _Range, _PlayerID)
+    local Enemies;
     if not self.GetEnemiesInArea then
-        return self.DefaultGetEnemiesInArea(self, _Position, _Range, _PlayerID);
+        Enemies = self.DefaultGetEnemiesInArea(self, _Position, _Range, _PlayerID);
+    else
+        Enemies = self.GetEnemiesInArea(self, _Position, _Range, _PlayerID);
     end
-    self.GetEnemiesInArea(self, _Position, _Range, _PlayerID);
+    return Enemies;
 end
 
 ---
@@ -1291,7 +1500,7 @@ end
 --
 -- @param[type=function] _Function Function to detect enemies
 -- @return[type=table] List of enemies in area
--- @within AiArmy
+-- @within Behavior
 --
 function AiArmy:SetEnemiesInAreaDetector(_Function)
     self.GetEnemiesInArea = _Function;
@@ -1360,12 +1569,26 @@ function AiArmy:TargetEnemy(_TroopID, _Enemies)
             if IsExisting(OldTarget) and Logic.GetEntityHealth(OldTarget) > 0 then
                 self.TroopProperties[_TroopID].Time = self.TroopProperties[_TroopID].Time -1;
                 if self.TroopProperties[_TroopID].Time > 0 then
-                    return OldTarget;
+                    local OtherArmy = nil
+                    for k, v in pairs(AiArmyList) do
+                        if v and self.ArmyID ~= v.ArmyID and not v:IsDead() then
+                            if v:IsInArmy(OldTarget) then
+                                OtherArmy = v;
+                            end
+                        end
+                    end
+                    if OtherArmy then
+                        if OtherArmy.State ~= ArmyStates.Retreat then
+                            return OldTarget;
+                        end
+                    else
+                        return OldTarget;
+                    end
                 end
             end
         end
 
-        local Enemies = _Enemies or self:GetEnemiesInRangeOfTroop(_TroopID);
+        local Enemies = self:SelectEnemy(_TroopID, _Enemies);
         if table.getn(Enemies) > 0 then
             self.TroopProperties[_TroopID].Target = Enemies[1];
             self.TroopProperties[_TroopID].Time   = 15;
@@ -1375,9 +1598,9 @@ function AiArmy:TargetEnemy(_TroopID, _Enemies)
     return 0;
 end
 
-function AiArmy:GetEnemiesInRangeOfTroop(_TroopID)
+function AiArmy:SelectEnemy(_TroopID, _Enemies)
     local Range = self.RodeLength + self.OuterRange;
-    local Enemies = self:CallGetEnemiesInArea(_TroopID, Range);
+    local Enemies = _Enemies or self:CallGetEnemiesInArea(_TroopID, Range);
 
     -- Remove if dead
     for i= table.getn(Enemies), 1, -1 do
@@ -1399,13 +1622,12 @@ function AiArmy:GetEnemiesInRangeOfTroop(_TroopID)
     end
 
     if table.getn(Enemies) > 1 then
-        local ArmyPosition = self:GetArmyPosition();
         table.sort(Enemies, function(a, b)
             if self then
                 return self:CallComputeEnemyPriority(_TroopID, a, b);
             end
             return false;
-        end)
+        end);
     end
     return Enemies;
 end
@@ -1432,20 +1654,26 @@ end
 --
 -- @param[type=function] _Function Function to detect enemies
 -- @return[type=table] Sorted enemy list
--- @within AiArmy
+-- @within Behavior
 --
 function AiArmy:SetEnemyPriorityComperator(_Function)
     self.ComputeEnemyPriority = _Function;
 end
 
 function AiArmy:DefaultComputeEnemyPriority(_TroopID, _EnemyID1, _EnemyID2)
-    local Cost1 = math.floor(QuestTools.GetDistance(_EnemyID1, _TroopID));
+    local Position;
+    if self.State == ArmyStates.Advance or self.State == ArmyStates.Battle then
+        Position = self:CallGetArmyFront();
+    else
+        Position = self:GetArmyPosition();
+    end    
+    local Cost1 = QuestTools.GetDistance(Position, _EnemyID1);
     local Factor1 = self:CallGetTargetThreatFactor(_EnemyID1, _TroopID);
-    local Priority1 = Cost1 * Factor1;
+    local Priority1 = math.floor(Cost1 * Factor1);
     
-    local Cost2 = math.floor(QuestTools.GetDistance(_EnemyID2, _TroopID));
+    local Cost2 = QuestTools.GetDistance(Position, _EnemyID2);
     local Factor2 = self:CallGetTargetThreatFactor(_EnemyID2, _TroopID);
-    local Priority2 = Cost2 * Factor2;
+    local Priority2 = math.floor(Cost2 * Factor2);
 
     if Priority1 == 0 then
         return false;
@@ -1481,7 +1709,7 @@ end
 --
 -- @param[type=function] _Function Function to calculate thread factor
 -- @return[type=table] Enemy cost factor
--- @within AiArmy
+-- @within Behavior
 --
 function AiArmy:SetTargetThreatFactorComperator(_Function)
     self.GetTargetThreatFactor = _Function;

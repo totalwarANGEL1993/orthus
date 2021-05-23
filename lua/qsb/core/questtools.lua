@@ -745,21 +745,15 @@ AreAlliesInArea = QuestTools.AreAlliesInArea;
 -- @param[type=number] _state    Diplomatic state
 -- @return[type=boolean] Entities near
 -- @within Diplomacy
---
-QuestTools.EnemyCategoryTypes = {
-    "DefendableBuilding",
-    "Hero",
-    "Headquarters",
-    "Military",
-    "MilitaryBuilding",
-};
 function QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _Position, _range, _state)
-	for i = 1,8 do
-        if Logic.GetDiplomacyState(_player, i) == _state then
-            for k, v in pairs(QuestTools.EnemyCategoryTypes) do
-                if Logic.IsPlayerEntityOfCategoryInArea(i, _Position.X, _Position.Y, _range, v) == 1 then
-                    return true;
-                end
+	local Position = _Position;
+    if type(Position) ~= "table" then
+        Position = GetPosition(Position);
+    end
+    for i = 1, 8 do
+        if i ~= _player and Logic.GetDiplomacyState(_player, i) == _state then
+            if Logic.IsPlayerEntityOfCategoryInArea(i, Position.X, Position.Y, _range, "DefendableBuilding", "Military", "MilitaryBuilding") == 1 then
+                return true;
             end
         end
 	end
