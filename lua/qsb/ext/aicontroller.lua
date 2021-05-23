@@ -116,7 +116,9 @@ end
 -- Y with a unique number starting by 1.
 --
 -- <b>Note:</b> The AI will decide to which targets an army is send to. There
--- isn't a direct connection for one army and one target.
+-- isn't a direct connection for one army and one target. If you don't want
+-- the AI to controll the army it must be hidden from the AI. In that case you
+-- have to provide the army with targets.
 --
 -- @param[type=string] _ArmyName   Army identifier
 -- @param[type=number] _PlayerID   Owner of army
@@ -165,7 +167,9 @@ end
 -- Y with a unique number starting by 1.
 --
 -- <b>Note:</b> The AI will decide to which targets an army is send to. There
--- isn't a direct connection for one army and one target.
+-- isn't a direct connection for one army and one target. If you don't want
+-- the AI to controll the army it must be hidden from the AI. In that case you
+-- have to provide the army with targets.
 --
 -- @param[type=string] _ArmyName    Army identifier
 -- @param[type=number] _PlayerID    Owner of army.
@@ -360,6 +364,9 @@ end
 -- Disables or enables the ability to attack for the army. This function can
 -- be used to forbid an army to attack even if there are valid targets.
 --
+-- <b>Note</b>: If the army is hidden from the AI and controlled by you this
+-- will not have an effect unless you take it into account in your controller.
+--
 -- @param               _Army   Name or ID of army
 -- @param[type=boolean] _Flag   Ability to attack
 -- @within Methods
@@ -378,6 +385,9 @@ end
 -- function can force an army to stay on its spawnpoint or to avoid to be put
 -- on guard duties.
 --
+-- <b>Note</b>: If the army is hidden from the AI and controlled by you this
+-- will not have an effect unless you take it into account in your controller.
+--
 -- @param               _Army   Name or ID of army
 -- @param[type=boolean] _Flag   Ability to defend
 -- @within Methods
@@ -393,6 +403,9 @@ end
 
 ---
 -- Sets the max amount of serfs the AI player will buy.
+--
+-- <b>Note</b>: If the Ai dont owns an normal HQ then this will not have any
+-- effect on it.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _Limit    Amount of serfs
@@ -478,7 +491,8 @@ end
 --
 -- <b>Note:</b> An AI will send one army per attack target. Which army is send
 -- is decided by the AI. Armies can not be connected to attack positions. By
--- default the AI chooses the target for an army that is closest to it.
+-- default the AI chooses the target for an army that is closest to it. So if
+-- you wish to send more than one army to a target place multiple targets.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=string] _Position Zielppsition
@@ -514,7 +528,8 @@ end
 --
 -- <b>Note:</b> An AI will send one army per patrol waypoint. Which army is send
 -- is decided by the AI. Armies can not be connected to patrol waypoints. By
--- default the AI chooses the position for an army that is closest to it.
+-- default the AI chooses the position for an army that is closest to it. So if
+-- you wish to send more than one army to a target place multiple targets.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=string] _Position Zielposition
@@ -569,7 +584,8 @@ end
 -- refreshing.
 -- 
 -- <p><b>Note:</b> This is active by default! You can deactivate it if you
--- want the AI to be restricted to the resources.</p>
+-- want the AI to be restricted to the resources. But this is not recommended,
+-- because the AI might be to easy to beat.</p>
 --
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=boolean] _Flag     Does ignore costs
@@ -612,7 +628,7 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
         Strength        = _Strength,
         ArmyStrength    = 12,
         RodeLength      = 4000,
-        MilitaryCosts   = false,
+        MilitaryCosts   = true,
     };
     table.insert(self.Players[_PlayerID].UnitsToBuild, Entities["PV_Cannon" .._TechLevel]);
 
@@ -942,7 +958,7 @@ end
 
 function AiController:ControlPlayerAssault(_PlayerID, _Position)
     -- no enemies there
-    local Enemies = AiArmy:GetEnemiesInArea(_Position, self.Players[_PlayerID].RodeLength, _PlayerID);
+    local Enemies = AiArmy:CallGetEnemiesInArea(_Position, self.Players[_PlayerID].RodeLength, _PlayerID);
     if table.getn(Enemies) == 0 then
         return;
     end
