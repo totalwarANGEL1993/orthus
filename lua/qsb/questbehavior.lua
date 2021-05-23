@@ -24,6 +24,9 @@
 -- @set sort=true
 --
 
+---@diagnostic disable: undefined-global
+---@diagnostic disable: lowercase-global
+
 -- Quests and tools --
 
 StageQuestResultType = {
@@ -129,19 +132,46 @@ end
 -- @within Methods
 -- @see CreateQuest
 --
--- @usage CreateQuest {
---     Name = "VictoryCondition",
---     Description = {
---         Title = "Justice!",
---         Text  = "Time for paybeck. Destroy your enemy!",
---         Type  = MAINQUEST_OPEN,
---         Info  = 1
---     },
---
---     Goal_DestroyPlayer(2, "HQ2"),
---     Reward_Victory(),
---     Trigger_Time(0)
--- }
+-- @usage CreateStagedQuest {
+-- 	Name 		= "StagedTraderQuest",
+-- 	Description = {
+-- 		Title = "Die Händler abklappern",
+-- 		Text  = "Sprecht mit allen Händlern und sichert Euch Handelsverträge.",
+-- 		Type  = MAINQUEST_OPEN,
+-- 		Info  = 1,
+-- 	},
+-- 	Stages      = {
+-- 		{
+-- 			Description = {
+-- 				Title = "Sprecht mit dem ersten Händler",
+-- 				Text  = "",
+-- 			},
+-- 			Goal_NPC("trader1"),
+-- 			Reward_Briefing("Trader1Briefing"),
+-- 		},
+-- 		{
+-- 			Description = {
+-- 				Title = "Sprecht mit dem zweiten Händler",
+-- 				Text  = "",
+-- 			},
+-- 			Goal_NPC("trader2"),
+-- 			Reward_Briefing("Trader1Briefing"),
+-- 		},
+-- 		{
+-- 			Description = {
+-- 				Title = "Sprecht mit dem dritten Händler",
+-- 				Text  = "",
+-- 			},
+-- 			Goal_NPC("trader3"),
+-- 			Reward_Briefing("Trader1Briefing"),
+-- 		},
+-- 		{
+-- 			Goal_InstantSuccess(),
+-- 			Trigger_QuestSuccess("StagedTraderQuest@Stage3", 5),
+-- 		}
+-- 	},
+-- 	Trigger_Time(5),
+-- };
 --
 function CreateStagedQuest(_Data)
     if not _Data.Name then
@@ -495,7 +525,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
             QuestSystemBehavior:InstallS5Hook();
         end
 
-        Camera.ZoomSetFactorMax(1.5);
+        Camera.ZoomSetFactorMax(2.0);
         QuestSystem:InstallQuestSystem();
         Interaction:Install();
         self:CreateBehaviorConstructors();
@@ -516,7 +546,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
         Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
         Mission_OnSaveGameLoaded = function()
             Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior();
-            Camera.ZoomSetFactorMax(1.5);
+            Camera.ZoomSetFactorMax(2.0);
             QuestSystemBehavior:CallSaveLoadActions();
         end
 
@@ -532,7 +562,7 @@ end
 
 function QuestSystemBehavior:CreateScriptEvents()
     QuestSync:DeleteScriptEvent(QuestDebug.ScriptEvents.AlterQuestResult);
-    QuestDebug.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _Result)
+    QuestDebug.ScriptEvents.AlterQuestResult = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _QuestID, _Result)
         if QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
                 Message("Can not find quest: " ..command[2]);
@@ -573,7 +603,7 @@ function QuestSystemBehavior:CreateScriptEvents()
     end);
 
     QuestSync:DeleteScriptEvent(QuestDebug.ScriptEvents.AlterQuestState);
-    QuestDebug.ScriptEvents.AlterQuestState = QuestSync:CreateScriptEvent(function(_ExecutingPlayer, _QuestID, _State)
+    QuestDebug.ScriptEvents.AlterQuestState = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _QuestID, _State)
         if QuestID == 0 then
             if GUI.GetPlayerID() == _ExecutingPlayer then
                 Message("Can not find quest: " ..command[2]);
@@ -761,7 +791,7 @@ end
 --
 function QuestSystemBehavior:UpgradeAI(_PlayerID, _NewTechLevel)
     if TroopGenerator.CreatedAiPlayers[_PlayerID] then
-        TroopGenerator.AI:UpgradeTroops(_PlayerID, _NewTechLevel);
+        AiController:UpgradeTroops(_PlayerID, _NewTechLevel);
     end
 end
 
@@ -3876,7 +3906,7 @@ end
 function b_Goal_DestroyPlayer:CustomFunction(_Quest)
     if not IsExisting(self.Data.Headquarter) then
         if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] then
-            AI.Player_DisableAi(self.Data.PlayerID);
+            AiController:DestroyPlayer(self.Data.PlayerID);
         end
 
         local PlayerEntities = QuestTools.GetPlayerEntities(self.Data.PlayerID, 0);
@@ -3942,10 +3972,9 @@ function b_Goal_DestroyArmy:GetGoalTable()
 end
 
 function b_Goal_DestroyArmy:CustomFunction(_Quest)
-    local Armies = TroopGenerator.CreatedAiArmies[self.Data.PlayerID] or {};
-    local Army = Armies[TroopGenerator.AiArmyNameToId[self.Data.ArmyName]];
-    if Army == nil then
-        return false;
+    local Army = GetArmy(self.Data.ArmyName);
+    if not Army then
+        return true;
     end
     if Army:IsDead() then
         return true;
@@ -3954,11 +3983,10 @@ end
 
 function b_Goal_DestroyArmy:Debug(_Quest)
     local Armies = TroopGenerator.CreatedAiArmies[self.Data.PlayerID] or {};
-    local Army = Armies[TroopGenerator.AiArmyNameToId[self.Data.ArmyName]];
+    local Army = GetArmy(self.Data.ArmyName);
     if Army == nil then
         local Player = tostring(self.Data.PlayerID);
-        local ArmyID = tostring(self.Data.ArmyID);
-        dbg(_Quest, self, "Player " ..Player.. " does not have an army with the id " ..ArmyID.. "!");
+        dbg(_Quest, self, "Army " ..tostring(self.Data.ArmyName).. " does not exist!");
         return true;
     end
     return false;
@@ -4679,10 +4707,60 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateAIPlayer);
 -- -------------------------------------------------------------------------- --
 
 ---
--- Creates an AI player and let it creates any armies.
+-- Destroys an AI player and all of their created armies.
+--
+-- <b>Note</b>: All armies of the player will be deleted. Even those that are
+-- hidden from the AI's control.
+--
+-- @param[type=number]  _PlayerID  Id of player
+-- @within Rewards
+--
+function Reward_AI_DestroyAIPlayer(...)
+    return b_Reward_AI_DestroyAIPlayer:New(unpack(arg));
+end
+
+b_Reward_AI_DestroyAIPlayer = {
+    Data = {
+        Name = "Reward_AI_DestroyAIPlayer",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_AI_DestroyAIPlayer:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    end
+end
+
+function b_Reward_AI_DestroyAIPlayer:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_AI_DestroyAIPlayer:CustomFunction(_Quest)
+    QuestTools.SaveCall{DestroyAIPlayer, self.Data.PlayerID};
+end
+
+function b_Reward_AI_DestroyAIPlayer:Debug(_Quest)
+    if not self.Data.PlayerID or self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "Player ID must be between 1 and 8!");
+        return true;
+    end
+    return true;
+end
+
+function b_Reward_AI_DestroyAIPlayer:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_AI_DestroyAIPlayer);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Creates an AI player and let it creates their own armies.
 --
 -- Armies will gather at the rally point and will automatically deployed on
--- attack targets and patrol points by the AI.
+-- attack targets and patrol points by the AI. The AI will need accessable
+-- recruiting facilities to buy troops.
 --
 -- <b>Note:</b> Armies will have 12 groups instead of 8!
 --
@@ -4788,7 +4866,11 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_SetupAIPlayer);
 ---
 -- Commands an AI player to build a building at the position.
 --
--- The AI will need serfs to heed the command!
+-- The AI will need serfs to heed the command.
+--
+-- <b>Note</b>: If you wish to perform more complicated construction commands
+-- to let the AI build up a base or something similar then you should use the
+-- classic method by calling an script callback.
 --
 -- @param[type=number] _PlayerID  Id of player
 -- @param[type=string] _Type      Type of building
@@ -4909,6 +4991,7 @@ function b_Reward_AI_CreateArmy:CustomFunction(_Quest)
         self.Data.Strength,
         self.Data.Position,
         self.Data.RodeLength,
+        -- TODO: Currently without effect!
         self.Data.TroopType
     };
     if not Army then
@@ -4925,7 +5008,7 @@ function b_Reward_AI_CreateArmy:Debug(_Quest)
         dbg(_Quest, self, "An army got an invalid identifier!");
         return true;
     end
-    if TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
+    if AiControllerArmyNameToID[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
         return true;
     end
@@ -5032,7 +5115,7 @@ function b_Reward_AI_CreateSpawnArmy:CustomFunction(_Quest)
         self.Data.PlayerID, 
         self.Data.Strength, 
         self.Data.Position, 
-        self.Data.LifeThread, 
+        self.Data.LifeThread,
         self.Data.RodeLength, 
         self.Data.RespawnTime, 
         unpack(TroopTypes)
@@ -5051,7 +5134,7 @@ function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
         dbg(_Quest, self, "An army got an invalid identifier!");
         return true;
     end
-    if TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
+    if AiControllerArmyNameToID[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
         return true;
     end
@@ -5083,6 +5166,58 @@ function b_Reward_AI_CreateSpawnArmy:Reset(_Quest)
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_AI_CreateSpawnArmy);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Destroys an army and all existing troops of this army.
+--
+-- @param[type=string] _ArmyName Army identifier
+-- @within Rewards
+--
+function Reward_AI_DestroyArmy(...)
+    return b_Reward_AI_DestroyArmy:New(unpack(arg));
+end
+
+b_Reward_AI_DestroyArmy = {
+    Data = {
+        Name = "Reward_AI_DestroyArmy",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reward_AI_DestroyArmy:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.ArmyName = _Parameter;
+    end
+end
+
+function b_Reward_AI_DestroyArmy:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reward_AI_DestroyArmy:CustomFunction(_Quest)
+    if AiControllerArmyNameToID[self.Data.ArmyName] then
+        QuestTools.SaveCall{ArmyDisband, self.Data.ArmyName, true, false};
+    end
+end
+
+function b_Reward_AI_DestroyArmy:Debug(_Quest)
+    if self.Data.ArmyName == "" or self.Data.ArmyName == nil then
+        dbg(_Quest, self, "An army got an invalid identifier!");
+        return true;
+    end
+    if not AiControllerArmyNameToID[self.Data.ArmyName] then
+        dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
+        return true;
+    end
+    return false;
+end
+
+function b_Reward_AI_DestroyArmy:Reset(_Quest)
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_AI_DestroyArmy);
 
 -- -------------------------------------------------------------------------- --
 
@@ -5120,7 +5255,7 @@ function b_Reward_AI_EnableArmyPatrol:GetRewardTable()
 end
 
 function b_Reward_AI_EnableArmyPatrol:CustomFunction(_Quest)
-    if TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
+    if AiControllerArmyNameToID[self.Data.ArmyName] then
         QuestTools.SaveCall{ArmyDisablePatrolAbility, self.Data.PlayerID, self.Data.ArmyName, not self.Data.Flag};
     end
 end
@@ -5130,7 +5265,7 @@ function b_Reward_AI_EnableArmyPatrol:Debug(_Quest)
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
-    if not TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
+    if not AiControllerArmyNameToID[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
     end
@@ -5178,7 +5313,7 @@ function b_Reward_AI_EnableArmyAttack:GetRewardTable()
 end
 
 function b_Reward_AI_EnableArmyAttack:CustomFunction(_Quest)
-    if TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
+    if AiControllerArmyNameToID[self.Data.ArmyName] then
         QuestTools.SaveCall{ArmyDisableAttackAbility, self.Data.PlayerID, self.Data.ArmyName, not self.Data.Flag};
     end
 end
@@ -5188,7 +5323,7 @@ function b_Reward_AI_EnableArmyAttack:Debug(_Quest)
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
-    if not TroopGenerator.AiArmyNameToId[self.Data.ArmyName] then
+    if not AiControllerArmyNameToID[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
     end

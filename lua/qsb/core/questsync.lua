@@ -36,17 +36,6 @@ QuestSync = {
 function QuestSync:Install()
     self:OverrideMessageReceived();
     self:ActivateTributePaidTrigger();
-
-    if CNetwork then
-        CNetwork.SetNetworkHandler("QuestSync_CNetwork_SnchronizedCall", function(_Name, _PlayerID, _ID, ...)
-            if CNetwork.IsAllowedToManipulatePlayer(_Name, _PlayerID) then
-                if self.ScriptEvents[_ID] then
-                    arg = arg or {};
-                    self.ScriptEvents[_ID].Function(unpack(arg));
-                end
-            end;
-        end);
-    end
 end
 
 ---
@@ -60,8 +49,15 @@ function QuestSync:CreateScriptEvent(_Function)
     local ActionIndex = self.UniqueActionCounter;
 
     self.ScriptEvents[ActionIndex] = {
-        Function  = _Function,
-    }    
+        Function = _Function,
+        CNetwork = "QuestSync_CNetworkHandler_" .. self.UniqueActionCounter;
+    };
+    if CNetwork then
+        CNetwork.SetNetworkHandler(
+            self.ScriptEvents[ActionIndex].CNetwork,
+            _Function
+        );
+    end
     return self.UniqueActionCounter;
 end
 
@@ -90,22 +86,14 @@ function QuestSync:SnchronizedCall(_ID, ...)
             Msg = Msg .. tostring(arg[i]) .. ":::";
         end
     end
-    local PlayerID = GUI.GetPlayerID();
-    local Time = Logic.GetTimeMs();
-    
     if CNetwork then
-        CNetwork.SendCommand(
-            "QuestSync_CNetwork_SnchronizedCall",
-            GUI.GetPlayerID(),
-            _ID,
-            unpack(arg)
-        );
+        local Name = self.ScriptEvents[_ID].CNetwork;
+        CNetwork.SendCommand(Name, unpack(arg));
     else
+        local PlayerID = GUI.GetPlayerID();
+        local Time = Logic.GetTimeMs();
         self:TransactionSend(_ID, PlayerID, Time, Msg, arg);
     end
-end
--- This is a dummy function needed to be called only on the community server.
-function QuestSync_CNetwork_SnchronizedCall(_PlayerID, _ID, ...)
 end
 
 function QuestSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
@@ -135,6 +123,7 @@ function QuestSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
             end
         end
         if AllAcksReceived == true then
+            table.insert(_Parameter, 1, -1);
             local ID = QuestSync:CreateTribute(_PlayerID, _ID, unpack(_Parameter));
             QuestSync:PayTribute(_PlayerID, ID);
             return true;
@@ -363,6 +352,26 @@ function QuestSync:GetActivePlayers()
         table.insert(Players, GUI.GetPlayerID());
     end
     return Players;
+end
+
+---
+-- Returns all active teams.
+-- @return[type=number] List of teams
+-- @within QuestSync
+--
+function QuestSync:GetActiveTeams()
+    if self:IsMultiplayerGame() then
+        local Teams = {};
+        for k, v in pairs(self:GetActivePlayers()) do
+            local Team = self:GetTeamOfPlayer(v);
+            if not QuestTools.IsInTable(Team, Teams) then
+                table.insert(Teams, Team);
+            end
+        end
+        return Teams;
+    else
+        return {1};
+    end
 end
 
 ---

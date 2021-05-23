@@ -101,10 +101,12 @@ function QuestSystem:InstallQuestSystem()
             self.QuestDescriptions[i] = {};
         end
 
-        -- Real random numbers
-        local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
-        if QuestSync:IsPlayerHost(GUI.GetPlayerID()) then
-            QuestSync:SnchronizedCall(self.MathRandomSeedScriptEvent, TimeString);
+        -- Real random numbers (not needed for CNetwork)
+        if not CNetwork then
+            local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
+            if QuestSync:IsPlayerHost(GUI.GetPlayerID()) then
+                QuestSync:SnchronizedCall(self.MathRandomSeedScriptEvent, TimeString);
+            end
         end
 
         -- Quest event trigger
@@ -129,7 +131,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
         for i= 1, table.getn(Defenders), 1 do
             local Soldiers;
             if Logic.IsLeader(Defenders[i]) == 1 then
-                Soldiers = {Logic.GetSoldiersAttachedToLeader(leaderID)};
+                Soldiers = {Logic.GetSoldiersAttachedToLeader(Defenders[i])};
                 table.remove(Soldiers, 1);
             end
             QuestSystem.HurtEntities[Defenders[i]] = {Attacker, Logic.GetTime(), Soldiers};
@@ -801,14 +803,16 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
             Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
         end
         Logic.PlayerSetGameStateToLost(self.m_Receiver);
-        Trigger.DisableTriggerSystem(1);
+        if XNetwork.Manager_DoesExist() == 0 then
+            Trigger.DisableTriggerSystem(1);
+        end
 
     elseif _Behavior[1] == Callbacks.Victory then
         if self.m_Receiver == GUI.GetPlayerID() then
             Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
         end
         Logic.PlayerSetGameStateToWon(self.m_Receiver);
-        if XNetwork.Manager_DoesExist() == 1 then
+        if XNetwork.Manager_DoesExist() == 0 then
             Trigger.DisableTriggerSystem(1);
         end
 
@@ -1754,7 +1758,7 @@ function QuestSystem:ReplaceKeyValuePlaceholders(_Message)
         end
         if string.find(Placeholder, "val:") then
             local Value = _G[string.sub(Placeholder, string.find(Placeholder, ":")+1)];
-            if type(Value) == "string" or type(value) == "number" then
+            if type(Value) == "string" or type(Value) == "number" then
                 _Message = Before .. Value .. After;
             end
         end

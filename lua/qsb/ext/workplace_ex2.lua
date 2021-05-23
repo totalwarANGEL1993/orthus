@@ -67,7 +67,11 @@ end
 -- @local
 --
 function QuestSystem.Workplace:PrepareWorkerAmountEvent()
-	self.ScriptEvent = QuestSync:CreateScriptEvent(function(_BuildingID, _Amount, _State)
+	self.ScriptEvent = QuestSync:CreateScriptEvent(function(name, _BuildingID, _Amount, _State)
+		local PlayerID = Logic.EntityGetPlayer(_BuildingID);
+		if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, PlayerID) then
+            return;
+        end
 		local ScriptName = QuestTools.CreateNameForEntity(_BuildingID);
 		QuestSystem.Workplace.WorkplaceStates[ScriptName] = _State;
 		Logic.SetCurrentMaxNumWorkersInBuilding(_BuildingID, _Amount);

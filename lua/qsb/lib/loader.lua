@@ -12,6 +12,7 @@
 -- <li>LuaBit - Lua 5.0 implementation of lua bit.</li>
 -- <li>EntityFind - Library to find all entities.</li>
 -- <li>MD5 - Library to create simple MD5 hashes.</li>
+-- <li>Countdown - User classic countdowns</li>
 -- <li>Metatable (S5 Community) - Makes metatables savable.</li>
 -- <li>S5Hook (S5 Community) - Allows basic memory manipulation (not compatible
 -- to History Edition).</li>
@@ -28,6 +29,9 @@ end
 if md5 == nil then
     Script.Load(gvBasePath.. "qsb/lib/md5.lua");
 end
+if StartCountdown == nil then
+    Script.Load(gvBasePath.. "qsb/lib/countdown.lua");
+end
 -- Load entity find
 if EntityFind == nil then
     Script.Load(gvBasePath.. "qsb/lib/entityfind.lua");
@@ -35,6 +39,10 @@ end
 -- Load Metatable fix
 if metatable == nil then
     Script.Load(gvBasePath.. "qsb/lib/metatable.lua");
+end
+-- Scripting Values
+if SV == nil then
+    Script.Load(gvBasePath.. "qsb/lib/scriptingvalue.lua");
 end
 -- Load S5Hook
 if S5Hook == nil and (not initEMS or not initEMS()) then

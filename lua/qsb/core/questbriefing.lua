@@ -64,7 +64,10 @@ end
 
 function QuestBriefing:CreateScriptEvents()
     -- Player pressed escape
-    self.Events.PostEscapePressed = QuestSync:CreateScriptEvent(function(_PlayerID)
+    self.Events.PostEscapePressed = QuestSync:CreateScriptEvent(function(name, _PlayerID)
+        if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
+            return;
+        end
         if not QuestSync:IsMultiplayerGame() and QuestBriefing:IsBriefingActive(_PlayerID) then
             if QuestBriefing:CanPageBeSkipped(_PlayerID) then
                 QuestBriefing:NextPage(_PlayerID, false);
@@ -73,7 +76,10 @@ function QuestBriefing:CreateScriptEvents()
     end);
     
     -- Multiple choice option selected
-    self.Events.PostOptionSelected = QuestSync:CreateScriptEvent(function(_PlayerID, _PageID, _OptionID)
+    self.Events.PostOptionSelected = QuestSync:CreateScriptEvent(function(name, _PlayerID, _PageID, _OptionID)
+        if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
+            return;
+        end
         if QuestBriefing:IsBriefingActive(_PlayerID) then
             local Page = QuestBriefing.m_Book[_PlayerID][_PageID];
             if Page then
@@ -100,13 +106,19 @@ function QuestBriefing:CreateScriptEvents()
     end);
 
     -- Post players camera position to all
-    self.Events.PostCameraPosition = QuestSync:CreateScriptEvent(function(_PlayerID, _X, _Y)
-        QuestBriefing.m_Book[_PlayerID] = QuestBriefing.m_Book[PlayerID] or {};
+    self.Events.PostCameraPosition = QuestSync:CreateScriptEvent(function(name, _PlayerID, _X, _Y)
+        if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
+            return;
+        end
+        QuestBriefing.m_Book[_PlayerID] = QuestBriefing.m_Book[_PlayerID] or {};
         QuestBriefing.m_Book[_PlayerID].RestorePosition = {X= _X, Y= _Y};
     end);
 
     -- Post players selected entities to all
-    self.Events.PostSelectedEntities = QuestSync:CreateScriptEvent(function(_PlayerID, ...)
+    self.Events.PostSelectedEntities = QuestSync:CreateScriptEvent(function(name, _PlayerID, ...)
+        if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
+            return;
+        end
         if arg and table.getn(arg) > 0 then
             QuestBriefing.m_Book[_PlayerID] = QuestBriefing.m_Book[_PlayerID] or {};
             QuestBriefing.m_Book[_PlayerID].SelectedEntities = copy(arg);
@@ -593,7 +605,7 @@ function QuestBriefing:NextPage(_PlayerID, _FirstPage)
     if Page.Target and Page.Explore and Page.Explore > 0 then
         local Position = GetPosition(Page.Target);
         local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, 0, _PlayerID);
-        Logic.SetEntityExplorationRange(ViewCenter, math.ceil(Page.Explore/10));
+        Logic.SetEntityExplorationRange(Position, math.ceil(Page.Explore/10));
         table.insert(self.m_Book[_PlayerID].Exploration, ID);
     end
     -- Start Fader
@@ -1171,7 +1183,7 @@ function QuestBriefing:SetPageApperance(_PlayerID, _DisableMap)
     local titleSize = (size[1]-200);
     local choiceHeight = round(46*(768/size[2]));
     local choiceWidth  = round(800*(1024/size[1]));
-    local choicePosX   = round(((Is4To3 and 112) or 112*1.4)*(size[1]/1024));
+    local choicePosX   = round(((Is4To3 and 112) or (112*1.4))*(size[1]/1024));
     local choicePosY   = round(((size[2]*(768/size[2]))/2) - ((self.MCButtonAmount/2)*(choiceHeight+10)));
 
     -- Set widget apperance

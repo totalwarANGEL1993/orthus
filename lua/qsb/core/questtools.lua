@@ -185,6 +185,24 @@ round = QuestTools.Round;
 -- Entities --
 
 ---
+-- Returns the relative health of the entity.
+--
+-- @param               _Entity Skriptname or ID of entity
+-- @return[type=number] Relative health
+-- @within Entities
+--
+function QuestTools.GetHealth(_Entity)
+    local EntityID = GetEntityId(_Entity);
+    if not Tools.IsEntityAlive(EntityID) then
+        return 0;
+    end
+    local MaxHealth = Logic.GetEntityMaxHealth(EntityID);
+    local Health = Logic.GetEntityHealth(EntityID);
+    return (Health / MaxHealth) * 100;
+end
+GetHealth = QuestTools.GetHealth;
+
+---
 -- Sets the visibility of the entity.
 --
 -- @param               _Entity Skriptname or ID of entity
@@ -208,7 +226,7 @@ end
 function QuestTools.IsVisible(_Entity)
     local ID = GetID(_Entity);
     local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
-    return Logic.GetEntityScriptingValue(ID, ValueIndex, VisibleFlag) == 513;
+    return Logic.GetEntityScriptingValue(ID, ValueIndex) == 513;
 end
 
 ---
@@ -546,29 +564,29 @@ GetCirclePosition = QuestTools.GetCirclePosition;
 function QuestTools.GetAngleBetween(_Pos1,_Pos2)
 	local delta_X = 0;
 	local delta_Y = 0;
-	local alpha   = 0
+	local alpha   = 0;
 	if type (_Pos1) == "string" or type (_Pos1) == "number" then
 		_Pos1 = GetPosition(GetEntityId(_Pos1));
 	end
 	if type (_Pos2) == "string" or type (_Pos2) == "number" then
 		_Pos2 = GetPosition(GetEntityId(_Pos2));
 	end
-	delta_X = _Pos1.X - _Pos2.X
-	delta_Y = _Pos1.Y - _Pos2.Y
-	if delta_X == 0 and delta_Y == 0 then -- Gleicher Punkt
-		return 0
+	delta_X = _Pos1.X - _Pos2.X;
+	delta_Y = _Pos1.Y - _Pos2.Y;
+	if delta_X == 0 and delta_Y == 0 then
+		return 0;
 	end
-	alpha = math.deg(math.asin(math.abs(delta_X)/(math.sqrt(__pow(delta_X, 2)+__pow(delta_Y, 2)))))
+	alpha = math.deg(math.asin(math.abs(delta_X)/(math.sqrt(delta_X^2 + delta_Y^2))));
 	if delta_X >= 0 and delta_Y > 0 then
-		alpha = 270 - alpha 
+		alpha = 270 - alpha ;
 	elseif delta_X < 0 and delta_Y > 0 then
-		alpha = 270 + alpha
+		alpha = 270 + alpha;
 	elseif delta_X < 0 and delta_Y <= 0 then
-		alpha = 90  - alpha
+		alpha = 90  - alpha;
 	elseif delta_X >= 0 and delta_Y <= 0 then
-		alpha = 90  + alpha
+		alpha = 90  + alpha;
 	end
-	return alpha
+	return alpha;
 end
 GetAngleBetween = QuestTools.GetAngleBetween;
 Winkel = QuestTools.GetAngleBetween;
@@ -654,8 +672,10 @@ GetEntityCategories = QuestTools.GetEntityCategories;
 --
 function QuestTools.GetEntityCategoriesAsString(_Entity)
     local Categories = {};
-    for k, v in pairs(QuestTools.GetEntityCategories(_Entity)) do
-        table.insert(Categories, v);
+    for k, v in pairs(EntityCategories) do
+        if Logic.IsEntityInCategory(GetID(_Entity), v) == 1 then
+            table.insert(Categories, k);
+        end
     end
     return Categories;
 end
@@ -719,30 +739,23 @@ AreAlliesInArea = QuestTools.AreAlliesInArea;
 -- Checks the area for entities of other parties with a diplomatic state to
 -- the player.
 --
--- The first 16 player entities in the area will be evaluated. If they're not
--- settler, heroes or buldings, they will be ignored.
---
 -- @param[type=number] _player   Player ID
 -- @param[type=table]  _position Area center
 -- @param[type=number] _range    Area size
 -- @param[type=number] _state    Diplomatic state
 -- @return[type=boolean] Entities near
 -- @within Diplomacy
---
-function QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _position, _range, _state)
-	for i = 1,8 do
-        if Logic.GetDiplomacyState(_player, i) == _state then
-            local Data = {Logic.GetPlayerEntitiesInArea(i, 0, _position.X, _position.Y, _range, 16)};
-            table.remove(Data, 1);
-            for j= table.getn(Data), 1, -1 do
-                if Logic.IsSettler(Data[j]) == 0 and Logic.IsBuilding(Data[j]) == 0 and Logic.IsHero(Data[j]) == 0 then
-                    table.remove(Data, j);
-                end
+function QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _Position, _range, _state)
+	local Position = _Position;
+    if type(Position) ~= "table" then
+        Position = GetPosition(Position);
+    end
+    for i = 1, 8 do
+        if i ~= _player and Logic.GetDiplomacyState(_player, i) == _state then
+            if Logic.IsPlayerEntityOfCategoryInArea(i, Position.X, Position.Y, _range, "DefendableBuilding", "Military", "MilitaryBuilding") == 1 then
+                return true;
             end
-            if table.getn(Data) > 0 then
-				return true;
-			end
-		end
+        end
 	end
 	return false;
 end
@@ -806,6 +819,105 @@ function QuestTools.StartSimpleHiResJobEx(_Function, ...)
 end
 StartSimpleHiResJobEx = QuestTools.StartSimpleHiResJobEx;
 
+---
+-- Creates an classic countdown in the top left of the screen. A counter ticks
+-- down to 0 and can trigger an optional callback function.
+--
+-- @param[type=number]   _Limit    Time in seconds
+-- @param[type=function] _Callback Callback function on counter finishes
+-- @param[type=boolean]  _Show     Countdown is visible
+-- @return[type=number] Counter ID
+-- @within Jobs
+--
+function QuestTools.StartCountdown(_Limit, _Callback, _Show)
+    assert(type(_Limit) == "number");
+    assert( not _Callback or type(_Callback) == "function" );
+    Counter.Index = (Counter.Index or 0) + 1;
+    if _Show and QuestTools.CountdownIsVisisble() then
+        assert(false, "StartCountdown: A countdown is already visible");
+    end
+    Counter["counter" .. Counter.Index] = {
+        Limit = _Limit, 
+        TickCount = 0, 
+        Callback = _Callback, 
+        Show = _Show, 
+        Finished = false
+    };
+    if _Show then
+        MapLocal_StartCountDown(_Limit);
+    end
+    if Counter.JobId == nil then
+        Counter.JobId = StartSimpleJobEx(QuestTools.CountdownTick);
+    end
+    return Counter.Index;
+end
+StartCountdown = QuestTools.StartCountdown;
+
+---
+-- Stops an running countdown.
+--
+-- @param[type=number]   _Id Index of Counter to stop
+-- @within Jobs
+--
+function QuestTools.StopCountdown(_Id)
+    if Counter.Index == nil then
+        return;
+    end
+    if _Id == nil then
+        for i = 1, Counter.Index do
+            if Counter.IsValid("counter" .. i) then
+                if Counter["counter" .. i].Show then
+                    MapLocal_StopCountDown();
+                end
+                Counter["counter" .. i] = nil;
+            end
+        end
+    else
+        if Counter.IsValid("counter" .. _Id) then
+            if Counter["counter" .. _Id].Show then
+                MapLocal_StopCountDown();
+            end
+            Counter["counter" .. _Id] = nil;
+        end
+    end
+end
+StopCountdown = QuestTools.StopCountdown;
+
+function QuestTools.CountdownTick()
+    local empty = true;
+    for i = 1, Counter.Index do
+        if Counter.IsValid("counter" .. i) then
+            if Counter.Tick("counter" .. i) then
+                Counter["counter" .. i].Finished = true;
+            end
+            if Counter["counter" .. i].Finished and not IsBriefingActive() then
+                if Counter["counter" .. i].Show then
+                    MapLocal_StopCountDown();
+                end
+                if type(Counter["counter" .. i].Callback) == "function" then
+                    Counter["counter" .. i].Callback();
+                end
+                Counter["counter" .. i] = nil;
+            end
+            empty = false;
+        end
+    end
+    if empty then
+        Counter.JobId = nil;
+        Counter.Index = nil;
+        return true;
+    end
+end
+function QuestTools.CountdownIsVisisble()
+    for i = 1, Counter.Index do
+        if Counter.IsValid("counter" .. i) and Counter["counter" .. i].Show then
+            return true;
+        end
+    end
+    return false;
+end
+CountdownIsVisisble = QuestTools.CountdownIsVisisble;
+
 -- AI --
 
 -- FillBuildingCostsTable
@@ -862,7 +974,7 @@ GetTechnologyCostsTable = QuestTools.GetTechnologyCostsTable;
 --
 function QuestTools.GetSoldierCostsTable(_PlayerID, _SoldierUpCat)
     local SoldierCosts = {};
-    Logic.FillSoldierCostsTable(_PlayerID, SoldierUpCat, SoldierCosts);
+    Logic.FillSoldierCostsTable(_PlayerID, _SoldierUpCat, SoldierCosts);
     return SoldierCosts;
 end
 GetSoldierCostsTable = QuestTools.GetSoldierCostsTable;
@@ -928,23 +1040,24 @@ HasEnoughResources = QuestTools.HasEnoughResources;
 -- @within AI
 --
 function QuestTools.AddResourcesToPlayer(_PlayerID, _Resources)
+
     if _Resources[ResourceType.Gold] ~= nil then
-		AddGold(_PlayerID, _Resources[ResourceType.Gold]);
+		AddGold(_PlayerID, _Resources[ResourceType.Gold] or _Resources[ResourceType.GoldRaw]);
     end
 	if _Resources[ResourceType.Clay] ~= nil then
-		AddClay(_PlayerID, _Resources[ResourceType.Clay]);
+		AddClay(_PlayerID, _Resources[ResourceType.Clay] or _Resources[ResourceType.ClayRaw]);
 	end
 	if _Resources[ResourceType.Wood] ~= nil then
-		AddWood(_PlayerID, _Resources[ResourceType.Wood]);
+		AddWood(_PlayerID, _Resources[ResourceType.Wood] or _Resources[ResourceType.WoodRaw]);
 	end
 	if _Resources[ResourceType.Iron] ~= nil then		
-		AddIron(_PlayerID, _Resources[ResourceType.Iron]);
+		AddIron(_PlayerID, _Resources[ResourceType.Iron] or _Resources[ResourceType.IronRaw]);
 	end
 	if _Resources[ResourceType.Stone] ~= nil then		
-		AddStone(_PlayerID, _Resources[ResourceType.Stone]);
+		AddStone(_PlayerID, _Resources[ResourceType.Stone] or _Resources[ResourceType.StoneRaw]);
 	end
     if _Resources[ResourceType.Sulfur] ~= nil then		
-		AddSulfur(_PlayerID, _Resources[ResourceType.Sulfur]);
+		AddSulfur(_PlayerID, _Resources[ResourceType.Sulfur] or _Resources[ResourceType.SulfurRaw]);
 	end
 end
 AddResourcesToPlayer = QuestTools.AddResourcesToPlayer;

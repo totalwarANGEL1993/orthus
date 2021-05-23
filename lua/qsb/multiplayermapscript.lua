@@ -34,7 +34,7 @@ function GameCallback_OnGameStart()
     -- Multiplayer stuff
     MultiplayerTools.InitCameraPositionsForPlayers();	
     MultiplayerTools.SetUpGameLogicOnMPGameConfig();
-    
+
     -- Singleplayer
     if not QuestSync or not QuestSync:IsMultiplayerGame() then
 		for i=1, 8, 1 do
