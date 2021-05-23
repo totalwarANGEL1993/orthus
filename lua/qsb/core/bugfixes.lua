@@ -180,10 +180,13 @@ function Bugfixes:Install()
 end
 
 function Bugfixes:CreateScriptEvents()
-    self.ScriptEvents.PostPlayerBlessed = QuestSync:CreateScriptEvent(function(_PlayerID, _Time, _Bless)
+    self.ScriptEvents.PostPlayerBlessed = QuestSync:CreateScriptEvent(function(name, _PlayerID, _Time, _Bless)
+        if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
+            return;
+        end
         Bugfixes.BlessLimit[_Bless][_PlayerID] = _Time;
     end);
-    self.ScriptEvents.PostWeatherChanged = QuestSync:CreateScriptEvent(function(_Time)
+    self.ScriptEvents.PostWeatherChanged = QuestSync:CreateScriptEvent(function(name, _Time)
         Bugfixes.WeatherChangeLimit.Last = _Time;
     end);
 end

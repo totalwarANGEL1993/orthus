@@ -20,6 +20,9 @@ MPRuleset_Rules = {
     
     -- Rules can be changed
     Changeable = true,
+    
+    -- Set to true to deactivate default defeat and victory conditions
+    DisableStandardVictoryCondition = true,
 
     Callbacks = {
         -- After the map has been loaded on all machines.
@@ -74,28 +77,37 @@ MPRuleset_Rules = {
         },
     },
 
-    --~~ Timers
-    --~~ Configure the timers for this game.
-    --~~ Peacetime means that players can not attack each other until the time
-    --~~ bar is full.
-    --~~ DeathPenalty is a timer that indicates how much time is left until
-    --~~ the objective must be reached. Per default the objectie is to kill
-    --~~ all members of different teams. But you can easily add more quests
-    --~~ that might add other objectives.
+    --~~ Modes
+    --~~ Configure the mode for this game.
+    --~~ 0 = No mode
+    --~~ 1 = PvP 
+    --~~ 2 = Sudden Death
+    --~~
+    --~~ Peacetime means that players can not attack each other until the
+    --~~ contdown has finished.
+    --~~ DeathTimer is a timer that indicates how much time is left until
+    --~~ castles starting to burn down.
+    --~~ SuddenDeath is the time until the castles burn down. Casles can not
+    --~~ repaired above what has already burned down.
 
-    Timer = {
+    Modes = {
+        Selected            = 0,
+
         -- Peacetime in minutes (0 = off)
         Peacetime           = 20,
-
-        -- Minutes until everyone loses (0 = off)
-        DeathPenalty        = 0,
+        -- Minutes until Sudden Death starts
+        DeathTimer          = 30,
+        -- Minutes until headquarters burns down
+        SuddenDeath         = 10,
+        -- Points needed for team victory
+        Points              = 80000,
     },
 
     --~~ Bugfixes
     --~~ Fixes some bugs in the game.
 
     Fixes = {
-        -- Crush building glitch fixed. Buildings will deselect the building
+        -- Crush building glitch fixed. Crushing will deselect the building
         -- and then destroy it right away without warning. (0 = off)
         CrushBuilding       = 1,
 
@@ -123,7 +135,7 @@ MPRuleset_Rules = {
         AssociateVillages   = 0,
 
         -- Block HQ rush (0 = off)
-        -- Player HQs can not be damaged until the player has village
+        -- Player HQs can not be damaged while the player has village
         -- centers left.
         HQRushBlock         = 1,
 

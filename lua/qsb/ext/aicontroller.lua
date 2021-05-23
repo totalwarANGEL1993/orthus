@@ -88,6 +88,18 @@ function CreateAIPlayer(_PlayerID, _TechLevel, _SerfAmount, _HomePosition, _Stre
 end
 
 ---
+-- Destroys an AI player with all of their armies.
+--
+-- @param[type=number] _PlayerID     PlayerID
+-- @within Methods
+--
+-- @usage DestroyAIPlayer(2);
+--
+function DestroyAIPlayer(_PlayerID)
+    AiController:DestroyPlayer(_PlayerID);
+end
+
+---
 -- Initalizes an army that is recruited by the AI player.
 -- Armies can also be created with the behavior interface. This is a simple
 -- type of army that can be configured by placing and naming script entities.
@@ -104,19 +116,22 @@ end
 -- Y with a unique number starting by 1.
 --
 -- <b>Note:</b> The AI will decide to which targets an army is send to. There
--- isn't a direct connection for one army and one target.
+-- isn't a direct connection for one army and one target. If you don't want
+-- the AI to controll the army it must be hidden from the AI. In that case you
+-- have to provide the army with targets.
 --
 -- @param[type=string] _ArmyName   Army identifier
 -- @param[type=number] _PlayerID   Owner of army
 -- @param[type=number] _Strength   Strength of army [1|8]
 -- @param[type=string] _Position   Home Position of army
 -- @param[type=number] _Area       Action range of the army
+-- @param[type=number] ...         List of types to build
 -- @return[type=number] Army ID
 -- @within Methods
 --
 -- @usage CreateAIPlayerArmy("Foo", false, 2, 8, "armyPos1", 5000);
 --
-function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area)
+function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, ...)
     if not AiController.Players[_PlayerID] then
         Message("DEBUG: Can not create army for player " ..tostring(_PlayerID).. " because AI is not initalized!");
         return;
@@ -152,7 +167,9 @@ end
 -- Y with a unique number starting by 1.
 --
 -- <b>Note:</b> The AI will decide to which targets an army is send to. There
--- isn't a direct connection for one army and one target.
+-- isn't a direct connection for one army and one target. If you don't want
+-- the AI to controll the army it must be hidden from the AI. In that case you
+-- have to provide the army with targets.
 --
 -- @param[type=string] _ArmyName    Army identifier
 -- @param[type=number] _PlayerID    Owner of army.
@@ -161,7 +178,7 @@ end
 -- @param[type=string] _Spawner     Name of generator
 -- @param[type=number] _Area        Action range of the army
 -- @param[type=number] _RespawnTime Time till troops are refreshed
--- @param              ...          List of types to spawn
+-- @param[type=table]  ...          List of types to spawn
 -- @within Methods
 --
 -- @usage CreateAIPlayerSpawnArmy(
@@ -218,7 +235,7 @@ function GetArmy(_Army)
 end
 
 ---
--- Disbands the given army.
+-- Disbands the given army and removes it from the AI`s list of armies.
 --
 -- @param               _Army            Name or ID of army
 -- @param[type=boolean] _DestroyTroops   Destroy remaining soldiers
@@ -230,9 +247,16 @@ end
 function ArmyDisband(_Army, _DestroyTroops, _DestoryProducer)
     local Army = GetArmy(_Army);
     if Army then
+        if AiController.Players[Army.PlayerID] then
+            for i= table.getn(AiController.Players[Army.PlayerID].Armies), 1 , -1 do
+                if AiController.Players[Army.PlayerID].Armies[i].ArmyID == Army.ArmyID then
+                    table.remove(AiController.Players[Army.PlayerID].Armies, i);
+                end
+            end
+        end
         Army:Disband(_DestroyTroops, _DestoryProducer);
         for k, v in pairs(AiControllerArmyNameToID) do
-            if v == _ArmyID then
+            if v == Army.ArmyID then
                 AiControllerArmyNameToID[k] = nil;
             end
         end
@@ -259,7 +283,52 @@ function ArmySetHiddenFromAI(_Army, _Flag)
             :SetSubState(ArmySubStates.None)
             :SetAttackTarget(nil)
             :SetGuardTarget(nil)
-            :UpdateDefenceTargetsOfArmy(Army.PlayerID, _ArmyID);
+            :UpdateDefenceTargetsOfArmy(Army.PlayerID, Army.ArmyID);
+    end
+end
+
+---
+-- Adds an manual controller to an army.
+--
+-- When the controller is set the army is automatically hidden from the AI. If
+-- the controller is invalidated by passin nil the army is returned to the AI.
+--
+-- If the controller is add successfully the ID of the created job is returned.
+-- Otherwise nil is returned.
+--
+-- The controller is called each second and the ID of the army is passed. To
+-- access the army data index AiArmyList with the army ID. The controller must
+-- not change the state of the army. This will be handled by the army itself.
+-- Controllers must only provide attack or guard positions.
+--
+-- <b>Note:</b> This feature is considered advanced level. In most cases the
+-- normal AI controller is sufficient to do the job. Use this if you need
+-- multiple bases for one AI which will not work with the controller.
+--
+-- <b>Note:</b> See documentation of AiArmy for futher information.
+--
+-- @param                _Army     Name or ID of army
+-- @param[type=function] _Function Controller function
+-- @return[type=number] Job ID of controller
+-- @within Methods
+-- 
+-- @usage -- Function reference
+-- ArmySetController("SomeArmy", MyControllerFunction);
+-- -- Inline function
+-- ArmySetController("SomeArmy", function(_ArmyID)
+--     -- Do something here
+-- end);
+--
+function ArmySetController(_Army, _Function)
+    if _Function == nil then
+        ArmySetHiddenFromAI(_Army, false);
+        return;
+    end
+    ArmySetHiddenFromAI(_Army, true);
+
+    local Army = GetArmy(_Army);
+    if Army then
+        return QuestTools.StartSimpleJobEx(_Function, Army.ArmyID);
     end
 end
 
@@ -340,6 +409,9 @@ end
 -- Disables or enables the ability to attack for the army. This function can
 -- be used to forbid an army to attack even if there are valid targets.
 --
+-- <b>Note</b>: If the army is hidden from the AI and controlled by you this
+-- will not have an effect unless you take it into account in your controller.
+--
 -- @param               _Army   Name or ID of army
 -- @param[type=boolean] _Flag   Ability to attack
 -- @within Methods
@@ -351,13 +423,15 @@ function ArmyDisableAttackAbility(_Army, _Flag)
     if Army then
         Army:SetAttackAllowed(_Flag == true);
     end
-    return self;
 end
 
 ---
 -- Disables or enables the ability to patrol between positions. This
 -- function can force an army to stay on its spawnpoint or to avoid to be put
 -- on guard duties.
+--
+-- <b>Note</b>: If the army is hidden from the AI and controlled by you this
+-- will not have an effect unless you take it into account in your controller.
 --
 -- @param               _Army   Name or ID of army
 -- @param[type=boolean] _Flag   Ability to defend
@@ -368,13 +442,15 @@ end
 function ArmyDisablePatrolAbility(_Army, _Flag)
     local Army = GetArmy(_Army);
     if Army then
-        Army:SetDefenceAllowed(_Flag == true);
+        Army:SetGuardAllowed(_Flag == true);
     end
-    return self;
 end
 
 ---
 -- Sets the max amount of serfs the AI player will buy.
+--
+-- <b>Note</b>: If the Ai dont owns an normal HQ then this will not have any
+-- effect on it.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _Limit    Amount of serfs
@@ -460,7 +536,8 @@ end
 --
 -- <b>Note:</b> An AI will send one army per attack target. Which army is send
 -- is decided by the AI. Armies can not be connected to attack positions. By
--- default the AI chooses the target for an army that is closest to it.
+-- default the AI chooses the target for an army that is closest to it. So if
+-- you wish to send more than one army to a target place multiple targets.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=string] _Position Zielppsition
@@ -496,7 +573,8 @@ end
 --
 -- <b>Note:</b> An AI will send one army per patrol waypoint. Which army is send
 -- is decided by the AI. Armies can not be connected to patrol waypoints. By
--- default the AI chooses the position for an army that is closest to it.
+-- default the AI chooses the position for an army that is closest to it. So if
+-- you wish to send more than one army to a target place multiple targets.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=string] _Position Zielposition
@@ -541,7 +619,7 @@ end
 function SetAIPlayerUnitsToBuild(_PlayerID, _CategoryList)
     if not AiController.Players[_PlayerID] then
         assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
-        return ArmyIDList;
+        return;
     end
     AiController:SetUnitsToBuild(_PlayerID, _CategoryList);
 end
@@ -551,7 +629,8 @@ end
 -- refreshing.
 -- 
 -- <p><b>Note:</b> This is active by default! You can deactivate it if you
--- want the AI to be restricted to the resources.</p>
+-- want the AI to be restricted to the resources. But this is not recommended,
+-- because the AI might be to easy to beat.</p>
 --
 -- @param[type=number]  _PlayerID ID of player
 -- @param[type=boolean] _Flag     Does ignore costs
@@ -592,7 +671,9 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
         UnitsToBuild    = copy(self.DefaultUnitsToBuild),
         EmploysArmies   = _Strength > 0,
         Strength        = _Strength,
-        MilitaryCosts   = false,
+        ArmyStrength    = 12,
+        RodeLength      = 4000,
+        MilitaryCosts   = true,
     };
     table.insert(self.Players[_PlayerID].UnitsToBuild, Entities["PV_Cannon" .._TechLevel]);
 
@@ -661,9 +742,21 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
         end
     end
 
-    QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_PlayerID)
+    self.Players[_PlayerID].JobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_PlayerID)
         AiController:ControlPlayerArmies(_PlayerID);
     end, _PlayerID);
+end
+
+function AiController:DestroyPlayer(_PlayerID)
+    AI.Player_DisableAi(_PlayerID);
+    if self.Players[_PlayerID] then
+        return;
+    end
+    for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
+        self.Players[_PlayerID].Armies[i]:Disband(true, false);
+    end
+    EndJob(self.Players[_PlayerID].JobID);
+    self.Players[_PlayerID] = nil;
 end
 
 -- ~~~ Properties ~~~ --
@@ -876,7 +969,7 @@ function AiController:SetAttackAllowed(_PlayerID, _ArmyID, _Flag)
     end
 end
 
-function AiController:SetDefenceAllowed(_PlayerID, _ArmyID, _Flag)
+function AiController:SetGuardAllowed(_PlayerID, _ArmyID, _Flag)
     if self.Players[_PlayerID] then
         self.Players[_PlayerID].DefenceAllowed = _Flag == true;
         for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
@@ -910,14 +1003,15 @@ end
 
 function AiController:ControlPlayerAssault(_PlayerID, _Position)
     -- no enemies there
-    local Enemies = AiArmy:GetEnemiesInArea(_Position, 4500, _PlayerID);
+    local Enemies = AiArmy:CallGetEnemiesInArea(_Position, self.Players[_PlayerID].RodeLength, _PlayerID);
     if table.getn(Enemies) == 0 then
         return;
     end
 
     -- check occupied
     for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
-        if self.Players[_PlayerID].Armies[i].AttackTarget == _Position then
+        local Army = self.Players[_PlayerID].Armies[i];
+        if Army:GetAttackTarget() and Army:GetAttackTarget()[1] == _Position then
             return;
         end
     end
@@ -925,8 +1019,8 @@ function AiController:ControlPlayerAssault(_PlayerID, _Position)
     -- associate army
     for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
         local Army = self.Players[_PlayerID].Armies[i];
-        if  not Army.AttackTarget 
-        and not Army.IsHiddenFromAI
+        if  not Army.IsHiddenFromAI
+        and not Army.AttackTarget
         and Army.DefendAllowed
         and (Army.State == ArmyStates.Idle or Army.State == ArmyStates.Guard)
         and not Army:IsDead() 
@@ -954,9 +1048,9 @@ function AiController:ControlPlayerDefence(_PlayerID, _Position)
     for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
         local Army = self.Players[_PlayerID].Armies[i];
         if QuestTools.IsInTable(_Position, Army.GuardPosList) then
-            if  not Army.AttackTarget 
+            if  not Army.IsHiddenFromAI
+            and not Army.AttackTarget 
             and not Army.GuardTarget
-            and not Army.IsHiddenFromAI
             and Army.DefendAllowed
             and Army.State == ArmyStates.Idle
             and not Army:IsDead() 
@@ -974,53 +1068,6 @@ function AiController:ControlPlayerDefence(_PlayerID, _Position)
                 end
             end
         end
-    end
-end
-
-function AiController:ControlPlayerDefence2(_PlayerID, _Position)
-    if not self.Players[_PlayerID].DefencePosMap[_Position] then
-        self.Players[_PlayerID].DefencePosMap[_Position] = {};
-    end
-    
-    local Data = self.Players[_PlayerID].DefencePosMap[_Position];
-    local AllocatedArmy = Data.Selected;
-    if AllocatedArmy then
-        local Army = GetArmy(AllocatedArmy);
-        if  Army
-        and Army.State == ArmyStates.Guard
-        and Army.DefendAllowed
-        and Army.GuardTarget
-        and not Army.AttackTarget
-        and (Army.State < ArmyStates.Retreat)
-        and not Army:IsDead()
-        and QuestTools.GetReachablePosition(Army.HomePosition, _Position) ~= nil then
-            return;
-        end
-    end
-
-    local NewArmy;
-    for k, v in pairs(self.Players[_PlayerID].Armies) do
-        if v and not QuestTools.IsInTable(v.ArmyID, self.Players[_PlayerID].DefencePosMap[_Position]) then
-            if  not v.AttackTarget 
-            and not v.GuardTarget
-            and not v.IsHiddenFromAI
-            and v.DefendAllowed
-            and v.State == ArmyStates.Idle
-            and not v:IsDead() 
-            and QuestTools.GetReachablePosition(v.HomePosition, _Position) ~= nil then
-                NewArmy = v;
-                break;
-            end
-        end
-    end
-
-    if NewArmy then
-        table.insert(self.Players[_PlayerID].DefencePosMap[_Position], NewArmy.ArmyID);
-        self.Players[_PlayerID].DefencePosMap[_Position].Selected = NewArmy.ArmyID;
-        NewArmy:SetGuardTarget(_Position);
-        return;
-    else
-        -- self.Players[_PlayerID].DefencePosMap[_Position] = nil;
     end
 end
 
@@ -1047,8 +1094,8 @@ function AiController:EmployArmies(_PlayerID)
                     "EmployArmy_Player" .._PlayerID.. "_ID_" ..Index,
                     _PlayerID,
                     self.Players[_PlayerID].HomePosition,
-                    4000,
-                    12
+                    self.Players[_PlayerID].RodeLength,
+                    self.Players[_PlayerID].ArmyStrength
                 );
                 ArmyDisableAttackAbility(ArmyID, math.mod(Index, 3) ~= 0);
                 self:FindProducerBuildings(_PlayerID);
@@ -1073,6 +1120,8 @@ function AiController:EmployNewArmy(_ArmyName, _PlayerID, _Position, _Area, _Str
     return Army.ArmyID;
 end
 
+-- ~~~ Producer ~~~ --
+
 function AiController:OverrideGameEventsForRecruiterUpdate()
     GameCallback_BuildingDestroyed_Orig_AiController = GameCallback_BuildingDestroyed;
     GameCallback_BuildingDestroyed = function(_HurterPlayerID, _HurtPlayerID)
@@ -1096,8 +1145,6 @@ function AiController:OverrideGameEventsForRecruiterUpdate()
         AiController:UpdateRecruitersOfArmies(_PlayerID);
     end
 end
-
--- ~~~ Producer ~~~ --
 
 function AiController:UpdateRecruitersOfArmies(_PlayerID)
     if not self.Players[_PlayerID] then

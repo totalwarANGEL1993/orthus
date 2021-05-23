@@ -179,7 +179,10 @@ end
 --
 function Interaction:CreateNpcMerchantScriptEvents()
     -- Buy Units
-    self.Event.BuyUnit = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _EntityType, _X, _Y, _SlotIndex)
+    self.Event.BuyUnit = QuestSync:CreateScriptEvent(function(name, _ScriptName, _PlayerID, _EntityType, _X, _Y, _SlotIndex)
+        if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
+            return;
+        end
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             local ID = AI.Entity_CreateFormation(_PlayerID, _EntityType, 0, 0, _X, _Y, 0, 0, 3, 0);
@@ -191,7 +194,10 @@ function Interaction:CreateNpcMerchantScriptEvents()
         end
     end);
     -- Buy Resources
-    self.Event.BuyRes = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _GoodType, _Amount, _SlotIndex)
+    self.Event.BuyRes = QuestSync:CreateScriptEvent(function(name, _ScriptName, _PlayerID, _GoodType, _Amount, _SlotIndex)
+        if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
+            return;
+        end
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             Logic.AddToPlayersGlobalResource(_PlayerID, _GoodType, _Amount);
@@ -200,7 +206,10 @@ function Interaction:CreateNpcMerchantScriptEvents()
         end
     end);
     -- Buy Technology
-    self.Event.BuyTech = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _TechType, _SlotIndex)
+    self.Event.BuyTech = QuestSync:CreateScriptEvent(function(name, _ScriptName, _PlayerID, _TechType, _SlotIndex)
+        if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
+            return;
+        end
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             ResearchTechnology(_TechType, _PlayerID);
@@ -209,7 +218,10 @@ function Interaction:CreateNpcMerchantScriptEvents()
         end
     end);
     -- Buy Custom
-    self.Event.BuyFunc = QuestSync:CreateScriptEvent(function(_ScriptName, _PlayerID, _SlotIndex)
+    self.Event.BuyFunc = QuestSync:CreateScriptEvent(function(name, _ScriptName, _PlayerID, _SlotIndex)
+        if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
+            return;
+        end
         local Instance = Interaction.IO[_ScriptName];
         if Instance then
             Instance.m_Offers[_SlotIndex].Good(
@@ -545,7 +557,7 @@ function NonPlayerCharacter:Controller()
             local CurrentTime = Logic.GetTime();
             if self.m_Waypoints.LastTime < CurrentTime then
                 -- Check each 2 minutes
-                self.m_Waypoints.LastTime = CurrentTime + (self.m_Waittime or 2*60);
+                self.m_Waypoints.LastTime = CurrentTime + (self.m_Waittime or (2*60));
                 -- Set waypoint
                 if IsNear(self.m_ScriptName, self.m_Waypoints[self.m_Waypoints.Current], self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
                     self.m_Waypoints.Current = self.m_Waypoints.Current +1;
@@ -569,7 +581,7 @@ function NonPlayerCharacter:Controller()
             if not self:GetNearestHero(NPC_LOOK_AT_HERO_DISTANCE) then
                 local CurrentTime = Logic.GetTime();
                 if self.m_Wanderer.LastTime < CurrentTime then
-                    self.m_Wanderer.LastTime = CurrentTime + (self.m_Waittime or 5*60);
+                    self.m_Wanderer.LastTime = CurrentTime + (self.m_Waittime or (5*60));
                     if IsNear(self.m_ScriptName, self.m_Wanderer[self.m_Wanderer.Current], self.m_ArrivedDistance or NPC_ARRIVED_TARGET_DISTANCE) then
                         -- Select random waypoint
                         local NewWaypoint;
@@ -806,7 +818,7 @@ end
 -- @within NonPlayerMerchant
 --
 function NonPlayerMerchant:SetPlayer(_Player)
-    self.m_Player = _Hero;
+    self.m_Player = _Player;
     return self;
 end
 
