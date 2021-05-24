@@ -60,6 +60,7 @@ function DropTroopRecruiter(_ScriptName)
         if JobIsRunning(AiTroopRecruiterList[_ScriptName].SoldierJobID) then
             EndJob(AiTroopRecruiterList[_ScriptName].SoldierJobID);
         end
+        DestroyEntity(AiTroopRecruiterList[_ScriptName].ApproachPosition);
         AiTroopRecruiterList[_ScriptName] = nil;
     end
 end
@@ -80,6 +81,7 @@ end
 
 AiTroopRecruiter = {
     ScriptName = nil,
+    ApproachPosition = 0,
     IsRecruiter = true,
     LastRecruitedTime = 0,
     Cheat = true,
@@ -173,15 +175,31 @@ function AiTroopRecruiter:SetSelector(_Selector)
     return self;
 end
 
+function AiTroopRecruiter:IsManagedByProducer(_TroopID)
+    return QuestTools.IsInTable(_TroopID, self.Troops.Created) == true;
+end
+
+function AiTroopRecruiter:GetApproachPosition()
+    return self.ApproachPosition;
+end
+
+function AiTroopRecruiter:SetApproachPosition(_Position)
+    DestroyEntity(self.ApproachPosition);
+    local Position = GetPosition(self.ScriptName);
+    local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, Position.X, Position.Y, 0, 0, 0, 0);
+    local x, y, z = Logic.EntityGetPos(ID);
+    local ApproachID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, 0, 8);
+    self.ApproachPosition = ApproachID;
+    DestroyEntity(ID);
+    return self;
+end
+
 function AiTroopRecruiter:Initalize()
     if not self.Initalized then
         self.Initalized = true;
         
         -- Save approach position
-        local Position = GetPosition(self.ScriptName);
-        local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, Position.X, Position.Y, 0, 0, 0, 0);
-        self.ApproachPosition = GetPosition(ID);
-        DestroyEntity(ID);
+        self:SetApproachPosition(GetPosition(self.ScriptName));
 
         -- Registers new recruited units
         self.CreationJobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_ENTITY_CREATED, function(_ScriptName)
@@ -222,6 +240,7 @@ function AiTroopRecruiter:Initalize()
         -- Buys soldiers for the leader
         self.SoldierJobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_ScriptName)
             if not IsExisting(_ScriptName) then
+                DestroyEntity(AiTroopRecruiterList[_ScriptName].ApproachPosition);
                 return true;
             end
             if AiTroopRecruiterList[_ScriptName] then
@@ -279,10 +298,10 @@ function AiTroopRecruiter:HandleSoldierRefill()
                                     end
                                 end
                             else
-                                local Position = self.ApproachPosition;
                                 if Logic.IsEntityMoving(ID) == false then
-                                    if QuestTools.GetReachablePosition(ID, Position) ~= nil then
-                                        Logic.MoveSettler(ID, Position.X, Position.Y);
+                                    if QuestTools.SameSector(ID, self.ApproachPosition) then
+                                        local x, y, z = Logic.EntityGetPos(self.ApproachPosition);
+                                        Logic.MoveSettler(ID, x, y, -1);
                                     else
                                         Logic.DestroyGroupByLeader(ID);
                                     end
@@ -338,15 +357,14 @@ function AiTroopRecruiter:IsRecruiterBuilding()
 end
 
 function AiTroopRecruiter:IsReady()
-    if self.ScriptName and IsExisting(self.ScriptName) then
-        local ID = GetID(self.ScriptName);
-        local PlayerID = Logic.EntityGetPlayer(ID);
-        -- TODO: Should the worker in the foundry be checked here?
-        if Logic.GetTime() > self.LastRecruitedTime + self.Delay then
-            if Logic.IsConstructionComplete(ID) == 1 then
-                if self:IsRecruiterBuilding() then
-                    local x, y, z = Logic.EntityGetPos(ID);
-                    if Logic.GetPlayerEntitiesInArea(PlayerID, 0, x, y, 800, 4) < 4 then
+    if table.getn(self.Troops.Created) < 3 then
+        if self.ScriptName and IsExisting(self.ScriptName) then
+            local ID = GetID(self.ScriptName);
+            local PlayerID = Logic.EntityGetPlayer(ID);
+            -- TODO: Should the worker in the foundry be checked here?
+            if Logic.GetTime() > self.LastRecruitedTime + self.Delay then
+                if Logic.IsConstructionComplete(ID) == 1 then
+                    if self:IsRecruiterBuilding() then
                         return true;
                     end
                 end
@@ -518,6 +536,11 @@ function AiTroopRecruiter:IsSuitableUnitType(_Type)
         ["PU_LeaderCavalry2"]          = {Entities.PB_Stable1, Entities.PB_Stable2},
         ["PU_LeaderHeavyCavalry1"]     = {Entities.PB_Stable1, Entities.PB_Stable2},
         ["PU_LeaderHeavyCavalry2"]     = {Entities.PB_Stable1, Entities.PB_Stable2},
+
+        ["PV_Cannon1"]                  = {Entities.PB_Foundry1, Entities.PB_Foundry2},
+        ["PV_Cannon2"]                  = {Entities.PB_Foundry1, Entities.PB_Foundry2},
+        ["PV_Cannon3"]                  = {Entities.PB_Foundry2},
+        ["PV_Cannon4"]                  = {Entities.PB_Foundry2},
     };
     local TypeName = Logic.GetEntityTypeName(_Type);
     local ProducerType = Logic.GetEntityType(GetID(self.ScriptName));
