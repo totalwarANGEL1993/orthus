@@ -31,6 +31,7 @@
 
 AiController = {
     Players = {},
+    CurrentPlayer = 0;
 
     DefaultUnitsToBuild = {
         UpgradeCategories.LeaderPoleArm,
@@ -43,6 +44,7 @@ AiController = {
 }
 
 AiControllerArmyNameToID = {};
+AiControllerPlayerJobID = nil;
 
 -- -------------------------------------------------------------------------- --
 
@@ -673,6 +675,7 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
         Strength        = _Strength,
         ArmyStrength    = 12,
         RodeLength      = 4000,
+        LastTick        = 0,
         MilitaryCosts   = true,
     };
     table.insert(self.Players[_PlayerID].UnitsToBuild, Entities["PV_Cannon" .._TechLevel]);
@@ -742,9 +745,12 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
         end
     end
 
-    self.Players[_PlayerID].JobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_PlayerID)
-        AiController:ControlPlayerArmies(_PlayerID);
-    end, _PlayerID);
+    -- table.getn(Score.Player)
+    if not AiControllerPlayerJobID then
+        AiControllerPlayerJobID = StartSimpleHiResJobEx(function()
+            AiController:ControlPlayerArmies();
+        end);
+    end
 end
 
 function AiController:DestroyPlayer(_PlayerID)
@@ -757,6 +763,10 @@ function AiController:DestroyPlayer(_PlayerID)
     end
     EndJob(self.Players[_PlayerID].JobID);
     self.Players[_PlayerID] = nil;
+end
+
+function AiController:GetTime()
+    return math.floor(Logic.GetTime() * 10);
 end
 
 -- ~~~ Properties ~~~ --
@@ -980,23 +990,32 @@ end
 
 -- ~~~ Army ~~~ --
 
-function AiController:ControlPlayerArmies(_PlayerID)
-    if self.Players[_PlayerID] then
-        -- Clear dead armies
-        for i= table.getn(self.Players[_PlayerID].Armies), 1, -1 do
-            if self.Players[_PlayerID].Armies[i]:IsDead() then
-                table.remove(self.Players[_PlayerID].Armies, i);
+function AiController:ControlPlayerArmies()
+    self.CurrentPlayer = self.CurrentPlayer +1;
+    if table.getn(Score.Player) < self.CurrentPlayer then
+        self.CurrentPlayer = 1;
+    end
+    local PlayerID = self.CurrentPlayer;
+    
+    if self.Players[PlayerID] then
+        if self.Players[PlayerID].LastTick == 0 or self:GetTime() > self.Players[PlayerID].LastTick +10 then
+            self.Players[PlayerID].LastTick = self:GetTime();
+            -- Clear dead armies
+            for i= table.getn(self.Players[PlayerID].Armies), 1, -1 do
+                if self.Players[PlayerID].Armies[i]:IsDead() then
+                    table.remove(self.Players[PlayerID].Armies, i);
+                end
             end
-        end
 
-        -- Handle attacks
-        for i= table.getn(self.Players[_PlayerID].AttackPos), 1, -1 do
-            self:ControlPlayerAssault(_PlayerID, self.Players[_PlayerID].AttackPos[i]);
-        end
+            -- Handle attacks
+            for i= table.getn(self.Players[PlayerID].AttackPos), 1, -1 do
+                self:ControlPlayerAssault(PlayerID, self.Players[PlayerID].AttackPos[i]);
+            end
 
-        -- Handle guarding
-        for i= table.getn(self.Players[_PlayerID].DefencePos), 1, -1 do
-            self:ControlPlayerDefence(_PlayerID, self.Players[_PlayerID].DefencePos[i]);
+            -- Handle guarding
+            for i= table.getn(self.Players[PlayerID].DefencePos), 1, -1 do
+                self:ControlPlayerDefence(PlayerID, self.Players[PlayerID].DefencePos[i]);
+            end
         end
     end
 end
@@ -1086,7 +1105,7 @@ function AiController:EmployArmies(_PlayerID)
                 end
             end
 
-            -- Create crmies
+            -- Create armies
             local Index = 0;
             while (Strength > table.getn(self.Players[_PlayerID].Armies)) do
                 Index = Index +1;
@@ -1097,7 +1116,7 @@ function AiController:EmployArmies(_PlayerID)
                     self.Players[_PlayerID].RodeLength,
                     self.Players[_PlayerID].ArmyStrength
                 );
-                ArmyDisableAttackAbility(ArmyID, math.mod(Index, 3) ~= 0);
+                -- ArmyDisableAttackAbility(ArmyID, math.mod(Index, 3) ~= 0);
                 self:FindProducerBuildings(_PlayerID);
                 self:UpdateRecruitersOfArmy(_PlayerID, ArmyID);
                 for k, v in pairs(self.Players[_PlayerID].DefencePos) do
@@ -1164,7 +1183,7 @@ function AiController:UpdateRecruitersOfArmy(_PlayerID, _ArmyID)
         self.Players[_PlayerID].Armies[_ArmyID].Producers = {};
         for k, v in pairs(self.Players[_PlayerID].Producers) do
             if v and not v.IsSpawner then
-                if QuestTools.GetReachablePosition(Army.HomePosition, v.ApproachPosition) ~= nil then
+                if QuestTools.SameSector(Army.HomePosition, v.ApproachPosition) then
                     table.insert(self.Players[_PlayerID].Armies[_ArmyID].Producers, v);
                 end
             end
@@ -1188,6 +1207,18 @@ function AiController:AddProducerBuilding(_PlayerID, _Entity)
         return;
     end
     local HomePosition = self.Players[_PlayerID].HomePosition;
+    -- No spawner allowed
+    if AiTroopSpawnerList[_Entity] then
+        return;
+    end
+    -- Check recruiter
+    if AiTroopRecruiterList[_Entity] then
+        if not HomePosition or QuestTools.SameSector(HomePosition, AiTroopRecruiterList[_Entity].ApproachPosition) then
+            table.insert(self.Players[_PlayerID].Producers, AiTroopRecruiterList[_Entity]);
+            return;
+        end
+    end
+    -- Create new recruiter
     if not HomePosition or QuestTools.GetReachablePosition(HomePosition, _Entity) ~= nil then
         local Recruiter = self:CreateRecruiter(_PlayerID, _Entity);
         if Recruiter then

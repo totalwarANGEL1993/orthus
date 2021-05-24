@@ -354,8 +354,13 @@ GetEntitiesByPrefix = QuestTools.GetEntitiesByPrefix;
 -- @return[type=table] Result set
 -- @within Entities
 --
-function QuestTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position)
+function QuestTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position, _Depth)
 	local ResultSet = {};
+    -- Hack: prevent stack overflow
+    _Depth = _Depth or 0;
+    if _Depth > 16 then
+        return ResultSet;
+    end
     
     _AreaSize = _AreaSize or Logic.WorldGetSize();
     _Position = _Position or {X = _AreaSize/2, Y = _AreaSize/2};
@@ -373,25 +378,25 @@ function QuestTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position)
 		local PositionX2 = _Position.X + _AreaSize / 4;
 		local PositionY1 = _Position.Y - _AreaSize / 4;
 		local PositionY2 = _Position.Y + _AreaSize / 4;
-		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY1});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY1}, _Depth+1);
 		for i = 1, table.getn(ResultSetRecursive) do
 			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
-		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY2});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY2}, _Depth+1);
 		for i = 1, table.getn(ResultSetRecursive) do
 			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
-		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY1});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY1}, _Depth+1);
 		for i = 1, table.getn(ResultSetRecursive) do
 			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
-		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY2});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY2}, _Depth+1);
 		for i = 1, table.getn(ResultSetRecursive) do
 			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
