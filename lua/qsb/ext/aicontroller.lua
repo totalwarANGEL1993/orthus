@@ -44,6 +44,7 @@ AiController = {
 }
 
 AiControllerArmyNameToID = {};
+AiControllerCustomJobID = {};
 AiControllerPlayerJobID = nil;
 
 -- -------------------------------------------------------------------------- --
@@ -128,7 +129,7 @@ end
 -- @param[type=string] _Position   Home Position of army
 -- @param[type=number] _Area       Action range of the army
 -- @param[type=number] ...         List of types to build
--- @return[type=number] Army ID
+-- @return[type=table] Army
 -- @within Methods
 --
 -- @usage CreateAIPlayerArmy("Foo", false, 2, 8, "armyPos1", 5000);
@@ -146,7 +147,7 @@ function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, .
     Army.IsRespawningArmy = false;
     table.insert(AiController.Players[_PlayerID].Armies, Army);
     AiControllerArmyNameToID[_ArmyName] = Army.ArmyID;
-    return Army.ArmyID;
+    return Army;
 end
 
 ---
@@ -181,6 +182,7 @@ end
 -- @param[type=number] _Area        Action range of the army
 -- @param[type=number] _RespawnTime Time till troops are refreshed
 -- @param[type=table]  ...          List of types to spawn
+-- @return[type=table] Army
 -- @within Methods
 --
 -- @usage CreateAIPlayerSpawnArmy(
@@ -218,7 +220,7 @@ function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Sp
     end
     table.insert(AiController.Players[_PlayerID].Armies, Army);
     AiControllerArmyNameToID[_ArmyName] = Army.ArmyID;
-    return Army.ArmyID;
+    return Army;
 end
 
 ---
@@ -284,53 +286,7 @@ function ArmySetHiddenFromAI(_Army, _Flag)
             :SetState(ArmyStates.Idle)
             :SetSubState(ArmySubStates.None)
             :SetAttackTarget(nil)
-            :SetGuardTarget(nil)
-            :UpdateDefenceTargetsOfArmy(Army.PlayerID, Army.ArmyID);
-    end
-end
-
----
--- Adds an manual controller to an army.
---
--- When the controller is set the army is automatically hidden from the AI. If
--- the controller is invalidated by passin nil the army is returned to the AI.
---
--- If the controller is add successfully the ID of the created job is returned.
--- Otherwise nil is returned.
---
--- The controller is called each second and the ID of the army is passed. To
--- access the army data index AiArmyList with the army ID. The controller must
--- not change the state of the army. This will be handled by the army itself.
--- Controllers must only provide attack or guard positions.
---
--- <b>Note:</b> This feature is considered advanced level. In most cases the
--- normal AI controller is sufficient to do the job. Use this if you need
--- multiple bases for one AI which will not work with the controller.
---
--- <b>Note:</b> See documentation of AiArmy for futher information.
---
--- @param                _Army     Name or ID of army
--- @param[type=function] _Function Controller function
--- @return[type=number] Job ID of controller
--- @within Methods
--- 
--- @usage -- Function reference
--- ArmySetController("SomeArmy", MyControllerFunction);
--- -- Inline function
--- ArmySetController("SomeArmy", function(_ArmyID)
---     -- Do something here
--- end);
---
-function ArmySetController(_Army, _Function)
-    if _Function == nil then
-        ArmySetHiddenFromAI(_Army, false);
-        return;
-    end
-    ArmySetHiddenFromAI(_Army, true);
-
-    local Army = GetArmy(_Army);
-    if Army then
-        return QuestTools.StartSimpleJobEx(_Function, Army.ArmyID);
+            :SetGuardTarget(nil);
     end
 end
 
@@ -650,6 +606,163 @@ end
 
 -- -------------------------------------------------------------------------- --
 
+---
+-- Sets an manual controller for an army.
+--
+-- When the controller is set the army is automatically hidden from the AI. If
+-- the controller is invalidated by passin nil the army is returned to the AI.
+--
+-- If the controller is add successfully the ID of the created job is returned.
+-- Otherwise nil is returned.
+--
+-- The controller is called each second and the ID of the army is passed. To
+-- access the army data index AiArmyList with the army ID. The controller must
+-- not change the state of the army. This will be handled by the army itself.
+-- Controllers must only provide attack or guard positions.
+--
+-- <b>Note:</b> This feature is considered advanced level. In most cases the
+-- normal AI controller is sufficient to do the job. Use this if you need
+-- multiple bases for one AI which will not work with the controller.
+--
+-- <b>Note:</b> See documentation of AiArmy for futher information.
+--
+-- @param                _Army     Name or ID of army
+-- @param[type=function] _Function Controller function
+-- @param                ...       Controller argument list
+-- @return[type=number] Job ID of controller
+-- @within Methods
+-- 
+-- @usage -- Function reference
+-- ArmySetController("SomeArmy", MyControllerFunction);
+-- -- Inline function
+-- ArmySetController("SomeArmy", function(_ArmyID)
+--     -- Do something here
+-- end);
+--
+function ArmySetController(_Army, _Function, ...)
+    arg = arg or {};
+    local Army = GetArmy(_Army);
+    if _Function == nil then
+        ArmySetHiddenFromAI(_Army, false);
+        if Army and AiControllerCustomJobID[Army.ArmyID] then
+            EndJob(AiControllerCustomJobID[Army.ArmyID]);
+            AiControllerCustomJobID[Army.ArmyID] = nil;
+        end
+        return;
+    end
+    ArmySetHiddenFromAI(_Army, true);
+
+    if Army then
+        local ID = QuestTools.StartSimpleJobEx(_Function, Army.ArmyID, unpack(arg));
+        AiControllerCustomJobID[Army.ArmyID] = ID
+        return ID;
+    end
+end
+
+---
+-- Sets an simple attack controller for an army.
+--
+-- The army will attack the given position or along the given path as soon as
+-- possible. When the attack is successfull the army returns to the home base
+-- and will strike again when new enemies appear. When the attack fails the
+-- army will regroup and try again as long as it is not finally defeated.
+--
+-- <b>Note:</b> An army that was employed by an AI is never defeated while the
+-- AI is not defeated. An AI is never defeated until it is commanded to
+-- selfdestruct using the corresponding function.
+--
+-- <b>Note:</b> The controller can be invalidated by calling ArmySetController
+-- with null as function.
+--
+-- @param                _Army     Name or ID of army
+-- @param                ...       Position or path to attack
+-- @return[type=number] Job ID of controller
+-- @within Methods
+-- 
+-- @usage -- Using single entity
+-- ArmySetSimpleAttackController("SomeArmy", "HomePosPlayer1");
+-- -- Using path
+-- ArmySetSimpleAttackController("SomeArmy", "OffenceWP1", "OffenceWP2", "OffenceWP3", "HomePosPlayer1");
+--
+function ArmySetSimpleAttackController(_Army, ...)
+    arg = arg or {};
+    local Army = GetArmy(_Army);
+    if Army then
+        return ArmySetController(_Army, function(_ArmyID, _Path)
+            local Army = GetArmy(_ArmyID);
+            if not Army or not Army.IsHiddenFromAI or Army:IsDead() then
+                return true;
+            end
+            if Army.State == ArmyStates.Idle then
+                if Army.AttackTarget == nil then
+                    Army:SetAttackTarget(_Path);
+                end
+            end
+        end, {unpack(arg)});
+    end
+end
+
+---
+-- Sets an simple guard controller for an army.
+--
+-- The army will guard each point in the given order and restarts at the first
+-- point. Between guarding points the army returns to the home base to refresh.
+-- The army will attack all enemies in sight. The job stops when the army is
+-- finally defeated.
+--
+-- <b>Note:</b> An army that was employed by an AI is never defeated while the
+-- AI is not defeated. An AI is never defeated until it is commanded to
+-- selfdestruct using the corresponding function.
+--
+-- <b>Note:</b> An army that was employed by an AI is never defeated while the
+-- AI is not defeated. An AI is never defeated until it is commanded to
+-- selfdestruct using the corresponding function.
+--
+-- <b>Note:</b> The controller can be invalidated by calling ArmySetController
+-- with null as function.
+--
+-- @param                _Army     Name or ID of army
+-- @param                ...       Positions to guard
+-- @return[type=number] Job ID of controller
+-- @within Methods
+-- 
+-- @usage ArmySetSimplePatrolController("SomeArmy", "GuardWP1", "GuardWP2", "GuardWP3");
+--
+function ArmySetSimplePatrolController(_Army, ...)
+    arg = arg or {};
+    local Army = GetArmy(_Army);
+    if Army then
+        Army:SetGuardPosList(unpack(arg));
+        return ArmySetController(_Army, function(_ArmyID)
+            local Army = GetArmy(_ArmyID);
+            if not Army or not Army.IsHiddenFromAI or Army:IsDead() then
+                return true;
+            end
+            if table.getn(Army.GuardPosList) == 0 then
+                return true;
+            end
+            if Army.State == ArmyStates.Idle then
+                if Army.GuardTarget == nil then
+                    local PointFound = false;
+                    for i= 1, table.getn(Army.GuardPosList), 1 do
+                        if  not QuestTools.IsInTable(Army.GuardPosList[i], Positions.Visited) then
+                            Army:SetGuardTarget(Army.GuardPosList[i]);
+                            Army:AddVisitedGuardPosition(Army.GuardPosList[i]);
+                            PointFound = true;
+                            break;
+                        end
+                    end
+                    if not PointFound then
+                        Army:ClearVisitedGuardPositions();
+                    end
+                end
+            end
+        end);
+    end
+end
+
+-- -------------------------------------------------------------------------- --
+
 function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Strength, _TechLevel, _Construct, _Rebuild)
     if self.Players[_PlayerID] then
         return;
@@ -899,39 +1012,11 @@ function AiController:AddDefenceTarget(_PlayerID, _Entity)
             table.insert(self.Players[_PlayerID].DefencePos, _Entity);
         end
         for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
-            local ArmyID = self.Players[_PlayerID].Armies[i].ArmyID;
-            self:AddDefenceTargetToArmy(_PlayerID, ArmyID, _Entity);
-        end
-    end
-end
-
-function AiController:UpdateDefenceTargetsOfArmy(_PlayerID, _ArmyID)
-    if self.Players[_PlayerID] then
-        for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
-            local Army = self.Players[_PlayerID].Armies[i];
-            if Army.ArmyID == _ArmyID then
-                if not Army.IsHiddenFromAI then
-                    for k, v in pairs(self.Players[_PlayerID].DefencePos) do
-                        self:AddDefenceTargetToArmy(_PlayerID, _ArmyID, v);
-                    end
-                else
-                    self.Players[_PlayerID].Armies[i].GuardPosList = {};
-                end
-            end
-        end
-    end
-end
-
-function AiController:AddDefenceTargetToArmy(_PlayerID, _ArmyID, _Entity)
-    if self.Players[_PlayerID] then
-        for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
-            local Army = self.Players[_PlayerID].Armies[i];
-            if Army.ArmyID == _ArmyID then
-                if not Army.IsHiddenFromAI then
-                    if QuestTools.GetReachablePosition(Army.HomePosition, _Entity) ~= nil then
-                        if not QuestTools.IsInTable(_Entity, Army.GuardPosList) then
-                            table.insert(self.Players[_PlayerID].Armies[i].GuardPosList, _Entity);
-                        end
+            local Army = self.Players[_PlayerID].Armies[i].Army;
+            if not Army.IsHiddenFromAI then
+                for j= table.getn(Army.GuardPosList), 1, -1 do
+                    if not QuestTools.IsInTable(_Entity, Army.GuardPosList) then
+                        table.insert(self.Players[_PlayerID].Armies[i].GuardPosList, _Entity);
                     end
                 end
             end
@@ -947,23 +1032,31 @@ function AiController:RemoveDefenceTarget(_PlayerID, _Entity)
             end
         end
         for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
-            local ArmyID = self.Players[_PlayerID].Armies[i].ArmyID;
-            self:RemoveDefenceTargetFromArmy(_PlayerID, ArmyID, _Entity);
+            local Army = self.Players[_PlayerID].Armies[i].Army;
+            if not Army.IsHiddenFromAI then
+                for j= table.getn(Army.GuardPosList), 1, -1 do
+                    if Army.GuardPosList[j] == _Entity then
+                        table.remove(self.Players[_PlayerID].Armies[i].GuardPosList, j);
+                    end
+                end
+            end
         end
     end
 end
 
-function AiController:RemoveDefenceTargetFromArmy(_PlayerID, _ArmyID, _Entity)
+function AiController:UpdateDefenceTargetsOfArmy(_PlayerID, _ArmyID)
     if self.Players[_PlayerID] then
         for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
             local Army = self.Players[_PlayerID].Armies[i];
             if Army.ArmyID == _ArmyID then
                 if not Army.IsHiddenFromAI then
-                    for j= table.getn(Army.GuardPosList), 1, -1 do
-                        if Army.GuardPosList[j] == _Entity then
-                            table.remove(self.Players[_PlayerID].Armies[i].GuardPosList, j);
+                    for k, v in pairs(self.Players[_PlayerID].DefencePos) do
+                        if v and not QuestTools.IsInTable(v, Army.GuardPosList) then
+                            table.insert(self.Players[_PlayerID].Armies[i].GuardPosList, v);
                         end
                     end
+                else
+                    self.Players[_PlayerID].Armies[i].GuardPosList = {};
                 end
             end
         end
@@ -1024,6 +1117,12 @@ function AiController:ControlPlayerAssault(_PlayerID, _Position)
     -- no enemies there
     local Enemies = AiArmy:CallGetEnemiesInArea(_Position, self.Players[_PlayerID].RodeLength, _PlayerID);
     if table.getn(Enemies) == 0 then
+        for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
+            local Army = self.Players[_PlayerID].Armies[i];
+            if Army:GetAttackTarget() and Army:GetAttackTarget()[1] == _Position then
+                Army:SetAttackTarget(nil);
+            end
+        end
         return;
     end
 
@@ -1120,7 +1219,7 @@ function AiController:EmployArmies(_PlayerID)
                 self:FindProducerBuildings(_PlayerID);
                 self:UpdateRecruitersOfArmy(_PlayerID, ArmyID);
                 for k, v in pairs(self.Players[_PlayerID].DefencePos) do
-                    self:AddDefenceTargetToArmy(_PlayerID, ArmyID, v);
+                    self:UpdateDefenceTargetsOfArmy(_PlayerID, ArmyID);
                 end
             end
         end
@@ -1163,6 +1262,22 @@ function AiController:OverrideGameEventsForRecruiterUpdate()
         AiController:AddProducerBuilding(_PlayerID, _BuildingID);
         AiController:UpdateRecruitersOfArmies(_PlayerID);
     end
+
+    -- HACK: Add producers afterwards to armies if previously failed
+    StartSimpleJobEx(function()
+        for i= 1, table.getn(Score.Player), 1 do
+            if self.Players[i] then
+                if table.getn(self.Players[i].Producers) > 0 then
+                    for j= 1, table.getn(self.Players[i].Armies), 1 do
+                        local Army = self.Players[i].Armies[j];
+                        if not Army.IsHiddenFromAI and table.getn(Army.Producers) == 0 then
+                            AiController:UpdateRecruitersOfArmy(i, j);
+                        end
+                    end
+                end
+            end
+        end
+    end)
 end
 
 function AiController:UpdateRecruitersOfArmies(_PlayerID)
@@ -1170,21 +1285,21 @@ function AiController:UpdateRecruitersOfArmies(_PlayerID)
         return;
     end
     for i= table.getn(self.Players[_PlayerID].Armies), 1, -1 do
-        self:UpdateRecruitersOfArmy(_PlayerID, self.Players[_PlayerID].Armies[i].ArmyID);
+        self:UpdateRecruitersOfArmy(_PlayerID, i);
     end
 end
 
-function AiController:UpdateRecruitersOfArmy(_PlayerID, _ArmyID)
+function AiController:UpdateRecruitersOfArmy(_PlayerID, _Index)
     if not self.Players[_PlayerID] then
         return;
     end
-    local Army = GetArmy(_ArmyID);
+    local Army = self.Players[_PlayerID].Armies[_Index];
     if Army and Army.PlayerID == _PlayerID and not Army.IsRespawningArmy then
-        self.Players[_PlayerID].Armies[_ArmyID].Producers = {};
+        self.Players[_PlayerID].Armies[_Index].Producers = {};
         for k, v in pairs(self.Players[_PlayerID].Producers) do
             if v and not v.IsSpawner then
                 if QuestTools.SameSector(Army.HomePosition, v.ApproachPosition) then
-                    table.insert(self.Players[_PlayerID].Armies[_ArmyID].Producers, v);
+                    table.insert(self.Players[_PlayerID].Armies[_Index].Producers, v);
                 end
             end
         end

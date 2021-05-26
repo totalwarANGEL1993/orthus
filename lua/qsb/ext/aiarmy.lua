@@ -27,7 +27,8 @@
 -- @field Battle Army is defending itself
 -- @field Obliberate Army is destroying all enemies at the target
 -- @field Guard Army is guarding a position
--- @field Defeat Army is defeated and remaining troops will be discarded
+-- @field Defeat Troops are defeated and remaining troops will be discarded
+-- @field Retreat Army makes an orderly retreat to the home base
 -- @field Refill Army is requesting new soldiers from the producers
 --
 ArmyStates = {
@@ -37,7 +38,8 @@ ArmyStates = {
     Obliberate = 4,
     Guard      = 5,
     Defeat     = 6,
-    Refill     = 7,
+    Retreat    = 7,
+    Refill     = 8,
 };
 
 ---
@@ -61,6 +63,7 @@ AiArmy = {
     RodeLength           = 3000;
     OuterRange           = 0;
     AbandonStrength      = 0.15;
+    RefillStrength       = 0.75;
     LastTick             = 0;
     Producers            = {},
 
@@ -69,13 +72,14 @@ AiArmy = {
     IsRespawningArmy     = false,
     InitialSpawned       = false,
     IsHiddenFromAI       = false,
+    IsIgnoringProducer   = false,
 
     Target               = nil,
     AttackTarget         = nil,
     GuardTarget          = nil,
     BattleTarget         = nil,
     GuardStartTime       = 0,
-    GuardMaximumTime     = 2*60,
+    GuardMaximumTime     = 2*60*10,
     AssembleTimer        = 0,
     GuardPosList         = {Visited = {}},
     HomePosition         = nil,
@@ -238,7 +242,7 @@ function AiArmy:IsDead()
             return false;
         end
     end
-    if not self.IsRespawningArmy then
+    if not self.IsRespawningArmy or self.IsIgnoringProducer then
         return false;
     end
     return true;
@@ -995,20 +999,22 @@ function AiArmy:Operate()
     self.ArmyPositionCache = nil;
     self.ArmyFormationCache = nil;
 
-    if self.ArmyIsDead then
-        return true;
-    end
     if self.ArmyIsPaused then
-        return false;
+        return;
     end
 
     self.AssembleTimer = self.AssembleTimer +1;
 
     self:ClearDeadTroops();
     self:ClearDeadTroopTargets();
+    if self:IsDead() then
+        self:AbandonRemainingTroops();
+        self:CheckAbandonedTroops();
+        return;
+    end
     self:CheckAbandonedTroops();
 
-    if self.State ~= ArmyStates.Defeat and self.State ~= ArmyStates.Refill then
+    if self.State ~= ArmyStates.Fallback and self.State ~= ArmyStates.Refill then
         if self:CalculateStrength() < self.AbandonStrength then
             self:SetState(ArmyStates.Defeat);
             self:SetSubState(ArmySubStates.None);
@@ -1030,6 +1036,8 @@ function AiArmy:Operate()
     elseif self.State == ArmyStates.Guard then
         self:GuardStateController();
     elseif self.State == ArmyStates.Defeat then
+        self:DefeatStateController();
+    elseif self.State == ArmyStates.Retreat then
         self:RetreatStateController();
     elseif self.State == ArmyStates.Refill then
         self:RefillStateController();
@@ -1047,9 +1055,6 @@ function AiArmy:ArmyOperationController()
     end
     local ArmyID = AiArmyCurrentArmy;
     if AiArmyList[ArmyID] then
-        if AiArmyList[ArmyID]:IsDead() then
-            return;
-        end
         if AiArmyList[ArmyID].LastTick == 0 
         or AiArmyList[ArmyID].LastTick +10 < self:GetTime() then
             AiArmyList[ArmyID].LastTick = self:GetTime();
@@ -1100,6 +1105,7 @@ function AiArmy:IdleStateController()
     if self.GuardTarget then
         self.State = ArmyStates.Advance;
         self.Target = self.GuardTarget;
+        self:MoveAsBlock(self.Target, false, false);
         self:NormalizedArmySpeed();
         self:ClearTargets();
         return;
@@ -1122,19 +1128,34 @@ function AiArmy:AdvanceStateController()
         return;
     end
 
-    -- find enemies
-    local Position = self:CallGetArmyFront();
-    local Enemies = self:CallGetEnemiesInArea(Position, 4000);
-    if table.getn(Enemies) > 0 then
-        self.BattleTarget = Position;
-        self.State = ArmyStates.Battle;
-        self.SubState = ArmySubStates.None;
-        self:ResetArmySpeed();
-        return;
+    -- find enemies closeby
+    for i= table.getn(self.Troops), 1, -1 do
+        local Exploration = Logic.GetEntityExplorationRange(self.Troops[i])*100;
+        local Enemies = self:CallGetEnemiesInArea(self.Troops[i], Exploration+1000);
+        if table.getn(Enemies) > 0 then
+            self.BattleTarget = GetPosition(Enemies[1]);
+            self.State = ArmyStates.Battle;
+            self.SubState = ArmySubStates.None;
+            self:ResetArmySpeed();
+            return;
+        end
+    end
+
+    -- abort attack without enemy
+    if self.AttackTarget then
+        local Position = self.AttackTarget[table.getn(self.AttackTarget)];
+        if not QuestTools.AreEnemiesInArea(self.PlayerID, Position, self.RodeLength) then
+            self.State = ArmyStates.Defeat;
+            self.SubState = ArmySubStates.None;
+            self.Target = nil;
+            self:ResetArmySpeed();
+            return;
+        end
     end
 
     -- advance to target
-    if QuestTools.GetDistance(self.Target, self:GetArmyPosition()) > 1500 then
+    local Distance = (self.GuardTarget and 500) or 1500;
+    if QuestTools.GetDistance(self.Target, self:GetArmyPosition()) > Distance then
         if not self:IsMoving() and not self:IsFighting() then
             self:MoveAsBlock(self.Target, false, false);
         end
@@ -1173,7 +1194,7 @@ function AiArmy:BattleStateController()
     local Enemies = self:CallGetEnemiesInArea(self.BattleTarget, AreaSize);
     if table.getn(Enemies) == 0 then
         self.BattleTarget = nil;
-        self.State = ArmyStates.Advance;
+        self.State = ArmyStates.Retreat;
         self.SubState = ArmySubStates.None;
         self:NormalizedArmySpeed();
         self:MoveAsBlock(self.Target, false, true);
@@ -1224,7 +1245,11 @@ function AiArmy:GuardStateController()
         if self.GuardStartTime + self.GuardMaximumTime < self:GetTime() then
             self:ClearTargets();
             self.SubState = ArmySubStates.None;
-            self.State = ArmyStates.Defeat;
+            if self:CalculateStrength() >= self.RefillStrength then
+                self.State = ArmyStates.Idle;
+            else
+                self.State = ArmyStates.Retreat;
+            end
             self.GuardTarget = nil;
             self.Target = nil;
             return;
@@ -1246,7 +1271,7 @@ end
 
 -- -------------------------------------------------------------------------- --
 
-function AiArmy:RetreatStateController()
+function AiArmy:DefeatStateController()
     if table.getn(self.Troops) == 0 then
         self.State = ArmyStates.Refill;
         self.SubState = ArmySubStates.None;
@@ -1263,6 +1288,51 @@ function AiArmy:RetreatStateController()
         self.AttackTarget = nil;
     end
     self:ClearTargets();
+end
+
+-- -------------------------------------------------------------------------- --
+
+function AiArmy:RetreatStateController()
+    -- find enemies closeby
+    if not self.BattleTarget then
+        for i= table.getn(self.Troops), 1, -1 do
+            local Exploration = Logic.GetEntityExplorationRange(self.Troops[i])*100;
+            local Enemies = self:CallGetEnemiesInArea(self.Troops[i], Exploration+1000);
+            if table.getn(Enemies) > 0 then
+                self.BattleTarget = GetPosition(Enemies[1]);
+                self:ResetArmySpeed();
+                return;
+            end
+        end
+    end
+
+    -- still enemies near
+    if self.BattleTarget then
+        local AreaSize = 4000;
+        local Enemies = self:CallGetEnemiesInArea(self.BattleTarget, AreaSize);
+        if table.getn(Enemies) == 0 then
+            self.BattleTarget = nil;
+            self:MoveAsBlock(self.HomePosition, false, false);
+            self:NormalizedArmySpeed();
+        else
+            self:ControlTroops(self.BattleTarget, Enemies);
+            self:Assemble(self.RodeLength);
+        end
+        return;
+    end
+
+    -- arrived at home basis
+    if QuestTools.GetDistance(self:GetArmyPosition(), self.HomePosition) <= 2000 then
+        self.State = ArmyStates.Refill;
+        self.SubState = ArmySubStates.None;
+        self.GuardTarget = nil;
+        self.AttackTarget = nil;
+        return;
+    end
+
+    -- move home
+    self:MoveAsBlock(self.HomePosition, false, false);
+    self:Assemble(500);
 end
 
 -- -------------------------------------------------------------------------- --
