@@ -5,7 +5,7 @@
 -- ########################################################################## --
 
 ---
--- This module is used by the AI controller to create armies. Overwriting
+-- This module is used by the AI controller to create armies. Using or Changing
 -- functions of the army is at your own risk.
 --
 -- <b>Required modules:</b>
@@ -58,7 +58,8 @@ AiArmy = {
     State                = ArmyStates.Idle;
     Troops               = {},
     AbandonedTroops      = {},
-    TroopProperties      = {};
+    IncommingTroops      = {},
+    TroopProperties      = {},
     TroopCount           = 8;
     RodeLength           = 3000;
     OuterRange           = 0;
@@ -90,6 +91,7 @@ AiArmyAttackedJobId = nil;
 AiArmyCurrentArmy = 0;
 AiArmyIdSequence = 0;
 AiArmyTroopIDToArmyID = {};
+AiArmyIncommingTroopIDToArmyID = {};
 AiArmyList = {};
 
 -- -------------------------------------------------------------------------- --
@@ -101,7 +103,7 @@ function AiArmy:construct(_PlayerID, _Home, _Range, _TroopAmount)
     self.HomePosition = _Home;
     self.RodeLength = _Range;
     self.OuterRange = _Range * 0.75;
-    self.TroopCount = _TroopAmount;
+    self.TroopCount = (_TroopAmount > 20 and 20) or _TroopAmount;
 
     self:StartControllerJob();
     table.insert(AiArmyList, self);
@@ -128,6 +130,76 @@ end
 
 function AiArmy:GetTime()
     return math.floor(Logic.GetTime() * 10);
+end
+
+---
+-- Adds an entity to the army.
+--
+-- Currently the army supports only leaders and cannons. Scouts and thieves are
+-- tolerated but there is no distinction between them and the normal leaders.
+-- Migrating troops are advancing aggressive to the central point of the army,
+-- attacking any enemy in sight.
+--
+-- <b>Note:</b> Adding an entity instantly can cause the problem that the
+-- center of the army becomes way off and targeting might not work.
+--
+-- <b>Note:</b> If the regular members have been defeated the home position
+-- becomes the new central point and troops will migrating there.
+--
+-- @param[type=number]  _TroopID   ID of troop
+-- @param[type=boolean] _Instantly Add entity in an instant
+-- @within Properties
+--
+function AiArmy:AddEntity(_TroopID, _Instantly)
+    if not IsExisting(_TroopID) or Logic.GetEntityHealth(_TroopID) == 0 then
+        return;
+    end
+    if Logic.IsEntityInCategory(_TroopID, EntityCategories.Cannon) ==  1
+    or Logic.IsLeader(_TroopID) == 1 then
+        return;
+    end
+    if not QuestTools.IsInTable(_TroopID, self.Troops) and not QuestTools.IsInTable(_TroopID, self.IncommingTroops) then
+        return;
+    end
+    self:CallChoseFormation(_TroopID);
+    if _Instantly then
+        AiArmyTroopIDToArmyID[_TroopID] = self.ArmyID;
+        table.insert(self.Troops, _TroopID);
+    else
+        AiArmyIncommingTroopIDToArmyID[_TroopID] = self.ArmyID;
+        table.insert(self.IncommingTroops, _TroopID);
+    end
+end
+
+---
+-- Removes an entity from the army.
+--
+-- @param[type=number] _TroopID ID of troop
+-- @within Properties
+--
+function AiArmy:RemoveEntity(_TroopID)
+    for i= table.getn(self.Troops), 1, -1 do
+        if self.Troops[i] == _TroopID then
+            AiArmyTroopIDToArmyID[_TroopID] = nil;
+            table.remove(self.Troops, i);
+        end
+    end
+    self:RemoveIncommingEntity(_TroopID);
+end
+
+---
+-- Removes an entity only from the incomming list of the army.
+--
+-- @param[type=number] _TroopID ID of troop
+-- @within Properties
+--
+function AiArmy:RemoveIncommingEntity(_TroopID)
+    for i= table.getn(self.IncommingTroops), 1, -1 do
+        if self.IncommingTroops[i] == _TroopID then
+            AiArmyIncommingTroopIDToArmyID[_TroopID] = nil;
+            table.remove(self.IncommingTroops, i);
+        end
+    end
 end
 
 ---
@@ -220,11 +292,8 @@ function AiArmy:Disband(_DestroyTroops, _KillProducer)
     self.Troops = {};
 
     self.ArmyIsDead = true;
+    self.ArmyIsPaused = true;
     return self;
-end
-
-function AiArmy:IsActive()
-    return self.ArmyIsPaused ~= true;
 end
 
 ---
@@ -322,6 +391,9 @@ end
 ---
 -- Checks if the passed entity ID is member of the army.
 --
+-- <b>Note:</b> Troops only count as army member if they are added to the
+-- troops. Incomming troops do not count as in the army.
+--
 -- @param[type=number] _TroopID ID of troop
 -- @return[type=boolean] Is in army
 -- @within Properties
@@ -333,11 +405,23 @@ function AiArmy:IsInArmy(_TroopID)
         end
         AiArmyTroopIDToArmyID[_TroopID] = nil;
     end
-    -- for i= 1, table.getn(self.Troops), 1 do
-    --     if self.Troops[i] == _TroopID then
-    --         return true;
-    --     end
-    -- end
+    return false;
+end
+
+---
+-- Checks if the passed entity ID is an incomming member.
+--
+-- @param[type=number] _TroopID ID of troop
+-- @return[type=boolean] Is in army
+-- @within Properties
+--
+function AiArmy:IsIncomming(_TroopID)
+    if AiArmyIncommingTroopIDToArmyID[_TroopID] then
+        if IsExisting(_TroopID) and Logic.GetEntityHealth(_TroopID) > 0 then
+            return AiArmyIncommingTroopIDToArmyID[_TroopID] == self.ArmyID;
+        end
+        AiArmyIncommingTroopIDToArmyID[_TroopID] = nil;
+    end
     return false;
 end
 
@@ -935,6 +1019,65 @@ function AiArmy:ClearDeadTroops()
     end
 end
 
+function AiArmy:ClearDeadIncommingTroops()
+    for i= table.getn(self.IncommingTroops), 1, -1 do
+        if self.IncommingTroops[i] then
+            if Logic.IsHero(self.IncommingTroops[i]) == 0 then
+                if not IsExisting(self.IncommingTroops[i]) then
+                    local ID = table.remove(self.Troops, i);
+                    AiArmyIncommingTroopIDToArmyID[ID] = nil;
+                end
+            else
+                if not IsExisting(self.IncommingTroops[i]) or Logic.GetEntityHealth(self.IncommingTroops[i]) == 0 then
+                    -- TODO: What should we do with a drunken sailor?
+                    -- SetPosition(self.Troops[i], GetPosition(self.HomePosition));
+                    local ID = table.remove(self.IncommingTroops, i);
+                    AiArmyIncommingTroopIDToArmyID[ID] = nil;
+                end
+            end
+        end
+    end
+end
+
+function AiArmy:CheckIncommingTroops()
+    for i= table.getn(self.IncommingTroops), 1, -1 do
+        if GetDistance(self.IncommingTroops[i], self:GetArmyPosition()) < 1500 then
+            self:AddEntity(self.IncommingTroops[i], true);
+            self:RemoveIncommingEntity(self.IncommingTroops[i]);
+        else
+            self:TroopAttackMove(self.IncommingTroops[i], self:GetArmyPosition(), false);
+        end
+    end
+end
+
+function AiArmy:ClearTargets()
+    for i= 1, table.getn(self.Troops), 1 do
+        if AiArmyList[self.ArmyID].TroopProperties[self.Troops[i]] then
+            AiArmyList[self.ArmyID].TroopProperties[self.Troops[i]].Target = 0;
+        end
+    end
+end
+
+function AiArmy:ClearDeadTroopTargets()
+    for i= table.getn(self.Troops), 1, -1 do
+        if self.Troops[i] then
+            if not IsExisting(self.Troops[i]) then
+                self.TroopProperties[self.Troops[i]] = nil;
+            else
+                if self.TroopProperties[self.Troops[i]] then
+                    if self.TroopProperties[self.Troops[i]].Target ~= 0 then
+                        local ID = self.TroopProperties[self.Troops[i]].Target;
+                        if not IsExisting(ID) or Logic.GetEntityHealth(ID) == 0 then
+                            self.TroopProperties[self.Troops[i]].Target = 0;
+                            self.TroopProperties[self.Troops[i]].Time   = 0;
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 function AiArmy:AbandonRemainingTroops()
     for i= table.getn(self.Troops), 1, -1 do
         local ID = table.remove(self.Troops, i);
@@ -964,34 +1107,6 @@ function AiArmy:CheckAbandonedTroops()
     end
 end
 
-function AiArmy:ClearDeadTroopTargets()
-    for i= table.getn(self.Troops), 1, -1 do
-        if self.Troops[i] then
-            if not IsExisting(self.Troops[i]) then
-                self.TroopProperties[self.Troops[i]] = nil;
-            else
-                if self.TroopProperties[self.Troops[i]] then
-                    if self.TroopProperties[self.Troops[i]].Target ~= 0 then
-                        local ID = self.TroopProperties[self.Troops[i]].Target;
-                        if not IsExisting(ID) or Logic.GetEntityHealth(ID) == 0 then
-                            self.TroopProperties[self.Troops[i]].Target = 0;
-                            self.TroopProperties[self.Troops[i]].Time   = 0;
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
-function AiArmy:ClearTargets()
-    for i= 1, table.getn(self.Troops), 1 do
-        if AiArmyList[self.ArmyID].TroopProperties[self.Troops[i]] then
-            AiArmyList[self.ArmyID].TroopProperties[self.Troops[i]].Target = 0;
-        end
-    end
-end
-
 -- -------------------------------------------------------------------------- --
 
 function AiArmy:Operate()
@@ -1006,16 +1121,18 @@ function AiArmy:Operate()
     self.AssembleTimer = self.AssembleTimer +1;
 
     self:ClearDeadTroops();
+    self:ClearDeadIncommingTroops();
     self:ClearDeadTroopTargets();
     if self:IsDead() then
         self:AbandonRemainingTroops();
         self:CheckAbandonedTroops();
         return;
     end
+    self:CheckIncommingTroops();
     self:CheckAbandonedTroops();
 
     if self.State ~= ArmyStates.Fallback and self.State ~= ArmyStates.Refill then
-        if self:CalculateStrength() < self.AbandonStrength then
+        if self:CalculateStrength(true) < self.AbandonStrength then
             self:SetState(ArmyStates.Defeat);
             self:SetSubState(ArmySubStates.None);
             self:SetBattleTarget(nil);
@@ -1162,8 +1279,11 @@ function AiArmy:AdvanceStateController()
     else
         if self.AttackTarget and self.Target == self.AttackTarget[self.AttackTarget.Current] then
             if table.getn(self.AttackTarget) > self.AttackTarget.Current then
-                self.AttackTarget.Current = self.AttackTarget.Current +1;
-                self.Target = self.AttackTarget[self.AttackTarget.Current];
+                local Last = self.AttackTarget[self.AttackTarget.Current-1] or self.HomePosition;
+                if QuestTools.SameSector(Last, self.AttackTarget[self.AttackTarget.Current]) then
+                    self.AttackTarget.Current = self.AttackTarget.Current +1;
+                    self.Target = self.AttackTarget[self.AttackTarget.Current];
+                end
                 return;
             end
             self.AttackTarget.Current = 1;
@@ -1245,7 +1365,7 @@ function AiArmy:GuardStateController()
         if self.GuardStartTime + self.GuardMaximumTime < self:GetTime() then
             self:ClearTargets();
             self.SubState = ArmySubStates.None;
-            if self:CalculateStrength() >= self.RefillStrength then
+            if self:CalculateStrength(false) >= self.RefillStrength then
                 self.State = ArmyStates.Idle;
             else
                 self.State = ArmyStates.Retreat;
@@ -1647,14 +1767,30 @@ end
 
 -- -------------------------------------------------------------------------- --
 
-function AiArmy:CalculateStrength()
+---
+-- Returns the relative strength of the army.
+--
+-- The number represents the persentage of all troops that are still alive.
+-- The value might be greater than 1 if troops have been added externally and
+-- are still migrating ot the army.
+--
+-- @return[type=number] Current relative strength
+-- @within Properties
+--
+function AiArmy:CalculateStrength(_WithIncomming)
     local CurStrength = 0;
     local MaxStrength = self.TroopCount;
-    for i= table.getn(self.Troops), 1, -1 do
-        if Logic.IsLeader(self.Troops[i]) == 1 then
-            local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(self.Troops[i]);
+    
+    local Troops = copy(self.Troops, {});
+    if _WithIncomming then
+        Troops = copy(Troops, self.IncommingTroops);
+    end
+    
+    for i= table.getn(Troops), 1, -1 do
+        if Logic.IsLeader(Troops[i]) == 1 then
+            local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(Troops[i]);
             if MaxSoldiers > 0 then
-                local CurSoldiers = Logic.LeaderGetNumberOfSoldiers(self.Troops[i]);
+                local CurSoldiers = Logic.LeaderGetNumberOfSoldiers(Troops[i]);
                 CurStrength = CurStrength + (CurSoldiers/MaxSoldiers);
             else
                 CurStrength = CurStrength + 1;

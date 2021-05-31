@@ -128,13 +128,12 @@ end
 -- @param[type=number] _Strength   Strength of army [1|8]
 -- @param[type=string] _Position   Home Position of army
 -- @param[type=number] _Area       Action range of the army
--- @param[type=number] ...         List of types to build
 -- @return[type=table] Army
 -- @within Methods
 --
 -- @usage CreateAIPlayerArmy("Foo", false, 2, 8, "armyPos1", 5000);
 --
-function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, ...)
+function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area)
     if not AiController.Players[_PlayerID] then
         Message("DEBUG: Can not create army for player " ..tostring(_PlayerID).. " because AI is not initalized!");
         return;
@@ -147,6 +146,7 @@ function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area, .
     Army.IsRespawningArmy = false;
     table.insert(AiController.Players[_PlayerID].Armies, Army);
     AiControllerArmyNameToID[_ArmyName] = Army.ArmyID;
+    AiController:UpdateDefenceTargetsOfArmy(_PlayerID, Army.ArmyID);
     return Army;
 end
 
@@ -695,7 +695,9 @@ function ArmySetSimpleAttackController(_Army, ...)
             end
             if Army.State == ArmyStates.Idle then
                 if Army.AttackTarget == nil then
-                    Army:SetAttackTarget(_Path);
+                    if QuestTools.GetReachablePosition(Army.HomePosition, _Path[table.getn(_Path)]) then
+                        Army:SetAttackTarget(_Path);
+                    end
                 end
             end
         end, {unpack(arg)});
@@ -732,7 +734,7 @@ function ArmySetSimplePatrolController(_Army, ...)
     arg = arg or {};
     local Army = GetArmy(_Army);
     if Army then
-        Army:SetGuardPosList(unpack(arg));
+        Army:SetGuardPosList(arg);
         return ArmySetController(_Army, function(_ArmyID)
             local Army = GetArmy(_ArmyID);
             if not Army or not Army.IsHiddenFromAI or Army:IsDead() then
@@ -745,7 +747,7 @@ function ArmySetSimplePatrolController(_Army, ...)
                 if Army.GuardTarget == nil then
                     local PointFound = false;
                     for i= 1, table.getn(Army.GuardPosList), 1 do
-                        if  not QuestTools.IsInTable(Army.GuardPosList[i], Positions.Visited) then
+                        if  not QuestTools.IsInTable(Army.GuardPosList[i], Army.GuardPosList.Visited) then
                             Army:SetGuardTarget(Army.GuardPosList[i]);
                             Army:AddVisitedGuardPosition(Army.GuardPosList[i]);
                             PointFound = true;
@@ -845,6 +847,7 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
     SetupPlayerAi(_PlayerID, Description);
     
     -- Employ armies
+    self:FindProducerBuildings(_PlayerID);
     self:EmployArmies(_PlayerID);
     -- Construct buildings
     self:SetDoesConstruct(_PlayerID, _Construct == true);
@@ -1215,8 +1218,6 @@ function AiController:EmployArmies(_PlayerID)
                     self.Players[_PlayerID].RodeLength,
                     self.Players[_PlayerID].ArmyStrength
                 );
-                -- ArmyDisableAttackAbility(ArmyID, math.mod(Index, 3) ~= 0);
-                self:FindProducerBuildings(_PlayerID);
                 self:UpdateRecruitersOfArmy(_PlayerID, ArmyID);
                 for k, v in pairs(self.Players[_PlayerID].DefencePos) do
                     self:UpdateDefenceTargetsOfArmy(_PlayerID, ArmyID);
