@@ -710,6 +710,45 @@ function QuestTools.CreateNameForEntity(_eID)
 end
 GiveEntityName = QuestTools.CreateNameForEntity;
 
+---
+-- Moves an entity to the destination and replaces it with an script entity
+-- on arrival.
+--
+-- @param[type=number] _Entity   Entity to move
+-- @param[type=number] _Target   Position where to move
+-- @param[type=number] _PlayerID Area size
+-- @return[type=number] ID of moving job
+-- @within Entities
+--
+function QuestTools.MoveAndVanish(_Entity, _Target)
+    if QuestTools.SameSector(_Entity, _Target) then
+        Move(_Entity, _Target);
+    end
+
+    local JobID = QuestTools.StartSimpleJobEx(function(_EntityID, _Target)
+        if not IsExisting(_EntityID) then
+            return true;
+        end
+        if not Logic.IsEntityMoving(_EntityID) then
+            if QuestTools.SameSector(_Entity, _Target) then
+                Move(_EntityID, _Target);
+            end
+        end
+        if IsNear(_EntityID, _Target, 150) then
+            local PlayerID = Logic.EntityGetPlayer(_EntityID);
+            local Orientation = Logic.GetEntityOrientation(_EntityID);
+            local ScriptName = Logic.GetEntityName(_EntityID);
+            local x, y, z = Logic.EntityGetPos(_EntityID);
+            DestroyEntity(_EntityID);
+            local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, Orientation, PlayerID);
+            Logic.SetEntityName(ID, ScriptName);
+            return true;
+        end
+    end, GetID(_Entity), _Target);
+    return JobID;
+end
+MoveAndVanish = QuestTools.MoveAndVanish;
+
 -- Diplomacy --
 
 ---
@@ -750,6 +789,7 @@ AreAlliesInArea = QuestTools.AreAlliesInArea;
 -- @param[type=number] _state    Diplomatic state
 -- @return[type=boolean] Entities near
 -- @within Diplomacy
+--
 function QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _Position, _range, _state)
 	local Position = _Position;
     if type(Position) ~= "table" then
