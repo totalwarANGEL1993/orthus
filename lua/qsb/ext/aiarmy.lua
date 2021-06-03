@@ -53,7 +53,7 @@ AiArmy = {
     TroopCount           = 8;
     RodeLength           = 3000;
     OuterRange           = 0;
-    AbandonStrength      = 0.15;
+    AbandonStrength      = 0.10;
     LastTick             = 0;
     Producers            = {},
 
@@ -322,9 +322,8 @@ end
 --
 function AiArmy:IsFighting()
     for i= table.getn(self.Troops), 1, -1 do
-        local Task = Logic.GetCurrentTaskList(self.Troops[i]);
-        if Task then
-            return string.find(Task, "BATTLE") ~= nil;
+        if self:IsTroopFighting(self.Troops[i]) == true then
+            return true;
         end
     end
     return false;
@@ -338,7 +337,7 @@ end
 --
 function AiArmy:IsMoving()
     for i= table.getn(self.Troops), 1, -1 do
-        if Logic.IsEntityMoving(self.Troops[i]) == true then
+        if self:IsTroopMoving(self.Troops[i]) == true then
             return true;
         end
     end
@@ -354,8 +353,21 @@ end
 --
 function AiArmy:IsTroopFighting(_TroopID)
     if IsExisting(_TroopID) then
-        local Task = Logic.GetCurrentTaskList(_TroopID);
-        return not Task or string.find(Task, "BATTLE") ~= nil;
+        return string.find(Logic.GetCurrentTaskList(_TroopID) or "", "BATTLE") ~= nil;
+    end
+    return false;
+end
+
+---
+-- Checks if a troop of the army is moving.
+--
+-- @param[type=number] _TroopID ID of troop
+-- @return[type=boolean] Troop is moving
+-- @within Properties
+--
+function AiArmy:IsTroopMoving(_TroopID)
+    if IsExisting(_TroopID) then
+        return Logic.IsEntityMoving(_TroopID) == true;
     end
     return false;
 end
@@ -1219,11 +1231,15 @@ function AiArmy:ResetArmySpeed()
 end
 
 function AiArmy:SetTroopSpeed(_TroopID, _Factor)
-    Logic.SetSpeedFactor(_TroopID, _Factor);
-    if Logic.IsLeader(_TroopID) == 1 then
-        local Soldiers = {Logic.GetSoldiersAttachedToLeader(_TroopID)};
-        for i= 2, Soldiers[1]+1, 1 do
-            Logic.SetSpeedFactor(Soldiers[i], _Factor);
+    if IsExisting(_TroopID) and Logic.GetEntityHealth(_TroopID) > 0 then
+        Logic.SetSpeedFactor(_TroopID, _Factor);
+        if Logic.IsLeader(_TroopID) == 1 then
+            local Soldiers = {Logic.GetSoldiersAttachedToLeader(_TroopID)};
+            for i= 2, Soldiers[1]+1, 1 do
+                if IsExisting(Soldiers[i]) and Logic.GetEntityHealth(Soldiers[i]) > 0 then
+                    Logic.SetSpeedFactor(Soldiers[i], _Factor);
+                end
+            end
         end
     end
 end
@@ -1492,7 +1508,8 @@ end
 
 function AiArmy:DequeueCommand()
     if table.getn(self.CommandQueue) > 0 then
-        return table.remove(self.CommandQueue, 1);
+        local Command = table.remove(self.CommandQueue, 1);
+        return Command;
     end
 end
 
@@ -1558,7 +1575,10 @@ function AiArmy:NextCommand()
     -- Execute command
     if self.CurrentCommand:m_RunCommand(self) then
         self.CurrentCommand = nil;
-        self:DequeueCommand();
+        local Dequeued = self:DequeueCommand();
+        if Dequeued.Loop then
+            table.insert(self.CommandQueue, Dequeued);
+        end
     end
 end
 
@@ -1574,23 +1594,41 @@ function AiArmyCommands:CreateCommand(_Type, ...)
     return new (AiArmyCommands[_Type], unpack(arg));
 end
 
--- Do nothing
-AiArmyCommands.Idle = {
-    m_Identifier = "Idle",
+-- This is not to be used directly
+AiArmyCommands.AbstractCommand = {
+    m_Identifier = "AbstractCommand",
+    m_Loop = false,
     m_RunCommand = function(self, _Army)
         return true;
     end;
 }
 
-function AiArmyCommands.Idle:construct()
+function AiArmyCommands.AbstractCommand:construct(_Loop)
+    self.m_Loop = _Loop == true;
 end
-class(AiArmyCommands.Idle);
+class(AiArmyCommands.AbstractCommand);
+
+function AiArmyCommands.AbstractCommand:IsLoop()
+    return self.m_Loop == true;
+end
+
+function AiArmyCommands.AbstractCommand:Run(_Army)
+    return self:m_RunCommand(_Army);
+end
+
+-- Do nothing
+AiArmyCommands.Idle = {
+    m_Identifier = "Idle",
+}
+
+function AiArmyCommands.Idle:construct(_Loop)
+    self.m_Loop = _Loop == true;
+end
+inherit(AiArmyCommands.Idle, AiArmyCommands.AbstractCommand);
 
 -- Walk to an possition
 AiArmyCommands.Move = {
     m_Identifier = "Move",
-    m_Target = nil;
-    m_Distance = nil;
     m_RunCommand = function(self, _Army)
         local LastIdx = table.getn(self.m_Target);
         if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= self.m_Distance then
@@ -1618,22 +1656,21 @@ AiArmyCommands.Move = {
     end;
 }
 
-function AiArmyCommands.Move:construct(_Target, _Distance)
+function AiArmyCommands.Move:construct(_Target, _Distance, _Loop)
     if type(_Target) ~= "table" then
         _Target = {_Target};
     end
     _Target.Current = 1;
 
+    self.m_Loop = _Loop == true;
     self.m_Target = _Target;
     self.m_Distance = _Distance;
 end
-class(AiArmyCommands.Move);
+inherit(AiArmyCommands.Move, AiArmyCommands.AbstractCommand);
 
 -- Walk to an possition and attacking enemies in a wide range on arrival
 AiArmyCommands.Attack = {
     m_Identifier = "Attack",
-    m_Target = nil;
-    m_Distance = nil;
     m_RunCommand = function(self, _Army)
         local LastIdx = table.getn(self.m_Target);
         if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= 2000 then
@@ -1664,29 +1701,26 @@ AiArmyCommands.Attack = {
         end
     end;
 }
-AiArmyCommands.Attack.m_RunCommand = AiArmyCommands.Move.m_RunCommand;
 
-function AiArmyCommands.Attack:construct(_Target, _Distance)
+function AiArmyCommands.Attack:construct(_Target, _Distance, _Loop)
     if type(_Target) ~= "table" then
         _Target = {_Target};
     end
     _Target.Current = 1;
-
+    
+    self.m_Loop = _Loop == true;
     self.m_Target = _Target;
     self.m_Distance = _Distance;
 end
-class(AiArmyCommands.Attack);
+inherit(AiArmyCommands.Attack, AiArmyCommands.Move);
 
 -- Attack enemies in sight
 AiArmyCommands.Battle = {
     m_Identifier = "Battle",
-    m_Position = nil;
-    m_Distance = nil;
-
     m_RunCommand = function(self, _Army)
-        local Enemies = _Army:CallGetEnemiesInArea(self.m_Position, self.m_Distance);
-        if table.getn(Enemies) > 0 then
-            _Army:ControlTroops(self.m_Position, Enemies);
+        if QuestTools.AreEnemiesInArea(_Army.PlayerID, self.m_Position, self.m_Distance) then
+            -- let :TargetEnemy search for closest enemy
+            _Army:ControlTroops(self.m_Position, nil);
             _Army:ResetArmySpeed();
             _Army:Assemble(self.m_Distance);
             return;
@@ -1696,18 +1730,16 @@ AiArmyCommands.Battle = {
     end;
 }
 
-function AiArmyCommands.Battle:construct(_Position, _Distance)
+function AiArmyCommands.Battle:construct(_Position, _Distance, _Loop)
+    self.m_Loop = _Loop == true;
     self.m_Position = _Position;
     self.m_Distance = _Distance;
 end
-class(AiArmyCommands.Battle);
+inherit(AiArmyCommands.Battle, AiArmyCommands.AbstractCommand);
 
 -- Stays at a point until the time is up and guards it
 AiArmyCommands.Guard = {
     m_Identifier = "Guard",
-    m_Position = nil;
-    m_Distance = nil;
-    m_Time = nil;
     m_LastTime = 0;
 
     m_RunCommand = function(self, _Army)
@@ -1749,12 +1781,13 @@ AiArmyCommands.Guard = {
     end;
 }
 
-function AiArmyCommands.Guard:construct(_Position, _Distance, _Time)
+function AiArmyCommands.Guard:construct(_Position, _Distance, _Time, _Loop)
+    self.m_Loop = _Loop == true;
     self.m_Position = _Position;
     self.m_Distance = _Distance;
     self.m_Time = _Time;
 end
-class(AiArmyCommands.Guard);
+inherit(AiArmyCommands.Guard, AiArmyCommands.AbstractCommand);
 
 -- Army retreats and automatically goes into refill state
 AiArmyCommands.Retreat = {
@@ -1778,13 +1811,11 @@ AiArmyCommands.Retreat = {
 
 function AiArmyCommands.Retreat:construct()
 end
-class(AiArmyCommands.Retreat);
+inherit(AiArmyCommands.Retreat, AiArmyCommands.AbstractCommand);
 
 -- Executes a custom action
 AiArmyCommands.Custom = {
     m_Identifier = "Custom";
-    m_End = nil;
-    m_Run = nil;
     m_Parameters = {},
     m_RunCommand = function(self, _Army)
         if self:m_Run(_Army) then
@@ -1794,7 +1825,8 @@ AiArmyCommands.Custom = {
     end;
 }
 
-function AiArmyCommands.Custom:construct(_Name, _Action, ...)
+function AiArmyCommands.Custom:construct(_Name, _Action, _Loop, ...)
+    self.m_Loop = _Loop == true;
     arg = arg or {};
     if not AiArmyCommands[_Name] then
         self.m_Identifier = _Name;
@@ -1804,7 +1836,7 @@ function AiArmyCommands.Custom:construct(_Name, _Action, ...)
         table.insert(self.m_Parameters, arg[i]);
     end
 end
-class(AiArmyCommands.Custom);
+inherit(AiArmyCommands.Custom, AiArmyCommands.AbstractCommand);
 
 -- -------------------------------------------------------------------------- --
 

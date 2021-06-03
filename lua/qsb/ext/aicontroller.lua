@@ -1111,10 +1111,10 @@ function AiController:OverrideGameEventsForRecruiterUpdate()
     -- HACK: Add producers afterwards to armies if previously failed
     StartSimpleJobEx(function()
         for i= 1, table.getn(Score.Player), 1 do
-            if self.Players[i] then
-                if table.getn(self.Players[i].Producers) > 0 then
-                    for j= 1, table.getn(self.Players[i].Armies), 1 do
-                        local Army = self.Players[i].Armies[j];
+            if AiController.Players[i] then
+                if table.getn(AiController.Players[i].Producers) > 0 then
+                    for j= 1, table.getn(AiController.Players[i].Armies), 1 do
+                        local Army = AiController.Players[i].Armies[j];
                         if not Army.IsHiddenFromAI and table.getn(Army.Producers) == 0 then
                             AiController:UpdateRecruitersOfArmy(i, j);
                         end
