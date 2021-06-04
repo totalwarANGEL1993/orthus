@@ -1576,7 +1576,7 @@ function AiArmy:NextCommand()
     if self.CurrentCommand:m_RunCommand(self) then
         self.CurrentCommand = nil;
         local Dequeued = self:DequeueCommand();
-        if Dequeued.Loop then
+        if Dequeued and Dequeued.Loop then
             table.insert(self.CommandQueue, Dequeued);
         end
     end
