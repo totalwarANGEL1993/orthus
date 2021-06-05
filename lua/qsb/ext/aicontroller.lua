@@ -886,6 +886,13 @@ function AiController:AddDefenceTarget(_PlayerID, _Entity)
         if not QuestTools.IsInTable(_Entity, self.Players[_PlayerID].DefencePos) then
             table.insert(self.Players[_PlayerID].DefencePos, _Entity);
         end
+        for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
+            self:CreateDefendBehavior(
+                _PlayerID,
+                self.Players[_PlayerID].Armies[i].ArmyID,
+                false
+            );
+        end
     end
 end
 
@@ -895,6 +902,13 @@ function AiController:RemoveDefenceTarget(_PlayerID, _Entity)
             if self.Players[_PlayerID].DefencePos[i] == _Entity then
                 table.remove(self.Players[_PlayerID].DefencePos, i);
             end
+        end
+        for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
+            self:CreateDefendBehavior(
+                _PlayerID,
+                self.Players[_PlayerID].Armies[i].ArmyID,
+                false
+            );
         end
     end
 end

@@ -13,8 +13,9 @@
 -- <li>EntityFind - Library to find all entities.</li>
 -- <li>MD5 - Library to create simple MD5 hashes.</li>
 -- <li>Countdown - User classic countdowns</li>
--- <li>Metatable (S5 Community) - Makes metatables savable.</li>
--- <li>S5Hook (S5 Community) - Allows basic memory manipulation (not compatible
+-- <li>Metatable (mcb) - Makes metatables savable.</li>
+-- <li>SVLib (schmeling65) - Accessing entity scripting values.</li>
+-- <li>S5Hook (bobby) - Allows basic memory manipulation (not compatible
 -- to History Edition).</li>
 -- </ul>
 --
@@ -41,8 +42,8 @@ if metatable == nil then
     Script.Load(gvBasePath.. "qsb/lib/metatable.lua");
 end
 -- Scripting Values
-if SV == nil then
-    Script.Load(gvBasePath.. "qsb/lib/scriptingvalue.lua");
+if SVLib == nil then
+    Script.Load(gvBasePath.. "qsb/lib/svlib.lua");
 end
 -- Load S5Hook
 if S5Hook == nil and (not initEMS or not initEMS()) then

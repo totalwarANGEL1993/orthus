@@ -10,7 +10,8 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
--- <li>qsb.lib.questsync</li>
+-- <li>qsb.core.questsync</li>
+-- <li>qsb.lib.svlib</li>
 -- </ul>
 --
 -- @set sort=true
@@ -210,10 +211,7 @@ GetHealth = QuestTools.GetHealth;
 -- @within Entities
 --
 function QuestTools.SetVisible(_Entity, _Flag)
-    local ID = GetID(_Entity);
-    local VisibleFlag = (_Flag == true and 513) or 65793;
-    local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
-    Logic.SetEntityScriptingValue(ID, ValueIndex, VisibleFlag);
+    SVLib.SetInvisibility(GetID(_Entity), not _Flag);
 end
 
 ---
@@ -224,9 +222,133 @@ end
 -- @within Entities
 --
 function QuestTools.IsVisible(_Entity)
+    return not SVLib.GetInvisibility(GetID(_Entity));
+end
+
+---
+-- Sets the height of the building.
+--
+-- @param _Entity              Skriptname or ID of entity
+-- @param[type=number] _Height New building height
+-- @within Entities
+--
+function QuestTools.SetBuildingHeight(_Entity, _Height)
     local ID = GetID(_Entity);
-    local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
-    return Logic.GetEntityScriptingValue(ID, ValueIndex) == 513;
+    if Logic.IsBuilding(ID) == 0 then
+        return;
+    end
+    SVLib.SetHightOfBuilding(ID, _Height);
+end
+
+---
+-- Returns the height of the building.
+--
+-- @param _Entity Skriptname or ID of entity
+-- @return[type=number] Building height
+-- @within Entities
+--
+function QuestTools.GetBuildingHeight(_Entity)
+    local ID = GetID(_Entity);
+    if Logic.IsBuilding(ID) == 0 then
+        return 1;
+    end
+    return SVLib.GetHightOfBuilding(ID);
+end
+
+---
+-- Changes the relative health of an entity.
+--
+-- @param _Entity               Skriptname or ID of entity
+-- @param[type=number] _Percent Amount of health
+-- @within Entities
+--
+function QuestTools.SetHealth(_Entity, _Percent)
+    local ID = GetID(_Entity);
+    if Logic.IsLeader(ID) == 1 then
+        local Soldiers = {Logic.GetSoldiersAttachedToLeader(ID)};
+        for i= 2, Soldiers[1]+1, 1 do
+            SetHealthWrapper(Soldiers[i], _Percent);
+        end
+    end
+    SetHealthWrapper(ID, _Percent);
+end
+SetHealthWrapper = SetHealth;
+SetHealth = QuestTools.SetHealth;
+
+---
+-- Sets the sub task index of the entity.
+--
+-- @param _Entity             Skriptname or ID of entity
+-- @param[type=number] _Index Index of Task
+-- @within Entities
+--
+function QuestTools.SetSubTask(_Entity, _Index)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    SVLib.SetTaskSubIndexNumber(ID, _Index);
+end
+
+---
+-- Returns the index of the sub task of the entity.
+--
+-- @param _Entity       Skriptname or ID of entity
+-- @return[type=number] Sub task index
+-- @within Entities
+--
+function QuestTools.GetSubTask(_Entity)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    return SVLib.GetTaskSubIndexNumber(ID);
+end
+
+---
+-- Changes the size of an entity. Only influences the model and not the
+-- blocking or collision.
+--
+-- @param _Entity            Skriptname or ID of entity
+-- @param[type=number] _Size Size as float (1.3 ect)
+-- @within Entities
+--
+function QuestTools.SetEntitySize(_Entity, _Size)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    SVLib.SetEntitySize(ID, _Size);
+end
+
+---
+-- Returns the size of the entity.
+--
+-- @param _Entity       Skriptname or ID of entity
+-- @return[type=number] Entity size
+-- @within Entities
+--
+function QuestTools.GetEntitySize(_Entity)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    return SVLib.GetEntitySize(ID);
+end
+
+---
+-- Changes the resource type obtained from the resource entity.
+--
+-- @param _Entity                    Skriptname or ID of entity
+-- @param[type=number] _ResourceType Type of resource
+-- @within Entities
+--
+function QuestTools.SetEntitySize(_Entity, _ResourceType)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    SVLib.SetResourceType(ID, _ResourceType);
 end
 
 ---
@@ -616,19 +738,15 @@ end
 ---
 -- Returns the leader entity ID of the soldier.
 --
--- @param[type=number] _eID Entity ID of soldier
+-- @param[type=number] _Soldier Entity ID of soldier
 -- @return[type=number] Entity ID of leader
 -- @within Entities
 --
-function QuestTools.SoldierGetLeader(_eID)
-    if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
-        if QuestSync:IsHistoryEdition() then
-            return Logic.GetEntityScriptingValue(_eID, 66) or _eID;
-        else
-            return Logic.GetEntityScriptingValue(_eID, 69) or _eID;
-        end
+function QuestTools.SoldierGetLeader(_Soldier)    
+    if Logic.IsEntityInCategory(_Soldier, EntityCategories.Soldier) == 1 then
+        return SVLib.GetLeaderOfSoldier(GetID(_Soldier));
     end
-    return _eID;
+    return GetID(_Soldier);
 end
 SoldierGetLeader = QuestTools.SoldierGetLeader;
 
@@ -964,8 +1082,6 @@ end
 CountdownIsVisisble = QuestTools.CountdownIsVisisble;
 
 -- AI --
-
--- FillBuildingCostsTable
 
 ---
 -- Returns a table with the costs of a building type.
