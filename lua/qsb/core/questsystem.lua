@@ -2112,7 +2112,7 @@ Conditions = {
 -- <pre>{Objectives.NoChange}</pre>
 --
 -- @field Destroy
--- Destroy a unit, a whole army or make a hero loose consciousness.
+-- Destroy a unit, a whole Blue Byte army or make a hero loose consciousness.
 -- <pre>{Objectives.Destroy, _target}</pre>
 --
 -- @field Create
@@ -2373,3 +2373,4 @@ Callbacks = {
     RevealArea = 106,
     ConcealArea = 17,
 }
+

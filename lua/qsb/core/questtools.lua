@@ -10,7 +10,8 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
--- <li>qsb.lib.questsync</li>
+-- <li>qsb.core.questsync</li>
+-- <li>qsb.lib.svlib</li>
 -- </ul>
 --
 -- @set sort=true
@@ -210,10 +211,7 @@ GetHealth = QuestTools.GetHealth;
 -- @within Entities
 --
 function QuestTools.SetVisible(_Entity, _Flag)
-    local ID = GetID(_Entity);
-    local VisibleFlag = (_Flag == true and 513) or 65793;
-    local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
-    Logic.SetEntityScriptingValue(ID, ValueIndex, VisibleFlag);
+    SVLib.SetInvisibility(GetID(_Entity), not _Flag);
 end
 
 ---
@@ -224,9 +222,133 @@ end
 -- @within Entities
 --
 function QuestTools.IsVisible(_Entity)
+    return not SVLib.GetInvisibility(GetID(_Entity));
+end
+
+---
+-- Sets the height of the building.
+--
+-- @param _Entity              Skriptname or ID of entity
+-- @param[type=number] _Height New building height
+-- @within Entities
+--
+function QuestTools.SetBuildingHeight(_Entity, _Height)
     local ID = GetID(_Entity);
-    local ValueIndex  = (QuestSync:IsHistoryEdition() == true and -26) or -30;
-    return Logic.GetEntityScriptingValue(ID, ValueIndex) == 513;
+    if Logic.IsBuilding(ID) == 0 then
+        return;
+    end
+    SVLib.SetHightOfBuilding(ID, _Height);
+end
+
+---
+-- Returns the height of the building.
+--
+-- @param _Entity Skriptname or ID of entity
+-- @return[type=number] Building height
+-- @within Entities
+--
+function QuestTools.GetBuildingHeight(_Entity)
+    local ID = GetID(_Entity);
+    if Logic.IsBuilding(ID) == 0 then
+        return 1;
+    end
+    return SVLib.GetHightOfBuilding(ID);
+end
+
+---
+-- Changes the relative health of an entity.
+--
+-- @param _Entity               Skriptname or ID of entity
+-- @param[type=number] _Percent Amount of health
+-- @within Entities
+--
+function QuestTools.SetHealth(_Entity, _Percent)
+    local ID = GetID(_Entity);
+    if Logic.IsLeader(ID) == 1 then
+        local Soldiers = {Logic.GetSoldiersAttachedToLeader(ID)};
+        for i= 2, Soldiers[1]+1, 1 do
+            SetHealthWrapper(Soldiers[i], _Percent);
+        end
+    end
+    SetHealthWrapper(ID, _Percent);
+end
+SetHealthWrapper = SetHealth;
+SetHealth = QuestTools.SetHealth;
+
+---
+-- Sets the sub task index of the entity.
+--
+-- @param _Entity             Skriptname or ID of entity
+-- @param[type=number] _Index Index of Task
+-- @within Entities
+--
+function QuestTools.SetSubTask(_Entity, _Index)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    SVLib.SetTaskSubIndexNumber(ID, _Index);
+end
+
+---
+-- Returns the index of the sub task of the entity.
+--
+-- @param _Entity       Skriptname or ID of entity
+-- @return[type=number] Sub task index
+-- @within Entities
+--
+function QuestTools.GetSubTask(_Entity)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    return SVLib.GetTaskSubIndexNumber(ID);
+end
+
+---
+-- Changes the size of an entity. Only influences the model and not the
+-- blocking or collision.
+--
+-- @param _Entity            Skriptname or ID of entity
+-- @param[type=number] _Size Size as float (1.3 ect)
+-- @within Entities
+--
+function QuestTools.SetEntitySize(_Entity, _Size)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    SVLib.SetEntitySize(ID, _Size);
+end
+
+---
+-- Returns the size of the entity.
+--
+-- @param _Entity       Skriptname or ID of entity
+-- @return[type=number] Entity size
+-- @within Entities
+--
+function QuestTools.GetEntitySize(_Entity)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    return SVLib.GetEntitySize(ID);
+end
+
+---
+-- Changes the resource type obtained from the resource entity.
+--
+-- @param _Entity                    Skriptname or ID of entity
+-- @param[type=number] _ResourceType Type of resource
+-- @within Entities
+--
+function QuestTools.SetEntitySize(_Entity, _ResourceType)
+    local ID = GetID(_Entity);
+    if not IsExisting(ID) then
+        return;
+    end
+    SVLib.SetResourceType(ID, _ResourceType);
 end
 
 ---
@@ -354,8 +476,13 @@ GetEntitiesByPrefix = QuestTools.GetEntitiesByPrefix;
 -- @return[type=table] Result set
 -- @within Entities
 --
-function QuestTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position)
+function QuestTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position, _Depth)
 	local ResultSet = {};
+    -- Hack: prevent stack overflow
+    _Depth = _Depth or 0;
+    if _Depth > 16 then
+        return ResultSet;
+    end
     
     _AreaSize = _AreaSize or Logic.WorldGetSize();
     _Position = _Position or {X = _AreaSize/2, Y = _AreaSize/2};
@@ -373,25 +500,25 @@ function QuestTools.FindAllEntities(_PlayerID, _Type, _AreaSize, _Position)
 		local PositionX2 = _Position.X + _AreaSize / 4;
 		local PositionY1 = _Position.Y - _AreaSize / 4;
 		local PositionY2 = _Position.Y + _AreaSize / 4;
-		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY1});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY1}, _Depth+1);
 		for i = 1, table.getn(ResultSetRecursive) do
 			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
-		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY2});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX1,Y=PositionY2}, _Depth+1);
 		for i = 1, table.getn(ResultSetRecursive) do
 			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
-		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY1});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY1}, _Depth+1);
 		for i = 1, table.getn(ResultSetRecursive) do
 			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
 			end
 		end
-		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY2});
+		local ResultSetRecursive = QuestTools.FindAllEntities(_PlayerID, _Type, HalfAreaSize, {X=PositionX2,Y=PositionY2}, _Depth+1);
 		for i = 1, table.getn(ResultSetRecursive) do
 			if not QuestTools.IsInTable(ResultSetRecursive[i], ResultSet) then
 				table.insert(ResultSet, ResultSetRecursive[i]);
@@ -481,19 +608,19 @@ function QuestTools.GetReachablePosition(_Entity, _Target)
     end
 	assert(type(Position1) == "table");
     assert(type(Position2) == "table");
-
     local ID = AI.Entity_CreateFormation(PlayerID, Entities.PU_Serf, 0, 0, Position2.X, Position2.Y, 0, 0, 0, 0);
-    local NewPosition = GetPosition(ID);
-    DestroyEntity(ID);
-    if QuestTools.SameSector(_Entity, NewPosition) then
+    if QuestTools.SameSector(_Entity, ID) then
+        local NewPosition = GetPosition(ID);
+        DestroyEntity(ID);
         return NewPosition;
     end
+    DestroyEntity(ID);
     return nil;
 end
 
 ---
--- Checks if an army or entity is dead. If an army has not been created yet
--- then it will not falsely assumed to be dead.
+-- Checks if an army or entity is dead. If an Blue Byte army has not been 
+-- created yet then it will not falsely assumed to be dead.
 --
 -- @param _input Army or entity (string, number oder table)
 -- @return[type=boolean] Army or entity is dead
@@ -611,19 +738,15 @@ end
 ---
 -- Returns the leader entity ID of the soldier.
 --
--- @param[type=number] _eID Entity ID of soldier
+-- @param[type=number] _Soldier Entity ID of soldier
 -- @return[type=number] Entity ID of leader
 -- @within Entities
 --
-function QuestTools.SoldierGetLeader(_eID)
-    if Logic.IsEntityInCategory(_eID, EntityCategories.Soldier) == 1 then
-        if QuestSync:IsHistoryEdition() then
-            return Logic.GetEntityScriptingValue(_eID, 66) or _eID;
-        else
-            return Logic.GetEntityScriptingValue(_eID, 69) or _eID;
-        end
+function QuestTools.SoldierGetLeader(_Soldier)    
+    if Logic.IsEntityInCategory(_Soldier, EntityCategories.Soldier) == 1 then
+        return SVLib.GetLeaderOfSoldier(GetID(_Soldier));
     end
-    return _eID;
+    return GetID(_Soldier);
 end
 SoldierGetLeader = QuestTools.SoldierGetLeader;
 
@@ -705,6 +828,45 @@ function QuestTools.CreateNameForEntity(_eID)
 end
 GiveEntityName = QuestTools.CreateNameForEntity;
 
+---
+-- Moves an entity to the destination and replaces it with an script entity
+-- on arrival.
+--
+-- @param[type=number] _Entity   Entity to move
+-- @param[type=number] _Target   Position where to move
+-- @param[type=number] _PlayerID Area size
+-- @return[type=number] ID of moving job
+-- @within Entities
+--
+function QuestTools.MoveAndVanish(_Entity, _Target)
+    if QuestTools.SameSector(_Entity, _Target) then
+        Move(_Entity, _Target);
+    end
+
+    local JobID = QuestTools.StartSimpleJobEx(function(_EntityID, _Target)
+        if not IsExisting(_EntityID) then
+            return true;
+        end
+        if not Logic.IsEntityMoving(_EntityID) then
+            if QuestTools.SameSector(_Entity, _Target) then
+                Move(_EntityID, _Target);
+            end
+        end
+        if IsNear(_EntityID, _Target, 150) then
+            local PlayerID = Logic.EntityGetPlayer(_EntityID);
+            local Orientation = Logic.GetEntityOrientation(_EntityID);
+            local ScriptName = Logic.GetEntityName(_EntityID);
+            local x, y, z = Logic.EntityGetPos(_EntityID);
+            DestroyEntity(_EntityID);
+            local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, Orientation, PlayerID);
+            Logic.SetEntityName(ID, ScriptName);
+            return true;
+        end
+    end, GetID(_Entity), _Target);
+    return JobID;
+end
+MoveAndVanish = QuestTools.MoveAndVanish;
+
 -- Diplomacy --
 
 ---
@@ -745,6 +907,7 @@ AreAlliesInArea = QuestTools.AreAlliesInArea;
 -- @param[type=number] _state    Diplomatic state
 -- @return[type=boolean] Entities near
 -- @within Diplomacy
+--
 function QuestTools.AreEntitiesOfDiplomacyStateInArea(_player, _Position, _range, _state)
 	local Position = _Position;
     if type(Position) ~= "table" then
@@ -919,8 +1082,6 @@ end
 CountdownIsVisisble = QuestTools.CountdownIsVisisble;
 
 -- AI --
-
--- FillBuildingCostsTable
 
 ---
 -- Returns a table with the costs of a building type.

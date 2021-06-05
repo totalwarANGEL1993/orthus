@@ -724,7 +724,9 @@ end
 --
 function QuestSystemBehavior:UnloadS5Hook()
     if QuestTools.GetExtensionNumber() <= 2 and S5Hook then
-        S5Hook.RemoveArchive();
+        if string.find(Folders.Map, "externalmap") then
+            S5Hook.RemoveArchive();
+        end
         Trigger.DisableTriggerSystem(1);
     end
 end
@@ -790,7 +792,7 @@ end
 -- @local
 --
 function QuestSystemBehavior:UpgradeAI(_PlayerID, _NewTechLevel)
-    if TroopGenerator.CreatedAiPlayers[_PlayerID] then
+    if AiController.Players[_PlayerID] then
         AiController:UpgradeTroops(_PlayerID, _NewTechLevel);
     end
 end
@@ -819,8 +821,13 @@ function QuestSystemBehavior:InstallS5Hook()
     if QuestTools.GetExtensionNumber() > 2 then
         ExtraFolder = "extra3";
     end
-    S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
-    S5Hook.ReloadCutscenes();
+
+    if string.find(Folders.Map, "externalmap") then
+        S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
+        S5Hook.ReloadCutscenes();
+    else
+        S5Hook.ReloadCutscenes(Folders.Map);
+    end
 end
 
 -- -------------------------------------------------------------------------- --
@@ -953,8 +960,8 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_NoChange);
 -- -------------------------------------------------------------------------- --
 
 ---
--- The goal is won after the hero is comatose or the entity/army is destroyed.
--- @param _Target Target (Army, hero, unit)
+-- The goal is won after the hero is comatose or the entity is destroyed.
+-- @param _Target Target (building, hero or unit)
 -- @within Goals
 --
 function Goal_Destroy(...)
@@ -1219,7 +1226,7 @@ end
 b_Goal_UnitsInArea = {
     Data = {
         Name = "Goal_UnitsInArea",
-        Type = Objectives.EntityDistance
+        Type = Objectives.MapScriptFunction
     },
 };
 
@@ -1649,9 +1656,13 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_DestroyCategory);
 
 ---
 -- This goal is won, after the receiver payed the tribute.
--- @param[type=string] _Resource Tribute resource
--- @param[type=number] _Amount Tribute high
 -- @param[type=string] _Message Tribute message
+-- @param[type=number] _Gold Amount of gold
+-- @param[type=number] _Clay Amount of clay
+-- @param[type=number] _Wood Amount of wood
+-- @param[type=number] _Stone Amount of stone
+-- @param[type=number] _Iron Amount of iron
+-- @param[type=number] _Sulfur Amount of sulfur
 -- @within Goals
 --
 function Goal_Tribute(...)
@@ -1666,17 +1677,33 @@ b_Goal_Tribute = {
 };
 
 function b_Goal_Tribute:AddParameter(_Index, _Parameter)
+    
     if _Index == 1 then
-        self.Data.Resource = ResourceType[_Parameter];
-    elseif _Index == 2 then
-        self.Data.Amount = _Parameter;
-    elseif _Index == 3 then
         self.Data.Message = _Parameter;
+    elseif _Index == 2 then
+        self.Data.Gold = _Parameter or 0;
+    elseif _Index == 3 then
+        self.Data.Clay = _Parameter or 0;
+    elseif _Index == 4 then
+        self.Data.Wood = _Parameter or 0;
+    elseif _Index == 5 then
+        self.Data.Stone = _Parameter or 0;
+    elseif _Index == 6 then
+        self.Data.Iron = _Parameter or 0;
+    elseif _Index == 7 then
+        self.Data.Sulfur = _Parameter or 0;
     end
 end
 
 function b_Goal_Tribute:GetGoalTable()
-    return {self.Data.Type, {self.Data.Resource, self.Data.Amount}, self.Data.Message};
+    return {self.Data.Type, {
+        ResourceType.Gold,   self.Data.Gold,
+        ResourceType.Clay,   self.Data.Clay,
+        ResourceType.Wood,   self.Data.Wood,
+        ResourceType.Stone,  self.Data.Stone,
+        ResourceType.Iron,   self.Data.Iron,
+        ResourceType.Sulfur, self.Data.Sulfur,
+    }, self.Data.Message};
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Goal_Tribute);
@@ -3206,30 +3233,8 @@ function b_Reward_MoveAndVanish:GetRewardTable()
 end
 
 function b_Reward_MoveAndVanish:CustomFunction(_Quest)
-    Move(self.Data.Entity, self.Data.Target);
-
-    self.Data.JobID = QuestTools.StartSimpleJobEx(function(_EntityID, _Target, _LookingPlayerID)
-        if not IsExisting(_EntityID) then
-            return true;
-        end
-        if not Logic.IsEntityMoving(_EntityID) then
-            Move(_EntityID, _Target);
-        end
-    
-        local PlayerID = Logic.EntityGetPlayer(_EntityID);
-        local ScriptName = Logic.GetEntityName(_EntityID);
-        local x, y, z = Logic.EntityGetPos(_EntityID);
-        if Logic.IsMapPositionExplored(_LookingPlayerID, x, y) == 0 or IsNear(_EntityID, _Target, 150) then
-            if Logic.IsLeader(_EntityID) == 1 then
-                Logic.DestroyGroupByLeader(_EntityID)
-            else
-                Logic.DestroyEntity(_EntityID)
-            end
-            local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, 0, PlayerID);
-            Logic.SetEntityName(ID, ScriptName);
-            return true;
-        end
-    end, GetID(self.Data.Entity), self.Data.Target, _Quest.m_Receiver);
+    self:Reset(_Quest);
+    self.Data.JobID = QuestTools.MoveAndVanish(self.Data.Entity, self.Data.Target);
 end
 
 function b_Reward_MoveAndVanish:Debug(_Quest)
@@ -3905,7 +3910,7 @@ end
 
 function b_Goal_DestroyPlayer:CustomFunction(_Quest)
     if not IsExisting(self.Data.Headquarter) then
-        if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] then
+        if AiController.Players[self.Data.PlayerID] then
             AiController:DestroyPlayer(self.Data.PlayerID);
         end
 
@@ -3982,7 +3987,6 @@ function b_Goal_DestroyArmy:CustomFunction(_Quest)
 end
 
 function b_Goal_DestroyArmy:Debug(_Quest)
-    local Armies = TroopGenerator.CreatedAiArmies[self.Data.PlayerID] or {};
     local Army = GetArmy(self.Data.ArmyName);
     if Army == nil then
         local Player = tostring(self.Data.PlayerID);
@@ -4683,7 +4687,7 @@ function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
         dbg(_Quest, self, "Serf limit must be a number >= 0!");
         return true;
     end
-    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] then
+    if AiController.Players[self.Data.PlayerID] then
         dbg(_Quest, self, "A player already exists for ID " ..tostring(self.Data.PlayerID));
         return true;
     end
@@ -4840,7 +4844,7 @@ function b_Reward_AI_SetupAIPlayer:Debug(_Quest)
         dbg(_Quest, self, "Army amount must be a number > 0!");
         return true;
     end
-    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] then
+    if AiController.Players[self.Data.PlayerID] then
         dbg(_Quest, self, "A player already exists for ID " ..tostring(self.Data.PlayerID));
         return true;
     end
@@ -4910,7 +4914,7 @@ function b_Reward_AI_ConstructBuilding:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_ConstructBuilding:Debug(_Quest)
-    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == nil then
+    if AiController.Players[self.Data.PlayerID] == nil then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
@@ -5000,7 +5004,7 @@ function b_Reward_AI_CreateArmy:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_CreateArmy:Debug(_Quest)
-    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == nil then
+    if AiController.Players[self.Data.PlayerID] == nil then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
@@ -5010,11 +5014,6 @@ function b_Reward_AI_CreateArmy:Debug(_Quest)
     end
     if AiControllerArmyNameToID[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
-        return true;
-    end
-    if  TroopGenerator.CreatedAiArmies[self.Data.PlayerID] 
-    and table.getn(TroopGenerator.CreatedAiArmies[self.Data.PlayerID]) > 9 then
-        dbg(_Quest, self, "Player '" ..tostring(self.Data.PlayerID).. "' has to many armies!");
         return true;
     end
     return false;
@@ -5126,7 +5125,7 @@ function b_Reward_AI_CreateSpawnArmy:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
-    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == null then
+    if AiController.Players[self.Data.PlayerID] == nil then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
@@ -5136,11 +5135,6 @@ function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
     end
     if AiControllerArmyNameToID[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' is already created!");
-        return true;
-    end
-    if  TroopGenerator.CreatedAiArmies[self.Data.PlayerID]
-    and table.getn(TroopGenerator.CreatedAiArmies[self.Data.PlayerID]) > 9 then
-        dbg(_Quest, self, "Player '" ..tostring(self.Data.PlayerID).. "' has to many armies!");
         return true;
     end
     if not IsExisting(self.Data.LifeThread) then
@@ -5261,7 +5255,7 @@ function b_Reward_AI_EnableArmyPatrol:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_EnableArmyPatrol:Debug(_Quest)
-    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == null then
+    if AiController.Players[self.Data.PlayerID] == nil then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
@@ -5319,7 +5313,7 @@ function b_Reward_AI_EnableArmyAttack:CustomFunction(_Quest)
 end
 
 function b_Reward_AI_EnableArmyAttack:Debug(_Quest)
-    if TroopGenerator.CreatedAiPlayers[self.Data.PlayerID] == null then
+    if AiController.Players[self.Data.PlayerID] == nil then
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end

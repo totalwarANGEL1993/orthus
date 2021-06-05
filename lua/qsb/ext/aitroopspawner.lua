@@ -62,6 +62,7 @@ function DropTroopGenerator(_ScriptName)
         if JobIsRunning(AiTroopSpawnerList[_ScriptName].SoldierJobID) then
             EndJob(AiTroopSpawnerList[_ScriptName].SoldierJobID);
         end
+        DestroyEntity(AiTroopSpawnerList[_ScriptName].ApproachPosition);
         AiTroopSpawnerList[_ScriptName] = nil;
     end
 end
@@ -82,6 +83,7 @@ end
 
 AiTroopSpawner = {
     ScriptName = nil,
+    ApproachPosition = 0,
     IsSpawner = true,
     LastRecruitedTime = 0,
     Delay = 2*60,
@@ -105,19 +107,36 @@ function AiTroopSpawner:construct(_ScriptName)
 end;
 class(AiTroopSpawner);
 
+function AiTroopSpawner:IsManagedByProducer(_TroopID)
+    return QuestTools.IsInTable(_TroopID, self.Troops.Created) == true;
+end
+
+function AiTroopSpawner:GetApproachPosition()
+    return self.ApproachPosition;
+end
+
+function AiTroopSpawner:SetApproachPosition(_Position)
+    DestroyEntity(self.ApproachPosition);
+    local Position = GetPosition(self.ScriptName);
+    local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, Position.X, Position.Y, 0, 0, 0, 0);
+    local x, y, z = Logic.EntityGetPos(ID);
+    local ApproachID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, 0, 8);
+    self.ApproachPosition = ApproachID;
+    DestroyEntity(ID);
+    return self;
+end
+
 function AiTroopSpawner:Initalize()
     if not self.Initalized then
         self.Initalized = true;
         
         -- Save approach position
-        local Position = GetPosition(self.ScriptName);
-        local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, Position.X, Position.Y, 0, 0, 0, 0);
-        self.ApproachPosition = GetPosition(ID);
-        DestroyEntity(ID);
+        self:SetApproachPosition(GetPosition(self.ScriptName));
 
         -- Buys soldiers for the leader
         self.SoldierJobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_ScriptName)
             if not IsExisting(_ScriptName) then
+                DestroyEntity(AiTroopSpawnerList[_ScriptName].ApproachPosition);
                 return true;
             end
             if AiTroopSpawnerList[_ScriptName] then
@@ -142,10 +161,10 @@ function AiTroopSpawner:HandleSoldierRefill()
                             if QuestTools.GetDistance(ID, self.ApproachPosition) < 1200 then
                                 Tools.CreateSoldiersForLeader(ID, 1);
                             else
-                                local Position = self.ApproachPosition;
                                 if Logic.IsEntityMoving(ID) == false then
-                                    if QuestTools.GetReachablePosition(ID, Position) ~= nil then
-                                        Logic.MoveSettler(ID, Position.X, Position.Y);
+                                    if QuestTools.SameSector(ID, self.ApproachPosition) then
+                                        local x, y, z = Logic.EntityGetPos(self.ApproachPosition);
+                                        Logic.MoveSettler(ID, x, y);
                                     else
                                         Logic.DestroyGroupByLeader(ID);
                                     end
@@ -181,11 +200,6 @@ end
 
 function AiTroopSpawner:ClearTypes()
     self.Troops.Types = {};
-    return self;
-end
-
-function AiTroopSpawner:SetApproachPosition(_Position)
-    self.ApproachPosition = _Position;
     return self;
 end
 
@@ -250,7 +264,7 @@ function AiTroopSpawner:CreateTroop(_IgnoreCreated, _Initial)
                 local TroopType = self.Troops.Selector(self);
                 local ID = GetID(self.ScriptName);
                 local PlayerID = Logic.EntityGetPlayer(ID);
-                local Position = self.ApproachPosition;
+                local Position = GetPosition(self.ApproachPosition);
 
                 local TroopID = AI.Entity_CreateFormation(
                     PlayerID,

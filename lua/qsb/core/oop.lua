@@ -55,6 +55,22 @@ function copy(_Source, _Dest)
 end
 
 ---
+-- Shuffles the contents of an array table and returns shuffeled table.
+--
+-- @param[type=table] _Source Source table
+-- @return[type=table] Shuffled table
+--
+function shuffle(_Source)
+    if _Source and table.getn(_Source) > 0 then
+        for i = table.getn(_Source), 2, -1 do
+            local j = math.random(i);
+            _Source[i], _Source[j] = _Source[j], _Source[i];
+        end
+    end
+    return _Source;
+end
+
+---
 -- Makes a table to some kind of pseudo class by adding some default stuff a
 -- class should have. Metatables will not be used so operator overloading is
 -- not possible.
@@ -72,16 +88,12 @@ end
 -- @return[type=table] Class table
 --
 function class(_Table)
-    for k, v in pairs(_G) do 
-        if v == _Table then
-            _Table.className = k;
-        end
-    end
-
     _Table.construct = _Table.construct or function(self, ...)
     end
 
     _Table.clone = _Table.clone or function(self)
+        assert(self.class ~= nil);
+        assert(self.class ~= self);
         return copy(self);
     end
 
@@ -97,21 +109,16 @@ function class(_Table)
         return "{" ..s.. "}";
     end
 
-    _Table.foreach = _Table.foreach or function(self, _Function)
-        for k, v in pairs(self) do
-            if v and type(v) ~= "function" and k ~= "parent" then 
-                _Function(self, k, v);
-            end
-        end
-    end
-
     _Table.equals = _Table.equals or function(self, _Other)
         if type(_Other) ~= "table" then 
             return false;
         end
         for k, v in pairs(self) do
-            if v ~= _Other[k] then
-                return false;
+            if v then
+                if type(_Other[k]) ~= "table" or not _Other[k].equals then
+                    return v ~= _Other[k];
+                end
+                return _Other[k]:equals(v);
             end
         end
         return true;
@@ -136,20 +143,52 @@ end
 ---
 -- Instanciates a class by calling the construct() method.
 --
--- If a parent is defined, new will first be called for the parent class. In
--- that case an instance of the parent class is accessable at the member
--- "parent". Methods for the parent object can be called seperatly and the
--- object will have it's own members.
---
 -- @param[type=table] _Class Class table
 -- @param ...         Constructor arguments
 -- @return[type=table] Instance of class
 --
 function new(_Class, ...)
     local instance = copy(_Class);
-    if instance.parent then
-        instance.parent = new(instance.parent, unpack(arg));
-    end
+    instance = copy(instance.parent or {}, instance);
+    instance.class = _Class;
     instance:construct(unpack(arg));
     return instance;
 end
+
+---
+-- Instanciates the parent class of the passed object.
+--
+-- The instance of the parent class is accessable at the member "super".
+-- Methods for the parent object can be called seperatly and the
+-- object will have it's own members.
+--
+-- @param[type=table] _Instance Instance table
+-- @param ...         Parent constructor arguments
+-- @return[type=table] Instance of class
+--
+function super(_Instance, ...)
+    if _Instance.parent then
+        _Instance.super = new(_Instance.parent, unpack(arg));
+    end
+end
+
+---
+-- Checks if the object is an instance of the given class.
+--
+-- Will also be true if any of the instance ancestors is an instance of the
+-- passed class.
+--
+-- @param[type=table] _Instance Instance
+-- @param[type=table] _Class    Class
+-- @return[type=table] Instance of class
+--
+function instanceof(_Instance, _Class)
+    if type(_Instance) ~= "table" or not _Instance.class then
+        return false;
+    end
+    if type(_Instance.super) == "table" and instanceof(_Instance.super, _Class) then
+        return true;
+    end
+    return _Instance.class == _Class;
+end
+
