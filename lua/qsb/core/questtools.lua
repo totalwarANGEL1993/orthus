@@ -486,19 +486,19 @@ function QuestTools.GetReachablePosition(_Entity, _Target)
     end
 	assert(type(Position1) == "table");
     assert(type(Position2) == "table");
-
     local ID = AI.Entity_CreateFormation(PlayerID, Entities.PU_Serf, 0, 0, Position2.X, Position2.Y, 0, 0, 0, 0);
-    local NewPosition = GetPosition(ID);
-    DestroyEntity(ID);
-    if QuestTools.SameSector(_Entity, NewPosition) then
+    if QuestTools.SameSector(_Entity, ID) then
+        local NewPosition = GetPosition(ID);
+        DestroyEntity(ID);
         return NewPosition;
     end
+    DestroyEntity(ID);
     return nil;
 end
 
 ---
--- Checks if an army or entity is dead. If an army has not been created yet
--- then it will not falsely assumed to be dead.
+-- Checks if an army or entity is dead. If an Blue Byte army has not been 
+-- created yet then it will not falsely assumed to be dead.
 --
 -- @param _input Army or entity (string, number oder table)
 -- @return[type=boolean] Army or entity is dead
