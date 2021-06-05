@@ -724,7 +724,9 @@ end
 --
 function QuestSystemBehavior:UnloadS5Hook()
     if QuestTools.GetExtensionNumber() <= 2 and S5Hook then
-        S5Hook.RemoveArchive();
+        if string.find(Folders.Map, "externalmap") then
+            S5Hook.RemoveArchive();
+        end
         Trigger.DisableTriggerSystem(1);
     end
 end
@@ -819,8 +821,13 @@ function QuestSystemBehavior:InstallS5Hook()
     if QuestTools.GetExtensionNumber() > 2 then
         ExtraFolder = "extra3";
     end
-    S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
-    S5Hook.ReloadCutscenes();
+
+    if string.find(Folders.Map, "externalmap") then
+        S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
+        S5Hook.ReloadCutscenes();
+    else
+        S5Hook.ReloadCutscenes(Folders.Map);
+    end
 end
 
 -- -------------------------------------------------------------------------- --
