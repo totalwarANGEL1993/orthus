@@ -953,8 +953,8 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_NoChange);
 -- -------------------------------------------------------------------------- --
 
 ---
--- The goal is won after the hero is comatose or the entity/army is destroyed.
--- @param _Target Target (Army, hero, unit)
+-- The goal is won after the hero is comatose or the entity is destroyed.
+-- @param _Target Target (building, hero or unit)
 -- @within Goals
 --
 function Goal_Destroy(...)

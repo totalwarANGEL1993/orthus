@@ -55,6 +55,22 @@ function copy(_Source, _Dest)
 end
 
 ---
+-- Shuffles the contents of an array table and returns shuffeled table.
+--
+-- @param[type=table] _Source Source table
+-- @return[type=table] Shuffled table
+--
+function shuffle(_Source)
+    if _Source and table.getn(_Source) > 0 then
+        for i = table.getn(_Source), 2, -1 do
+            local j = math.random(i);
+            _Source[i], _Source[j] = _Source[j], _Source[i];
+        end
+    end
+    return _Source;
+end
+
+---
 -- Makes a table to some kind of pseudo class by adding some default stuff a
 -- class should have. Metatables will not be used so operator overloading is
 -- not possible.
@@ -175,3 +191,4 @@ function instanceof(_Instance, _Class)
     end
     return _Instance.class == _Class;
 end
+
