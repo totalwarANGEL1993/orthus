@@ -122,7 +122,7 @@ function AiArmy:Operate()
     and not self:IsExecutingBehavior("Refill") then
         if self:CalculateStrength(true) < self.AbandonStrength then
             self:ClearBehaviorsNotLooped();
-            local NewBehavior = AiArmyBehavior:CreateBehavior("Retreat");
+            local NewBehavior = AiArmyBehavior:New("Retreat");
             self:InsertBehavior(NewBehavior);
             self:SetSubBehavior(ArmySubBehavior.None);
             self:AbandonRemainingTroops();
@@ -161,15 +161,13 @@ function AiArmy:ArmyAttackedReactionController(_Attacker, _Attacked)
                         VictimID = QuestTools.SoldierGetLeader(VictimID);
                     end
                     if VictimID and QuestTools.IsInTable(VictimID, AiArmyList[j].Troops) then
-                        if not AiArmyList[j]:IsExecutingBehavior("Battle") then
-                            AiArmyList[j]:InsertBehavior(AiArmyBehavior:CreateBehavior(
-                                "Battle",
-                                GetPosition(_Attacker),
-                                4000
-                            ));
-                            AiArmyList[j]:InvalidateCurrentBehavior();
-                            AiArmyList[j]:NextBehavior();
-                        end
+                        AiArmyList[j]:InsertBehavior(AiArmyBehavior:New(
+                            "Battle",
+                            GetPosition(_Attacker),
+                            4000
+                        ));
+                        AiArmyList[j]:InvalidateCurrentBehavior();
+                        AiArmyList[j]:NextBehavior();
                     end
                 end
             end
@@ -1323,9 +1321,9 @@ function AiArmy:NextBehavior()
         Behavior = self.BehaviorQueue[1];
         if not Behavior then
             if QuestTools.GetDistance(self:GetArmyPosition(), self.HomePosition) <= 1000 then
-                Behavior = AiArmyBehavior:CreateBehavior("Idle", false);
+                Behavior = AiArmyBehavior:New("Idle", false);
             else
-                Behavior = AiArmyBehavior:CreateBehavior("Retreat", false);
+                Behavior = AiArmyBehavior:New("Retreat", false);
             end
             self:InsertBehavior(command);
         end
@@ -1429,55 +1427,66 @@ end
 
 ---
 -- List of possible behavior for armies.
+--
+-- <b>Note:</b> If an army is attacked by the enemy it will always enter Battle
+-- when not already battleing. In that case the position of the attacker is used
+-- as anchor. The new created behavior will be set as the current behavior and
+-- always the first in the queue.
+--
 -- @within AiArmyBehavior
 --
 -- @field Idle    The army is doing nothing.
--- @field Move    The army walks to the defined destination. If set to agressive
---                enemies are immedaitly attacked. Otherwise they are ignored
---                until they attack first.
+-- @field Move    The army walks to the defined destination. If it is set to
+--                agressive, enemies are immedaitly attacked. Otherwise they are
+--                ignored until they attack first.
 -- @field Attack  The army walkst to the defined destination and will execute
---                Battle with outer range as area on arrival. While walking the
+--                Battle with outer range as area on arrival. While walking, the
 --                army will always be aggressive.
--- @field Battle  The army is attacking all enemies in an area. If all enemies
---                are defeated the behavior succeeds.
+-- @field Battle  The army is attacking all enemies in the area. If all enemies
+--                are defeated, the behavior succeeds.
 -- @field Guard   The army is staying at a position for awhile. If enemies
---                aredetected Battle is executed until enemies are defeated.
+--                are detected, Battle is executed until enemies are defeated.
 --                Setting guard time to -1 results in guarding forever.
 -- @field Retreat The army is retreating to the home base. Retreat automatically
 --                adds Refill after success.
 -- @field Refill  The army is trying to replace fallen leaders and buy new
---                soldiers for the remaining.
--- @field Custom  The army is executing a user defined behavior.
+--                soldiers for the others.
 --
 AiArmyBehavior = {};
 
 ---
--- Erstellt ein neues Behavior.
+-- Creates a new instance of an behavior.
+--
+-- A behavior represents (in this case) a command that is together with others
+-- put into a queue where they will be processed one after another. Some of them
+-- can create new behaviors on their own and put them into the queue.
+-- A behavior is finished when the action returns true. Behaviors can also be 
+-- executed in a loop. After one finished, it will automaticaly be reattached 
+-- at the end of the queue.
 --
 -- @param[type=string]  _Type Name of behavior
 -- @param               ...   List of parameters
 -- @param[type=boolean] _Loop Behavior is reattached after completion
--- @return[type=table] Created behavior
+-- @return[type=table] Instanciated behavior
 -- @within AiArmyBehavior
+-- @see AiArmyBehavior:Create
 --
 -- @usage -- Idle
--- AiArmyBehavior:CreateBehavior("Idle", _Loop);
+-- AiArmyBehavior:New("Idle", _Loop);
 -- -- Move
--- AiArmyBehavior:CreateBehavior("Move", _Target, _Distance, _Aggressive, _Loop);
+-- AiArmyBehavior:New("Move", _Target, _Distance, _Aggressive, _Loop);
 -- -- Attack
--- AiArmyBehavior:CreateBehavior("Attack", _Target, _Distance, _Loop);
+-- AiArmyBehavior:New("Attack", _Target, _Distance, _Loop);
 -- -- Battle
--- AiArmyBehavior:CreateBehavior("Battle", _Position, _Distance, _Loop);
+-- AiArmyBehavior:New("Battle", _Position, _Distance, _Loop);
 -- -- Guard
--- AiArmyBehavior:CreateBehavior("Guard", _Position, _Distance, _Time, _Loop);
+-- AiArmyBehavior:New("Guard", _Position, _Distance, _Time, _Loop);
 -- -- Retreat
--- AiArmyBehavior:CreateBehavior("Retreat");
+-- AiArmyBehavior:New("Retreat");
 -- -- Refill
--- AiArmyBehavior:CreateBehavior("Refill");
--- -- Custom
--- AiArmyBehavior:CreateBehavior("Custom", _Action, _Loop, ...);
+-- AiArmyBehavior:New("Refill");
 --
-function AiArmyBehavior:CreateBehavior(_Type, ...)
+function AiArmyBehavior:New(_Type, ...)
     arg = arg or {};
     if not AiArmyBehavior[_Type] then
         return;
@@ -1485,11 +1494,61 @@ function AiArmyBehavior:CreateBehavior(_Type, ...)
     return new (AiArmyBehavior[_Type], unpack(arg));
 end
 
+---
+-- Creates a new custom behavior.
+--
+-- A custom behavior must have an unique name. You cannot create a behavior that
+-- already exists.
+--
+-- A custom behavior needs an action function. First 3 parameter are fixed. The
+-- function receives the self reference, the army reference and the loop flag.
+-- All other parameters are optional. You can pass them like you would do with
+-- default behaviors.
+--
+-- The reset function is optional and will be called after a behavior finished
+-- and is removed (and might be reattached due to be looped) from the queue. It
+-- receives the self reference as parameter.
+--
+-- After you created the behavior you can add fields by calling :AddField on the
+-- behavior. A field can be accessey by using the self reference. Type 
+-- self.m_Data.Fieldname to access the field. The main difference to parameters
+-- is that they won't be passed when the action is called. Use them to control
+-- states of your behavior.
+--
+-- <b>Note:</b> This feature is considered expert level! The default behavior
+-- will be enough in most cases.
+--
+-- @param[type=string]   _Type   Name of behavior
+-- @param[type=function] _Action Function called on each tick
+-- @param[type=function] _Reset  (optional) Function called when dequeued
+-- @within AiArmyBehavior
+-- @see AiArmyBehavior:New
+--
+-- @usage -- Create behavior
+-- AiArmyBehavior:Create("MyBehavior", MyBehaviorAction, MyBehaviorReset);
+-- -- Add a control field after creation
+-- AiArmyBehavior.MyBehavior:AddField("Key", 123);
+-- -- Instanciate the behavior with parameters
+-- AiArmyBehavior:New("MyBehavior", false, 1, "Dario");
+-- -- Check if behavior is executed
+-- if _Army:IsExecutingBehavior("MyBehavior") then
+--
+function AiArmyBehavior:Create(_Type, _Action, _Reset)
+    assert(AiArmyBehavior[_Type] == nil, "A behavior named " ..tostring(_Type).. " already exists!");
+    assert(type(_Action) == "function", "There is no action method for the behavior defined!");
+    AiArmyBehavior[_Type] = {};
+    inherit(AiArmyBehavior[_Type], AiArmyBehavior.Custom);
+    AiArmyBehavior[_Type].m_Abstract = false;
+    AiArmyBehavior[_Type].m_Run = _Action;
+    AiArmyBehavior[_Type].m_Reset = _Reset;
+end
+
 -- -------------------------------------------------------------------------- --
 
 -- This is not to be used directly
 AiArmyBehavior.AbstractBehavior = {
     m_Identifier = "AbstractBehavior",
+    m_Abstract = true,
     m_Loop = false,
 }
 
@@ -1511,9 +1570,45 @@ end
 
 -- -------------------------------------------------------------------------- --
 
+-- Template for custom behavior
+AiArmyBehavior.Custom = {
+    m_Identifier = "Custom";
+    m_Parameters = {},
+    m_Data = {},
+}
+
+function AiArmyBehavior.Custom:construct(_Loop, ...)
+    arg = arg or {};
+    self.m_Loop = _Loop == true;
+    for i= 1, table.getn(arg), 1 do
+        table.insert(self.m_Parameters, arg[i]);
+    end
+end
+inherit(AiArmyBehavior.Custom, AiArmyBehavior.AbstractBehavior);
+
+function AiArmyBehavior.Custom:AddField(_Key, _Value)
+    self.m_Data[_Key] = _Value;
+end
+
+function AiArmyBehavior.Custom:Run(_Army)
+    assert(not self.m_Abstract, "You can not use AiArmyBehavior.Custom directly!");
+    if self.m_Run and self:m_Run(_Army, unpack(self.m_Parameters)) then
+        return true;
+    end
+end
+
+function AiArmyBehavior.Custom:Reset(_Army)
+    if self.m_Reset then
+        self:m_Reset();
+    end
+end
+
+-- -------------------------------------------------------------------------- --
+
 -- Do nothing
 AiArmyBehavior.Idle = {
     m_Identifier = "Idle",
+    m_Abstract = false,
 }
 
 function AiArmyBehavior.Idle:construct(_Loop)
@@ -1526,6 +1621,7 @@ inherit(AiArmyBehavior.Idle, AiArmyBehavior.AbstractBehavior);
 -- Walk to an possition
 AiArmyBehavior.Move = {
     m_Identifier = "Move",
+    m_Abstract = false,
 }
 
 function AiArmyBehavior.Move:construct(_Target, _Distance, _Aggressive, _Loop)
@@ -1551,7 +1647,7 @@ function AiArmyBehavior.Move:Run(_Army)
             local Exploration = Logic.GetEntityExplorationRange(_Army.Troops[i])*100;
             local Enemies = _Army:CallGetEnemiesInArea(_Army.Troops[i], Exploration+1000);
             if table.getn(Enemies) > 0 then
-                _Army:InsertBehavior(AiArmyBehavior:CreateBehavior(
+                _Army:InsertBehavior(AiArmyBehavior:New(
                     "Battle",
                     GetPosition(Enemies[1]),
                     4000
@@ -1577,6 +1673,7 @@ end
 -- Walk to an possition and attacking enemies in a wide range on arrival
 AiArmyBehavior.Attack = {
     m_Identifier = "Attack",
+    m_Abstract = false,
 }
 
 function AiArmyBehavior.Attack:construct(_Target, _Distance, _Loop)
@@ -1596,15 +1693,15 @@ function AiArmyBehavior.Attack:Run(_Army)
     if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= 2000 then
         local Range = _Army.RodeLength + _Army.OuterRange;
         local Target = self.m_Target[LastIdx];
-        _Army:InsertBehavior(AiArmyBehavior:CreateBehavior("Retreat"));
-        _Army:InsertBehavior(AiArmyBehavior:CreateBehavior("Battle", Target, Range));
+        _Army:InsertBehavior(AiArmyBehavior:New("Retreat"));
+        _Army:InsertBehavior(AiArmyBehavior:New("Battle", Target, Range));
         return true;
     end
     for i= table.getn(_Army.Troops), 1, -1 do
         local Exploration = Logic.GetEntityExplorationRange(_Army.Troops[i])*100;
         local Enemies = _Army:CallGetEnemiesInArea(_Army.Troops[i], Exploration+1000);
         if table.getn(Enemies) > 0 then
-            _Army:InsertBehavior(AiArmyBehavior:CreateBehavior(
+            _Army:InsertBehavior(AiArmyBehavior:New(
                 "Battle",
                 GetPosition(Enemies[1]),
                 4000
@@ -1629,6 +1726,7 @@ end
 -- Attack enemies in sight
 AiArmyBehavior.Battle = {
     m_Identifier = "Battle",
+    m_Abstract = false,
 }
 
 function AiArmyBehavior.Battle:construct(_Position, _Distance, _Loop)
@@ -1654,6 +1752,7 @@ end
 -- Stays at a point until the time is up and guards it
 AiArmyBehavior.Guard = {
     m_Identifier = "Guard",
+    m_Abstract = false,
     m_LastTime = 0;
     m_RetreatStrength = 0.4;
 }
@@ -1672,7 +1771,7 @@ function AiArmyBehavior.Guard:Run(_Army)
         _Army:MoveAsBlock(self.m_Position, false, false);
         _Army:NormalizedArmySpeed();
         if QuestTools.AreEnemiesInArea(_Army.PlayerID, _Army:GetArmyPosition(), 4000) then
-            _Army:InsertBehavior(AiArmyBehavior:CreateBehavior(
+            _Army:InsertBehavior(AiArmyBehavior:New(
                 "Battle",
                 _Army:GetArmyPosition(),
                 4000
@@ -1687,7 +1786,7 @@ function AiArmyBehavior.Guard:Run(_Army)
     -- defend area against enemy
     local Area = _Army.RodeLength + _Army.OuterRange;
     if QuestTools.AreEnemiesInArea(_Army.PlayerID, _Army:GetArmyPosition(), Area) then
-        _Army:InsertBehavior(AiArmyBehavior:CreateBehavior(
+        _Army:InsertBehavior(AiArmyBehavior:New(
             "Battle",
             _Army:GetArmyPosition(),
             Area
@@ -1700,7 +1799,7 @@ function AiArmyBehavior.Guard:Run(_Army)
 
     -- Check retreat strength
     if _Army:CalculateStrength() < self.m_RetreatStrength then
-        _Army:InsertBehavior(AiArmyBehavior:CreateBehavior("Retreat"));
+        _Army:InsertBehavior(AiArmyBehavior:New("Retreat"));
         _Army:InvalidateCurrentBehavior();
         return;
     end
@@ -1736,6 +1835,7 @@ end
 -- Army retreats and automatically goes into refill state
 AiArmyBehavior.Retreat = {
     m_Identifier = "Retreat",
+    m_Abstract = false,
 }
 
 function AiArmyBehavior.Retreat:construct()
@@ -1744,11 +1844,11 @@ inherit(AiArmyBehavior.Retreat, AiArmyBehavior.AbstractBehavior);
 
 function AiArmyBehavior.Retreat:Run(_Army)
     if QuestTools.GetDistance(_Army:GetArmyPosition(), _Army.HomePosition) <= 2000 then
-        _Army:InsertBehavior(AiArmyBehavior:CreateBehavior("Refill"), 2);
+        _Army:InsertBehavior(AiArmyBehavior:New("Refill"), 2);
         return true;
     end
     if QuestTools.AreEnemiesInArea(_Army.PlayerID, _Army:GetArmyPosition(), 4000) then
-        _Army:InsertBehavior(AiArmyBehavior:CreateBehavior(
+        _Army:InsertBehavior(AiArmyBehavior:New(
             "Battle",
             _Army:GetArmyPosition(),
             4000
@@ -1767,6 +1867,7 @@ end
 -- Army retreats and automatically goes into refill state
 AiArmyBehavior.Refill = {
     m_Identifier = "Refill",
+    m_Abstract = false,
 }
 
 function AiArmyBehavior.Refill:construct()
@@ -1835,30 +1936,6 @@ function AiArmyBehavior.Refill:Run(_Army)
                 end
             end
         end
-    end
-end
-
--- -------------------------------------------------------------------------- --
-
--- Executes a custom action
-AiArmyBehavior.Custom = {
-    m_Identifier = "Custom";
-    m_Parameters = {},
-}
-
-function AiArmyBehavior.Custom:construct(_Action, _Loop, ...)
-    self.m_Loop = _Loop == true;
-    arg = arg or {};
-    self.m_Run = _Action;
-    for i= 1, table.getn(arg), 1 do
-        table.insert(self.m_Parameters, arg[i]);
-    end
-end
-inherit(AiArmyBehavior.Custom, AiArmyBehavior.AbstractBehavior);
-
-function AiArmyBehavior.Custom:Run(_Army)
-    if self:m_Run(_Army, unpack(self.m_Parameters)) then
-        return true;
     end
 end
 

@@ -1006,7 +1006,7 @@ function AiController:ControlPlayerAssault(_PlayerID, _Position)
         and (not IsAttacking and not IsBattling and not IsRetreating and not IsRefilling)
         and not Army:IsDead() 
         and QuestTools.GetReachablePosition(Army.HomePosition, _Position) ~= nil then
-            Army:InsertBehavior(AiArmyBehavior:CreateBehavior("Attack", _Position, 2000));
+            Army:InsertBehavior(AiArmyBehavior:New("Attack", _Position, 2000));
             Army:InvalidateCurrentBehavior();
             break;
         end
@@ -1034,7 +1034,7 @@ function AiController:CreateDefendBehavior(_PlayerID, _Army, _Purge)
             -- add behavir for each point
             Reachable = shuffle(Reachable);
             for i= 1, table.getn(Reachable), 1 do
-                Army:EnqueueBehavior(AiArmyBehavior:CreateBehavior(
+                Army:EnqueueBehavior(AiArmyBehavior:New(
                     "Guard",
                     Reachable[i][2],
                     self.Players[_PlayerID].RodeLength + self.Players[_PlayerID].OuterRange,
