@@ -723,6 +723,10 @@ end
 -- @local
 --
 function QuestSystemBehavior:UnloadS5Hook()
+    -- do not execute for CNetwork editor
+    if not Folders.Map then
+        return;
+    end
     if QuestTools.GetExtensionNumber() <= 2 and S5Hook then
         if string.find(Folders.Map, "externalmap") then
             S5Hook.RemoveArchive();
@@ -809,6 +813,11 @@ function QuestSystemBehavior:UpdatePlayerColorAssigment()
 end
 
 function QuestSystemBehavior:InstallS5Hook()
+    -- do not start hook for CNetwork editor
+    if not Folders.Map then
+        return;
+    end
+    -- do not start in history edition
     if XNetwork.Manager_IsNATReady or not InstallS5Hook() then
         return;
     end

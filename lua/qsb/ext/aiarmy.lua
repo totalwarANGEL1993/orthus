@@ -1131,7 +1131,7 @@ function AiArmy:ControlSingleTroop(_TroopID, _Position, _Enemies)
             elseif Logic.IsEntityInCategory(_TroopID, EntityCategories.LongRange) == 1 then
                 self:TroopAttack(_TroopID, Target, true);
             else
-                self:TroopAttackMove(_TroopID, Target, true);
+                self:TroopAttack(_TroopID, Target, true);
             end
         end
     else
