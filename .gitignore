@@ -1,6 +1,8 @@
 ldoc/*
 target/*
 doc/*
+dbg
+var
 _*
 .project
 .settings

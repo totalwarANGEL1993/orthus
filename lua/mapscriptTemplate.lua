@@ -10,12 +10,7 @@ Script.Load("data/script/maptools/main.lua");
 Script.Load("data/script/maptools/mapeditortools.lua");
 
 -- Load QSB
-gvBasePath = "data/maps/externalmap/";
-Script.Load(gvBasePath.. "qsb/core/loader.lua");
-Script.Load(gvBasePath.. "qsb/lib/loader.lua");
-Script.Load(gvBasePath.. "qsb/ext/loader.lua");
-Script.Load(gvBasePath.. "qsb/questbehavior.lua");
-Script.Load(gvBasePath.. "qsb/treasure.lua");
+Script.Load(gvBasePath.. "qsb/loader.lua");
 
 -- Settings ----------------------------------------------------------------- --
 
@@ -41,14 +36,16 @@ function InitPlayerColorMapping()
 end
 
 function FirstMapAction()
-    Score.Player[0] = {};
-	Score.Player[0]["buildings"] = 0;
-	Score.Player[0]["all"] = 0;
-    
-    LoadQuestSystem();
-    ActivateDebugMode(true, false, true, true);
-    
-    -- Call your code here
+    if Folders.Map then
+        Score.Player[0] = {};
+        Score.Player[0]["buildings"] = 0;
+        Score.Player[0]["all"] = 0;
+        
+        LoadQuestSystem();
+        ActivateDebugMode(true, false, true, true);
+
+        -- Call your code here
+    end
 end
 
 -- User script -------------------------------------------------------------- --

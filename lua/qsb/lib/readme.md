@@ -1,3 +1,3 @@
-# qsb.lib
+# qsb.ext
 
-This package is supposed to contain lua libs that are used in the qsb.
+This module contains extensions to be used in the quest lib.

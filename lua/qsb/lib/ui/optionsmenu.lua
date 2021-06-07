@@ -450,3 +450,11 @@ function OptionMenuOption:GetTarget(...)
     return self.m_Target;
 end
 
+-- Callbacks ---------------------------------------------------------------- --
+
+GameCallback_OnQuestSystemLoaded_Orig_OptionsMenu = GameCallback_OnQuestSystemLoaded;
+GameCallback_OnQuestSystemLoaded = function()
+    GameCallback_OnQuestSystemLoaded_Orig_OptionsMenu();
+    OptionMenu:Install();
+end
+

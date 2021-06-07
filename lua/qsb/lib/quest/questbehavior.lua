@@ -527,19 +527,9 @@ function QuestSystemBehavior:PrepareQuestSystem()
 
         Camera.ZoomSetFactorMax(2.0);
         QuestSystem:InstallQuestSystem();
-        Interaction:Install();
         self:CreateBehaviorConstructors();
         self:OverwriteMapClosingFunctions();
         self:CreateScriptEvents();
-        if QuestSystem.GameSpeedSwitch then
-            QuestSystem.GameSpeedSwitch:Install();
-        end
-        if QuestSystem.Workplace then
-            QuestSystem.Workplace:Install();
-        end
-        if OptionMenu then
-            OptionMenu:Install();
-        end
 
         GameCallback_OnQuestSystemLoaded();
         
@@ -548,14 +538,6 @@ function QuestSystemBehavior:PrepareQuestSystem()
             Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior();
             Camera.ZoomSetFactorMax(2.0);
             QuestSystemBehavior:CallSaveLoadActions();
-        end
-
-        if MultiplayerSystem then
-            -- Delay selection by 1 second
-            QuestTools.StartSimpleJobEx(function()
-                MultiplayerSystem:Install();
-                return true;
-            end);
         end
     end
 end

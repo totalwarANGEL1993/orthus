@@ -10,12 +10,8 @@ Script.Load("data/script/maptools/dynamicfog.lua");
 Script.Load("data/script/maptools/extra2comfort.lua");
 
 -- Load QSB
-Script.Load(gvBasePath.. "qsb/core/loader.lua");
-Script.Load(gvBasePath.. "qsb/lib/loader.lua");
-Script.Load(gvBasePath.. "qsb/ext/loader.lua");
-Script.Load(gvBasePath.. "qsb/questbehavior.lua");
-Script.Load(gvBasePath.. "qsb/multiplayersystem.lua");
-Script.Load(gvBasePath.. "qsb/treasure.lua");
+Script.Load(gvBasePath.. "qsb/loader.lua");
+Script.Load(gvBasePath.. "qsb/lib/quest/multiplayersystem.lua");
 
 -- Settings ----------------------------------------------------------------- --
 

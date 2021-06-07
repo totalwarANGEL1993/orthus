@@ -1245,3 +1245,11 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
     XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomShortCut, "");
 end
 
+-- Callbacks ---------------------------------------------------------------- --
+
+GameCallback_OnQuestSystemLoaded_Orig_Interaction = GameCallback_OnQuestSystemLoaded;
+GameCallback_OnQuestSystemLoaded = function()
+    GameCallback_OnQuestSystemLoaded_Orig_Interaction();
+    Interaction:Install();
+end
+

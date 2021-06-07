@@ -1,30 +1,31 @@
-bin/bba5.exe %1
+run bin/bba5.exe %1
 
 xcopy /S %2 %1 and ".unpacked/maps/externalmap/mapscript.lua"
 
+echo "Open map..."
 set oldPWD=%CD%
 cd %1 and ".unpacked/maps/externalmap"
 if not exist "qsb" mkdir qsb
 cd %oldPWD%
+echo "Done!"
 
-xcopy /S lua/qsb/oop.lua %1 and ".unpacked/maps/externalmap/qsb/oop.lua"
-xcopy /S lua/qsb/interaction.lua %1 and ".unpacked/maps/externalmap/qsb/interaction.lua"
-xcopy /S lua/qsb/questsystem.lua %1 and ".unpacked/maps/externalmap/qsb/questsystem.lua"
-xcopy /S lua/qsb/questbehavior.lua %1 and ".unpacked/maps/externalmap/qsb/questbehavior.lua"
-xcopy /S lua/qsb/questdebug.lua %1 and ".unpacked/maps/externalmap/qsb/questdebug.lua"
-xcopy /S lua/qsb/extraloader.lua %1 and ".unpacked/maps/externalmap/qsb/extraloader.lua"
-xcopy /S lua/qsb/information_ex2.lua %1 and ".unpacked/maps/externalmap/qsb/information_ex2.lua"
-xcopy /S lua/qsb/speed_ex2.lua %1 and ".unpacked/maps/externalmap/qsb/speed_ex2.lua"
-xcopy /S lua/qsb/timer_ex2.lua %1 and ".unpacked/maps/externalmap/qsb/timer_ex2.lua"
-xcopy /S lua/qsb/workplace_ex2.lua %1 and ".unpacked/maps/externalmap/qsb/workplace_ex2.lua"
-xcopy /S lua/qsb/treasure.lua %1 and ".unpacked/maps/externalmap/qsb/treasure.lua"
-xcopy /S lua/qsb/s5hook_ex2.lua %1 and ".unpacked/maps/externalmap/qsb/s5hook_ex2.lua"
+echo "Copy qsb files..."
 
-xcopy /S lua/qsb/timer_ex3.lua %1 and ".unpacked/maps/externalmap/qsb/timer_ex3.lua"
-xcopy /S lua/qsb/information_ex3.lua %1 and ".unpacked/maps/externalmap/qsb/information_ex3.lua"
+xcopy /S lua/qsb/loader.lua %1 and ".unpacked/maps/externalmap/qsb/loader.lua"
+xcopy /S lua/qsb/multiplayermapscript.lua %1 and ".unpacked/maps/externalmap/qsb/multiplayermapscript.lua"
 
-bin/bba5.exe %1 and "$.unpacked"
-RMDIR /S /Q %1 and "$.unpacked"
+xcopy lua/qsb/lib %1 and ".unpacked/maps/externalmap/qsb/lib" /E
+xcopy lua/qsb/ext %1 and ".unpacked/maps/externalmap/qsb/ext" /E
+xcopy lua/qsb/ext %1 and ".unpacked/maps/externalmap/qsb/s5c" /E
+
+RMDIR /S /Q %1 and "$.unpacked/maps/externalmap/qsb/s5c/.git"
 
 echo "Done!"
+
+echo "Packing map..."
+bin/bba5.exe %1 and "$.unpacked"
+RMDIR /S /Q %1 and "$.unpacked"
+echo "Done!"
+
+echo "Finished! :)"
 pause

@@ -3,6 +3,7 @@
 echo "Open map..."
 bin/bba5.sh $1
 echo "Done!"
+exit 0
 
 echo "Copy mapscript..."
 cp $2 "$1.unpacked/maps/externalmap/mapscript.lua" > /dev/null 2>&1
@@ -19,71 +20,15 @@ cd "$1.unpacked/maps/externalmap"
 mkdir "qsb"
 cd "$oldPWD"
 
-copyQsbFileFailed=0
-cp lua/qsb/oop.lua "$1.unpacked/maps/externalmap/qsb/oop.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/interaction.lua "$1.unpacked/maps/externalmap/qsb/interaction.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/questsystem.lua "$1.unpacked/maps/externalmap/qsb/questsystem.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/questbehavior.lua "$1.unpacked/maps/externalmap/qsb/questbehavior.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/questdebug.lua "$1.unpacked/maps/externalmap/qsb/questdebug.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
+cp lua/qsb/loader.lua "$1.unpacked/maps/externalmap/qsb/loader.lua" > /dev/null 2>&1
+cp lua/qsb/multiplayermapscript.lua "$1.unpacked/maps/externalmap/qsb/multiplayermapscript.lua" > /dev/null 2>&1
 
-cp lua/qsb/extraloader.lua "$1.unpacked/maps/externalmap/qsb/extraloader.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/information_ex2.lua "$1.unpacked/maps/externalmap/qsb/information_ex2.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/treasure.lua "$1.unpacked/maps/externalmap/qsb/treasure.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/speed_ex2.lua "$1.unpacked/maps/externalmap/qsb/speed_ex2.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/timer_ex2.lua "$1.unpacked/maps/externalmap/qsb/timer_ex2.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/workplace_ex2.lua "$1.unpacked/maps/externalmap/qsb/workplace_ex2.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/s5hook_ex2.lua "$1.unpacked/maps/externalmap/qsb/s5hook_ex2.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
+cp -r lua/qsb/lib "$1.unpacked/maps/externalmap/qsb/lib" > /dev/null 2>&1
+cp -r lua/qsb/ext "$1.unpacked/maps/externalmap/qsb/ext" > /dev/null 2>&1
+cp -r lua/qsb/ext "$1.unpacked/maps/externalmap/qsb/s5c" > /dev/null 2>&1
 
+rm -rf "$1.unpacked/maps/externalmap/qsb/s5c/.git" > /dev/null 2>&1
 
-cp lua/qsb/information_ex3.lua "$1.unpacked/maps/externalmap/qsb/information_ex3.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-cp lua/qsb/timer_ex3.lua "$1.unpacked/maps/externalmap/qsb/timer_ex3.lua" > /dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-	$copyQsbFileFailed=1
-fi
-
-if [ "$copyQsbFileFailed" -ne "0" ]; then
-	echo "Failed to copy files!"
-	exit 1
-fi
 echo "Done!"
 
 echo "Packing map..."

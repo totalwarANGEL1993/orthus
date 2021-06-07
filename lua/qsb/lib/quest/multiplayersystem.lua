@@ -1816,6 +1816,18 @@ GameMode_PG_PointsTeam8Progress_Goal = function(_Behavior, _Quest)
     end
 end
 
+-- Callbacks ---------------------------------------------------------------- --
+
+GameCallback_OnQuestSystemLoaded_Orig_MultiplayerSystem = GameCallback_OnQuestSystemLoaded;
+GameCallback_OnQuestSystemLoaded = function()
+    GameCallback_OnQuestSystemLoaded_Orig_MultiplayerSystem();
+
+    QuestTools.StartSimpleJobEx(function()
+        MultiplayerSystem:Install();
+        return true;
+    end);
+end
+
 -- -------------------------------------------------------------------------- --
 
 --
