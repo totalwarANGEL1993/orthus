@@ -221,7 +221,7 @@ function OptionMenu:OverrideGroupSelection()
             if OptionMenu.Menu.ControllingPlayer ~= GUI.GetPlayerID() then
                 return;
             end
-            QuestSync:SnchronizedCall(OptionMenu.Events.OptionConfirmed, _Count);
+            QuestSync:SynchronizedCall(OptionMenu.Events.OptionConfirmed, _Count);
         end
     end
 end

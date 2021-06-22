@@ -8,8 +8,8 @@ gvLibVersion = "2.0.0";
 gvBasePath = gvBasePath or "data/maps/externalmap/";
 
 Script.Load(gvBasePath.. "qsb/lib/oop.lua");
-Script.Load(gvBasePath.. "qsb/lib/bugfixes.lua");
 
+Script.Load(gvBasePath.. "qsb/lib/quest/questcore.lua");
 Script.Load(gvBasePath.. "qsb/lib/quest/questtools.lua");
 Script.Load(gvBasePath.. "qsb/lib/quest/questsync.lua");
 Script.Load(gvBasePath.. "qsb/lib/quest/questsystem.lua");

@@ -94,7 +94,7 @@ function WorkplaceUtilization:OverrideInterfaceAction()
 			XGUIEng.HighLightButton("SetWorkersAmountFew", 1);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
             XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
-			QuestSync:SnchronizedCall(EventID, BuildingID, 0, _State, unpack(WorkerIDs));
+			QuestSync:SynchronizedCall(EventID, BuildingID, 0, _State, unpack(WorkerIDs));
 			if not QuestSync:IsCNetwork() then
 				GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, 0);
 			end
@@ -103,7 +103,7 @@ function WorkplaceUtilization:OverrideInterfaceAction()
 			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf", 1);
             XGUIEng.HighLightButton("SetWorkersAmountFull", 0);
-			QuestSync:SnchronizedCall(EventID, BuildingID, Amount, _State, unpack(WorkerIDs));
+			QuestSync:SynchronizedCall(EventID, BuildingID, Amount, _State, unpack(WorkerIDs));
 			if not QuestSync:IsCNetwork() then
 				GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, Amount);
 			end
@@ -112,7 +112,7 @@ function WorkplaceUtilization:OverrideInterfaceAction()
 			XGUIEng.HighLightButton("SetWorkersAmountFew", 0);
 			XGUIEng.HighLightButton("SetWorkersAmountHalf", 0);
 			XGUIEng.HighLightButton("SetWorkersAmountFull", 1);
-			QuestSync:SnchronizedCall(EventID, BuildingID, Amount, _State, unpack(WorkerIDs));
+			QuestSync:SynchronizedCall(EventID, BuildingID, Amount, _State, unpack(WorkerIDs));
 			if not QuestSync:IsCNetwork() then
 				GUI.SetCurrentMaxNumWorkersInBuilding(BuildingID, Amount);
 			end
@@ -297,7 +297,7 @@ function WorkplaceUtilization:OverrideInterfaceUpdate()
 			elseif WorkplaceUtilization.WorkplaceStates[ScriptName] == "full" then
 				CurrentWorkerAmount = MaxNumberOfworkers;
 			end
-			QuestSync:SnchronizedCall(
+			QuestSync:SynchronizedCall(
 				WorkplaceUtilization.ScriptEvent,
 				_NewID, CurrentWorkerAmount,
 				WorkplaceUtilization.WorkplaceStates[ScriptName]

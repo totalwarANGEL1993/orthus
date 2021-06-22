@@ -939,14 +939,14 @@ end
 --
 function QuestTools.StartInlineJob(_EventType, _Function, ...)
     if TriggerFix then
-return Trigger.RequestTrigger(
-    _EventType,
-    "",
-    _Function,
-    1,
-    {},
-    copy(arg or {})
-);
+        return Trigger.RequestTrigger(
+            _EventType,
+            "",
+            _Function,
+            1,
+            {},
+            copy(arg or {})
+        );
     else
         QuestTools.InlineJobs.Counter = QuestTools.InlineJobs.Counter +1;
         _G["QuestTools_InlineJob_Data_" ..QuestTools.InlineJobs.Counter] = copy(arg);

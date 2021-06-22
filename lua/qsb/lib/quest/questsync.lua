@@ -42,7 +42,7 @@ end
 -- Creates an script event and returns the event ID. Use the ID to call the
 -- created event.
 -- @param[type=function] _Function Function to call
--- @see QuestSync:SnchronizedCall
+-- @see QuestSync:SynchronizedCall
 --
 function QuestSync:CreateScriptEvent(_Function)
     self.UniqueActionCounter = self.UniqueActionCounter +1;
@@ -78,7 +78,7 @@ end
 -- @param              ... List of Parameters (String or Number)
 -- @see QuestSync:CreateScriptEvent
 --
-function QuestSync:SnchronizedCall(_ID, ...)
+function QuestSync:SynchronizedCall(_ID, ...)
     arg = arg or {};
     local Msg = "";
     if table.getn(arg) > 0 then

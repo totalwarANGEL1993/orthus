@@ -89,10 +89,9 @@ function QuestSystem:InstallQuestSystem()
     if self.SystemInstalled ~= true then
         self.SystemInstalled = true;
         
-        -- Initalize syncher
+        QuestCore:Install();
         EndJob(tributeJingleTriggerId);
         QuestSync:Install();
-        Bugfixes:Install();
         QuestBriefing:Install();
         self:CreateScriptEvents();
 
@@ -105,7 +104,7 @@ function QuestSystem:InstallQuestSystem()
         if not CNetwork then
             local TimeString = "1" ..string.gsub(string.sub(Framework.GetSystemTimeDateString(), 12), "-", "");
             if QuestSync:IsPlayerHost(GUI.GetPlayerID()) then
-                QuestSync:SnchronizedCall(self.MathRandomSeedScriptEvent, TimeString);
+                QuestSync:SynchronizedCall(self.MathRandomSeedScriptEvent, TimeString);
             end
         end
 

@@ -82,15 +82,16 @@ function ResetBehaviorProgress(_Behavior)
 end
 
 function OnScreenInfo:Install()
-    if self.m_IsInstalled then
-        return;
+    if not self.m_IsInstalled then
+        StartSimpleHiResJobEx(function()
+            OnScreenInfo:RenderOnScreenInfos();
+        end);
+        AddOnSaveLoadedAction(function()
+            OnScreenInfo:Install();
+        end);
     end
     self.m_IsInstalled = true;
-
     self:OverrideUpdates();
-    StartSimpleHiResJobEx(function()
-        OnScreenInfo:RenderOnScreenInfos();
-    end);
 end
 
 function OnScreenInfo:Activate(_QuestID)
@@ -414,11 +415,5 @@ GameCallback_OnQuestStatusChanged = function(_QuestID, _State, _Result)
     else
         OnScreenInfo:Deactivate(_QuestID);
     end
-end
-
-Mission_OnSaveGameLoaded_Orig_OnScreenInfo = Mission_OnSaveGameLoaded;
-Mission_OnSaveGameLoaded = function()
-    Mission_OnSaveGameLoaded_Orig_OnScreenInfo();
-    OnScreenInfo:Install();
 end
 

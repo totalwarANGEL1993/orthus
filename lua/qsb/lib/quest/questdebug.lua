@@ -505,47 +505,47 @@ function QuestDebug:EvaluateCommand(_Tokens)
 
         elseif Action == "win" then 
             local QuestID = GetQuestID(command[2]);
-            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Success);
+            QuestSync:SynchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Success);
             return true;
 
         elseif Action == "fail" then 
             local QuestID = GetQuestID(command[2]);
-            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Failure);
+            QuestSync:SynchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Failure);
             return true;
         
         elseif Action == "stop" then 
             local QuestID = GetQuestID(command[2]);
-            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Interrupted);
+            QuestSync:SynchronizedCall(self.ScriptEvents.AlterQuestResult, GUI.GetPlayerID(), QuestID, QuestResults.Interrupted);
             return true;
 
         elseif Action == "start" then 
             local QuestID = GetQuestID(command[2]);
-            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestState, GUI.GetPlayerID(), QuestID, QuestStates.Active);
+            QuestSync:SynchronizedCall(self.ScriptEvents.AlterQuestState, GUI.GetPlayerID(), QuestID, QuestStates.Active);
             return true;
             
         elseif Action == "reset" then 
             local QuestID = GetQuestID(command[2]);
-            QuestSync:SnchronizedCall(self.ScriptEvents.AlterQuestState, GUI.GetPlayerID(), QuestID, -1);
+            QuestSync:SynchronizedCall(self.ScriptEvents.AlterQuestState, GUI.GetPlayerID(), QuestID, -1);
             return true;
 
         elseif Action == "wakeup" then 
-            QuestSync:SnchronizedCall(self.ScriptEvents.WakeUpHero, GUI.GetPlayerID(), command[2]);
+            QuestSync:SynchronizedCall(self.ScriptEvents.WakeUpHero, GUI.GetPlayerID(), command[2]);
             return true;
 
         elseif Action == "diplomacy" then
-            QuestSync:SnchronizedCall(self.ScriptEvents.AlterDiplomacyState, GUI.GetPlayerID(), command[2], command[3], command[4]);
+            QuestSync:SynchronizedCall(self.ScriptEvents.AlterDiplomacyState, GUI.GetPlayerID(), command[2], command[3], command[4]);
             return true;
 
         elseif Action == "clear" then 
-            QuestSync:SnchronizedCall(self.ScriptEvents.ClearNotes, GUI.GetPlayerID());
+            QuestSync:SynchronizedCall(self.ScriptEvents.ClearNotes, GUI.GetPlayerID());
             return true;
 
         elseif Action == "show" then
-            QuestSync:SnchronizedCall(self.ScriptEvents.ShowQuestStatus, GUI.GetPlayerID(), command[2], command[3]);
+            QuestSync:SynchronizedCall(self.ScriptEvents.ShowQuestStatus, GUI.GetPlayerID(), command[2], command[3]);
             return true;
 
         elseif Action == "help" then
-            QuestSync:SnchronizedCall(self.ScriptEvents.ShowCheatCodes, GUI.GetPlayerID(), command[2]);
+            QuestSync:SynchronizedCall(self.ScriptEvents.ShowCheatCodes, GUI.GetPlayerID(), command[2]);
             return true;
         end
     end
@@ -632,37 +632,34 @@ function QuestDebug:CreateCheatMethods()
     -- Changing entity owner
     function Cheats_ChangePlayer(_player)
         local eID = GUI.GetEntityAtPosition(GUI.GetMousePosition());
-        QuestSync:SnchronizedCall(self.ScriptEvents.ChangeEntityPlayer, GUI.GetPlayerID(), eID, _player);
+        QuestSync:SynchronizedCall(self.ScriptEvents.ChangeEntityPlayer, GUI.GetPlayerID(), eID, _player);
     end
 
     -- Change entity health
     function Cheats_ChangeHealth(_flag)
         local eID = GUI.GetEntityAtPosition(GUI.GetMousePosition());
-        QuestSync:SnchronizedCall(self.ScriptEvents.ChangeEntityHealth, GUI.GetPlayerID(), eID, _flag);
+        QuestSync:SynchronizedCall(self.ScriptEvents.ChangeEntityHealth, GUI.GetPlayerID(), eID, _flag);
     end
 
     -- Cheat units
     function Cheats_CreateUnitUnderMouse(_flag)
         local mouse = {GUI.Debug_GetMapPositionUnderMouse()};
-        QuestSync:SnchronizedCall(self.ScriptEvents.CheatUnitAtMousePosition, GUI.GetPlayerID(), mouse[1], mouse[2], _flag);
+        QuestSync:SynchronizedCall(self.ScriptEvents.CheatUnitAtMousePosition, GUI.GetPlayerID(), mouse[1], mouse[2], _flag);
     end
 
     function Cheats_AddResourcesToPlayer(_Resource, _Amount)
-        QuestSync:SnchronizedCall(self.ScriptEvents.AddResourcesToPlayer, GUI.GetPlayerID(), _Resource, _Amount);
+        QuestSync:SynchronizedCall(self.ScriptEvents.AddResourcesToPlayer, GUI.GetPlayerID(), _Resource, _Amount);
     end
 
     function Cheats_CheatTechnologies(_PlayerID)
-        QuestSync:SnchronizedCall(self.ScriptEvents.CheatTechnologies, GUI.GetPlayerID());
+        QuestSync:SynchronizedCall(self.ScriptEvents.CheatTechnologies, GUI.GetPlayerID());
     end
 end
 
 function QuestDebug:OverrideSaveGameLoaded()
-    Mission_OnSaveGameLoaded_Orig_QuestDebug = Mission_OnSaveGameLoaded;
-    Mission_OnSaveGameLoaded = function()
-        Mission_OnSaveGameLoaded_Orig_QuestDebug();
-
+    AddOnSaveLoadedAction(function()
         QuestDebug:CreateCheats();
-    end
+    end);
 end
 
 -- Callbacks ---------------------------------------------------------------- --

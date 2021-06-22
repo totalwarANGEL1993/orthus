@@ -272,7 +272,7 @@ function QuestBriefing:OverrideBriefingFunctions()
     GameCallback_Escape = function()
         local PlayerID = GUI.GetPlayerID();
         if QuestBriefing:IsBriefingActive(PlayerID) then
-            QuestSync:SnchronizedCall(QuestBriefing.Events.PostEscapePressed, PlayerID);
+            QuestSync:SynchronizedCall(QuestBriefing.Events.PostEscapePressed, PlayerID);
         else
             GameCallback_Escape_Orig_QuestBriefing();
         end
@@ -605,7 +605,7 @@ function QuestBriefing:NextPage(_PlayerID, _FirstPage)
     if Page.Target and Page.Explore and Page.Explore > 0 then
         local Position = GetPosition(Page.Target);
         local ID = Logic.CreateEntity(Entities.XD_ScriptEntity, Position.X, Position.Y, 0, _PlayerID);
-        Logic.SetEntityExplorationRange(Position, math.ceil(Page.Explore/10));
+        Logic.SetEntityExplorationRange(Position, math.ceil(Page.Explore/100));
         table.insert(self.m_Book[_PlayerID].Exploration, ID);
     end
     -- Start Fader
@@ -764,7 +764,7 @@ end
 
 function QuestBriefing:BriefingMCButtonSelected(_Selected)
     local PlayerID = GUI.GetPlayerID();
-    QuestSync:SnchronizedCall(
+    QuestSync:SynchronizedCall(
         self.Events.PostOptionSelected,
         PlayerID,
         self.m_Book[PlayerID].Page,

@@ -309,16 +309,6 @@ function RegisterBehavior(_Behavior)
 end
 
 ---
--- Adds an action that is performed after a save is loaded.
--- @param[type=function] _Function Action
--- @param                ...       Data
--- @within Methods
---
-function AddOnSaveLoadedAction(_Function, ...)
-    QuestSystemBehavior:AddSaveLoadActions(_Function, unpack(copy(arg)));
-end
-
----
 -- Fails the quest.
 -- @param _Quest Quest name or ID
 -- @within Methods
@@ -490,7 +480,6 @@ QuestSystemBehavior = {
         Version = "1.3.0",
 
         QuestNameToStages = {},
-        SaveLoadedActions = {},
         PlayerColorAssigment = {},
         AiPlayerAttackTargets = {},
         AiPlayerPatrolPoints = {},
@@ -514,12 +503,13 @@ function QuestSystemBehavior:PrepareQuestSystem()
     if not self.Data.SystemInitalized then
         self.Data.SystemInitalized = true;
 
-        self:AddSaveLoadActions(function()
+        AddOnSaveLoadedAction(function()
             QuestSystemBehavior:UpdatePlayerColorAssigment()
+            Camera.ZoomSetFactorMax(2.0);
         end);
         if InstallS5Hook then
             self.Data.CurrentMapName = Framework.GetCurrentMapName();
-            self:AddSaveLoadActions(function()
+            AddOnSaveLoadedAction(function()
                 QuestSystemBehavior:InstallS5Hook()
             end);
             QuestSystemBehavior:InstallS5Hook();
@@ -532,13 +522,6 @@ function QuestSystemBehavior:PrepareQuestSystem()
         self:CreateScriptEvents();
 
         GameCallback_OnQuestSystemLoaded();
-        
-        Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior = Mission_OnSaveGameLoaded;
-        Mission_OnSaveGameLoaded = function()
-            Mission_OnSaveGameLoaded_Orig_QuestSystemBehavior();
-            Camera.ZoomSetFactorMax(2.0);
-            QuestSystemBehavior:CallSaveLoadActions();
-        end
     end
 end
 
@@ -715,28 +698,6 @@ function QuestSystemBehavior:UnloadS5Hook()
         end
         Trigger.DisableTriggerSystem(1);
     end
-end
-
----
--- Calls all load actions after a save is loaded.
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:CallSaveLoadActions()
-    for k, v in pairs(self.Data.SaveLoadedActions) do
-        v[1](v);
-    end
-end
-
----
--- Adds an action that is performed after a save is loaded.
--- @param[type=function] _Function Action
--- @param                ...       Data
--- @within QuestSystemBehavior
--- @local
---
-function QuestSystemBehavior:AddSaveLoadActions(_Function, ...)
-    table.insert(self.Data.SaveLoadedActions, {_Function, unpack(copy(arg))});
 end
 
 ---

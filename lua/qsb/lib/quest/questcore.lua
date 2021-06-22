@@ -1,5 +1,5 @@
 -- ########################################################################## --
--- #  Bugfixes                                                              # --
+-- #  QuestCore                                                                  # --
 -- #  --------------------------------------------------------------------  # --
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
@@ -35,7 +35,7 @@
 -- @set sort=true
 --
 
-Bugfixes = {
+QuestCore = {
     UseCrushBuildingFix = true,
     UseFormationFix = true,
     UseBlessLimit = false,
@@ -43,6 +43,7 @@ Bugfixes = {
     UseFindViewFix = true,
     UseTradeAmountFix = true,
 
+    SaveLoadedActions = {},
     ScriptEvents = {},
     TradeLimit = -1,
     WeatherChangeLimit = {
@@ -85,7 +86,7 @@ Bugfixes = {
 -- @within Methods
 --
 function ActivateCrushBuildingBugfix(_Flag)
-    Bugfixes.UseCrushBuildingFix = _Flag == true;
+    QuestCore.UseCrushBuildingFix = _Flag == true;
 end
 
 ---
@@ -94,7 +95,7 @@ end
 -- @within Methods
 --
 function ActivateFormationBugfix(_Flag)
-    Bugfixes.UseFormationFix = _Flag == true;
+    QuestCore.UseFormationFix = _Flag == true;
 end
 
 ---
@@ -103,7 +104,7 @@ end
 -- @within Methods
 --
 function ActivateBlessLimitBugfix(_Flag)
-    Bugfixes.UseBlessLimit = _Flag == true;
+    QuestCore.UseBlessLimit = _Flag == true;
 end
 
 ---
@@ -112,7 +113,7 @@ end
 -- @within Methods
 --
 function ActivateWeatherChangeLimitBugfix(_Flag)
-    Bugfixes.UseWeatherChangeLimit = _Flag == true;
+    QuestCore.UseWeatherChangeLimit = _Flag == true;
 end
 
 ---
@@ -121,7 +122,7 @@ end
 -- @within Methods
 --
 function ActivateFindViewBugfix(_Flag)
-    Bugfixes.UseFindViewFix = _Flag == true;
+    QuestCore.UseFindViewFix = _Flag == true;
 end
 
 ---
@@ -131,7 +132,7 @@ end
 --
 function SetBlessDelay(_Time)
     _Time = (_Time <= 30 and 30) or _Time;
-    Bugfixes.BlessLimit.Limit = _Time;
+    QuestCore.BlessLimit.Limit = _Time;
 end
 
 ---
@@ -141,7 +142,7 @@ end
 --
 function SetWeatherChangeDelay(_Time)
     _Time = (_Time <= 30 and 30) or _Time;
-    Bugfixes.WeatherChangeLimit.Limit = _Time;
+    QuestCore.WeatherChangeLimit.Limit = _Time;
 end
 
 ---
@@ -154,7 +155,17 @@ function SetTradeAmountLimit(_Limit)
     if math.mod(_Limit, 250) ~= 0 then
         _Limit = 250 * math.floor((_Limit / 250) + 0.5);
     end
-    Bugfixes.TradeLimit = _Limit;
+    QuestCore.TradeLimit = _Limit;
+end
+
+---
+-- Adds an action that is performed after a save is loaded.
+-- @param[type=function] _Function Action
+-- @param                ...       Data
+-- @within Methods
+--
+function AddOnSaveLoadedAction(_Function, ...)
+    QuestCore:AddSaveLoadActions(_Function, unpack(copy(arg)));
 end
 
 -- -------------------------------------------------------------------------- --
@@ -164,12 +175,29 @@ end
 -- @within Bugfix
 -- @local
 --
-function Bugfixes:Install()
+function QuestCore:Install()
     Tools.GiveResources = Tools.GiveResouces;
-    Mission_OnSaveGameLoaded_Orig_QSB_Bugfixes = Mission_OnSaveGameLoaded;
-    Mission_OnSaveGameLoaded = function()
-        Mission_OnSaveGameLoaded_Orig_QSB_Bugfixes();
-        Bugfixes:OverrideGuiSellBuilding();
+    if TriggerFix then
+        AddSaveLoadedCallback(function()
+            QuestCore:CallSaveLoadActions();
+            QuestCore:OverrideGuiSellBuilding();
+        end);
+    else
+        if MultiplayerTools then
+            Mission_OnSaveGameLoaded_Orig_QSB_QuestCore = MultiplayerTools.OnSaveGameLoaded;
+            MultiplayerTools.OnSaveGameLoaded = function()
+                Mission_OnSaveGameLoaded_Orig_QSB_QuestCore();
+                QuestCore:CallSaveLoadActions();
+                QuestCore:OverrideGuiSellBuilding();
+            end
+        else
+            Mission_OnSaveGameLoaded_Orig_QSB_QuestCore = Mission_OnSaveGameLoaded;
+            Mission_OnSaveGameLoaded = function()
+                Mission_OnSaveGameLoaded_Orig_QSB_QuestCore();
+                QuestCore:CallSaveLoadActions();
+                QuestCore:OverrideGuiSellBuilding();
+            end
+        end
     end
     
     self:OverrideGuiSellBuilding();
@@ -179,38 +207,48 @@ function Bugfixes:Install()
     self:OverrideGUIUpdate();
 end
 
-function Bugfixes:CreateScriptEvents()
+function QuestCore:AddSaveLoadActions(_Function, ...)
+    table.insert(self.SaveLoadedActions, {_Function, unpack(copy(arg))});
+end
+
+function QuestCore:CallSaveLoadActions()
+    for k, v in pairs(self.SaveLoadedActions) do
+        v[1](v);
+    end
+end
+
+function QuestCore:CreateScriptEvents()
     self.ScriptEvents.PostPlayerBlessed = QuestSync:CreateScriptEvent(function(name, _PlayerID, _Time, _Bless)
         if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, _PlayerID) then
             return;
         end
-        Bugfixes.BlessLimit[_Bless][_PlayerID] = _Time;
+        QuestCore.BlessLimit[_Bless][_PlayerID] = _Time;
     end);
     self.ScriptEvents.PostWeatherChanged = QuestSync:CreateScriptEvent(function(name, _Time)
-        Bugfixes.WeatherChangeLimit.Last = _Time;
+        QuestCore.WeatherChangeLimit.Last = _Time;
     end);
 end
 
-function Bugfixes:PostPlayerBlessed(_PlayerID, _Time, _Bless)
-    QuestSync:SnchronizedCall(self.ScriptEvents.PostPlayerBlessed, _PlayerID, _Time, _Bless);
+function QuestCore:PostPlayerBlessed(_PlayerID, _Time, _Bless)
+    QuestSync:SynchronizedCall(self.ScriptEvents.PostPlayerBlessed, _PlayerID, _Time, _Bless);
 end
 
-function Bugfixes:PostWeatherChanged(_Time)
-    QuestSync:SnchronizedCall(self.ScriptEvents.PostWeatherChanged, _Time);
+function QuestCore:PostWeatherChanged(_Time)
+    QuestSync:SynchronizedCall(self.ScriptEvents.PostWeatherChanged, _Time);
 end
 
-function Bugfixes:OverrideGuiSellBuilding()
-    Bugfixes.GUI_SellBuilding = nil;
-    Bugfixes.GUI_SellBuilding = GUI.SellBuilding;
+function QuestCore:OverrideGuiSellBuilding()
+    QuestCore.GUI_SellBuilding = nil;
+    QuestCore.GUI_SellBuilding = GUI.SellBuilding;
     GUI.SellBuilding = function(_BuildingID)
-        if Bugfixes.UseCrushBuildingFix then
+        if QuestCore.UseCrushBuildingFix then
             GUI.DeselectEntity(_BuildingID);
         end
-        Bugfixes.GUI_SellBuilding(_BuildingID);
+        QuestCore.GUI_SellBuilding(_BuildingID);
     end
 end
 
-function Bugfixes:OverrideGUIActions()
+function QuestCore:OverrideGUIActions()
     -- Bless Settlers delay
     GUIAction_BlessSettlers = function(_BlessCategory)
         local PlayerID = GUI.GetPlayerID();
@@ -225,10 +263,10 @@ function Bugfixes:OverrideGUIActions()
             Sound.PlayFeedbackSound(Sounds.VoicesMentor_INFO_MonksNeedMoreTime_rnd_01, 0);
             return;
         end
-        Bugfixes:PostPlayerBlessed(
+        QuestCore:PostPlayerBlessed(
             PlayerID,
             Time,
-            Bugfixes.Maps.BlessCategoryToButton[_BlessCategory]
+            QuestCore.Maps.BlessCategoryToButton[_BlessCategory]
         );
         GUI.BlessByBlessCategory(_BlessCategory);
     end
@@ -248,12 +286,12 @@ function Bugfixes:OverrideGUIActions()
             return;
         end
         GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_WeathermashineActivated"));
-        Bugfixes:PostWeatherChanged(Time);
+        QuestCore:PostWeatherChanged(Time);
         GUI.SetWeather(_Weathertype);
     end
 
     function GUIAction_MarketToggleResource(_value, _resource)
-        if Bugfixes.UseTradeAmountFix then
+        if QuestCore.UseTradeAmountFix then
             _value = _value * 5;
             if XGUIEng.IsModifierPressed( Keys.ModifierControl ) == 1 then
                 _value = _value * 10;
@@ -265,9 +303,9 @@ function Bugfixes:OverrideGUIActions()
             end
         end
         _resource = _resource + _value;
-        if Bugfixes.TradeLimit > -1 then
-            if _resource > Bugfixes.TradeLimit then
-                _resource = Bugfixes.TradeLimit;
+        if QuestCore.TradeLimit > -1 then
+            if _resource > QuestCore.TradeLimit then
+                _resource = QuestCore.TradeLimit;
             end
         end
         if _resource <= 0 then
@@ -277,7 +315,7 @@ function Bugfixes:OverrideGUIActions()
     end
 end
 
-function Bugfixes:OverrideGUITooltip()
+function QuestCore:OverrideGUITooltip()
     -- Bless Limit
     GUITooltip_BlessSettlers_Orig_QSB_Bugfix = GUITooltip_BlessSettlers;
     GUITooltip_BlessSettlers = function(_Disabled, _Normal, _Researched, _Key)
@@ -286,8 +324,8 @@ function Bugfixes:OverrideGUITooltip()
         local WidgetID = XGUIEng.GetCurrentWidgetID();
         local s, e = string.find(_Normal, "MenuMonastery/");
         local Button = string.sub(_Normal, e+1, string.len(_Normal) -7);
-        if Bugfixes.UseBlessLimit then
-            local Time = Bugfixes:GetBlessDelayForPlayer(PlayerID, Button);
+        if QuestCore.UseBlessLimit then
+            local Time = QuestCore:GetBlessDelayForPlayer(PlayerID, Button);
             if Time > 0 then
                 XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, XGUIEng.GetStringTableText(_Normal));
                 XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomCosts, QuestSystem:ReplacePlaceholders("{red}" ..Time));
@@ -301,8 +339,8 @@ function Bugfixes:OverrideGUITooltip()
         GUITooltip_ResearchTechnologies_Orig_QSB_Bugfix(_Technology, _Text, _Key);
         local PlayerID = GUI.GetPlayerID();
         local WidgetID = XGUIEng.GetCurrentWidgetID();
-        if Bugfixes.UseWeatherChangeLimit then
-            local Data = Bugfixes.WeatherChangeLimit;
+        if QuestCore.UseWeatherChangeLimit then
+            local Data = QuestCore.WeatherChangeLimit;
             local Time = Data.Last + Data.Limit - math.floor(Logic.GetTime());
             if Data.Last > 0 and Time > 0 then
                 XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, XGUIEng.GetStringTableText(_Text));
@@ -312,30 +350,30 @@ function Bugfixes:OverrideGUITooltip()
     end
 end
 
-function Bugfixes:OverrideGUIUpdate()
+function QuestCore:OverrideGUIUpdate()
     GUIUpdate_FindView_Orig_QSB_Bugfix = GUIUpdate_FindView
     GUIUpdate_FindView = function()
         local PlayerID = GUI.GetPlayerID();
         local EntityID = GUI.GetSelectedEntity();
         
         -- Find view fix
-        if not Bugfixes.UseFindViewFix then
+        if not QuestCore.UseFindViewFix then
             GUIUpdate_FindView_Orig_QSB_Bugfix();
         else
-            Bugfixes:UpdateFindViewButtons();
+            QuestCore:UpdateFindViewButtons();
         end
         -- Find View
-        Bugfixes:UpdateFormationButtons();
+        QuestCore:UpdateFormationButtons();
         -- Bless limit
-        Bugfixes:UpdateBlessSettlerButtons();
+        QuestCore:UpdateBlessSettlerButtons();
         -- Weather change limit
-        Bugfixes:UpdateChangeWeatherButtons();
+        QuestCore:UpdateChangeWeatherButtons();
     end
 end
 
-function Bugfixes:UpdateChangeWeatherButtons()
-    if Bugfixes.UseWeatherChangeLimit then
-        local Data = Bugfixes.WeatherChangeLimit;
+function QuestCore:UpdateChangeWeatherButtons()
+    if QuestCore.UseWeatherChangeLimit then
+        local Data = QuestCore.WeatherChangeLimit;
         local Time = Data.Last + Data.Limit - math.floor(Logic.GetTime());
         GUIUpdate_ChangeWeatherButtons("WeatherTower_MakeSummer", Technologies.T_MakeSummer, 1);
         GUIUpdate_ChangeWeatherButtons("WeatherTower_MakeRain", Technologies.T_MakeRain, 1);
@@ -348,10 +386,10 @@ function Bugfixes:UpdateChangeWeatherButtons()
     end
 end
 
-function Bugfixes:UpdateFindViewButtons()
+function QuestCore:UpdateFindViewButtons()
     local PlayerID = GUI.GetPlayerID();
     local EntityID = GUI.GetSelectedEntity();
-    if Bugfixes.UseFindViewFix then
+    if QuestCore.UseFindViewFix then
         local ScoutAmount = 0;
         if Entities.PU_Scout then
             ScoutAmount = Logic.GetNumberOfEntitiesOfTypeOfPlayer(PlayerID, Entities.PU_Scout);
@@ -365,15 +403,15 @@ function Bugfixes:UpdateFindViewButtons()
 
         local ExistingMap = {}
         for i= 1, table.getn(AllLeader), 1 do
-            for k, v in pairs(Bugfixes.Maps.EntityCategoryToFindView) do
+            for k, v in pairs(QuestCore.Maps.EntityCategoryToFindView) do
                 if Logic.IsEntityInCategory(AllLeader[i], EntityCategories[k]) == 1 then
                     ExistingMap[k] = (ExistingMap[k] or 0) +1;
                 end
             end
         end
-        for k, v in pairs(Bugfixes.Maps.EntityCategoryToFindView) do
+        for k, v in pairs(QuestCore.Maps.EntityCategoryToFindView) do
             XGUIEng.ShowWidget(
-                Bugfixes.Maps.EntityCategoryToFindView[k],
+                QuestCore.Maps.EntityCategoryToFindView[k],
                 ((ExistingMap[k] or 0) > 0 and 1) or 0
             );
         end
@@ -383,10 +421,10 @@ function Bugfixes:UpdateFindViewButtons()
     end
 end
 
-function Bugfixes:UpdateBlessSettlerButtons()
+function QuestCore:UpdateBlessSettlerButtons()
     local PlayerID = GUI.GetPlayerID();
     local EntityID = GUI.GetSelectedEntity();
-    if Bugfixes.UseBlessLimit then
+    if QuestCore.UseBlessLimit then
         if EntityID then
             local EntityTypeName = Logic.GetEntityTypeName(Logic.GetEntityType(EntityID));
             if string.find(EntityTypeName, "PB_Monastery") then
@@ -396,7 +434,7 @@ function Bugfixes:UpdateBlessSettlerButtons()
                 GUIUpdate_GlobalTechnologiesButtons("BlessSettlers4", Technologies.T_BlessSettlers4,Entities.PB_Monastery2);
                 GUIUpdate_GlobalTechnologiesButtons("BlessSettlers5", Technologies.T_BlessSettlers5,Entities.PB_Monastery3);
                 for i= 1, 5, 1 do
-                    if Bugfixes:GetBlessDelayForPlayer(PlayerID, "BlessSettlers" ..i) > 0 then
+                    if QuestCore:GetBlessDelayForPlayer(PlayerID, "BlessSettlers" ..i) > 0 then
                         XGUIEng.DisableButton("BlessSettlers" ..i, 1);
                     end
                 end
@@ -405,10 +443,10 @@ function Bugfixes:UpdateBlessSettlerButtons()
     end
 end
 
-function Bugfixes:UpdateFormationButtons()
+function QuestCore:UpdateFormationButtons()
     local PlayerID = GUI.GetPlayerID();
     local EntityID = GUI.GetSelectedEntity();
-    if Bugfixes.UseFormationFix then
+    if QuestCore.UseFormationFix then
         -- Vilibility
         if IsExisting(EntityID) and Logic.IsLeader(EntityID) == 1
         and Logic.LeaderGetMaxNumberOfSoldiers(EntityID) > 0 then
@@ -437,11 +475,11 @@ function Bugfixes:UpdateFormationButtons()
     end
 end
 
-function Bugfixes:GetBlessDelayForPlayer(_PlayerID, _Button)
-    local Last = Bugfixes.BlessLimit[_Button][_PlayerID] or 0;
+function QuestCore:GetBlessDelayForPlayer(_PlayerID, _Button)
+    local Last = QuestCore.BlessLimit[_Button][_PlayerID] or 0;
     if Last == 0 then
         return 0;
     end
-    return Last + Bugfixes.BlessLimit.Limit - math.floor(Logic.GetTime());
+    return Last + QuestCore.BlessLimit.Limit - math.floor(Logic.GetTime());
 end
 

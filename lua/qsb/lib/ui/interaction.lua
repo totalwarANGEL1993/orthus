@@ -1106,7 +1106,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
             else
                 Position = GetPosition(self.m_ScriptName);
             end
-            QuestSync:SnchronizedCall(
+            QuestSync:SynchronizedCall(
                 Interaction.Event.BuyUnit,
                 self.m_ScriptName,
                 PlayerID,
@@ -1118,7 +1118,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
 
         -- Resource
         elseif self.m_Offers[_SlotIndex].Type == MerchantOfferTypes.Resource then
-            QuestSync:SnchronizedCall(
+            QuestSync:SynchronizedCall(
                 Interaction.Event.BuyRes,
                 self.m_ScriptName,
                 PlayerID,
@@ -1132,7 +1132,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
             if Logic.IsTechnologyResearched(PlayerID, self.m_Offers[_SlotIndex].Good) == 1 then
                 return;
             end
-            QuestSync:SnchronizedCall(
+            QuestSync:SynchronizedCall(
                 Interaction.Event.BuyTech,
                 self.m_ScriptName,
                 PlayerID,
@@ -1142,7 +1142,7 @@ function NonPlayerMerchant:BuyOffer(_SlotIndex)
 
         -- Custom
         else
-            QuestSync:SnchronizedCall(
+            QuestSync:SynchronizedCall(
                 Interaction.Event.BuyFunc,
                 self.m_ScriptName,
                 PlayerID,

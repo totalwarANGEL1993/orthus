@@ -1077,6 +1077,11 @@ function MultiplayerSystem:ConfigurationFinished()
     if MPRuleset_Rules.Modes.Selected > 0 then
         Message(ReplacePlacholders(self.Text.Messages.RulesDefined[QuestTools.GetLanguage()]));
     end
+    -- FIXME: With active multiplayer system save games can not be loaded.
+    Framework.SaveGame_Orig_MultiplayerSystem = Framework.SaveGame;
+    Framework.SaveGame = function(_Name, _Desc)
+        Message("Debug: Saving deactivated because of reference error!");
+    end
 
     self:SetupDiplomacyForPeacetime();
     self:FillResourceHeaps(MPRuleset_Rules);
