@@ -260,7 +260,7 @@ function QuestCore:OverrideGUIActions()
         local BlessCosts = Logic.GetBlessCostByBlessCategory(_BlessCategory);
         if BlessCosts > CurrentFaith then
             GUI.AddNote(XGUIEng.GetStringTableText("InGameMessages/GUI_NotEnoughFaith"));
-            Sound.PlayFeedbackSound(Sounds.VoicesMentor_INFO_MonksNeedMoreTime_rnd_01, 0);
+            Sound.PlayFeedbackSound(Sounds.VoicesMentor_INFO_MonksNeedMoreTime_rnd_01);
             return;
         end
         QuestCore:PostPlayerBlessed(
