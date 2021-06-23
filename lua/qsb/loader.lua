@@ -32,11 +32,16 @@ Script.Load(gvBasePath.. "qsb/lib/ai/aiwallconstruction.lua");
 
 Script.Load(gvBasePath.. "qsb/ext/loader.lua");
 
-Script.Load(gvBasePath.. "qsb/s5c/s5communitylib/packer/devload.lua");
+Script.Load(gvBasePath.. "s5c/s5communitylib/packer/devload.lua");
 
 -- only if community lib is found
 if mcbPacker then
-    mcbPacker.mainPath = gvBasePath.. "qsb/s5c/s5communitylib/";
+    -- Old version
+    -- mcbPacker.mainPath = gvBasePath.. "s5c/s5communitylib/";
+    mcbPacker.Paths = {
+        {gvBasePath.. "s5c/s5communitylib/", ".lua"},
+        {gvBasePath.. "s5c/s5communitylib/", ".luac"}
+    }
     
     mcbPacker.require("tables/ArmorClasses");
     mcbPacker.require("tables/AttachmentTypes");
