@@ -32,11 +32,11 @@ AiArmy = {
     AbandonedTroops      = {},
     IncommingTroops      = {},
     TroopProperties      = {},
-    TroopCount           = 8;
-    RodeLength           = 3000;
-    OuterRange           = 0;
-    AbandonStrength      = 0.10;
-    LastTick             = 0;
+    TroopCount           = 8,
+    RodeLength           = 3000,
+    OuterRange           = 0,
+    AbandonStrength      = 0.10,
+    LastTick             = 0,
     Producers            = {},
 
 
@@ -44,6 +44,7 @@ AiArmy = {
     InitialSpawned       = false,
     IsHiddenFromAI       = false,
     IsIgnoringProducer   = false,
+    IsDirectlyTargeting  = true,
 
     BehaviorQueue        = {},
     CurrentBehavior      = nil,
@@ -53,10 +54,10 @@ AiArmy = {
 
 AiArmyControllerJobId = nil;
 AiArmyAttackedJobId = nil;
-AiArmyCurrentArmy = 0;
 AiArmyIdSequence = 0;
 AiArmyTroopIDToArmyID = {};
 AiArmyIncommingTroopIDToArmyID = {};
+AiArmyTickFrequency = 3;
 AiArmyList = {};
 
 -- -------------------------------------------------------------------------- --
@@ -65,6 +66,7 @@ function AiArmy:construct(_PlayerID, _Home, _Range, _TroopAmount)
     AiArmyIdSequence = AiArmyIdSequence +1;
     self.PlayerID = _PlayerID;
     self.ArmyID = AiArmyIdSequence;
+    self.TickTime = math.mod(AiArmyIdSequence, AiArmyTickFrequency);
     self.HomePosition = _Home;
     self.RodeLength = _Range;
     self.OuterRange = _Range * 0.75;
@@ -75,11 +77,13 @@ function AiArmy:construct(_PlayerID, _Home, _Range, _TroopAmount)
 end
 class(AiArmy);
 
+-- -------------------------------------------------------------------------- --
+
 function AiArmy:StartControllerJob()
     -- Controller
     if not AiArmyControllerJobId then
         AiArmyControllerJobId = QuestTools.StartSimpleHiResJobEx(function()
-            return AiArmy:ArmyOperationController();
+            return AiArmy:ArmyOperationScheduler();
         end);
     end
 
@@ -93,17 +97,70 @@ function AiArmy:StartControllerJob()
     end
 end
 
--- -------------------------------------------------------------------------- --
+function AiArmy:ArmyOperationScheduler()
+    if AiArmy ~= self then
+        return;
+    end
+
+    -- get armies needed to be scheduled
+    local QualifyingArmies = {};
+    for i= 1, table.getn(AiArmyList), 1 do
+        if math.mod(Logic.GetCurrentTurn(), AiArmyTickFrequency) == AiArmyList[i].TickTime then
+            table.insert(QualifyingArmies, i);
+        end
+    end
+
+    -- schedule army
+    if table.getn(QualifyingArmies) > 0 then
+        -- sort armys by last execution
+        if table.getn(QualifyingArmies) > 1 then
+            table.sort(QualifyingArmies, function(a, b)
+                return AiArmyList[a].LastTick < AiArmyList[b].LastTick;
+            end);
+        end
+        -- execute operation
+        if AiArmyList[QualifyingArmies[1]] then
+            AiArmyList[QualifyingArmies[1]]:Operate();
+            AiArmyList[QualifyingArmies[1]].LastTick = self:GetTime();
+        end
+    end
+end
+
+function AiArmy:ArmyAttackedReactionController(_Attacker, _Attacked)
+    for i= 1, table.getn(_Attacked), 1 do
+        for j= 1, table.getn(AiArmyList), 1 do
+            if not AiArmyList[j]:IsDead() then
+                if not AiArmyList[j]:IsExecutingBehavior("Battle") then
+                    local VictimID = _Attacked[i];
+                    if Logic.IsEntityInCategory(VictimID, EntityCategories.Soldier) == 1 then
+                        VictimID = QuestTools.SoldierGetLeader(VictimID);
+                    end
+                    if VictimID and QuestTools.IsInTable(VictimID, AiArmyList[j].Troops) then
+                        AiArmyList[j]:InsertBehavior(AiArmyBehavior:New(
+                            "Battle",
+                            GetPosition(_Attacker),
+                            4000
+                        ));
+                        AiArmyList[j]:InvalidateCurrentBehavior();
+                        AiArmyList[j]:NextBehavior();
+                        break;
+                    end
+                end
+            end
+        end
+    end
+end
 
 function AiArmy:Operate()
+    if Logic.GetTime() >= 1149 then
+        if self.ArmyID == 1 then
+            LuaDebugger.Break();
+        end
+    end
     self.ArmyOrientationCache = nil;
     self.ArmyPositionCache = nil;
     self.ArmyFrontCache = nil;
     self.ArmyFormationCache = nil;
-
-    if self.ArmyIsPaused then
-        return;
-    end
 
     self.AssembleTimer = self.AssembleTimer +1;
 
@@ -131,48 +188,6 @@ function AiArmy:Operate()
         end
     end
     self:NextBehavior();
-end
-
-function AiArmy:ArmyOperationController()
-    if AiArmy ~= self then
-        return;
-    end
-    AiArmyCurrentArmy = AiArmyCurrentArmy +1;
-    if table.getn(AiArmyList) < AiArmyCurrentArmy then
-        AiArmyCurrentArmy = 1;
-    end
-    local ArmyID = AiArmyCurrentArmy;
-    if AiArmyList[ArmyID] then
-        if AiArmyList[ArmyID].LastTick == 0 
-        or AiArmyList[ArmyID].LastTick +10 < self:GetTime() then
-            AiArmyList[ArmyID].LastTick = self:GetTime();
-            AiArmyList[ArmyID]:Operate();
-        end
-    end
-end
-
-function AiArmy:ArmyAttackedReactionController(_Attacker, _Attacked)
-    for i= 1, table.getn(_Attacked), 1 do
-        for j= 1, table.getn(AiArmyList), 1 do
-            if not AiArmyList[j]:IsDead() then
-                if not AiArmyList[j]:IsExecutingBehavior("Battle") then
-                    local VictimID = _Attacked[i];
-                    if Logic.IsEntityInCategory(VictimID, EntityCategories.Soldier) == 1 then
-                        VictimID = QuestTools.SoldierGetLeader(VictimID);
-                    end
-                    if VictimID and QuestTools.IsInTable(VictimID, AiArmyList[j].Troops) then
-                        AiArmyList[j]:InsertBehavior(AiArmyBehavior:New(
-                            "Battle",
-                            GetPosition(_Attacker),
-                            4000
-                        ));
-                        AiArmyList[j]:InvalidateCurrentBehavior();
-                        AiArmyList[j]:NextBehavior();
-                    end
-                end
-            end
-        end
-    end
 end
 
 -- -------------------------------------------------------------------------- --
@@ -386,6 +401,19 @@ function AiArmy:SetIsDead(_Flag)
 end
 
 ---
+-- Switches the targeting mode between accurate and inaccurate. Accurate means
+-- ranged troops will target enemies at max range. Inaccurate on the other hand
+-- makes them behave normally.
+--
+-- @param[type=boolean] _Flag Direct targeting flag
+-- @within Properties
+--
+function AiArmy:SetDirectlyTargeting(_Flag)
+    self.IsDirectlyTargeting = _Flag == true;
+    return self;
+end
+
+---
 -- Checks if an army is fighting. If any member is fighting then the army is
 -- fighting.
 --
@@ -394,8 +422,10 @@ end
 --
 function AiArmy:IsFighting()
     for i= table.getn(self.Troops), 1, -1 do
-        if self:IsTroopFighting(self.Troops[i]) == true then
-            return true;
+        if Logic.IsEntityInCategory(self.Troops[i], EntityCategories.Cannon) == 0 then
+            if self:IsTroopFighting(self.Troops[i]) == true then
+                return true;
+            end
         end
     end
     return false;
@@ -540,7 +570,6 @@ end
 -- @param[type=function] _Function Calculate army rotation
 -- @return[type=number] Army rotation
 -- @within Calculator
--- @local
 --
 function AiArmy:SetArmyOrientationCalculator(_Function)
     self.GetArmyOrientation = _Function;
@@ -608,7 +637,6 @@ end
 -- @param[type=function] _Function Calculate army front
 -- @return[type=number] Front position of army
 -- @within Calculator
--- @local
 --
 function AiArmy:SetArmyFrontCalculator(_Function)
     self.GetArmyOrientation = _Function;
@@ -1073,7 +1101,7 @@ end
 
 function AiArmy:Assemble(_Area)
     local IsScattered = false;
-    if self.AssembleTimer >= 15 then
+    if self.AssembleTimer >= 30 then
         self.AssembleTimer = 0;
         local PositionMap = self:GetArmyBlockPositonMap(self:GetArmyPosition());
         local TroopCount = table.getn(self.Troops);
@@ -1106,15 +1134,10 @@ end
 function AiArmy:ControlTroops(_Position, _Enemies)
     local Position = _Position or self:GetArmyPosition();
     for i= 1, table.getn(self.Troops), 1 do
-        if Logic.IsEntityInCategory(self.Troops[i], EntityCategories.Cannon) == 0 then
-            if self:IsTroopFighting() then
-                return;
-            end
-        end
+
         self.TroopProperties[self.Troops[i]] = self.TroopProperties[self.Troops[i]] or {
             Target  = 0,
             Time    = 0,
-            Command = 0
         };
         self:ControlSingleTroop(self.Troops[i], Position, _Enemies);
     end
@@ -1124,33 +1147,49 @@ function AiArmy:ControlSingleTroop(_TroopID, _Position, _Enemies)
     local Target = self:TargetEnemy(_TroopID, _Enemies);
     if Target > 0 then
         if not self:IsTroopFighting(_TroopID) then
+            AI.Army_EnableLeaderAi(_TroopID, (self.IsDirectlyTargeting and 0) or 1);
+            
             if Logic.IsEntityInCategory(_TroopID, EntityCategories.Cannon) == 1 then
                 self:CannonTroopAttackTarget(_TroopID, Target);
             elseif Logic.IsEntityInCategory(_TroopID, EntityCategories.CavalryLight) == 1 then
-                self:TroopAttackMove(_TroopID, Target, true);
+                if self.IsDirectlyTargeting then
+                    self:TroopAttack(_TroopID, Target, true);
+                else
+                    self:TroopAttackMove(_TroopID, Target, true);
+                end
             elseif Logic.IsEntityInCategory(_TroopID, EntityCategories.LongRange) == 1 then
-                self:TroopAttack(_TroopID, Target, true);
+                if self.IsDirectlyTargeting then
+                    self:TroopAttack(_TroopID, Target, true);
+                else
+                    self:TroopAttackMove(_TroopID, Target, true);
+                end
             else
-                self:TroopAttack(_TroopID, Target, true);
+                if self.IsDirectlyTargeting then
+                    self:TroopAttack(_TroopID, Target, true);
+                else
+                    self:TroopAttackMove(_TroopID, Target, true);
+                end
             end
         end
     else
-        self:TroopAttackMove(_TroopID, _Position, false);
+        if self.IsDirectlyTargeting then
+            self:MoveTroop(_TroopID, _Position, true);
+        else
+            self:TroopAttackMove(_TroopID, _Position, false);
+        end
     end
 end
 
 function AiArmy:CannonTroopAttackTarget(_TroopID, _EnemyID)
-    local Command = self.TroopProperties[_TroopID].Command;
-    if not Command or Command +10 < self:GetTime() then
-        local Sight = Logic.GetEntityExplorationRange(_TroopID) * 100;
-        if self:GetDistanceSqared(_TroopID, _EnemyID) < Sight^2 then
-            if not self:IsTroopFighting(_TroopID) then
-                self:TroopAttack(_TroopID, _EnemyID, true);
-            end
+    local Sight = Logic.GetEntityExplorationRange(_TroopID) * 100;
+    if self:GetDistanceSqared(_TroopID, _EnemyID) < Sight^2 then
+        self:TroopAttack(_TroopID, _EnemyID, true);
+    else
+        if self.IsDirectlyTargeting then
+            self:MoveTroop(_TroopID, _EnemyID, true);
         else
-            self:TroopAttackMove(_TroopID, _EnemyID, false);
+            self:TroopAttackMove(_TroopID, _EnemyID, true);
         end
-        self.TroopProperties[_TroopID].Command = self:GetTime();
     end
 end
 
@@ -1177,7 +1216,6 @@ end
 --
 -- @param[type=function] _Function Function to detect enemies
 -- @within Calculator
--- @local
 --
 function AiArmy:SetTroopFormationSelector(_Function)
     self.GetEnemiesInArea = _Function;
@@ -1224,7 +1262,6 @@ end
 -- @param[type=function] _Function Function to detect enemies
 -- @return[type=table] List of enemies in area
 -- @within Calculator
--- @local
 --
 function AiArmy:SetEnemiesInAreaDetector(_Function)
     self.GetEnemiesInArea = _Function;
@@ -1236,22 +1273,28 @@ function AiArmy:DefaultGetEnemiesInArea(_Position, _Range, _PlayerID)
         _Position = GetPosition(_Position);
     end
     local AllEnemiesInSight = {};
-    for i= 1, 8, 1 do
+    for i= 1, table.getn(Score.Player), 1 do
         if i ~= PlayerID and Logic.GetDiplomacyState(PlayerID, i) == Diplomacy.Hostile then
-            -- local PlayerEntities = QuestTools.FindAllEntities(i, 0, _Range, _Position);
             local PlayerEntities = {Logic.GetPlayerEntitiesInArea(i, 0, _Position.X, _Position.Y, _Range, 16)};
-            -- for j= table.getn(PlayerEntities), 1, -1 do
-            for j= 2, PlayerEntities[1]+1, 1 do
-                if Logic.GetEntityHealth(PlayerEntities[j]) > 0 then
-                    if (
-                        Logic.IsEntityInCategory(PlayerEntities[j], EntityCategories.Cannon) == 1 or
-                        (Logic.IsHero(PlayerEntities[j]) == 1 and Logic.GetCamouflageTimeLeft(PlayerEntities[j]) == 0) or
-                        Logic.IsBuilding(PlayerEntities[j]) == 1 or
-                        Logic.IsLeader(PlayerEntities[j]) == 1
-                    )
-                    and Logic.IsEntityInCategory(PlayerEntities[j], EntityCategories.Thief) == 0 then
-                        table.insert(AllEnemiesInSight, PlayerEntities[j]);
-                    end
+            for j= PlayerEntities[1]+1, 2, -1 do
+                local EntityType = Logic.GetEntityType(PlayerEntities[j]);
+                local TypeName = Logic.GetEntityTypeName(EntityType);
+                
+                if (
+                    (Logic.IsBuilding(PlayerEntities[j]) == 1 and 
+                     Logic.IsEntityInCategory(PlayerEntities[j], EntityCategories.Workplace) == 0) or
+                    (Logic.IsHero(PlayerEntities[j]) == 1 and
+                     Logic.GetCamouflageDuration(PlayerEntities[j]) == 0) or
+                    Logic.IsLeader(PlayerEntities[j]) == 1 or
+                    Logic.IsEntityInCategory(PlayerEntities[j], EntityCategories.Cannon) == 1
+                )
+                and (
+                    not FoundationTopTypeToFoundationType[TypeName] and
+                    Logic.IsEntityInCategory(PlayerEntities[j], EntityCategories.Thief) == 0 and
+                    Logic.GetEntityHealth(PlayerEntities[j]) > 0
+                )
+                then
+                    table.insert(AllEnemiesInSight, PlayerEntities[j]);
                 end
             end
         end
@@ -1274,6 +1317,14 @@ function AiArmy:GetDistanceSqared(_Position1, _Position2)
     local yDistance = (_Position1.Y - _Position2.Y);
     return ((_Position1.X - _Position2.X)^2) + ((_Position1.Y - _Position2.Y)^2);
 end
+
+FoundationTopTypeToFoundationType = {
+    ["CB_Evil_Tower1_ArrowLauncher"] = "CB_Evil_Tower1",
+    ["PB_DarkTower2_Ballista"]       = "PB_DarkTower2",
+    ["PB_DarkTower3_Cannon"]         = "PB_DarkTower3",
+    ["PU_Hero2_Cannon1"]             = "PU_Hero2_Foundation1",
+    ["PU_Hero3_TrapCannon"]          = "PU_Hero3_Trap",
+}
 
 -- -------------------------------------------------------------------------- --
 
@@ -1436,9 +1487,8 @@ end
 -- @within AiArmyBehavior
 --
 -- @field Idle    The army is doing nothing.
--- @field Move    The army walks to the defined destination. If it is set to
---                agressive, enemies are immedaitly attacked. Otherwise they are
---                ignored until they attack first.
+-- @field Move    The army walks to the defined destination. Enemies are ignored
+--                unless they attack the army.
 -- @field Attack  The army walkst to the defined destination and will execute
 --                Battle with outer range as area on arrival. While walking, the
 --                army will always be aggressive.
@@ -1474,7 +1524,7 @@ AiArmyBehavior = {};
 -- @usage -- Idle
 -- AiArmyBehavior:New("Idle", _Loop);
 -- -- Move
--- AiArmyBehavior:New("Move", _Target, _Distance, _Aggressive, _Loop);
+-- AiArmyBehavior:New("Move", _Target, _Distance, _Loop);
 -- -- Attack
 -- AiArmyBehavior:New("Attack", _Target, _Distance, _Loop);
 -- -- Battle
@@ -1624,7 +1674,7 @@ AiArmyBehavior.Move = {
     m_Abstract = false,
 }
 
-function AiArmyBehavior.Move:construct(_Target, _Distance, _Aggressive, _Loop)
+function AiArmyBehavior.Move:construct(_Target, _Distance, _Loop)
     if type(_Target) ~= "table" then
         _Target = {_Target};
     end
@@ -1633,29 +1683,26 @@ function AiArmyBehavior.Move:construct(_Target, _Distance, _Aggressive, _Loop)
     self.m_Loop = _Loop == true;
     self.m_Target = _Target;
     self.m_Distance = _Distance;
-    self.m_Aggressive = _Aggressive == true;
 end
 inherit(AiArmyBehavior.Move, AiArmyBehavior.AbstractBehavior);
 
 function AiArmyBehavior.Move:Run(_Army)
     local LastIdx = table.getn(self.m_Target);
-    if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= self.m_Distance then
+    if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= 2000 then
         return true;
     end
-    if self.m_Aggressive then
-        for i= table.getn(_Army.Troops), 1, -1 do
-            local Exploration = Logic.GetEntityExplorationRange(_Army.Troops[i])*100;
-            local Enemies = _Army:CallGetEnemiesInArea(_Army.Troops[i], Exploration+1000);
-            if table.getn(Enemies) > 0 then
-                _Army:InsertBehavior(AiArmyBehavior:New(
-                    "Battle",
-                    GetPosition(Enemies[1]),
-                    4000
-                ));
-                _Army:InvalidateCurrentBehavior();
-                _Army:NextBehavior();
-                return;
-            end
+    for i= table.getn(_Army.Troops), 1, -1 do
+        local Exploration = Logic.GetEntityExplorationRange(_Army.Troops[i])*100;
+        local Enemies = _Army:CallGetEnemiesInArea(_Army.Troops[i], Exploration+1000);
+        if table.getn(Enemies) > 0 then
+            _Army:InsertBehavior(AiArmyBehavior:New(
+                "Battle",
+                GetPosition(Enemies[1]),
+                4000
+            ));
+            _Army:InvalidateCurrentBehavior();
+            _Army:NextBehavior();
+            return;
         end
     end
     _Army:MoveAsBlock(self.m_Target[self.m_Target.Current], false, false);
@@ -1711,7 +1758,7 @@ function AiArmyBehavior.Attack:Run(_Army)
             return;
         end
     end
-    _Army:MoveAsBlock(self.m_Target[self.m_Target.Current], false, false);
+    _Army:MoveAsBlock(self.m_Target[self.m_Target.Current], false, _Army:IsFighting());
     _Army:NormalizedArmySpeed();
     _Army:Assemble(500);
     if self.m_Target.Current < table.getn(self.m_Target) then
@@ -1737,12 +1784,14 @@ end
 inherit(AiArmyBehavior.Battle, AiArmyBehavior.AbstractBehavior);
 
 function AiArmyBehavior.Battle:Run(_Army)
-    if QuestTools.AreEnemiesInArea(_Army.PlayerID, self.m_Position, self.m_Distance) then
-        _Army:ControlTroops(self.m_Position, nil);
+    local Enemies = _Army:CallGetEnemiesInArea(self.m_Position, self.m_Distance);
+    if table.getn(Enemies) > 0 then
+        _Army:ControlTroops(self.m_Position, Enemies);
         _Army:ResetArmySpeed();
         _Army:Assemble(self.m_Distance);
         return;
     end
+    _Army:MoveAsBlock(_Army:GetArmyPosition(), false, true);
     _Army:InvalidateCurrentBehavior();
     return true;
 end
@@ -1967,20 +2016,21 @@ function AiArmy:SelectEnemy(_TroopID, _Enemies)
     local Range = self.RodeLength + self.OuterRange;
     local Enemies = _Enemies or self:CallGetEnemiesInArea(_TroopID, Range);
 
-    -- Remove if dead
     for i= table.getn(Enemies), 1, -1 do
         if not IsExisting(Enemies[i]) or Logic.GetEntityHealth(Enemies[i]) == 0 then
             table.remove(Enemies, i);
         end
     end
 
-    if table.getn(Enemies) > 1 then
-        table.sort(Enemies, function(a, b)
-            if self then
-                return self:CallComputeEnemyPriority(_TroopID, a, b);
-            end
-            return false;
-        end);
+    if self.IsDirectlyTargeting then
+        if table.getn(Enemies) > 1 then            
+            table.sort(Enemies, function(a, b)
+                if self then
+                    return self:CallComputeEnemyPriority(_TroopID, a, b);
+                end
+                return false;
+            end);
+        end
     end
     return Enemies;
 end
@@ -2008,7 +2058,6 @@ end
 -- @param[type=function] _Function Function to detect enemies
 -- @return[type=table] Sorted enemy list
 -- @within Calculator
--- @local
 --
 function AiArmy:SetEnemyPriorityComperator(_Function)
     self.ComputeEnemyPriority = _Function;
@@ -2059,7 +2108,6 @@ end
 -- @param[type=function] _Function Function to calculate thread factor
 -- @return[type=table] Enemy cost factor
 -- @within Calculator
--- @local
 --
 function AiArmy:SetTargetThreatFactorComperator(_Function)
     self.GetTargetThreatFactor = _Function;
@@ -2079,15 +2127,13 @@ function AiArmy:DefaultGetTargetThreatFactor(_TargetID, _TroopID)
         end
     end
     if Factor > 0 then
-        local Cur = 1;
-        local Max = 0;
         if Logic.IsLeader(_TargetID) == 1 then
-            Cur = Logic.LeaderGetNumberOfSoldiers(_TargetID);
-            Max = Logic.LeaderGetMaxNumberOfSoldiers(_TargetID);
-        end
-        Factor = Factor * ((Max > 0 and 1 - (Cur/Max)) or 1);
-        if Factor == 0 then
-            return 1;
+            local Cur = Logic.LeaderGetNumberOfSoldiers(_TargetID);
+            local Max = Logic.LeaderGetMaxNumberOfSoldiers(_TargetID);
+            Factor = Factor * ((Max > 0 and 1 - (Cur/Max)) or 1);
+            if Factor == 0 then
+                return 1;
+            end
         end
     end
     return Factor;
@@ -2138,60 +2184,62 @@ end
 GroupTargetingPriorities = {};
 
 GroupTargetingPriorities.Cannon = {
-    ["MilitaryBuilding"] = 12,
-    ["EvilLeader"] = 10,
-    ["LongRange"] = 5,
+    ["MilitaryBuilding"] = 100,
+    ["EvilLeader"] = 90,
+    ["LongRange"] = 50,
 };
 GroupTargetingPriorities.LightCavalry = {
-    ["Hero"] = 12,
-    ["Cannon"] = 10,
-    ["MilitaryBuilding"] = 8,
-    ["Spear"] = 4,
-    ["Sword"] = 4,
+    ["Hero"] = 100,
+    ["Cannon"] = 90,
+    ["MilitaryBuilding"] = 80,
+    ["Spear"] = 40,
+    ["Sword"] = 40,
     ["EvilLeader"] = 0,
     ["LongRange"] = 0,
     ["Rifle"] = 0,
 };
 GroupTargetingPriorities.HeavyCavalry = {
-    ["Hero"] = 12,
-    ["Cannon"] = 12,
-    ["LongRange"] = 8,
-    ["MilitaryBuilding"] = 6,
-    ["Sword"] = 6,
+    ["Hero"] = 100,
+    ["Cannon"] = 100,
+    ["LongRange"] = 80,
+    ["MilitaryBuilding"] = 60,
+    ["Sword"] = 60,
     ["Spear"] = 0,
 };
 GroupTargetingPriorities.Sword = {
-    ["Hero"] = 12,
-    ["Spear"] = 11,
-    ["Cannon"] = 9,
-    ["LongRange"] = 6,
-    ["Serf"] = 3,
+    ["Hero"] = 100,
+    ["Spear"] = 90,
+    ["Cannon"] = 80,
+    ["LongRange"] = 60,
+    ["MilitaryBuilding"] = 40,
+    ["Serf"] = 30,
     ["CavalryHeavy"] = 0,
 };
 GroupTargetingPriorities.Spear = {
-    ["CavalryHeavy"] = 12,
-    ["CavalryLight"] = 12,
-    ["MilitaryBuilding"] = 10,
+    ["CavalryHeavy"] = 100,
+    ["CavalryLight"] = 100,
+    ["MilitaryBuilding"] = 90,
+    ["LongRange"] = 0,
     ["Serf"] = 0,
     ["Sword"] = 0,
-    ["LongRange"] = 0,
 };
 GroupTargetingPriorities.Ranged = {
-    ["MilitaryBuilding"] = 12,
-    ["CavalryHeavy"] = 10,
-    ["CavalryLight"] = 10,
-    ["VillageCenter"] = 6,
-    ["Headquarters"] = 6,
-    ["Hero"] = 5,
+    ["MilitaryBuilding"] = 100,
+    ["CavalryHeavy"] = 90,
+    ["CavalryLight"] = 90,
+    ["VillageCenter"] = 60,
+    ["Headquarters"] = 60,
+    ["Hero"] = 50,
+    ["MilitaryBuilding"] = 20,
     ["EvilLeader"] = 0,
 };
 GroupTargetingPriorities.Rifle = {
-    ["EvilLeader"] = 12,
-    ["LongRange"] = 12,
-    ["MilitaryBuilding"] = 12,
-    ["Cannon"] = 8,
-    ["VillageCenter"] = 4,
-    ["Headquarters"] = 4,
+    ["EvilLeader"] = 100,
+    ["LongRange"] = 100,
+    ["MilitaryBuilding"] = 100,
+    ["Cannon"] = 80,
+    ["VillageCenter"] = 40,
+    ["Headquarters"] = 40,
     ["Melee"] = 0,
 };
 
