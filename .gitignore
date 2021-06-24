@@ -1,6 +1,7 @@
 ldoc/*
 target/*
 doc/*
+*/s5c/*
 dbg
 var
 _*
