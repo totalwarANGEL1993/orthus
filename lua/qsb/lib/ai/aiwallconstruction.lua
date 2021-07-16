@@ -1738,7 +1738,7 @@ AiWallConstruction.Text = {
 
 AiWallConstruction.Data = {
     [Entities.XD_WallStraightGate_Closed]     = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.0005,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1755,7 +1755,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_WallStraightGate]            = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.0005,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1772,7 +1772,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_WallDistorted]               = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1789,7 +1789,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_WallStraight]                = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1806,7 +1806,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_WallCorner]                  = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 100,
@@ -1823,7 +1823,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_DarkWallStraightGate_Closed] = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.0005,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1840,7 +1840,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_DarkWallStraightGate]        = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.0005,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1857,7 +1857,7 @@ AiWallConstruction.Data = {
         }
     },
         [Entities.XD_DarkWallDistorted]       = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1874,7 +1874,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_DarkWallStraight]            = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1891,7 +1891,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_DarkWallCorner]              = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 100,

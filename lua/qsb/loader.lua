@@ -30,6 +30,7 @@ Script.Load(gvBasePath.. "qsb/lib/ai/aiarmy.lua");
 Script.Load(gvBasePath.. "qsb/lib/ai/aicontroller.lua");
 Script.Load(gvBasePath.. "qsb/lib/ai/aiwallconstruction.lua");
 Script.Load(gvBasePath.. "qsb/lib/ai/aipath.lua");
+Script.Load(gvBasePath.. "qsb/lib/ai/aiforce.lua");
 
 Script.Load(gvBasePath.. "qsb/ext/loader.lua");
 
