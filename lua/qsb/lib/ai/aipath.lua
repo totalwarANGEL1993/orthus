@@ -98,7 +98,7 @@ function FindPathBetweenInternal(...)
         Start = Start +1;
         End = End +1;
     end
-    Path = Path:Reduce(16);
+    Path = Path:Reduce(2);
     return Path;
 end
 
@@ -497,12 +497,26 @@ function AiPathModel:GetNextBlockedNodeID(_Limit)
     for i= 2, _Limit, 1 do
         if self.m_Nodes[id+i] then
             local nextWP = self.m_Nodes[id+i];
-            if not QuestTools.SameSector(currentWP, nextWP) then
+            local WallSegments = self:GetWallSegments(GetPosition(nextWP), 800);
+            if table.getn(WallSegments) > 0 or not QuestTools.SameSector(currentWP, nextWP) then
                 return id+i;
             end
         end
     end
     return 0;
+end
+
+function AiPathModel:GetWallSegments(_Position, _Area)
+    local WallList = {};
+    for i= 1, 8 do
+        for k,v in pairs(AiPathWallTypeList) do
+            local tmp = {Logic.GetPlayerEntitiesInArea(i, v, _Position.X, _Position.Y, _Area, 16)};
+            for j=2, tmp[1], 1 do
+                table.insert(WallList, tmp[j]);
+            end
+        end
+    end
+    return WallList;
 end
 
 ---
@@ -556,6 +570,15 @@ function AiPathModel:Hide()
 end
 
 -- - Data ------------------------------------------------------------------- --
+
+AiPathWallTypeList = {
+    Entities.XD_DarkWallDistorted,
+    Entities.XD_DarkWallStraight,
+    Entities.XD_DarkWallStraightGate_Closed,
+    Entities.XD_WallDistorted,
+    Entities.XD_WallStraight,
+    Entities.XD_WallStraightGate_Closed,
+};
 
 AiPathBlockingDoodads = {
     [Entities.XD_AppleTree1] = 200,

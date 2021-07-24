@@ -1165,6 +1165,7 @@ function AiWallConstruction:OverrideInterfaceUpdate()
             local SelectedID = GUI.GetSelectedEntity();
             local EntityType = Logic.GetEntityType(SelectedID);
             if AiWallConstruction.Mapping.CornerType[EntityType] or AiWallConstruction.Mapping.TowerType[EntityType] then
+                -- Do nothing
             elseif EntityType == Entities.PB_University1 or EntityType == Entities.PB_University2 then
                 GUIUpdate_GlobalTechnologiesButtons_Orig_WallConstruction(_Button, _Technology, _Type);
             else
