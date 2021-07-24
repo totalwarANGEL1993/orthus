@@ -1165,6 +1165,7 @@ function AiWallConstruction:OverrideInterfaceUpdate()
             local SelectedID = GUI.GetSelectedEntity();
             local EntityType = Logic.GetEntityType(SelectedID);
             if AiWallConstruction.Mapping.CornerType[EntityType] or AiWallConstruction.Mapping.TowerType[EntityType] then
+                -- Do nothing
             elseif EntityType == Entities.PB_University1 or EntityType == Entities.PB_University2 then
                 GUIUpdate_GlobalTechnologiesButtons_Orig_WallConstruction(_Button, _Technology, _Type);
             else
@@ -1738,7 +1739,7 @@ AiWallConstruction.Text = {
 
 AiWallConstruction.Data = {
     [Entities.XD_WallStraightGate_Closed]     = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.0005,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1755,7 +1756,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_WallStraightGate]            = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.0005,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1772,7 +1773,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_WallDistorted]               = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1789,7 +1790,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_WallStraight]                = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1806,7 +1807,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_WallCorner]                  = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 100,
@@ -1823,7 +1824,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_DarkWallStraightGate_Closed] = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.0005,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1840,7 +1841,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_DarkWallStraightGate]        = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.0005,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1857,7 +1858,7 @@ AiWallConstruction.Data = {
         }
     },
         [Entities.XD_DarkWallDistorted]       = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1874,7 +1875,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_DarkWallStraight]            = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 0,
@@ -1891,7 +1892,7 @@ AiWallConstruction.Data = {
         }
     },
     [Entities.XD_DarkWallCorner]              = {
-        MaxHealth    = 500,
+        MaxHealth    = 3000,
         HealthFactor = 0.001,
         BuildTime    = 450,
         UpgradeTime  = 100,

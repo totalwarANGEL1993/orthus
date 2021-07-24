@@ -26,6 +26,7 @@ function SVLib.SetInvisibility(_id,_flag)
 end
 
 --Gibt zurück ob eine Entity unsichtbar ist
+--return true/false
 function SVLib.GetInvisibility(_id)
 	if SVLib.HistoryFlag == 1 then
 		if Logic.GetEntityScriptingValue(_id,-26) == 513 then
@@ -48,6 +49,7 @@ function SVLib.SetHightOfBuilding(_id,_float)
 end
 
 --Gibt die Höhe von Gebäuden zurück in %
+--return float
 function SVLib.GetHightOfBuilding(_id)
 	return Int2Float(Logic.GetEntityScriptingValue(_id,18))
 end
@@ -68,6 +70,7 @@ function SVLib.SetHPOfEntity(_id,_HPNumber)
 end
 
 --Gibt die Leben einer Entity zurück
+--return Ganzzahl
 function SVLib.GetHPOfEntity(_id)
 	return Logic.GetEntityScriptingValue(_id,-8)
 end
@@ -82,6 +85,7 @@ function SVLib.SetTaskSubIndexNumber(_id,_index)
 end
 
 --Gibt den momentanen Index in der Tasklist einer Entity
+--return Ganzzahl
 function SVLib.GetTaskSubIndexNumber(_id)
 	if SVLib.HistoryFlag == 1 then
 		return Logic.GetEntityScriptingValue(_id,-18)
@@ -100,6 +104,7 @@ function SVLib.SetEntitySize(_id,_float)
 end
 
 --Gibt die Größe einer Entity in % relativ zur Normalgröße zurück
+--return float
 function SVLib.GetEntitySize(_id)
 	if SVLib.HistoryFlag == 1 then
 		return Int2Float(Logic.GetEntityScriptingValue(_id,-29))
@@ -112,6 +117,25 @@ end
 --Ja, man kann damit z.B. Taler oder Wetterenergie oder Glauben haken.
 function SVLib.SetResourceType(_id,_ResourceType)
 	Logic.SetEntityScriptingValue(_id,8,_ResourceType)
+end
+
+--Gibt den ResourcenTyp der Resource zurück
+--return Ganzzahl
+function SVLib.GetResourceType(_id)
+	return Logic.GetEntityScriptingValue(_id,8)
+end
+
+--Setzt die Prozentanzahl welche in der Mitte der Gebäude-Entity sichtbar ist (Forschung, Ausbau, etc)
+--float 0 <= _float <= 1
+function SVLib.SetPercentageInBuilding(_id,_float)
+	Logic.SetEntityScriptingValue(_id,20,Float2Int(_float))
+end
+
+
+--Gibt die Prozentanzeige in der Mitte des Gebäudes bzw. des Balkens unten in der GUI zurück
+--return 0 <= float <= 1
+function SVLib.GetPercentageAtBuilding(_id)
+	return Int2Float(Logic.GetEntityScriptingValue(_id,20))
 end
 
 

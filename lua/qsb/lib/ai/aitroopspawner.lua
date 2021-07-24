@@ -36,7 +36,7 @@
 function CreateTroopGenerator(_Data)
     if not AiTroopSpawnerList[_Data.ScriptName] then
         local Spawner = new(AiTroopSpawner, _Data.ScriptName);
-        Spawner:SetDelay(_Data.Delay or 90);
+        Spawner:SetDelay(_Data.Delay or 30);
         if _Data.Spawnpoint then
             Spawner:SetApproachPosition(GetPosition(_Data.Spawnpoint));
         end
@@ -86,7 +86,7 @@ AiTroopSpawner = {
     ApproachPosition = 0,
     IsSpawner = true,
     LastRecruitedTime = 0,
-    Delay = 2*60,
+    Delay = 30,
     Troops = {
         Maximum = 999,
         Selector = function(self)
