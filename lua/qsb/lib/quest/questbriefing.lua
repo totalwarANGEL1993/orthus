@@ -13,9 +13,6 @@
 -- of buttont if something is created or lua state changes. Otherwise you will
 -- get a desync!
 --
--- If briefings are used and the map is in compability mode with the history
--- edition, the map can not be played in LAN.
---
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.core.oop</li>
@@ -1108,17 +1105,6 @@ function QuestBriefing:EnableCinematicMode(_PlayerID)
     XGUIEng.ShowWidget("Movie",0);
 
     GUIAction_ToggleMenu("NetworkWindow", 0);
-    if QuestSync:IsHistoryEdition() or XGUIEng.IsWidgetExisting("CinematicMC_Button3") == 0 then
-        self:EnableCinematicModeForHistoryEdition(_PlayerID);
-    end
-end
-
-function QuestBriefing:EnableCinematicModeForHistoryEdition(_PlayerID)
-    GUIAction_NetworkWindow_KickPlayer = function(_Index)
-        BriefingMCButtonSelected(_Index+1);
-    end
-    GUIUpdate_NetworkWindow_PlayerName = function(_Index)
-    end
 end
 
 function QuestBriefing:DisableCinematicMode(_PlayerID)
@@ -1216,68 +1202,12 @@ function QuestBriefing:SetPageApperance(_PlayerID, _DisableMap)
     XGUIEng.ShowWidget("CinematicBar02", 1);
     XGUIEng.ShowWidget("CinematicBar01", 1);
     XGUIEng.ShowWidget("CinematicBar00", 1);
-
-    -- Ensure Buttons are disabled if fallback is used
-    local AllButtonsExisting = true;
     for i= 1, self.MCButtonAmount, 1 do
-        if XGUIEng.IsWidgetExisting("CinematicMC_Button" ..i) == 0 then
-            AllButtonsExisting = false;
-        end
-    end
-    if AllButtonsExisting then
-        for i= 1, self.MCButtonAmount, 1 do
+        if XGUIEng.IsWidgetExisting("CinematicMC_Button" ..i) == 1 then
             XGUIEng.ShowWidget("CinematicMC_Button" ..i, 1);
+        else
+            GUI.AddStaticNote("Debug: Widget CinematicMC_Button" ..i.. " does not exist!");
         end
-    else
-        for i= 1, self.MCButtonAmount, 1 do
-            XGUIEng.ShowWidget("CinematicMC_Button" ..i, 0);
-        end
-        self:SetPageApperanceForHistoryEdition(_PlayerID);
-    end
-end
-
-function QuestBriefing:SetPageApperanceForHistoryEdition(_PlayerID)
-    local size = {GUI.GetScreenSize()};
-    local PageID = self.m_Book[_PlayerID].Page;
-    local SizeY = round(50 * (768/size[2]));
-    local choicePosY = round(140 - ((self.MCButtonAmount/2)*((SizeY/2)+15)));
-
-    XGUIEng.SetWidgetPositionAndSize("NetworkWindow",190,400,500,300);
-    XGUIEng.ShowWidget("NetworkWindowController",0);
-    XGUIEng.ShowWidget("NetworkWindowCloseButton",0);
-    XGUIEng.ShowWidget("NetworkWindowInfoCustomWidget", 0);
-    XGUIEng.ShowWidget("NetworkWindowFrame", 0);
-    XGUIEng.ShowWidget("NetworkWindowBGFill", 0);
-    XGUIEng.ShowWidget("NetworkWindowBGDown", 0);
-    XGUIEng.ShowWidget("NetworkWindowBGRight", 0);
-    XGUIEng.ShowWidget("NetworkWindowBGTop", 0);
-    XGUIEng.ShowWidget("NetworkWindowBGLeft", 0);
-    XGUIEng.ShowWidget("NetworkBG_Complete", 0);
-
-    for i= 1, 8, 1 do
-        XGUIEng.ShowWidget("NetworkWindowPlayer" ..i, 0);
-    end
-    
-    if self.m_Book[_PlayerID][PageID].MC then
-        GUIAction_ToggleMenu("NetworkWindow", 1);
-        if table.getn(self.m_Book[_PlayerID][PageID].MC) > 0 then
-            for i= 1, self.MCButtonAmount, 1 do
-                if self.m_Book[_PlayerID][PageID].MC[i] then
-                    XGUIEng.ShowWidget("NetworkWindowPlayer" ..i, 1);
-                    XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "KickButton", 1);
-                    XGUIEng.ShowWidget("NetworkWindowPlayer" ..i.. "Name", 1);
-                    XGUIEng.SetWidgetPositionAndSize("NetworkWindowPlayer" ..i, 0, choicePosY, 500, SizeY);
-                    XGUIEng.SetWidgetPositionAndSize("NetworkWindowPlayer" ..i.. "KickButton", 0, 0, 35, 35);
-                    XGUIEng.SetWidgetPositionAndSize("NetworkWindowPlayer" ..i.. "Name", 40, 0, 460, SizeY);
-                    XGUIEng.SetMaterialTexture("NetworkWindowPlayer" ..i.. "Name", 0, "");
-                    XGUIEng.SetMaterialColor("NetworkWindowPlayer" ..i.. "Name", 0, 0, 0, 0, 100);
-                    XGUIEng.TransferMaterials("Trade_Market_AcceptSulfur", "NetworkWindowPlayer" ..i.. "KickButton");
-                    choicePosY = choicePosY + (SizeY+15);
-                end
-            end
-        end
-    else
-        GUIAction_ToggleMenu("NetworkWindow", 0);
     end
 end
 

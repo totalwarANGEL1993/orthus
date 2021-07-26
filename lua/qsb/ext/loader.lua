@@ -26,8 +26,4 @@ end
 if SVLib == nil then
     Script.Load(gvBasePath.. "qsb/ext/svlib.lua");
 end
--- Load S5Hook
-if S5Hook == nil and (not initEMS or not initEMS()) then
-    Script.Load(gvBasePath.. "qsb/ext/s5hook.lua");
-end
 

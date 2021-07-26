@@ -152,11 +152,6 @@ function AiArmy:ArmyAttackedReactionController(_Attacker, _Attacked)
 end
 
 function AiArmy:Operate()
-    if Logic.GetTime() >= 1149 then
-        if self.ArmyID == 1 then
-            LuaDebugger.Break();
-        end
-    end
     self.ArmyOrientationCache = nil;
     self.ArmyPositionCache = nil;
     self.ArmyFrontCache = nil;

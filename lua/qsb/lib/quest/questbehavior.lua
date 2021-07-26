@@ -507,10 +507,10 @@ function QuestSystemBehavior:PrepareQuestSystem()
             QuestSystemBehavior:UpdatePlayerColorAssigment()
             Camera.ZoomSetFactorMax(2.0);
         end);
-        if InstallS5Hook then
+        if CppLogic then
             self.Data.CurrentMapName = Framework.GetCurrentMapName();
             AddOnSaveLoadedAction(function()
-                QuestSystemBehavior:InstallS5Hook()
+                QuestSystemBehavior:ReloadS5Hook()
             end);
             QuestSystemBehavior:InstallS5Hook();
         end
@@ -644,7 +644,7 @@ function QuestSystemBehavior:DoesStageContainRewardQuestBriefing(_Description)
 end
 
 ---
--- Setup the unloading of the map archive and the S5Hook.
+-- Setup the unloading of the map archive and CppLogic.
 -- @within QuestSystemBehavior
 -- @local
 --
@@ -683,19 +683,20 @@ function QuestSystemBehavior:OverwriteMapClosingFunctions()
 end
 
 ---
--- Unloads the map archive and the S5Hook.
+-- Unloads the map archive and the CppLogic.
 -- @within QuestSystemBehavior
 -- @local
 --
 function QuestSystemBehavior:UnloadS5Hook()
-    -- do not execute for CNetwork editor
-    if not Folders.Map then
+    if not CppLogic.OnLeaveMap then
+        Message("ERROR: Can not find CppLogic!");
         return;
     end
-    if QuestTools.GetExtensionNumber() <= 2 and S5Hook then
+    if QuestTools.GetExtensionNumber() <= 2 and CppLogic then
         if string.find(Folders.Map, "externalmap") then
-            S5Hook.RemoveArchive();
+            CppLogic.Logic.RemoveTopArchive();
         end
+        CppLogic.OnLeaveMap();
         Trigger.DisableTriggerSystem(1);
     end
 end
@@ -756,29 +757,25 @@ function QuestSystemBehavior:UpdatePlayerColorAssigment()
 end
 
 function QuestSystemBehavior:InstallS5Hook()
-    -- do not start hook for CNetwork editor
-    if not Folders.Map then
-        return;
-    end
-    -- do not start in history edition
-    if XNetwork.Manager_IsNATReady or not InstallS5Hook() then
+    if not CppLogic or not CppLogic.Logic.ReloadCutscene then
+        Message("ERROR: Can not find CppLogic!");
         return;
     end
     self.Data.S5HookInitalized = true;
-
-    local ExtraFolder = "extra1";
-    if QuestTools.GetExtensionNumber() > 1 then
-        ExtraFolder = "extra2";
+    if mcbPacker then
+        TriggerFix.AllScriptsLoaded();
     end
-    if QuestTools.GetExtensionNumber() > 2 then
-        ExtraFolder = "extra3";
-    end
+end
 
+function QuestSystemBehavior:ReloadS5Hook()
+    if not CppLogic or not CppLogic.Logic.ReloadCutscene then
+        Message("ERROR: Can not find CppLogic!");
+        return;
+    end
     if string.find(Folders.Map, "externalmap") then
-        S5Hook.AddArchive(ExtraFolder.. "/shr/maps/user/" ..QuestSystemBehavior.Data.CurrentMapName.. ".s5x");
-        S5Hook.ReloadCutscenes();
+        CppLogic.Logic.ReloadCutscene();
     else
-        S5Hook.ReloadCutscenes(Folders.Map);
+        CppLogic.Logic.ReloadCutscene(Folders.Map);
     end
 end
 

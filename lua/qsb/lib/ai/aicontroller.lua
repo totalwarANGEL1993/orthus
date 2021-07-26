@@ -131,7 +131,7 @@ end
 -- @return[type=table] Army
 -- @within Methods
 --
--- @usage CreateAIPlayerArmy("Foo", false, 2, 8, "armyPos1", 5000);
+-- @usage CreateAIPlayerArmy("Foo", 2, 8, "armyPos1", 5000);
 --
 function CreateAIPlayerArmy(_ArmyName, _PlayerID, _Strength, _Position, _Area)
     if not AiController.Players[_PlayerID] then
@@ -186,7 +186,7 @@ end
 -- @within Methods
 --
 -- @usage CreateAIPlayerSpawnArmy(
---     "Bar", false, 2, 8, "armyPos1", "lifethread", 5000, 2*60,
+--     "Bar", 2, 8, "armyPos1", "lifethread", 5000, 2*60,
 --     {Entities.PU_LeaderSword2, 3},
 --     {Entities.PU_LeaderBow2, 3},
 --     {Entities.PV_Cannon2, 0}

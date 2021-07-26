@@ -4,7 +4,7 @@
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
 
-gvLibVersion = "2.0.0";
+gvLibVersion = "2.1.0";
 gvBasePath = gvBasePath or "data/maps/externalmap/";
 
 Script.Load(gvBasePath.. "qsb/lib/oop.lua");
@@ -28,36 +28,32 @@ Script.Load(gvBasePath.. "qsb/lib/ai/aitrooprecruiter.lua");
 Script.Load(gvBasePath.. "qsb/lib/ai/aitroopspawner.lua");
 Script.Load(gvBasePath.. "qsb/lib/ai/aiarmy.lua");
 Script.Load(gvBasePath.. "qsb/lib/ai/aicontroller.lua");
-Script.Load(gvBasePath.. "qsb/lib/ai/aiwallconstruction.lua");
-Script.Load(gvBasePath.. "qsb/lib/ai/aipath.lua");
-Script.Load(gvBasePath.. "qsb/lib/ai/aiforce.lua");
 
 Script.Load(gvBasePath.. "qsb/ext/loader.lua");
 
-Script.Load(gvBasePath.. "s5c/s5communitylib/packer/devload.lua");
+Script.Load(gvBasePath.. "s5c/s5CommunityLib/packer/devload.lua");
 
 -- only if community lib is found
 if mcbPacker then
-    -- Old version
-    -- mcbPacker.mainPath = gvBasePath.. "s5c/s5communitylib/";
     mcbPacker.Paths = {
-        {gvBasePath.. "s5c/s5communitylib/", ".lua"},
-        {gvBasePath.. "s5c/s5communitylib/", ".luac"}
+        {gvBasePath.. "s5c/", ".lua"},
+        {gvBasePath.. "s5c/", ".luac"}
     }
     
-    mcbPacker.require("tables/ArmorClasses");
-    mcbPacker.require("tables/AttachmentTypes");
-    mcbPacker.require("tables/EntityAttachments");
-    mcbPacker.require("tables/LeaderFormations");
-    mcbPacker.require("tables/MouseEvents");
-    mcbPacker.require("tables/TerrainTypes");
-    mcbPacker.require("tables/animTable");
+    mcbPacker.require("s5CommunityLib/tables/ArmorClasses");
+    mcbPacker.require("s5CommunityLib/tables/AttachmentTypes");
+    mcbPacker.require("s5CommunityLib/tables/EntityAttachments");
+    mcbPacker.require("s5CommunityLib/tables/LeaderFormations");
+    mcbPacker.require("s5CommunityLib/tables/MouseEvents");
+    mcbPacker.require("s5CommunityLib/tables/TerrainTypes");
+    mcbPacker.require("s5CommunityLib/tables/animTable");
 
-    mcbPacker.require("comfort/math/Lerp");
-    mcbPacker.require("comfort/math/Polygon");
-    mcbPacker.require("comfort/math/Vector");
-    mcbPacker.require("comfort/pos/IsInCone");
-    mcbPacker.require("comfort/table/CopyTable");
+    mcbPacker.require("s5CommunityLib/comfort/math/Lerp");
+    mcbPacker.require("s5CommunityLib/comfort/math/Polygon");
+    mcbPacker.require("s5CommunityLib/comfort/math/Vector");
+    mcbPacker.require("s5CommunityLib/comfort/pos/IsInCone");
+    mcbPacker.require("s5CommunityLib/comfort/table/CopyTable");
 
-    mcbPacker.require("fixes/TriggerFix");
+    mcbPacker.require("s5CommunityLib/comfort/other/FrameworkWrapperLight");
+    mcbPacker.require("s5CommunityLib/fixes/TriggerFix");
 end
