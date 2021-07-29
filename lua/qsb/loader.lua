@@ -4,7 +4,6 @@
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
 
-gvLibVersion = "2.1.0";
 gvBasePath = gvBasePath or "data/maps/externalmap/";
 
 Script.Load(gvBasePath.. "qsb/lib/oop.lua");
@@ -53,7 +52,4 @@ if mcbPacker then
     mcbPacker.require("s5CommunityLib/comfort/math/Vector");
     mcbPacker.require("s5CommunityLib/comfort/pos/IsInCone");
     mcbPacker.require("s5CommunityLib/comfort/table/CopyTable");
-
-    mcbPacker.require("s5CommunityLib/comfort/other/FrameworkWrapperLight");
-    mcbPacker.require("s5CommunityLib/fixes/TriggerFix");
 end

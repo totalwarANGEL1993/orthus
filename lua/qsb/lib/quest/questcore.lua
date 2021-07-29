@@ -177,26 +177,19 @@ end
 --
 function QuestCore:Install()
     Tools.GiveResources = Tools.GiveResouces;
-    if TriggerFix then
-        AddSaveLoadedCallback(function()
+    if MultiplayerTools then
+        Mission_OnSaveGameLoaded_Orig_QSB_QuestCore = MultiplayerTools.OnSaveGameLoaded;
+        MultiplayerTools.OnSaveGameLoaded = function()
+            Mission_OnSaveGameLoaded_Orig_QSB_QuestCore();
             QuestCore:CallSaveLoadActions();
             QuestCore:OverrideGuiSellBuilding();
-        end);
+        end
     else
-        if MultiplayerTools then
-            Mission_OnSaveGameLoaded_Orig_QSB_QuestCore = MultiplayerTools.OnSaveGameLoaded;
-            MultiplayerTools.OnSaveGameLoaded = function()
-                Mission_OnSaveGameLoaded_Orig_QSB_QuestCore();
-                QuestCore:CallSaveLoadActions();
-                QuestCore:OverrideGuiSellBuilding();
-            end
-        else
-            Mission_OnSaveGameLoaded_Orig_QSB_QuestCore = Mission_OnSaveGameLoaded;
-            Mission_OnSaveGameLoaded = function()
-                Mission_OnSaveGameLoaded_Orig_QSB_QuestCore();
-                QuestCore:CallSaveLoadActions();
-                QuestCore:OverrideGuiSellBuilding();
-            end
+        Mission_OnSaveGameLoaded_Orig_QSB_QuestCore = Mission_OnSaveGameLoaded;
+        Mission_OnSaveGameLoaded = function()
+            Mission_OnSaveGameLoaded_Orig_QSB_QuestCore();
+            QuestCore:CallSaveLoadActions();
+            QuestCore:OverrideGuiSellBuilding();
         end
     end
     

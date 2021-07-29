@@ -477,7 +477,7 @@ QuestSystemBehavior = {
         RegisteredQuestBehaviors = {},
         SystemInitalized = false,
         S5HookInitalized = false,
-        Version = "1.3.0",
+        Version = "1.4.0",
 
         QuestNameToStages = {},
         PlayerColorAssigment = {},
@@ -762,14 +762,13 @@ function QuestSystemBehavior:InstallS5Hook()
         return;
     end
     self.Data.S5HookInitalized = true;
-    if mcbPacker then
-        TriggerFix.AllScriptsLoaded();
-    end
 end
 
 function QuestSystemBehavior:ReloadS5Hook()
-    if not CppLogic or not CppLogic.Logic.ReloadCutscene then
+    CppLogic_ResetGlobal();
+    if not CppLogic.Logic.ReloadCutscene then
         Message("ERROR: Can not find CppLogic!");
+        self.Data.S5HookInitalized = false;
         return;
     end
     if string.find(Folders.Map, "externalmap") then

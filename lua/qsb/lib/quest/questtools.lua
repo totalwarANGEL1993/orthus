@@ -956,33 +956,22 @@ end
 -- @within Jobs
 --
 function QuestTools.StartInlineJob(_EventType, _Function, ...)
-    if TriggerFix then
-        return Trigger.RequestTrigger(
-            _EventType,
-            "",
-            _Function,
-            1,
-            {},
-            copy(arg or {})
-        );
-    else
-        QuestTools.InlineJobs.Counter = QuestTools.InlineJobs.Counter +1;
-        _G["QuestTools_InlineJob_Data_" ..QuestTools.InlineJobs.Counter] = copy(arg);
-        _G["QuestTools_InlineJob_Function_" ..QuestTools.InlineJobs.Counter] = _Function;
-        _G["QuestTools_InlineJob_Executor_" ..QuestTools.InlineJobs.Counter] = function(i)
-            if _G["QuestTools_InlineJob_Function_" ..i](unpack(_G["QuestTools_InlineJob_Data_" ..i])) then
-                return true;
-            end
+    QuestTools.InlineJobs.Counter = QuestTools.InlineJobs.Counter +1;
+    _G["QuestTools_InlineJob_Data_" ..QuestTools.InlineJobs.Counter] = copy(arg);
+    _G["QuestTools_InlineJob_Function_" ..QuestTools.InlineJobs.Counter] = _Function;
+    _G["QuestTools_InlineJob_Executor_" ..QuestTools.InlineJobs.Counter] = function(i)
+        if _G["QuestTools_InlineJob_Function_" ..i](unpack(_G["QuestTools_InlineJob_Data_" ..i])) then
+            return true;
         end
-        return Trigger.RequestTrigger(
-            _EventType,
-            "",
-            "QuestTools_InlineJob_Executor_" ..QuestTools.InlineJobs.Counter,
-            1,
-            {},
-            {QuestTools.InlineJobs.Counter}
-        );
     end
+    return Trigger.RequestTrigger(
+        _EventType,
+        "",
+        "QuestTools_InlineJob_Executor_" ..QuestTools.InlineJobs.Counter,
+        1,
+        {},
+        {QuestTools.InlineJobs.Counter}
+    );
 end
 StartInlineJob = QuestTools.StartInlineJob;
 
