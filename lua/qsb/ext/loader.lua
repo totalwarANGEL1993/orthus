@@ -11,7 +11,6 @@
 -- <ul>
 -- <li>Metatable (mcb) - Makes metatables savable.</li>
 -- <li>SVLib (schmeling65) - Accessing entity scripting values.</li>
--- <li>S5Hook (bobby) - Allows basic memory manipulation (not compatible
 -- to History Edition).</li>
 -- </ul>
 --

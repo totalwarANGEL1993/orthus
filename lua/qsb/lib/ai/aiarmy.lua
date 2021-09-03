@@ -2127,7 +2127,7 @@ function AiArmy:DefaultGetTargetThreatFactor(_TargetID, _TroopID)
             local Max = Logic.LeaderGetMaxNumberOfSoldiers(_TargetID);
             Factor = Factor * ((Max > 0 and 1 - (Cur/Max)) or 1);
             if Factor == 0 then
-                return 1;
+                return 0.01;
             end
         end
     end
@@ -2225,7 +2225,6 @@ GroupTargetingPriorities.Ranged = {
     ["VillageCenter"] = 60,
     ["Headquarters"] = 60,
     ["Hero"] = 50,
-    ["MilitaryBuilding"] = 20,
     ["EvilLeader"] = 0,
 };
 GroupTargetingPriorities.Rifle = {

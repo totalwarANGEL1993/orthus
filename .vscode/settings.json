@@ -98,6 +98,12 @@
         "CreateQuest",
         "QuestSystemBehavior",
         "UserTool_GetPlayerName",
-        "SetupNormalWeatherGfxSet"
+        "SetupNormalWeatherGfxSet",
+        "Folders",
+        "S5Hook",
+        "mcbPacker",
+        "Counter",
+        "MapLocal_StartCountDown",
+        "MapLocal_StopCountDown"
     ]
 }
