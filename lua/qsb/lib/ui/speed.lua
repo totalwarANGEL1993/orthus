@@ -12,9 +12,9 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.core.questsync</li>
--- <li>qsb.core.questtools</li>
--- <li>qsb.core.questsystem</li>
+-- <li>qsb.quest.questsync</li>
+-- <li>qsb.quest.questtools</li>
+-- <li>qsb.quest.questsystem</li>
 -- </ul>
 --
 -- @set sort=true

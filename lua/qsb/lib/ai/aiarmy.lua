@@ -11,10 +11,10 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.core.questsync</li>
--- <li>qsb.core.questtools</li>
--- <li>qsb.ext.aitrooprecruiter</li>
--- <li>qsb.ext.aitroopspawner</li>
+-- <li>qsb.quest.questsync</li>
+-- <li>qsb.quest.questtools</li>
+-- <li>qsb.ai.aitrooprecruiter</li>
+-- <li>qsb.ai.aitroopspawner</li>
 -- </ul>
 --
 -- @set sort=true
@@ -1308,8 +1308,6 @@ function AiArmy:GetDistanceSqared(_Position1, _Position2)
     if (type(_Position2) == "string") or (type(_Position2) == "number") then
         _Position2 = GetPosition(_Position2);
     end
-    local xDistance = (_Position1.X - _Position2.X);
-    local yDistance = (_Position1.Y - _Position2.Y);
     return ((_Position1.X - _Position2.X)^2) + ((_Position1.Y - _Position2.Y)^2);
 end
 
@@ -1926,7 +1924,6 @@ function AiArmyBehavior.Refill:Run(_Army)
         return;
     end
     if table.getn(_Army.Troops) == _Army.TroopCount then
-        local HomePosition = GetPosition(_Army.HomePosition);
         _Army:Move(_Army.HomePosition);
         return true;
     else

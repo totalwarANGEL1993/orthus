@@ -13,9 +13,9 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.core.oop</li>
--- <li>qsb.core.questsystem</li>
--- <li>qsb.core.tools</li>
+-- <li>qsb.oop</li>
+-- <li>qsb.quest.questsystem</li>
+-- <li>qsb.quest.questtools</li>
 -- </ul>
 --
 -- @set sort=true

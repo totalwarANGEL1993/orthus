@@ -13,12 +13,13 @@
 -- <ul>
 -- <li>qsb.lib.oop</li>
 -- <li>qsb.lib.questtools</li>
--- <li>qsb.core.questsystem</li>
--- <li>qsb.core.questdebug</li>
--- <li>qsb.ext.interaction</li>
--- <li>qsb.ext.information</li>
--- <li>qsb.ext.onscreeninfo</li>
--- <li>qsb.ext.troopgenerator</li>
+-- <li>qsb.quest.questsystem</li>
+-- <li>qsb.quest.questdebug</li>
+-- <li>qsb.ui.interaction</li>
+-- <li>qsb.quest.questbriefing</li>
+-- <li>qsb.ui.onscreeninfo</li>
+-- <li>qsb.ai.aiarmy</li>
+-- <li>qsb.ai.aicontroller</li>
 -- </ul>
 --
 -- @set sort=true

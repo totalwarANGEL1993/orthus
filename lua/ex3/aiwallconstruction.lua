@@ -54,10 +54,10 @@ function RemoteBuildPlaceWall(_Entity, _Direction, _Mode, _Variant)
     local PlayerID = Logic.EntityGetPos(GetID(_Entity));
     local x, y, z = Logic.EntityGetPos(GetID(_Entity));
     if _Mode then
-        AiWallConstruction:SetPlacementMode(_PlayerID, _Mode);
+        AiWallConstruction:SetPlacementMode(PlayerID, _Mode);
     end
     if _Variant then
-        AiWallConstruction:SetPlacementMode(_PlayerID, _Variant);
+        AiWallConstruction:SetPlacementMode(PlayerID, _Variant);
     end
     local Costs = AiWallConstruction:WallSegmendGetCosts(PlayerID);
     QuestTools.AddResourcesToPlayer(PlayerID, Costs);
@@ -214,7 +214,7 @@ end
 -- @param[type=number] _PlayerID ID opf player
 --
 function ChangeEnemyDamageFactor(_Type, _Factor, _PlayerID)
-    self.Mapping:Set(_PlayerID, "DamageFactor", EntityType, _Factor);
+    self.Mapping:Set(_PlayerID, "DamageFactor", _Type, _Factor);
 end
 
 ---
@@ -938,7 +938,7 @@ function AiWallConstruction:IsTowerLimitReached(_PlayerID)
         TowerAmount = TowerAmount + Logic.GetNumberOfEntitiesOfTypeOfPlayer(_PlayerID, v);
     end
     for k, v in pairs(self.m_Walls) do
-        if WallConstructionIsTowerType[k] and v.Upgrade > 0 then
+        if AiWallConstruction.Mapping.TowerType[k] and v.Upgrade > 0 then
             TowerAmount = TowerAmount + 1;
         end
     end
@@ -1147,7 +1147,6 @@ function AiWallConstruction:OverrideInterfaceTooltip()
         GUITooltip_UpgradeBuilding_Orig_WallConstruction = GUITooltip_UpgradeBuilding;
         GUITooltip_UpgradeBuilding = function(_EntityType, _Disabled, _Normal, _Technology)
             local SelectedID = GUI.GetSelectedEntity();
-            local PlayerID = Logic.EntityGetPlayer(SelectedID);
             local EntityType = Logic.GetEntityType(SelectedID);
             if AiWallConstruction.Mapping.CornerType[EntityType] then
                 GUITooltip_ConstructBuilding(UpgradeCategories.Tower,"MenuSerf/Tower_normal","MenuSerf/Tower_disabled", Technologies.B_Tower,"KeyBindings/UpgradeBuilding");
@@ -1519,7 +1518,7 @@ function AiWallConstruction:FeedbackPlaceSegment(_EntityID, _Action)
         Sound.PlayFeedbackSound(Sounds.Leader_LEADER_NO_rnd_01);
         return;
     end
-    if QuestTools.AreEnemiesInArea(_PlayerID, {X= X1, Y= Y1}, 5000) then
+    if QuestTools.AreEnemiesInArea(PlayerID, {X= X1, Y= Y1}, 5000) then
         local Text = QuestTools.GetLocalizedTextInTable(self.Text.Message.EnemyToClose);
         Message(Text);
         Sound.PlayFeedbackSound(Sounds.Leader_LEADER_NO_rnd_01);

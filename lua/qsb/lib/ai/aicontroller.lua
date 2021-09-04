@@ -19,11 +19,11 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.core.questsync</li>
--- <li>qsb.core.questtools</li>
--- <li>qsb.ext.aitrooprecruiter</li>
--- <li>qsb.ext.aitroopspawner</li>
--- <li>qsb.ext.aiarmy</li>
+-- <li>qsb.quest.questsync</li>
+-- <li>qsb.quest.questtools</li>
+-- <li>qsb.ai.aitrooprecruiter</li>
+-- <li>qsb.ai.aitroopspawner</li>
+-- <li>qsb.ai.aiarmy</li>
 -- </ul>
 --
 -- @set sort=true

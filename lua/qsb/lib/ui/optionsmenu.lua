@@ -10,9 +10,9 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.core.oop</li>
--- <li>qsb.core.questtools</li>
--- <li>qsb.core.questsystem</li>
+-- <li>qsb.oop</li>
+-- <li>qsb.quest.questtools</li>
+-- <li>qsb.quest.questsystem</li>
 -- </ul>
 --
 -- @set sort=true

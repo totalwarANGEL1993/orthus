@@ -13,8 +13,8 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.core.oop</li>
--- <li>qsb.lib.questtools</li>
+-- <li>qsb.oop</li>
+-- <li>qsb.quest.questtools</li>
 -- </ul>
 --
 -- @set sort=true

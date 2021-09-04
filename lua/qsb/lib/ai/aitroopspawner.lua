@@ -20,8 +20,8 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.core.questsync</li>
--- <li>qsb.core.questtools</li>
+-- <li>qsb.quest.questsync</li>
+-- <li>qsb.quest.questtools</li>
 -- </ul>
 --
 -- @set sort=true
@@ -86,6 +86,7 @@ AiTroopSpawner = {
     ApproachPosition = 0,
     IsSpawner = true,
     LastRecruitedTime = 0,
+    Enabled = true,
     Delay = 30,
     Troops = {
         Maximum = 999,
@@ -111,14 +112,18 @@ function AiTroopSpawner:IsManagedByProducer(_TroopID)
     return QuestTools.IsInTable(_TroopID, self.Troops.Created) == true;
 end
 
+function AiTroopSpawner:SetEnabled(_Flag)
+    self.Enabled = _Flag == true;
+    return self;
+end
+
 function AiTroopSpawner:GetApproachPosition()
     return self.ApproachPosition;
 end
 
 function AiTroopSpawner:SetApproachPosition(_Position)
     DestroyEntity(self.ApproachPosition);
-    local Position = GetPosition(self.ScriptName);
-    local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, Position.X, Position.Y, 0, 0, 0, 0);
+    local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, _Position.X, _Position.Y, 0, 0, 0, 0);
     local x, y, z = Logic.EntityGetPos(ID);
     local ApproachID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, 0, 8);
     self.ApproachPosition = ApproachID;
@@ -214,10 +219,12 @@ function AiTroopSpawner:SetDelay(_Time)
 end
 
 function AiTroopSpawner:IsReady(_Initial)
-    if self.ScriptName and IsExisting(self.ScriptName) then
-        if _Initial or Logic.GetTime() > self.LastRecruitedTime + self.Delay then
-            if table.getn(self.Troops.Created) < self.Troops.Maximum then
-                return true;
+    if self.Enabled then
+        if self.ScriptName and IsExisting(self.ScriptName) then
+            if _Initial or Logic.GetTime() > self.LastRecruitedTime + self.Delay then
+                if table.getn(self.Troops.Created) < self.Troops.Maximum then
+                    return true;
+                end
             end
         end
     end

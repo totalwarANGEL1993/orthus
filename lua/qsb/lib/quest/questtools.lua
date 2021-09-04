@@ -9,9 +9,9 @@
 --
 -- <b>Required modules:</b>
 -- <ul>
--- <li>qsb.core.oop</li>
--- <li>qsb.core.questsync</li>
--- <li>qsb.lib.svlib</li>
+-- <li>qsb.oop</li>
+-- <li>qsb.quest.questsync</li>
+-- <li>qsb.ext.svlib</li>
 -- </ul>
 --
 -- @set sort=true

@@ -17,8 +17,8 @@
 -- <b>Required modules:</b>
 -- <ul>
 -- <li>qsb.oop</li>
--- <li>qsb.core.questsync</li>
--- <li>qsb.core.questtools</li>
+-- <li>qsb.quest.questsync</li>
+-- <li>qsb.quest.questtools</li>
 -- </ul>
 --
 -- @set sort=true
@@ -84,6 +84,7 @@ AiTroopRecruiter = {
     ApproachPosition = 0,
     IsRecruiter = true,
     LastRecruitedTime = 0,
+    Enabled = true,
     Cheat = true,
     Delay = 5,
     Troops = {
@@ -165,6 +166,11 @@ function AiTroopRecruiter:SetCheatCosts(_Flag)
     return self;
 end
 
+function AiTroopRecruiter:SetEnabled(_Flag)
+    self.Enabled = _Flag == true;
+    return self;
+end
+
 function AiTroopRecruiter:SetDelay(_Time)
     self.Delay = _Time;
     return self;
@@ -185,8 +191,7 @@ end
 
 function AiTroopRecruiter:SetApproachPosition(_Position)
     DestroyEntity(self.ApproachPosition);
-    local Position = GetPosition(self.ScriptName);
-    local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, Position.X, Position.Y, 0, 0, 0, 0);
+    local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, _Position.X, _Position.Y, 0, 0, 0, 0);
     local x, y, z = Logic.EntityGetPos(ID);
     local ApproachID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, 0, 8);
     self.ApproachPosition = ApproachID;
@@ -357,15 +362,17 @@ function AiTroopRecruiter:IsRecruiterBuilding()
 end
 
 function AiTroopRecruiter:IsReady()
-    if table.getn(self.Troops.Created) < 3 then
-        if self.ScriptName and IsExisting(self.ScriptName) then
-            local ID = GetID(self.ScriptName);
-            local PlayerID = Logic.EntityGetPlayer(ID);
-            -- TODO: Should the worker in the foundry be checked here?
-            if Logic.GetTime() > self.LastRecruitedTime + self.Delay then
-                if Logic.IsConstructionComplete(ID) == 1 then
-                    if self:IsRecruiterBuilding() then
-                        return true;
+    if self.Enabled then
+        if table.getn(self.Troops.Created) < 3 then
+            if self.ScriptName and IsExisting(self.ScriptName) then
+                local ID = GetID(self.ScriptName);
+                local PlayerID = Logic.EntityGetPlayer(ID);
+                -- TODO: Should the worker in the foundry be checked here?
+                if Logic.GetTime() > self.LastRecruitedTime + self.Delay then
+                    if Logic.IsConstructionComplete(ID) == 1 then
+                        if self:IsRecruiterBuilding() then
+                            return true;
+                        end
                     end
                 end
             end
