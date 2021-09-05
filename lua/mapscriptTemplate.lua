@@ -10,6 +10,8 @@ Script.Load("data/script/maptools/main.lua");
 Script.Load("data/script/maptools/mapeditortools.lua");
 
 -- Load QSB
+gvBasePath = "data/maps/externalmap/";
+gvS5cLibPath = "data/maps/externalmap/s5c/";
 Script.Load(gvBasePath.. "qsb/loader.lua");
 
 -- Settings ----------------------------------------------------------------- --

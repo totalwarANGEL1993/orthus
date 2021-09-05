@@ -19,6 +19,7 @@
 
 QuestTools = {
     InlineJobs = {Counter = 0},
+    WaypointData = {},
     EntityNameCounter = 0,
 };
 
@@ -62,6 +63,8 @@ end
 ---
 -- Checks if a value is inside a table.
 --
+-- <b>Alias</b>: IstDrin
+--
 -- @param             _Value Value to find
 -- @param[type=table] _Table Table to search
 -- @return[type=boolean] Value found
@@ -74,6 +77,8 @@ IstDrin = QuestTools.IsInTable;
 
 ---
 -- Returns the key of the given value in the table if value is existing.
+--
+-- <b>Alias</b>: KeyOf
 --
 -- @param             _Value Value of key
 -- @param[type=table] _Table Table to search
@@ -171,6 +176,10 @@ end
 -- Values below x.5 will be floored to the previous integer. Values greater
 -- than x.5 will be risen to the next integer.
 --
+-- <b>Alias</b>: Round
+--
+-- <b>Alias</b>: round
+--
 -- @param[type=number] _Value Number to round
 -- @return[type=number] Rounded number
 -- @within Utils
@@ -187,6 +196,8 @@ round = QuestTools.Round;
 
 ---
 -- Returns the relative health of the entity.
+--
+-- <b>Alias</b>: GetHealth
 --
 -- @param               _Entity Skriptname or ID of entity
 -- @return[type=number] Relative health
@@ -257,6 +268,8 @@ end
 
 ---
 -- Changes the relative health of an entity.
+--
+-- <b>Alias</b>: SetHealth
 --
 -- @param _Entity               Skriptname or ID of entity
 -- @param[type=number] _Percent Amount of health
@@ -405,6 +418,9 @@ end
 
 ---
 -- Finds all entities of the player that have the type.
+--
+-- <b>Alias</b>: GetPlayerEntities
+--
 -- @param[type=number] _PlayerID   ID of player
 -- @param[type=number] _EntityType Type to search
 -- @return[type=table] List of entities
@@ -442,6 +458,9 @@ GetPlayerEntities = QuestTools.GetPlayerEntities;
 
 ---
 -- Finds all entities numbered from 1 to n with a common prefix.
+--
+-- <b>Alias</b>: GetEntitiesByPrefix
+--
 -- @param[type=string] _Prefix Prefix of scriptnames
 -- @return[type=table] List of entities
 -- @within Entities
@@ -468,6 +487,8 @@ GetEntitiesByPrefix = QuestTools.GetEntitiesByPrefix;
 --
 -- Be careful: This method is using expensive area checks. Do better not use
 -- it inside of jobs.
+--
+-- <b>Alias</b>: SucheAufDerWelt
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=number] _Type     Type of entity
@@ -538,6 +559,8 @@ SucheAufDerWelt = QuestTools.FindAllEntities
 
 ---
 -- Returns the distance between two positions or entities.
+--
+-- <b>Alias</b>: GetDistance
 --
 -- @param _pos1 Position 1 (string, number oder table)
 -- @param _pos2 Position 2 (string, number oder table)
@@ -619,8 +642,10 @@ function QuestTools.GetReachablePosition(_Entity, _Target)
 end
 
 ---
--- Checks if an army or entity is dead. If an Blue Byte army has not been 
+-- Checks if an army or entity is dead. If an Blue Byte army has not been
 -- created yet then it will not falsely assumed to be dead.
+--
+-- <b>Alias</b>: IsDead
 --
 -- @param _input Army or entity (string, number oder table)
 -- @return[type=boolean] Army or entity is dead
@@ -638,6 +663,8 @@ IsDead = QuestTools.IsDead;
 
 ---
 -- Checks if the position table contains a valid position on the map.
+--
+-- <b>Alias</b>: IsValidPosition
 --
 -- @param[type=table] _pos Position to check
 -- @return[type=boolean] Position valid
@@ -658,6 +685,8 @@ IsValidPosition = QuestTools.IsValidPosition;
 
 ---
 -- Returns a position on a circle at the given angle.
+--
+-- <b>Alias</b>: GetCirclePosition
 --
 -- @param _Position              Schriptname or id of building
 -- @param[type=number] _AreaSize Radius of circle
@@ -682,6 +711,10 @@ GetCirclePosition = QuestTools.GetCirclePosition;
 
 ---
 -- Returns Returns the angle between the two given positions or entities.
+--
+-- <b>Alias</b>: GetAngleBetween
+--
+-- <b>Alias</b>: Winkel
 --
 -- @param _Pos1 First position
 -- @param _Pos2 Second position
@@ -738,6 +771,8 @@ end
 ---
 -- Returns the leader entity ID of the soldier.
 --
+-- <b>Alias</b>: SoldierGetLeader
+--
 -- @param[type=number] _Soldier Entity ID of soldier
 -- @return[type=number] Entity ID of leader
 -- @within Entities
@@ -752,6 +787,8 @@ SoldierGetLeader = QuestTools.SoldierGetLeader;
 
 ---
 -- Returns true, if the entity has one of the passed entity types.
+--
+-- <b>Alias</b>: HasOneOfTypes
 --
 -- @param              _Entity Scriptname or ID
 -- @param[type=number] ...     List of types
@@ -771,6 +808,8 @@ HasOneOfTypes = QuestTools.HasOneOfTypes;
 ---
 -- Returns true, if the entity has one of the passed entity categories.
 --
+-- <b>Alias</b>: HasOneOfCategories
+--
 -- @param              _Entity Scriptname or ID
 -- @param[type=number] ...     List of categories
 -- @return[type=boolean] Has one type
@@ -788,6 +827,8 @@ HasOneOfCategories = QuestTools.HasOneOfCategories;
 
 ---
 -- Returns all categories the entity is in.
+--
+-- <b>Alias</b>: GetEntityCategories
 --
 -- @param _Entity Scriptname or ID
 -- @return[type=table] Category list
@@ -807,6 +848,8 @@ GetEntityCategories = QuestTools.GetEntityCategories;
 ---
 -- Returns all keys of the categories the entity is in.
 --
+-- <b>Alias</b>: GetEntityCategoriesAsString
+--
 -- @param _Entity Scriptname or ID
 -- @return[type=table] Category list
 -- @within Entities
@@ -825,6 +868,8 @@ GetEntityCategoriesAsString = QuestTools.GetEntityCategoriesAsString;
 ---
 -- Returns the script name of the entity. If the entity do not have a name a
 -- unique ongoing name is added to the entity and returned
+--
+-- <b>Alias</b>: GiveEntityName
 --
 -- @param[type=number] _eID EntityID
 -- @return[type=string] Script name
@@ -849,6 +894,8 @@ GiveEntityName = QuestTools.CreateNameForEntity;
 ---
 -- Moves an entity to the destination and replaces it with an script entity
 -- on arrival.
+--
+-- <b>Alias</b>: MoveAndVanish
 --
 -- @param[type=number] _Entity   Entity to move
 -- @param[type=number] _Target   Position where to move
@@ -885,10 +932,124 @@ function QuestTools.MoveAndVanish(_Entity, _Target)
 end
 MoveAndVanish = QuestTools.MoveAndVanish;
 
+---
+-- Moves an entity over the passed waypoints. The entity can be replaced with
+-- an script entity once it reaches the final destination.
+--
+-- Waypoints are passed as table. They can contain the following fields:
+-- <table border="1">
+-- <tr>
+-- <td><b>Field</b></td>
+-- <td><b>Description</b></td>
+-- </tr>
+-- <tr>
+-- <td>Target</td>
+-- <td>Script name of the waypoint</td>
+-- </tr>
+-- <tr>
+-- <td>Distance</td>
+-- <td>(Optional) Radius the entity must be in around the target.</td>
+-- </tr>
+-- <tr>
+-- <td>IgnoreBlocking</td>
+-- <td>(Optional) Entity is using the direct way and ignores evenry blocking. (This can
+-- be used to move them in and out of buildings)</td>
+-- </tr>
+-- <tr>
+-- <td>Waittime</td>
+-- <td>(Optional) Time in seconds the entity waits until moving to the next waypoint.</td>
+-- </tr>
+-- <tr>
+-- <td>Callback</td>
+-- <td>(Optional) Function called when entity passes waypoint. (If a waittime is
+-- set the function is called after waittime is over)</td>
+-- </tr>
+-- </table>
+--
+-- <b>Alias</b>: MoveOnWaypoints
+--
+-- @param[type=number]  _Entity Entity to move
+-- @param[type=boolean] _Vanish Delete on last waypoint
+-- @param[type=table]   ...     List of waypoints
+-- @return[type=number] ID of moving job
+-- @within Entities
+--
+function QuestTools.MoveOnWaypoints(_Entity, _Vanish, ...)
+    if not IsExisting(_Entity) then
+        return;
+    end
+
+    local ID = GetID(_Entity);
+    QuestTools.WaypointData[ID] = {
+        Vanish = _Vanish == true,
+        Current = 1,
+    };
+    for i= 1, table.getn(arg), 1 do
+        table.insert(
+            QuestTools.WaypointData[ID],
+            {arg[i].Target,
+             arg[i].Distance or 50,
+             arg[i].IgnoreBlocking == true,
+             (arg[i].Waittime or 0) * 10,
+             arg[i].Callback}
+        );
+    end
+
+    local JobID = QuestTools.StartSimpleHiResJobEx(function(_ID)
+        if not IsExisting(_ID) or not QuestTools.WaypointData[_ID] then
+            return true;
+        end
+        local Index = QuestTools.WaypointData[_ID].Current;
+        local Data  = QuestTools.WaypointData[_ID][Index];
+
+        local Task = Logic.GetCurrentTaskList(_ID);
+        if not string.find(Task or "", "WALK") then
+            local x, y, z = Logic.EntityGetPos(GetID(Data[1]));
+            if Data[3] then
+                Logic.SetTaskList(_ID, TaskLists.TL_NPC_WALK);
+                Logic.MoveEntity(_ID, x, y);
+            else
+                Logic.MoveSettler(_ID, x, y);
+            end
+        end
+
+        if IsNear(_ID, Data[1], Data[2]) then
+            if QuestTools.WaypointData[_ID][Index][4] > 0 then
+                QuestTools.WaypointData[_ID][Index][4] = Data[4] -1;
+                if string.find(Task or "", "WALK") then
+                    Logic.SetTaskList(_ID, TaskLists.TL_NPC_IDLE);
+                end
+            else
+                QuestTools.WaypointData[_ID].Current = Index +1;
+                if Data[5] then
+                    Data[5](Data);
+                end
+            end
+            if Index == table.getn(QuestTools.WaypointData[_ID]) then
+                if QuestTools.WaypointData[_ID].Vanish then
+                    local PlayerID = Logic.EntityGetPlayer(_ID);
+                    local Orientation = Logic.GetEntityOrientation(_ID);
+                    local ScriptName = Logic.GetEntityName(_ID);
+                    local x, y, z = Logic.EntityGetPos(_ID);
+                    DestroyEntity(_ID);
+                    local NewID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, Orientation, PlayerID);
+                    Logic.SetEntityName(NewID, ScriptName);
+                end
+                QuestTools.WaypointData[_ID] = nil;
+                return true;
+            end
+        end
+    end, ID);
+    return JobID;
+end
+MoveOnWaypoints = QuestTools.MoveOnWaypoints;
+
 -- Diplomacy --
 
 ---
 -- Checks the area for entities of an enemy player.
+--
+-- <b>Alias</b>: AreEnemiesInArea
 --
 -- @param[type=number] _player   Player ID
 -- @param[type=table]  _position Area center
@@ -903,6 +1064,8 @@ AreEnemiesInArea = QuestTools.AreEnemiesInArea;
 
 ---
 -- Checks the area for entities of an allied player.
+--
+-- <b>Alias</b>: AreAlliesInArea
 --
 -- @param[type=number] _player   Player ID
 -- @param[type=table]  _position Area center
@@ -949,6 +1112,8 @@ end
 -- If a table is passed as one of the arguments then a copy will be created.
 -- It will not be a reference because of saving issues.
 --
+-- <b>Alias</b>: StartInlineJob
+--
 -- @param[type=number]   _EventType Event type
 -- @param[type=function] _Function Lua function reference
 -- @param ...            Optional arguments
@@ -977,6 +1142,9 @@ StartInlineJob = QuestTools.StartInlineJob;
 
 ---
 -- Creates an inline job that is executed every second.
+--
+-- <b>Alias</b>: StartSimpleJobEx
+--
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
@@ -989,6 +1157,9 @@ StartSimpleJobEx = QuestTools.StartSimpleJobEx;
 
 ---
 -- Creates an inline job that is executed ten times per second.
+--
+-- <b>Alias</b>: StartSimpleHiResJobEx
+--
 -- @param[type=function] _Function Lua function reference
 -- @param                ... Optional arguments
 -- @return[type=number] Job ID
@@ -1002,6 +1173,8 @@ StartSimpleHiResJobEx = QuestTools.StartSimpleHiResJobEx;
 ---
 -- Creates an classic countdown in the top left of the screen. A counter ticks
 -- down to 0 and can trigger an optional callback function.
+--
+-- <b>Alias</b>: StartCountdown
 --
 -- @param[type=number]   _Limit    Time in seconds
 -- @param[type=function] _Callback Callback function on counter finishes
@@ -1035,6 +1208,8 @@ StartCountdown = QuestTools.StartCountdown;
 
 ---
 -- Stops an running countdown.
+--
+-- <b>Alias</b>: StopCountdown
 --
 -- @param[type=number]   _Id Index of Counter to stop
 -- @within Jobs
@@ -1103,6 +1278,8 @@ CountdownIsVisisble = QuestTools.CountdownIsVisisble;
 ---
 -- Returns a table with the costs of a building type.
 --
+-- <b>Alias</b>: GetBuildingCostsTable
+--
 -- @param[type=number] _EntityType Building type
 -- @return[type=table] Costs table
 -- @within AI
@@ -1116,6 +1293,8 @@ GetBuildingCostsTable = QuestTools.GetBuildingCostsTable;
 
 ---
 -- Returns a table with the upgrade costs of a building type.
+--
+-- <b>Alias</b>: GetBuildingUpgradeCostsTable
 --
 -- @param[type=number] _EntityType Building type
 -- @return[type=table] Costs table
@@ -1131,6 +1310,8 @@ GetBuildingUpgradeCostsTable = QuestTools.GetBuildingUpgradeCostsTable;
 ---
 -- Returns a table with the technology research costs.
 --
+-- <b>Alias</b>: GetTechnologyCostsTable
+--
 -- @param[type=number] _Technology Technology
 -- @return[type=table] Costs table
 -- @within AI
@@ -1144,6 +1325,8 @@ GetTechnologyCostsTable = QuestTools.GetTechnologyCostsTable;
 
 ---
 -- Returns a table with the soldier costs.
+--
+-- <b>Alias</b>: GetSoldierCostsTable
 --
 -- @param[type=number] _PlayerID     ID of player
 -- @param[type=number] _SoldierUpCat Upgrade category soldier
@@ -1160,6 +1343,8 @@ GetSoldierCostsTable = QuestTools.GetSoldierCostsTable;
 ---
 -- Returns a table with the leader costs.
 --
+-- <b>Alias</b>: GetMilitaryCostsTable
+--
 -- @param[type=number] _PlayerID    ID of player
 -- @param[type=number] _LeaderUpCat Upgrade category leader
 -- @return[type=table] Costs table
@@ -1174,6 +1359,8 @@ GetMilitaryCostsTable = QuestTools.GetMilitaryCostsTable;
 
 ---
 -- Returns true if the player has enough resources.
+--
+-- <b>Alias</b>: HasEnoughResources
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=table]  _Costs    Costs table
@@ -1213,6 +1400,8 @@ HasEnoughResources = QuestTools.HasEnoughResources;
 ---
 -- Adds resources to the player by the given resource table.
 --
+-- <b>Alias</b>: AddResourcesToPlayer
+--
 -- @param[type=number] _PlayerID  ID of player
 -- @param[type=table]  _Resources Resource table
 -- @within AI
@@ -1242,6 +1431,8 @@ AddResourcesToPlayer = QuestTools.AddResourcesToPlayer;
 
 ---
 -- Removes Resources from the player by the given costs table.
+--
+-- <b>Alias</b>: RemoveResourcesFromPlayer
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=table]  _Costs    Costs table
@@ -1279,6 +1470,8 @@ RemoveResourcesFromPlayer = QuestTools.RemoveResourcesFromPlayer;
 ---
 -- Checks, if the positions are in the same sector. If 2 possitions are not
 -- in the same sector then they are not connected.
+--
+-- <b>Alias</b>: SameSector
 --
 -- @param _pos1 Position 1
 -- @param _pos2 Position 2

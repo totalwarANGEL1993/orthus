@@ -30,15 +30,16 @@ Script.Load(gvBasePath.. "qsb/lib/ai/aicontroller.lua");
 
 Script.Load(gvBasePath.. "qsb/ext/loader.lua");
 
-Script.Load(gvBasePath.. "s5c/s5CommunityLib/packer/devload.lua");
+gvS5cLibPath = gvS5cLibPath or gvBasePath.. "s5c/";
+Script.Load(gvS5cLibPath.. "s5CommunityLib/packer/devload.lua");
 
 -- only if community lib is found
 if mcbPacker then
     mcbPacker.Paths = {
-        {gvBasePath.. "s5c/", ".lua"},
-        {gvBasePath.. "s5c/", ".luac"}
-    }
-    
+        {gvS5cLibPath, ".lua"},
+        {gvS5cLibPath, ".luac"}
+    };
+
     mcbPacker.require("s5CommunityLib/tables/ArmorClasses");
     mcbPacker.require("s5CommunityLib/tables/AttachmentTypes");
     mcbPacker.require("s5CommunityLib/tables/EntityAttachments");
