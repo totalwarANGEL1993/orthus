@@ -754,6 +754,8 @@ Winkel = QuestTools.GetAngleBetween;
 ---
 -- Checks if a building is currently being upgraded.
 --
+-- <b>Alias</b>: IsBuildingBeingUpgraded
+--
 -- @param _Entity Schriptname or id of building
 -- @return[type=boolean] Building is being upgraded
 -- @within Entities
@@ -767,6 +769,7 @@ function QuestTools.IsBuildingBeingUpgraded(_Entity)
     local Limit = Logic.GetTotalUpgradeTimeForBuilding(BuildingID);
     return Limit - Value > 0;
 end
+IsBuildingBeingUpgraded = QuestTools.IsBuildingBeingUpgraded;
 
 ---
 -- Returns the leader entity ID of the soldier.

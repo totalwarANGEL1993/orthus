@@ -30,8 +30,12 @@ Script.Load(gvBasePath.. "qsb/lib/ai/aicontroller.lua");
 
 Script.Load(gvBasePath.. "qsb/ext/loader.lua");
 
-gvS5cLibPath = gvS5cLibPath or gvBasePath.. "s5c/";
-Script.Load(gvS5cLibPath.. "s5CommunityLib/packer/devload.lua");
+-- try loading lib
+Script.Load("data/maps/user/EMS/tools/s5CommunityLib/packer/devload.lua");
+if not mcbPacker then
+    gvS5cLibPath = gvS5cLibPath or gvBasePath.. "s5c/";
+    Script.Load(gvS5cLibPath.. "s5CommunityLib/packer/devload.lua");
+end
 
 -- only if community lib is found
 if mcbPacker then
