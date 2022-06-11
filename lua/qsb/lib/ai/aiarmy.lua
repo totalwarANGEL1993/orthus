@@ -210,7 +210,7 @@ end
 -- @within Properties
 --
 function AiArmy:AddEntity(_TroopID, _Instantly)
-    if not IsExisting(_TroopID) or Logic.GetEntityHealth(_TroopID) == 0 then
+    if not self:IsTroopAlive(_TroopID) then
         return;
     end
     if Logic.IsEntityInCategory(_TroopID, EntityCategories.Cannon) ==  1
@@ -343,7 +343,9 @@ function AiArmy:Disband(_DestroyTroops, _KillProducer)
                     end
                     SetHealth(self.Troops[i], 0);
                 else
-                    Logic.SetTaskList(self.Troops[i], TaskLists.TL_DIE);
+                    if self:IsTroopAlive(self.Troops[i]) then
+                        Logic.SetTaskList(self.Troops[i], TaskLists.TL_DIE);
+                    end
                 end
             end
         end
@@ -449,7 +451,7 @@ end
 -- @within Properties
 --
 function AiArmy:IsTroopFighting(_TroopID)
-    if IsExisting(_TroopID) then
+    if self:IsTroopAlive(_TroopID) then
         return string.find(Logic.GetCurrentTaskList(_TroopID) or "", "BATTLE") ~= nil;
     end
     return false;
@@ -463,8 +465,23 @@ end
 -- @within Properties
 --
 function AiArmy:IsTroopMoving(_TroopID)
-    if IsExisting(_TroopID) then
+    if self:IsTroopAlive(_TroopID) then
         return Logic.IsEntityMoving(_TroopID) == true;
+    end
+    return false;
+end
+
+function AiArmy:IsTroopAlive(_TroopID)
+    return self:IsEntityAlive(_TroopID);
+end
+
+function AiArmy:IsEntityAlive(_ID)
+    if IsExisting(_ID) then
+        local TaskList = Logic.GetCurrentTaskList(_ID);
+        local Health = Logic.GetEntityHealth(_ID);
+        if Health > 0 and (not TaskList or not string.find(TaskList, "TL_DIE")) then
+            return true;
+        end
     end
     return false;
 end
@@ -494,7 +511,7 @@ end
 --
 function AiArmy:IsInArmy(_TroopID)
     if AiArmyTroopIDToArmyID[_TroopID] then
-        if IsExisting(_TroopID) and Logic.GetEntityHealth(_TroopID) > 0 then
+        if self:IsTroopAlive(_TroopID) then
             return AiArmyTroopIDToArmyID[_TroopID] == self.ArmyID;
         end
         AiArmyTroopIDToArmyID[_TroopID] = nil;
@@ -511,7 +528,7 @@ end
 --
 function AiArmy:IsIncomming(_TroopID)
     if AiArmyIncommingTroopIDToArmyID[_TroopID] then
-        if IsExisting(_TroopID) and Logic.GetEntityHealth(_TroopID) > 0 then
+        if self:IsTroopAlive(_TroopID) then
             return AiArmyIncommingTroopIDToArmyID[_TroopID] == self.ArmyID;
         end
         AiArmyIncommingTroopIDToArmyID[_TroopID] = nil;
@@ -779,7 +796,7 @@ end
 
 function AiArmy:Attack(_TargetID, _Abort)
     for i= table.getn(self.Troops), 1, -1 do
-        if self.Troops[i] and IsExisting(self.Troops[i]) and Logic.GetEntityHealth(self.Troops[i]) > 0 then
+        if self.Troops[i] and self:IsTroopAlive(self.Troops[i]) then
             if _Abort or not Logic.IsEntityMoving(self.Troops[i]) then
                 Logic.GroupAttack(self.Troops[i], _TargetID);
             end
@@ -920,12 +937,12 @@ function AiArmy:ClearDeadTroops()
     for i= table.getn(self.Troops), 1, -1 do
         if self.Troops[i] then
             if Logic.IsHero(self.Troops[i]) == 0 then
-                if not IsExisting(self.Troops[i]) then
+                if not self:IsTroopAlive(self.Troops[i]) then
                     local ID = table.remove(self.Troops, i);
                     AiArmyTroopIDToArmyID[ID] = nil;
                 end
             else
-                if not IsExisting(self.Troops[i]) or Logic.GetEntityHealth(self.Troops[i]) == 0 then
+                if not IsExisting(self.Troops[i]) then
                     -- TODO: What should we do with a drunken sailor?
                     -- SetPosition(self.Troops[i], GetPosition(self.HomePosition));
                     local ID = table.remove(self.Troops, i);
@@ -940,12 +957,12 @@ function AiArmy:ClearDeadIncommingTroops()
     for i= table.getn(self.IncommingTroops), 1, -1 do
         if self.IncommingTroops[i] then
             if Logic.IsHero(self.IncommingTroops[i]) == 0 then
-                if not IsExisting(self.IncommingTroops[i]) then
+                if not self:IsTroopAlive(self.IncommingTroops[i]) then
                     local ID = table.remove(self.IncommingTroops, i);
                     AiArmyIncommingTroopIDToArmyID[ID] = nil;
                 end
             else
-                if not IsExisting(self.IncommingTroops[i]) or Logic.GetEntityHealth(self.IncommingTroops[i]) == 0 then
+                if not IsExisting(self.IncommingTroops[i]) then
                     -- TODO: What should we do with a drunken sailor?
                     -- SetPosition(self.Troops[i], GetPosition(self.HomePosition));
                     local ID = table.remove(self.IncommingTroops, i);
@@ -979,13 +996,13 @@ end
 function AiArmy:ClearDeadTroopTargets()
     for i= table.getn(self.Troops), 1, -1 do
         if self.Troops[i] then
-            if not IsExisting(self.Troops[i]) then
+            if not self:IsTroopAlive(self.Troops[i]) then
                 self.TroopProperties[self.Troops[i]] = nil;
             else
                 if self.TroopProperties[self.Troops[i]] then
                     if self.TroopProperties[self.Troops[i]].Target ~= 0 then
                         local ID = self.TroopProperties[self.Troops[i]].Target;
-                        if not IsExisting(ID) or Logic.GetEntityHealth(ID) == 0 then
+                        if not self:IsTroopAlive(ID) then
                             self.TroopProperties[self.Troops[i]].Target = 0;
                             self.TroopProperties[self.Troops[i]].Time   = 0;
                         end
@@ -999,7 +1016,7 @@ end
 function AiArmy:AbandonRemainingTroops()
     for i= table.getn(self.Troops), 1, -1 do
         local ID = table.remove(self.Troops, i);
-        if ID and IsExisting(ID) and Logic.GetEntityHealth(ID) > 0 then
+        if ID and self:IsTroopAlive(ID) then
             table.insert(self.AbandonedTroops, ID);
         end
     end
@@ -1008,7 +1025,7 @@ end
 function AiArmy:CheckAbandonedTroops()
     for i= table.getn(self.AbandonedTroops), 1, -1 do
         local ID = self.AbandonedTroops[i];
-        if IsExisting(ID) and Logic.GetEntityHealth(ID) > 0 then
+        if self:IsTroopAlive(ID) then
             if not self:IsTroopFighting(ID) then
                 table.remove(self.AbandonedTroops, i);
                 if Logic.IsLeader(ID) == 1 then
@@ -1042,7 +1059,7 @@ UnitBaseSpeed = {
 
 function AiArmy:GetTroopBaseSpeed(_TroopID)
     local Speed = 0;
-    if not IsExisting(_TroopID) then
+    if not self:IsTroopAlive(_TroopID) then
         return Speed;
     end
     for k, v in pairs(QuestTools.GetEntityCategoriesAsString(_TroopID)) do
@@ -1079,12 +1096,12 @@ function AiArmy:ResetArmySpeed()
 end
 
 function AiArmy:SetTroopSpeed(_TroopID, _Factor)
-    if IsExisting(_TroopID) and Logic.GetEntityHealth(_TroopID) > 0 then
+    if self:IsTroopAlive(_TroopID) then
         Logic.SetSpeedFactor(_TroopID, _Factor);
         if Logic.IsLeader(_TroopID) == 1 then
             local Soldiers = {Logic.GetSoldiersAttachedToLeader(_TroopID)};
             for i= 2, Soldiers[1]+1, 1 do
-                if IsExisting(Soldiers[i]) and Logic.GetEntityHealth(Soldiers[i]) > 0 then
+                if self:IsEntityAlive(_TroopID) then
                     Logic.SetSpeedFactor(Soldiers[i], _Factor);
                 end
             end
@@ -1986,7 +2003,7 @@ function AiArmy:TargetEnemy(_TroopID, _Enemies)
     if self.TroopProperties[_TroopID] then
         if self.TroopProperties[_TroopID].Target ~= 0 then
             local OldTarget = self.TroopProperties[_TroopID].Target;
-            if IsExisting(OldTarget) and Logic.GetEntityHealth(OldTarget) > 0 then
+            if self:IsEntityAlive(OldTarget) then
                 self.TroopProperties[_TroopID].Time = self.TroopProperties[_TroopID].Time -1;
                 if self.TroopProperties[_TroopID].Time > 0 then
                     return OldTarget;
@@ -2009,7 +2026,7 @@ function AiArmy:SelectEnemy(_TroopID, _Enemies)
     local Enemies = _Enemies or self:CallGetEnemiesInArea(_TroopID, Range);
 
     for i= table.getn(Enemies), 1, -1 do
-        if not IsExisting(Enemies[i]) or Logic.GetEntityHealth(Enemies[i]) == 0 then
+        if not self:IsTroopAlive(Enemies[i]) then
             table.remove(Enemies, i);
         end
     end

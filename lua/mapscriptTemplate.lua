@@ -42,7 +42,7 @@ function FirstMapAction()
         Score.Player[0] = {};
         Score.Player[0]["buildings"] = 0;
         Score.Player[0]["all"] = 0;
-        
+
         LoadQuestSystem();
         ActivateDebugMode(true, false, true, true);
 
