@@ -1517,11 +1517,11 @@ AiArmyBehavior = {};
 ---
 -- Creates a new instance of an behavior.
 --
--- A behavior represents (in this case) a command that is together with others
--- put into a queue where they will be processed one after another. Some of them
--- can create new behaviors on their own and put them into the queue.
--- A behavior is finished when the action returns true. Behaviors can also be 
--- executed in a loop. After one finished, it will automaticaly be reattached 
+-- A behavior represents (in this case) a command that is put into a queue
+-- together with others where they will be processed one after another. Some of
+-- them can create new behaviors on their own and put them into the queue.
+-- A behavior is finished when the action returns true. Behaviors can also be
+-- executed in a loop. After one finished, it will automaticaly be reattached
 -- at the end of the queue.
 --
 -- @param[type=string]  _Type Name of behavior

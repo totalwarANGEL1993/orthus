@@ -11,8 +11,8 @@
 -- or wall corners with new segments.
 --
 -- If you planning on activating this mod in a map with AI players, ensure that
--- the armies are smart enouth do attack walls. The easiest way is to use the
--- in the QSB included army function with waypoints instead of default AI. 
+-- the armies are smart enouth to attack walls. The easiest way is to use the
+-- in the QSB included army function with waypoints instead of default AI.
 --
 -- <b>Required modules:</b>
 -- <ul>

@@ -118,7 +118,7 @@ end
 -- positions were the AI will patrol. Also replace X with the player ID and
 -- Y with a unique number starting by 1.
 --
--- <b>Note:</b> The AI will decide to which targets an army is send to. There
+-- <b>Note:</b> The AI will decide which targets an army is send to. There
 -- isn't a direct connection for one army and one target. If you don't want
 -- the AI to controll the army it must be hidden from the AI. In that case you
 -- have to provide the army with targets.
@@ -966,7 +966,7 @@ function AiController:ControlPlayerArmies()
     end
 end
 
-function AiController:ControlPlayerAssault(_PlayerID, _Position)   
+function AiController:ControlPlayerAssault(_PlayerID, _Position)
     -- no enemies there
     local Enemies = AiArmy:CallGetEnemiesInArea(_Position, self.Players[_PlayerID].RodeLength, _PlayerID);
     if table.getn(Enemies) == 0 then
@@ -1097,7 +1097,7 @@ function AiController:OverrideGameEventsForRecruiterUpdate()
     GameCallback_BuildingDestroyed_Orig_AiController = GameCallback_BuildingDestroyed;
     GameCallback_BuildingDestroyed = function(_HurterPlayerID, _HurtPlayerID)
         GameCallback_BuildingDestroyed_Orig_AiController(_HurterPlayerID, _HurtPlayerID);
-        
+
         if not AiController.Players[_HurtPlayerID] then
             return;
         end
