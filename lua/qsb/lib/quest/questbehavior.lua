@@ -5090,7 +5090,7 @@ function b_Reward_AI_CreateSpawnArmy:Debug(_Quest)
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' has no life thread!");
         return true;
     end
-    
+
     local ValidMember = false;
     for i= 1, 6, 1 do
         if Entities[self.Data["TroopType" ..i]] ~= nil then
@@ -5185,10 +5185,8 @@ b_Reward_AI_EnableArmyPatrol = {
 
 function b_Reward_AI_EnableArmyPatrol:AddParameter(_Index, _Parameter)
     if _Index == 1 then
-        self.Data.PlayerID = _Parameter;
-    elseif _Index == 2 then
         self.Data.ArmyName = _Parameter;
-    elseif _Index == 3 then
+    elseif _Index == 2 then
         self.Data.Flag = _Parameter;
     end
 end
@@ -5199,15 +5197,11 @@ end
 
 function b_Reward_AI_EnableArmyPatrol:CustomFunction(_Quest)
     if AiControllerArmyNameToID[self.Data.ArmyName] then
-        QuestTools.SaveCall{ArmyDisablePatrolAbility, self.Data.PlayerID, self.Data.ArmyName, not self.Data.Flag};
+        QuestTools.SaveCall{ArmySetExemtFromPatrol, self.Data.ArmyName, not self.Data.Flag};
     end
 end
 
 function b_Reward_AI_EnableArmyPatrol:Debug(_Quest)
-    if AiController.Players[self.Data.PlayerID] == nil then
-        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
-        return true;
-    end
     if not AiControllerArmyNameToID[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;
@@ -5242,11 +5236,9 @@ b_Reward_AI_EnableArmyAttack = {
 };
 
 function b_Reward_AI_EnableArmyAttack:AddParameter(_Index, _Parameter)
-    if _Index == 1 then
-        self.Data.PlayerID = _Parameter;
-    elseif _Index == 2 then
+    if _Index == 1  then
         self.Data.ArmyName = _Parameter;
-    elseif _Index == 3 then
+    elseif _Index == 2 then
         self.Data.Flag = _Parameter;
     end
 end
@@ -5257,15 +5249,11 @@ end
 
 function b_Reward_AI_EnableArmyAttack:CustomFunction(_Quest)
     if AiControllerArmyNameToID[self.Data.ArmyName] then
-        QuestTools.SaveCall{ArmyDisableAttackAbility, self.Data.PlayerID, self.Data.ArmyName, not self.Data.Flag};
+        QuestTools.SaveCall{ArmySetExemtFromAttack, self.Data.ArmyName, not self.Data.Flag};
     end
 end
 
 function b_Reward_AI_EnableArmyAttack:Debug(_Quest)
-    if AiController.Players[self.Data.PlayerID] == nil then
-        dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
-        return true;
-    end
     if not AiControllerArmyNameToID[self.Data.ArmyName] then
         dbg(_Quest, self, "Army '" ..tostring(self.Data.ArmyName).. "' does not exist!");
         return true;

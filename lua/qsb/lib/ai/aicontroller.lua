@@ -270,6 +270,10 @@ end
 -- be considered when the AI selects targets to attack or to defend. When an
 -- army is hidden or returned, all objectives of this army are nullified.
 --
+-- <b>Note:</b> Armies will be automatically hidden when a custom controller is
+-- added to them. Use this only if you want the army to be stationary without
+-- receiving any orders. (Bandits camp ect.)
+--
 -- @param               _Army   Name or ID of army
 -- @param[type=boolean] _Flag   Army is hidden
 -- @within Methods
@@ -280,6 +284,54 @@ function ArmySetHiddenFromAI(_Army, _Flag)
     local Army = GetArmy(_Army);
     if Army then
         Army:SetHiddenFromAI(_Flag);
+        AiController:CreateDefendBehavior(Army.PlayerID, Army.ArmyID);
+    end
+end
+
+---
+-- Removes the army from candidates for attack operations or rejoins it. When
+-- an army is removed or returned, all objectives of this army are nullified.
+--
+-- Armies that won't go on patrol will remain on their home position when not
+-- ordered to patrol.
+--
+-- <b>Note:</b> This will only affect armies with default controller. If a
+-- custom controller is used, this won't have an effect.
+--
+-- @param               _Army   Name or ID of army
+-- @param[type=boolean] _Flag   Army can't attack
+-- @within Methods
+--
+-- @usage ArmySetExemtFromAttack("SomeArmy", true);
+--
+function ArmySetExemtFromAttack(_Army, _Flag)
+    local Army = GetArmy(_Army);
+    if Army then
+        Army:SetExemtFromAttack(_Flag);
+        AiController:CreateDefendBehavior(Army.PlayerID, Army.ArmyID);
+    end
+end
+
+---
+-- Removes the army from candidates for patrol operations or rejoins it. When
+-- an army is removed or returned, all objectives of this army are nullified.
+--
+-- Armies that won't go on patrol will remain on their home position when not
+-- chosen for an attack operation.
+--
+-- <b>Note:</b> This will only affect armies with default controller. If a
+-- custom controller is used, this won't have an effect.
+--
+-- @param               _Army   Name or ID of army
+-- @param[type=boolean] _Flag   Army can't patrol
+-- @within Methods
+--
+-- @usage ArmySetExemtFromPatrol("SomeArmy", true);
+--
+function ArmySetExemtFromPatrol(_Army, _Flag)
+    local Army = GetArmy(_Army);
+    if Army then
+        Army:SetExemtFromPatrol(_Flag);
         AiController:CreateDefendBehavior(Army.PlayerID, Army.ArmyID);
     end
 end
@@ -1003,6 +1055,7 @@ function AiController:ControlPlayerAssault(_PlayerID, _Position)
         local IsRefilling = Army:IsExecutingBehavior("Refill");
 
         if  not Army.IsHiddenFromAI
+        and not Army.IsExemtFromAttack
         and (not IsAttacking and not IsBattling and not IsRetreating and not IsRefilling)
         and not Army:IsDead() 
         and QuestTools.GetReachablePosition(Army.HomePosition, _Position) ~= nil then
@@ -1030,6 +1083,10 @@ function AiController:CreateDefendBehavior(_PlayerID, _Army, _Purge)
                 if Position then
                     table.insert(Reachable, {v, Position});
                 end
+            end
+            -- Set home position if needed
+            if Army.IsExemtFromPatrol or table.getn(Reachable) == 0 then
+                table.insert(Reachable, {-1, Army.HomePosition});
             end
             -- add behavir for each point
             Reachable = shuffle(Reachable);

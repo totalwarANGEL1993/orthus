@@ -43,6 +43,8 @@ AiArmy = {
     IsRespawningArmy     = false,
     InitialSpawned       = false,
     IsHiddenFromAI       = false,
+    IsExemtFromAttack    = false,
+    IsExemtFromPatrol    = false,
     IsIgnoringProducer   = false,
     IsDirectlyTargeting  = true,
 
@@ -544,6 +546,18 @@ end
 --
 function AiArmy:SetHiddenFromAI(_Flag)
     self.IsHiddenFromAI = _Flag == true;
+    return self;
+end
+
+-- Hidden switch for attack duty (used by default AI controller)
+function AiArmy:SetExemtFromAttack(_Flag)
+    self.IsExemtFromAttack = _Flag == true;
+    return self;
+end
+
+-- Hidden switch for patrol duty (used by default AI controller)
+function AiArmy:SetExemtFromPatrol(_Flag)
+    self.IsExemtFromPatrol = _Flag == true;
     return self;
 end
 
@@ -1517,9 +1531,9 @@ AiArmyBehavior = {};
 ---
 -- Creates a new instance of an behavior.
 --
--- A behavior represents (in this case) a command that is put into a queue
--- together with others where they will be processed one after another. Some of
--- them can create new behaviors on their own and put them into the queue.
+-- A behavior represents (in this case) a command that is together with others
+-- put into a queue where they will be processed one after another. Some of them
+-- can create new behaviors on their own and put them into the queue.
 -- A behavior is finished when the action returns true. Behaviors can also be
 -- executed in a loop. After one finished, it will automaticaly be reattached
 -- at the end of the queue.
