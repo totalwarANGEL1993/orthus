@@ -4901,7 +4901,6 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_ConstructBuilding);
 -- @param[type=number] _Strength  Strength of army
 -- @param[type=string] _Position  Army base position
 -- @param[type=number] _Area      Average action range
--- @param[type=string] _TroopType Army troop type
 -- @within Rewards
 --
 function Reward_AI_CreateArmy(...)
@@ -4926,9 +4925,6 @@ function b_Reward_AI_CreateArmy:AddParameter(_Index, _Parameter)
         self.Data.Position = _Parameter;
     elseif _Index == 5 then
         self.Data.RodeLength = _Parameter;
-    elseif _Index == 6 then
-        _Parameter = _Parameter or "City";
-        self.Data.TroopType = ArmyCategories[_Parameter];
     end
 end
 
@@ -5167,7 +5163,6 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_DestroyArmy);
 ---
 -- Disables or enables the patrol behavior for armies.
 --
--- @param[type=number] _PlayerID ID of player
 -- @param[type=string] _ArmyName Army identifier
 -- @param[type=boolean] _Flag  Patrol disabled
 -- @within Rewards
@@ -5219,7 +5214,6 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_EnableArmyPatrol);
 ---
 -- Disables or enables the attack behavior for armies.
 --
--- @param[type=number] _PlayerID ID of player
 -- @param[type=string] _ArmyName Army identifier
 -- @param[type=boolean] _Flag  Attack disabled
 -- @within Rewards
