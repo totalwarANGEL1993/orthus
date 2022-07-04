@@ -497,10 +497,10 @@ end
 ---
 -- Registers an attack target position for the player.
 --
--- <b>Note:</b> An AI will send one army per attack target. Which army is send
--- is decided by the AI. Armies can not be connected to attack positions. By
--- default the AI chooses the target for an army that is closest to it. So if
--- you wish to send more than one army to a target place multiple targets.
+-- <b>Note:</b> An AI will send one or more armies per attack target. Which
+-- armies are send is decided by the AI. Armies can not be connected to attack
+-- positions. By default the AI chooses the target for an army that is closest
+-- to it.
 --
 -- @param[type=number] _PlayerID ID of player
 -- @param[type=string] _Position Zielppsition
@@ -529,6 +529,30 @@ function RemoveAIPlayerAttackTarget(_PlayerID, _Position)
         return;
     end
     AiController:RemoveAttackTarget(_PlayerID, GetID(_Position));
+end
+
+---
+-- Sets the max amount of armies that are send to a single target.
+--
+-- <b>Note:</b> This applies only to armies that are not hidden from the AI and
+-- do not use custom controllers.
+--
+-- @param[type=number] _PlayerID ID of player
+-- @param[type=number] _Max      Amount of armies
+-- @within Methods
+-- 
+-- @usage SetAIPlayerMaxArmiesPerTarget(2, 3);
+--
+function SetAIPlayerMaxArmiesPerTarget(_PlayerID, _Max)
+    if not AiController.Players[_PlayerID] then
+        assert(false, "There isn't an AI initalized for player " .._PlayerID.. "!");
+        return;
+    end
+    if not _Max or math.ceil(_Max) < 1 then
+        assert(false, "Max amount of armies must be above 0!");
+        return;
+    end
+    AiController.Players[_PlayerID].AttackForceLimit = math.ceil(_Max);
 end
 
 ---
@@ -675,22 +699,23 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
     end
 
     self.Players[_PlayerID] = {
-        Armies          = {},
-        Producers       = {},
-        AttackPos       = {},
-        AttackPosMap    = {},
-        DefencePos      = {},
-        DefencePosMap   = {},
-        HomePosition    = _HomePosition,
-        TechLevel       = _TechLevel,
-        UnitsToBuild    = copy(self.DefaultUnitsToBuild),
-        EmploysArmies   = _Strength > 0,
-        Strength        = _Strength,
-        ArmyStrength    = 12,
-        RodeLength      = 4000,
-        OuterRange      = 3000,
-        LastTick        = 0,
-        MilitaryCosts   = true,
+        Armies           = {},
+        Producers        = {},
+        AttackPos        = {},
+        AttackPosMap     = {},
+        DefencePos       = {},
+        DefencePosMap    = {},
+        HomePosition     = _HomePosition,
+        TechLevel        = _TechLevel,
+        UnitsToBuild     = copy(self.DefaultUnitsToBuild),
+        EmploysArmies    = _Strength > 0,
+        Strength         = _Strength,
+        ArmyStrength     = 12,
+        RodeLength       = 4000,
+        OuterRange       = 3000,
+        LastTick         = 0,
+        AttackForceLimit = 1,
+        MilitaryCosts    = true,
     };
     table.insert(self.Players[_PlayerID].UnitsToBuild, Entities["PV_Cannon" .._TechLevel]);
     -- Remove rifle
@@ -1021,6 +1046,14 @@ end
 function AiController:ControlPlayerAssault(_PlayerID, _Position)
     -- no enemies there
     local Enemies = AiArmy:CallGetEnemiesInArea(_Position, self.Players[_PlayerID].RodeLength, _PlayerID);
+    for i= table.getn(Enemies), 1, -1 do
+        local Type = Logic.GetEntityType(Enemies[i]);
+        local TypeName = Logic.GetEntityTypeName(Type);
+        if  TypeName ~= nil and TypeName ~= ""
+        and string.find(TypeName, "Tower") then
+            table.remove(Enemies, i);
+        end
+    end
     if table.getn(Enemies) == 0 then
         for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
             local Army = self.Players[_PlayerID].Armies[i];
@@ -1036,12 +1069,16 @@ function AiController:ControlPlayerAssault(_PlayerID, _Position)
     end
 
     -- check occupied
+    local MaxArmiesForTarget = self.Players[_PlayerID].AttackForceLimit;
     for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
         local Army = self.Players[_PlayerID].Armies[i];
         local Command = Army:GetBehaviorInQueue("Attack");
         if Command then
             if Command.m_Target and Command.m_Target[1] == _Position then
-                return;
+                MaxArmiesForTarget = MaxArmiesForTarget -1;
+                if MaxArmiesForTarget <= 0 then
+                    return;
+                end
             end
         end
     end

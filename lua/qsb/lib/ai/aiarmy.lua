@@ -163,7 +163,7 @@ function AiArmy:Operate()
 
     self:ClearDeadTroops();
     self:ClearDeadIncommingTroops();
-    self:ClearDeadTroopTargets();
+    self:ClearInvalidTroopTargets();
     if self:IsDead() then
         self:AbandonRemainingTroops();
         self:CheckAbandonedTroops();
@@ -1007,7 +1007,7 @@ function AiArmy:ClearTargets()
     end
 end
 
-function AiArmy:ClearDeadTroopTargets()
+function AiArmy:ClearInvalidTroopTargets()
     for i= table.getn(self.Troops), 1, -1 do
         if self.Troops[i] then
             if not self:IsTroopAlive(self.Troops[i]) then
@@ -1016,7 +1016,7 @@ function AiArmy:ClearDeadTroopTargets()
                 if self.TroopProperties[self.Troops[i]] then
                     if self.TroopProperties[self.Troops[i]].Target ~= 0 then
                         local ID = self.TroopProperties[self.Troops[i]].Target;
-                        if not self:IsTroopAlive(ID) then
+                        if not self:IsTroopAlive(ID) or Logic.IsEntityInCategory(ID, EntityCategories.Workplace) == 1 then
                             self.TroopProperties[self.Troops[i]].Target = 0;
                             self.TroopProperties[self.Troops[i]].Time   = 0;
                         end
@@ -1400,7 +1400,7 @@ function AiArmy:NextBehavior()
             else
                 Behavior = AiArmyBehavior:New("Retreat", false);
             end
-            self:InsertBehavior(command);
+            self:InsertBehavior(Behavior);
         end
     end
 
@@ -1512,7 +1512,7 @@ end
 --
 -- @field Idle    The army is doing nothing.
 -- @field Move    The army walks to the defined destination. Enemies are ignored
---                unless they attack the army.
+--                unless they come to close.
 -- @field Attack  The army walkst to the defined destination and will execute
 --                Battle with outer range as area on arrival. While walking, the
 --                army will always be aggressive.
@@ -1713,21 +1713,8 @@ inherit(AiArmyBehavior.Move, AiArmyBehavior.AbstractBehavior);
 function AiArmyBehavior.Move:Run(_Army)
     local LastIdx = table.getn(self.m_Target);
     if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= 2000 then
+        _Army:ClearTargets();
         return true;
-    end
-    for i= table.getn(_Army.Troops), 1, -1 do
-        local Exploration = Logic.GetEntityExplorationRange(_Army.Troops[i])*100;
-        local Enemies = _Army:CallGetEnemiesInArea(_Army.Troops[i], Exploration+1000);
-        if table.getn(Enemies) > 0 then
-            _Army:InsertBehavior(AiArmyBehavior:New(
-                "Battle",
-                GetPosition(Enemies[1]),
-                4000
-            ));
-            _Army:InvalidateCurrentBehavior();
-            _Army:NextBehavior();
-            return;
-        end
     end
     _Army:MoveAsBlock(self.m_Target[self.m_Target.Current], false, false);
     _Army:NormalizedArmySpeed();
@@ -1756,6 +1743,7 @@ function AiArmyBehavior.Attack:construct(_Target, _Distance, _Loop)
     self.m_Loop = _Loop == true;
     self.m_Target = _Target;
     self.m_Distance = _Distance;
+    self.m_Destination = _Target;
 end
 inherit(AiArmyBehavior.Attack, AiArmyBehavior.Move);
 
@@ -1766,6 +1754,7 @@ function AiArmyBehavior.Attack:Run(_Army)
         local Target = self.m_Target[LastIdx];
         _Army:InsertBehavior(AiArmyBehavior:New("Retreat"));
         _Army:InsertBehavior(AiArmyBehavior:New("Battle", Target, Range));
+        _Army:ClearTargets();
         return true;
     end
     for i= table.getn(_Army.Troops), 1, -1 do
@@ -1775,7 +1764,7 @@ function AiArmyBehavior.Attack:Run(_Army)
             _Army:InsertBehavior(AiArmyBehavior:New(
                 "Battle",
                 GetPosition(Enemies[1]),
-                4000
+                3000
             ));
             _Army:InvalidateCurrentBehavior();
             _Army:NextBehavior();
@@ -1817,12 +1806,13 @@ function AiArmyBehavior.Battle:Run(_Army)
     end
     _Army:MoveAsBlock(_Army:GetArmyPosition(), false, true);
     _Army:InvalidateCurrentBehavior();
+    _Army:ClearTargets();
     return true;
 end
 
 -- -------------------------------------------------------------------------- --
 
--- Stays at a point until the time is up and guards it
+-- Stays at a point and guards it until the time is up
 AiArmyBehavior.Guard = {
     m_Identifier = "Guard",
     m_Abstract = false,
@@ -1881,6 +1871,7 @@ function AiArmyBehavior.Guard:Run(_Army)
     self.m_GuardTimer = self.m_GuardTimer or self.m_Time;
     if self.m_GuardStarded and self.m_GuardTimer ~= -1 then
         if self.m_GuardTimer == 0 then
+            _Army:ClearTargets();
             return true;
         end
         local CurrentTime = math.floor(Logic.GetTime());
@@ -1920,18 +1911,21 @@ function AiArmyBehavior.Retreat:Run(_Army)
         _Army:InsertBehavior(AiArmyBehavior:New("Refill"), 2);
         return true;
     end
-    if QuestTools.AreEnemiesInArea(_Army.PlayerID, _Army:GetArmyPosition(), 4000) then
-        _Army:InsertBehavior(AiArmyBehavior:New(
-            "Battle",
-            _Army:GetArmyPosition(),
-            4000
-        ));
-        _Army:InvalidateCurrentBehavior();
-        return;
+    if math.mod(Logic.GetTime(), 10) == 0 then
+        local Enemies = _Army:CallGetEnemiesInArea(self.m_Destination, _Army.RodeLength + _Army.OuterRange);
+        if table.getn(Enemies) > 0 then
+            _Army:InsertBehavior(AiArmyBehavior:New(
+                "Battle",
+                _Army:GetArmyPosition(),
+                4000
+            ));
+            _Army:InvalidateCurrentBehavior();
+            return;
+        end
     end
     _Army:NormalizedArmySpeed();
     _Army:SetSubBehavior(ArmySubBehavior.None);
-    _Army:MoveAsBlock(_Army.HomePosition, false, false);
+    _Army:MoveAsBlock(_Army.HomePosition, false, true);
     _Army:Assemble(500);
 end
 
@@ -2027,9 +2021,13 @@ function AiArmy:TargetEnemy(_TroopID, _Enemies)
 
         local Enemies = self:SelectEnemy(_TroopID, _Enemies);
         if table.getn(Enemies) > 0 then
-            self.TroopProperties[_TroopID].Target = Enemies[1];
-            self.TroopProperties[_TroopID].Time   = 15;
-            return Enemies[1];
+            for i= 1, table.getn(Enemies), 1 do
+                if Logic.IsEntityInCategory(Enemies[i], EntityCategories.Workplace) == 0 then
+                    self.TroopProperties[_TroopID].Target = Enemies[i];
+                    self.TroopProperties[_TroopID].Time   = 15;
+                    return Enemies[i];
+                end
+            end
         end
     end
     return 0;
