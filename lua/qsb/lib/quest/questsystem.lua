@@ -1556,6 +1556,7 @@ function QuestSystem:QuestTributePayed(_TributeID)
                 if Quest.m_Objectives[j][1] == Objectives.Tribute then
                     if _TributeID == Quest.m_Objectives[j][4] then
                         if Quest.m_Receiver == GUI.GetPlayerID() then
+                            GUIAction_ToggleMenu( XGUIEng.GetWidgetID("TradeWindow"),0);
                             Sound.PlayGUISound(Sounds.OnKlick_Select_helias, 127);
                         end
                         Quest.m_Objectives[j][5] = true;
@@ -1620,8 +1621,8 @@ function QuestSystem:NpcAndHeroLookAtTasks(_NPC, _Hero)
     Logic.GetHeroes(Logic.EntityGetPlayer(_Hero), HeroesTable);
     for i= 1, table.getn(HeroesTable), 1 do
         if QuestTools.GetDistance(_NPC, HeroesTable[i]) < 5000 then
-            if Logic.GetCurrentTaskList(HeroesTable[i]) == "TL_NPC_INTERACTION" then
-                GUI.SettlerStand(HeroesTable[i]);
+            if _Hero ~= HeroesTable[i] and Logic.GetCurrentTaskList(HeroesTable[i]) == "TL_NPC_INTERACTION" then
+                Logic.SetTaskList(HeroesTable[i], TaskLists.TL_NPC_IDLE);
             end
         end
     end
