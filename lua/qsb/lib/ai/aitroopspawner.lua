@@ -109,7 +109,7 @@ end;
 class(AiTroopSpawner);
 
 function AiTroopSpawner:IsManagedByProducer(_TroopID)
-    return QuestTools.IsInTable(_TroopID, self.Troops.Created) == true;
+    return IsInTable(_TroopID, self.Troops.Created) == true;
 end
 
 function AiTroopSpawner:SetEnabled(_Flag)
@@ -139,7 +139,7 @@ function AiTroopSpawner:Initalize()
         self:SetApproachPosition(GetPosition(self.ScriptName));
 
         -- Buys soldiers for the leader
-        self.SoldierJobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_ScriptName)
+        self.SoldierJobID = StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_ScriptName)
             if not IsExisting(_ScriptName) then
                 DestroyEntity(AiTroopSpawnerList[_ScriptName].ApproachPosition);
                 return true;
@@ -156,18 +156,18 @@ function AiTroopSpawner:HandleSoldierRefill()
         local ID = self.Troops.Created[i];
         local Task = Logic.GetCurrentTaskList(ID);
         if IsExisting(ID) and (not Task or not string.find(Task, "DIE")) then
-            if not QuestTools.AreEnemiesInArea(GetPlayer(ID), GetPosition(ID), 2000) then
+            if not AreEnemiesInArea(GetPlayer(ID), GetPosition(ID), 2000) then
                 local BarracksID = Logic.LeaderGetBarrack(ID);
                 if BarracksID == 0 then
                     if not Task or not string.find(Task, "BATTLE") then
                         local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
                         local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
                         if CurrentSoldiers < MaxSoldiers then
-                            if QuestTools.GetDistance(ID, self.ApproachPosition) < 1200 then
+                            if GetDistance(ID, self.ApproachPosition) < 1200 then
                                 Tools.CreateSoldiersForLeader(ID, 1);
                             else
                                 if Logic.IsEntityMoving(ID) == false then
-                                    if QuestTools.SameSector(ID, self.ApproachPosition) then
+                                    if SameSector(ID, self.ApproachPosition) then
                                         local x, y, z = Logic.EntityGetPos(self.ApproachPosition);
                                         Logic.MoveSettler(ID, x, y);
                                     else

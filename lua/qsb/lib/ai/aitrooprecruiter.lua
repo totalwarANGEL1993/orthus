@@ -143,7 +143,7 @@ function AiTroopRecruiter:IsAlive()
 end
 
 function AiTroopRecruiter:AddType(_Type)
-    if not QuestTools.IsInTable(_Type, self.Troops.Types) then
+    if not IsInTable(_Type, self.Troops.Types) then
         table.insert(self.Troops.Types, _Type);
     end
     return self;
@@ -182,7 +182,7 @@ function AiTroopRecruiter:SetSelector(_Selector)
 end
 
 function AiTroopRecruiter:IsManagedByProducer(_TroopID)
-    return QuestTools.IsInTable(_TroopID, self.Troops.Created) == true;
+    return IsInTable(_TroopID, self.Troops.Created) == true;
 end
 
 function AiTroopRecruiter:GetApproachPosition()
@@ -207,7 +207,7 @@ function AiTroopRecruiter:Initalize()
         self:SetApproachPosition(GetPosition(self.ScriptName));
 
         -- Registers new recruited units
-        self.CreationJobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_ENTITY_CREATED, function(_ScriptName)
+        self.CreationJobID = StartInlineJob(Events.LOGIC_EVENT_ENTITY_CREATED, function(_ScriptName)
             if not IsExisting(_ScriptName) then
                 return true;
             end
@@ -219,7 +219,7 @@ function AiTroopRecruiter:Initalize()
                     AiTroopRecruiter:HandleCreatedCannon(PlayerID, v);
                 else
                     if Logic.IsLeader(v) == 1 then
-                        if QuestTools.GetDistance(v, ID) < 1000 then
+                        if GetDistance(v, ID) < 1000 then
                             table.insert(AiTroopRecruiterCreated, v);
                         end
                     end
@@ -228,7 +228,7 @@ function AiTroopRecruiter:Initalize()
         end, self.ScriptName);
 
         -- Associates created units to the recuiter
-        self.AllocationJobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_ScriptName)
+        self.AllocationJobID = StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_ScriptName)
             if not IsExisting(_ScriptName) then
                 return true;
             end
@@ -243,7 +243,7 @@ function AiTroopRecruiter:Initalize()
         end, self.ScriptName);
 
         -- Buys soldiers for the leader
-        self.SoldierJobID = QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_ScriptName)
+        self.SoldierJobID = StartInlineJob(Events.LOGIC_EVENT_EVERY_SECOND, function(_ScriptName)
             if not IsExisting(_ScriptName) then
                 DestroyEntity(AiTroopRecruiterList[_ScriptName].ApproachPosition);
                 return true;
@@ -262,7 +262,7 @@ function AiTroopRecruiter:HandleCreatedCannon(_PlayerID, _EntityID)
     if n > 0 then
         local ScriptName = Logic.GetEntityName(Foundry1);
         if AiTroopRecruiterList[ScriptName] then
-            if not QuestTools.IsInTable(_EntityID, AiTroopRecruiterList[ScriptName].Troops.Created) then
+            if not IsInTable(_EntityID, AiTroopRecruiterList[ScriptName].Troops.Created) then
                 table.insert(AiTroopRecruiterList[ScriptName].Troops.Created, _EntityID);
             end
         end
@@ -271,7 +271,7 @@ function AiTroopRecruiter:HandleCreatedCannon(_PlayerID, _EntityID)
     if n > 0 then
         local ScriptName = Logic.GetEntityName(Foundry2);
         if AiTroopRecruiterList[ScriptName] then
-            if not QuestTools.IsInTable(_EntityID, AiTroopRecruiterList[ScriptName].Troops.Created) then
+            if not IsInTable(_EntityID, AiTroopRecruiterList[ScriptName].Troops.Created) then
                 table.insert(AiTroopRecruiterList[ScriptName].Troops.Created, _EntityID);
             end
         end
@@ -283,28 +283,28 @@ function AiTroopRecruiter:HandleSoldierRefill()
         local ID = self.Troops.Created[i];
         local Task = Logic.GetCurrentTaskList(ID);
         if IsExisting(ID) and (not Task or not string.find(Task, "DIE")) then
-            if not QuestTools.AreEnemiesInArea(GetPlayer(ID), GetPosition(ID), 2000) then
+            if not AreEnemiesInArea(GetPlayer(ID), GetPosition(ID), 2000) then
                 local BarracksID = Logic.LeaderGetBarrack(ID);
                 if BarracksID == 0 then
                     if not Task or not string.find(Task, "BATTLE") then
                         local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
                         local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
                         if CurrentSoldiers < MaxSoldiers then
-                            if QuestTools.GetDistance(ID, self.ApproachPosition) < 1200 then
+                            if GetDistance(ID, self.ApproachPosition) < 1200 then
                                 if self.Cheat then
                                     Tools.CreateSoldiersForLeader(ID, 1);
                                 else
                                     local PlayerID = Logic.EntityGetPlayer(ID);
                                     local SoldierType = Logic.LeaderGetSoldiersType(ID);
-                                    local SoldierCosts = QuestTools.GetSoldierCostsTable(PlayerID, SoldierType);
-                                    if QuestTools.HasEnoughResources(PlayerID, SoldierCosts) then
-                                        QuestTools.RemoveResourcesFromPlayer(PlayerID, SoldierCosts)
+                                    local SoldierCosts = GetSoldierCostsTable(PlayerID, SoldierType);
+                                    if HasEnoughResources(PlayerID, SoldierCosts) then
+                                        RemoveResourcesFromPlayer(PlayerID, SoldierCosts)
                                         Tools.CreateSoldiersForLeader(ID, 1);
                                     end
                                 end
                             else
                                 if Logic.IsEntityMoving(ID) == false then
-                                    if QuestTools.SameSector(ID, self.ApproachPosition) then
+                                    if SameSector(ID, self.ApproachPosition) then
                                         local x, y, z = Logic.EntityGetPos(self.ApproachPosition);
                                         Logic.MoveSettler(ID, x, y, -1);
                                     else
@@ -448,9 +448,9 @@ end
 
 function AiTroopRecruiter:CheatLeaderCosts(_UnitType)
     local PlayerID = Logic.EntityGetPlayer(GetID(self.ScriptName));
-    QuestTools.AddResourcesToPlayer(
+    AddResourcesToPlayer(
         PlayerID,
-        QuestTools.GetMilitaryCostsTable(PlayerID, _UnitType)
+        GetMilitaryCostsTable(PlayerID, _UnitType)
     );
 end
 
@@ -465,9 +465,9 @@ function AiTroopRecruiter:CheatCannonCosts(_UnitType)
     local CannonCosts = {};
     local CannonUpCat = ArmyCannonTypeToUpgradeCategory[Logic.GetEntityTypeName(_UnitType)];
     if CannonUpCat then
-        QuestTools.AddResourcesToPlayer(
+        AddResourcesToPlayer(
             PlayerID,
-            QuestTools.GetMilitaryCostsTable(PlayerID, CannonUpCat)
+            GetMilitaryCostsTable(PlayerID, CannonUpCat)
         );
     end
 end
@@ -480,12 +480,12 @@ function AiTroopRecruiter:HasSpaceForUnit(_UnitType)
     local CurrentUsage = Logic.GetPlayerAttractionUsage(PlayerID);
     -- Calculate future usage (reserved space for soldiers)
     local FutureUsage = 0;
-    for k, v in pairs(QuestTools.GetAllLeader(PlayerID)) do
+    for k, v in pairs(GetAllLeader(PlayerID)) do
         local MaximumSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(v);
         local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(v);
         FutureUsage = FutureUsage + (MaximumSoldiers - CurrentSoldiers);
     end
-    FutureUsage = FutureUsage + table.getn(QuestTools.GetAllCannons(PlayerID));
+    FutureUsage = FutureUsage + table.getn(GetAllCannons(PlayerID));
 
     local Usage = MaximumUsage - (CurrentUsage + FutureUsage);
     return Usage >= self:GetSpaceNeededForUnit(_UnitType);
@@ -551,23 +551,23 @@ function AiTroopRecruiter:IsSuitableUnitType(_Type)
     };
     local TypeName = Logic.GetEntityTypeName(_Type);
     local ProducerType = Logic.GetEntityType(GetID(self.ScriptName));
-    return QuestTools.IsInTable(ProducerType, LeaderTypeToBarracksType[TypeName]);
+    return IsInTable(ProducerType, LeaderTypeToBarracksType[TypeName]);
 end
 
 function AiTroopRecruiter:IsSuitableBuilding(_Type)
     local BuildingType = Logic.GetEntityTypeName(Logic.GetEntityType(GetID(self.ScriptName)));
     if string.find(BuildingType, "PB_Barracks") then
-        return QuestTools.IsInTable(_Type, self.BarracksUnits) == true;
+        return IsInTable(_Type, self.BarracksUnits) == true;
     elseif string.find(BuildingType, "PB_Archery") then
-        return QuestTools.IsInTable(_Type, self.ArcheryUnits) == true;
+        return IsInTable(_Type, self.ArcheryUnits) == true;
     elseif string.find(BuildingType, "PB_Stable") then
-        return QuestTools.IsInTable(_Type, self.StableUnits) == true;
+        return IsInTable(_Type, self.StableUnits) == true;
     elseif string.find(BuildingType, "PB_Foundry") then
-        if QuestTools.IsInTable(_Type, self.Foundry1Units) == true then
+        if IsInTable(_Type, self.Foundry1Units) == true then
             return true;
         end
         if BuildingType == "PB_Foundry2" then
-            return QuestTools.IsInTable(_Type, self.Foundry2Units) == true;
+            return IsInTable(_Type, self.Foundry2Units) == true;
         end
     end
     return false;

@@ -202,7 +202,7 @@ end
 function TreasureTemplate:GiveTreasureReward(_PlayerID)
     Tools.GiveResources(_PlayerID, unpack(self.m_Rewards));
     
-    local Language = QuestTools.GetLanguage();
+    local Language = GetLanguage();
     local RewardString = "";
     if GUI.GetPlayerID() == _PlayerID then
         -- Gold
@@ -252,7 +252,7 @@ end
 -- @local
 --
 function TreasureTemplate:StartController()
-    return QuestTools.StartSimpleJobEx(function(_ScriptName)
+    return StartSimpleJobEx(function(_ScriptName)
         local Chest = QuestTreasure[_ScriptName];
         if not Chest then
             return true;

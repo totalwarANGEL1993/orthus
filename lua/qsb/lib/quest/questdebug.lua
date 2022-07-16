@@ -101,8 +101,8 @@ end
 
 function QuestDebug:PrintQuestStatus(_QuestID, _State, _Result)
     if self.m_QuestTrace then 
-        local QuestState = QuestTools.GetKeyByValue(_State, QuestStates);
-        local QuestResult = QuestTools.GetKeyByValue(_Result, QuestResults);
+        local QuestState = GetKeyByValue(_State, QuestStates);
+        local QuestResult = GetKeyByValue(_Result, QuestResults);
         local QuestName = QuestSystem.Quests[_QuestID].m_QuestName;
         Message("Quest '" ..QuestName.."' changed: State is now " ..QuestState.. "; Result is now " ..QuestResult);
     end
@@ -306,8 +306,8 @@ function QuestDebug:CreateScriptEvents()
                 Message("Can not find quest: " .._Quest);
             end
             local QuestName      = "Name: " ..QuestSystem.Quests[QuestID].m_QuestName.. " @cr ";
-            local QuestState     = "State: " ..QuestTools.GetKeyByValue(QuestSystem.Quests[QuestID].m_State, QuestStates).. " @cr ";
-            local QuestResult    = "Result: " ..QuestTools.GetKeyByValue(QuestSystem.Quests[QuestID].m_Result, QuestResults).. " @cr ";
+            local QuestState     = "State: " ..GetKeyByValue(QuestSystem.Quests[QuestID].m_State, QuestStates).. " @cr ";
+            local QuestResult    = "Result: " ..GetKeyByValue(QuestSystem.Quests[QuestID].m_Result, QuestResults).. " @cr ";
             local QuestReceiver  = "Receiver: " ..QuestSystem.Quests[QuestID].m_Receiver.. " @cr ";
             local QuestTime      = "Time: " ..QuestSystem.Quests[QuestID].m_Time.. " @cr ";
             local QuestGoals     = "Objectives: " ..table.getn(QuestSystem.Quests[QuestID].m_Objectives).. " @cr ";
@@ -401,7 +401,7 @@ function QuestDebug:CreateScriptEvents()
                 Tools.ChangeGroupPlayerID(_Entity, _Player);
             else
                 if Logic.IsEntityInCategory(_Entity,EntityCategories.Soldier) == 1 then
-                    Tools.ChangeGroupPlayerID(QuestTools.SoldierGetLeader(_Entity), _Player);
+                    Tools.ChangeGroupPlayerID(SoldierGetLeader(_Entity), _Player);
                 else
                     ChangePlayer(_Entity, _Player);
                 end
@@ -431,7 +431,7 @@ function QuestDebug:CreateScriptEvents()
 
     self.ScriptEvents.CheatUnitAtMousePosition = QuestSync:CreateScriptEvent(function(name, _ExecutingPlayer, _X, _Y, _Flag)
         local pos = {X= _X, Y= _Y};
-        if QuestTools.IsValidPosition(pos) then
+        if IsValidPosition(pos) then
             if _Flag == 1 then
                 Tools.CreateGroup(GUI.GetPlayerID(), Entities.PU_LeaderSword4, 8, pos.X , pos.Y , 0);
                 if GUI.GetPlayerID() == _ExecutingPlayer then

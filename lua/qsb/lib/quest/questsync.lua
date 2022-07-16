@@ -110,7 +110,7 @@ function QuestSync:TransactionSend(_ID, _PlayerID, _Time, _Msg, _Parameter)
         MPGame_ApplicationCallback_ReceivedChatMessage(TransMsg, 0, _PlayerID);
     end
     -- Wait for ack
-    QuestTools.StartSimpleHiResJobEx(function(_PlayerID, _Hash, _Time, ...)
+    StartSimpleHiResJobEx(function(_PlayerID, _Hash, _Time, ...)
         if _Time +2 < Logic.GetTime() then
             -- Message("DEBUG: Timeout for " .._Hash);
             return true;
@@ -195,7 +195,7 @@ function QuestSync:PayTribute(_PlayerID, _TributeID)
 end
 
 function QuestSync:ActivateTributePaidTrigger()
-    QuestTools.StartInlineJob(
+    StartInlineJob(
         Events.LOGIC_EVENT_TRIBUTE_PAID,
         function()
             QuestSync:OnTributePaidTrigger(Event.GetTributeUniqueID());
@@ -364,7 +364,7 @@ function QuestSync:GetActiveTeams()
         local Teams = {};
         for k, v in pairs(self:GetActivePlayers()) do
             local Team = self:GetTeamOfPlayer(v);
-            if not QuestTools.IsInTable(Team, Teams) then
+            if not IsInTable(Team, Teams) then
                 table.insert(Teams, Team);
             end
         end

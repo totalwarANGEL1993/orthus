@@ -315,7 +315,7 @@ function QuestSystem:InitalizeQuestEventTrigger()
 end
 
 function QuestSystem:GetNextFreeJornalID(_PlayerID)
-    if QuestTools.GetExtensionNumber() == 3 then
+    if GetExtensionNumber() == 3 then
         return table.getn(self.QuestDescriptions[_PlayerID]) +1;
     end
     
@@ -458,7 +458,7 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
     elseif Behavior[1] == Objectives.Destroy then
 
         if type(Behavior[2]) == "table" then
-            if QuestTools.IsDead(Behavior[2]) then
+            if IsDead(Behavior[2]) then
                 Behavior.Completed = true;
             end
         else
@@ -494,7 +494,7 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
     elseif Behavior[1] == Objectives.Create then
         local Position = (type(Behavior[3]) == "table" and Behavior[3]) or GetPosition(Behavior[3]);
 
-        local EnoughEntities = QuestTools.SaveCall{
+        local EnoughEntities = SaveCall{
             AreEntitiesInArea, self.m_Receiver, Behavior[2], Position, Behavior[4], Behavior[5],
             ErrorHandler = function() return false; end
         };
@@ -503,7 +503,7 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
             if Behavior[7] then
                 local CreatedEntities = {Logic.GetPlayerEntitiesInArea(self.m_Receiver, Behavior[2], Position.X, Position.Y, Behavior[4], Behavior[5])};
                 for i= 2, table.getn(CreatedEntities), 1 do
-                    QuestTools.SaveCall{ChangePlayer, CreatedEntities[i], Behavior[7]};
+                    SaveCall{ChangePlayer, CreatedEntities[i], Behavior[7]};
                 end
             end
             Behavior.Completed = true;
@@ -534,8 +534,8 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         end
 
     elseif Behavior[1] == Objectives.EntityDistance then
-        local Distance = QuestTools.SaveCall{
-            QuestTools.GetDistance, Behavior[2], Behavior[3],
+        local Distance = SaveCall{
+            GetDistance, Behavior[2], Behavior[3],
             ErrorHandler = function() return 0; end
         };
 
@@ -596,7 +596,7 @@ function QuestTemplate:IsObjectiveCompleted(_Index)
         if Behavior[4] == nil then
             local Text = Behavior[3];
             if type(Text) == "table" then
-                Text = Text[QuestTools.GetLanguage()];
+                Text = Text[GetLanguage()];
             end
             Text = QuestSystem:ReplacePlaceholders(Text);
             QuestSystem.UniqueTributeID = QuestSystem.UniqueTributeID +1;
@@ -816,7 +816,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         end
 
     elseif _Behavior[1] == Callbacks.MapScriptFunction then
-        QuestTools.SaveCall{_Behavior[2][1], _Behavior[2][2], self};
+        SaveCall{_Behavior[2][1], _Behavior[2][2], self};
 
     elseif _Behavior[1] == Callbacks.Briefing then
         if _ResultType == QuestResults.Success then
@@ -826,15 +826,15 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         end
 
     elseif _Behavior[1] == Callbacks.ChangePlayer then
-        QuestTools.SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
+        SaveCall{ChangePlayer, _Behavior[2], _Behavior[3]};
 
     elseif _Behavior[1] == Callbacks.Message then
         if self.m_Receiver == GUI.GetPlayerID() then
             local Text = _Behavior[2];
             if type(Text) == "table" then
-                Text = Text[QuestTools.GetLanguage()];
+                Text = Text[GetLanguage()];
             end
-            QuestTools.SaveCall{Message, QuestSystem:ReplacePlaceholders(Text)};
+            SaveCall{Message, QuestSystem:ReplacePlaceholders(Text)};
         end
 
     elseif _Behavior[1] == Callbacks.DestroyEntity then
@@ -853,7 +853,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         end
 
     elseif _Behavior[1] == Callbacks.CreateEntity then
-        QuestTools.SaveCall{ReplaceEntity, _Behavior[2], _Behavior[3]};
+        SaveCall{ReplaceEntity, _Behavior[2], _Behavior[3]};
         if _Behavior[4] then
             ChangePlayer(_Behavior[2], _Behavior[4]);
         end
@@ -866,7 +866,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         if _Behavior[5] then
             PlayerID = _Behavior[5];
         else
-            PlayerID = QuestTools.SaveCall{
+            PlayerID = SaveCall{
                 GetPlayer, _Behavior[2],
                 ErrorHandler = function() return 1; end
             };
@@ -879,7 +879,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         Logic.SetEntityName(ID, _Behavior[2]);
 
     elseif _Behavior[1] == Callbacks.CreateEffect then
-        local Position = QuestTools.SaveCall{
+        local Position = SaveCall{
             GetPosition, _Behavior[4],
             ErrorHandler = function() return {X= 100, Y= 100}; end
         };
@@ -980,7 +980,7 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         if QuestSystem.NamedExplorations[_Behavior[2]] then
             DestroyEntity(QuestSystem.NamedExplorations[_Behavior[2]]);
         end
-        local Position = QuestTools.SaveCall{
+        local Position = SaveCall{
             GetPosition, _Behavior[2],
             ErrorHandler = function() return {X= 100, Y= 100}; end
         };
@@ -1285,7 +1285,7 @@ function QuestTemplate:AttachFragments()
         NewQuestText = NewQuestText .. self.m_Fragments[2][i];
     end
     
-    if QuestTools.GetExtensionNumber() > 2 then
+    if GetExtensionNumber() > 2 then
         -- TODO: implement for ISAM!
         if self.m_Description.Type == MAINQUEST_OPEN or self.m_Description.Type == SUBQUEST_OPEN then
 
@@ -1302,9 +1302,9 @@ function QuestTemplate:AttachFragments()
                 );
 
                 if self.m_Result == QuestResults.Failure then
-                    ResultText = QuestTools.GetLocalizedTextInTable(QuestSystem.Text.Queststate.Failed);
+                    ResultText = GetLocalizedTextInTable(QuestSystem.Text.Queststate.Failed);
                 elseif self.m_Result == QuestResults.Success then
-                    ResultText = QuestTools.GetLocalizedTextInTable(QuestSystem.Text.Queststate.Succeed);
+                    ResultText = GetLocalizedTextInTable(QuestSystem.Text.Queststate.Succeed);
                 end
                 ResultText = QuestSystem:ReplacePlaceholders(ResultText);
 
@@ -1329,16 +1329,16 @@ function QuestTemplate:CreateQuest()
 
             local Title = self.m_Description.Title;
             if type(Title) == "table" then
-                Title = Title[QuestTools.GetLanguage()];
+                Title = Title[GetLanguage()];
             end
             Title = QuestSystem:ReplacePlaceholders(Title);
             local Text  = self.m_Description.Text;
             if type(Text) == "table" then
-                Text = Text[QuestTools.GetLanguage()];
+                Text = Text[GetLanguage()];
             end
             Text = QuestSystem:ReplacePlaceholders(Text);
 
-            if QuestTools.GetExtensionNumber() > 2 then
+            if GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicAddQuest(
                     self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.Info or 1
                 );
@@ -1368,16 +1368,16 @@ function QuestTemplate:CreateQuestEx()
 
             local Title = self.m_Description.Title;
             if type(Title) == "table" then
-                Title = Title[QuestTools.GetLanguage()];
+                Title = Title[GetLanguage()];
             end
             Title = QuestSystem:ReplacePlaceholders(Title);
             local Text  = self.m_Description.Text;
             if type(Text) == "table" then
-                Text = Text[QuestTools.GetLanguage()];
+                Text = Text[GetLanguage()];
             end
             Text = QuestSystem:ReplacePlaceholders(Text);
 
-            if QuestTools.GetExtensionNumber() > 2 then
+            if GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicAddQuestEx(
                     self.m_Receiver, QuestID, self.m_Description.Type, Title, Text, self.m_Description.X, 
                     self.m_Description.Y, self.m_Description.Info or 1
@@ -1402,13 +1402,13 @@ function QuestTemplate:QuestSetFailed()
     if self.m_Description and self.m_Description.Visible and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
         if Jornal then
-            if QuestTools.GetExtensionNumber() > 2 then
+            if GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicSetQuestType(self.m_Receiver, ID, Jornal[3] +1, Jornal[6]);
             else
                 Logic.RemoveQuest(self.m_Receiver, ID);
 
                 local ResultText = QuestSystem:ReplacePlaceholders(
-                    QuestTools.GetLocalizedTextInTable(QuestSystem.Text.Queststate.Failed)
+                    GetLocalizedTextInTable(QuestSystem.Text.Queststate.Failed)
                 );
 
                 if Jornal[7] == nil then
@@ -1425,13 +1425,13 @@ function QuestTemplate:QuestSetSuccessfull()
     if self.m_Description and self.m_Description.Visible and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
         if Jornal then
-            if QuestTools.GetExtensionNumber() > 2 then
+            if GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicSetQuestType(self.m_Receiver, ID, Jornal[3] +1, Jornal[6]);
             else
                 Logic.RemoveQuest(self.m_Receiver, ID);
 
                 local ResultText = QuestSystem:ReplacePlaceholders(
-                    QuestTools.GetLocalizedTextInTable(QuestSystem.Text.Queststate.Succeed)
+                    GetLocalizedTextInTable(QuestSystem.Text.Queststate.Succeed)
                 );
 
                 if Jornal[7] == nil then
@@ -1448,7 +1448,7 @@ function QuestTemplate:RemoveQuest()
     if self.m_Visible and self.m_Description and self.m_Description.Type ~= FRAGMENTQUEST_OPEN then
         local Jornal, ID = QuestSystem:GetJornalByQuestID(self.m_QuestID);
         if Jornal then
-            if QuestTools.GetExtensionNumber() > 2 then
+            if GetExtensionNumber() > 2 then
                 mcbQuestGUI.simpleQuest.logicRemoveQuest(self.m_Receiver, Jornal[1]);
             else
                 Logic.RemoveQuest(self.m_Receiver, Jornal[1]);
@@ -1594,7 +1594,7 @@ function QuestSystem:ObjectiveNPCHandler(_Hero, _NPC)
                                     if Quest.m_Objectives[j][4] then
                                         local Text = Quest.m_Objectives[j][4];
                                         if type(Text) == "table" then
-                                            Text = Text[QuestTools.GetLanguage()];
+                                            Text = Text[GetLanguage()];
                                         end
                                         Message(QuestSystem:ReplacePlaceholders(Text));
                                     end
@@ -1620,7 +1620,7 @@ function QuestSystem:NpcAndHeroLookAtTasks(_NPC, _Hero)
     local HeroesTable = {};
     Logic.GetHeroes(Logic.EntityGetPlayer(_Hero), HeroesTable);
     for i= 1, table.getn(HeroesTable), 1 do
-        if QuestTools.GetDistance(_NPC, HeroesTable[i]) < 5000 then
+        if GetDistance(_NPC, HeroesTable[i]) < 5000 then
             if _Hero ~= HeroesTable[i] and Logic.GetCurrentTaskList(HeroesTable[i]) == "TL_NPC_INTERACTION" then
                 Logic.SetTaskList(HeroesTable[i], TaskLists.TL_NPC_IDLE);
             end

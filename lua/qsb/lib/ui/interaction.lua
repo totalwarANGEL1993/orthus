@@ -252,7 +252,7 @@ function Interaction:IsInteractionPossibleForHeroOrPlayer(_Instance, _HeroID)
     if _Instance.m_Hero then
         if _HeroID ~= GetID(_Instance.m_Hero) then
             if _Instance.m_HeroInfo and PlayerIDOfHero == GUI.GetPlayerID() then
-                local Text = QuestTools.GetLocalizedTextInTable(_Instance.m_HeroInfo);
+                local Text = GetLocalizedTextInTable(_Instance.m_HeroInfo);
                 Message(ReplacePlacholders(Text));
             end
             return true;
@@ -261,7 +261,7 @@ function Interaction:IsInteractionPossibleForHeroOrPlayer(_Instance, _HeroID)
     if _Instance.m_Player and QuestSync:IsMultiplayerGame() then
         if PlayerIDOfHero ~= _Instance.m_Player then
             if _Instance.m_PlayerInfo and PlayerIDOfHero == GUI.GetPlayerID() then
-                local Text = QuestTools.GetLocalizedTextInTable(_Instance.m_PlayerInfo);
+                local Text = GetLocalizedTextInTable(_Instance.m_PlayerInfo);
                 Message(ReplacePlacholders(Text));
             end
             return false;
@@ -1179,7 +1179,7 @@ function NonPlayerMerchant:TooltipOffer(_SlotIndex)
     end
 
     local CostString = InterfaceTool_CreateCostString(Costs);
-    local Language = QuestTools.GetLanguage();
+    local Language = GetLanguage();
     local Description;
 
     -- Mercenary

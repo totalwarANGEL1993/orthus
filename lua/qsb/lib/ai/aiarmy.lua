@@ -84,14 +84,14 @@ class(AiArmy);
 function AiArmy:StartControllerJob()
     -- Controller
     if not AiArmyControllerJobId then
-        AiArmyControllerJobId = QuestTools.StartSimpleHiResJobEx(function()
+        AiArmyControllerJobId = StartSimpleHiResJobEx(function()
             return AiArmy:ArmyOperationScheduler();
         end);
     end
 
     -- Attack reaction
     if not AiArmyAttackedJobId then
-        AiArmyAttackedJobId = QuestTools.StartInlineJob(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, function()
+        AiArmyAttackedJobId = StartInlineJob(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, function()
             local Offender = Event.GetEntityID1();
             local Defender = {Event.GetEntityID2()};
             return AiArmy:ArmyAttackedReactionController(Offender, Defender);
@@ -135,9 +135,9 @@ function AiArmy:ArmyAttackedReactionController(_Attacker, _Attacked)
                 if not AiArmyList[j]:IsExecutingBehavior("Battle") then
                     local VictimID = _Attacked[i];
                     if Logic.IsEntityInCategory(VictimID, EntityCategories.Soldier) == 1 then
-                        VictimID = QuestTools.SoldierGetLeader(VictimID);
+                        VictimID = SoldierGetLeader(VictimID);
                     end
-                    if VictimID and QuestTools.IsInTable(VictimID, AiArmyList[j].Troops) then
+                    if VictimID and IsInTable(VictimID, AiArmyList[j].Troops) then
                         AiArmyList[j]:InsertBehavior(AiArmyBehavior:New(
                             "Battle",
                             GetPosition(_Attacker),
@@ -219,7 +219,7 @@ function AiArmy:AddEntity(_TroopID, _Instantly)
     or Logic.IsLeader(_TroopID) == 1 then
         return;
     end
-    if not QuestTools.IsInTable(_TroopID, self.Troops) and not QuestTools.IsInTable(_TroopID, self.IncommingTroops) then
+    if not IsInTable(_TroopID, self.Troops) and not IsInTable(_TroopID, self.IncommingTroops) then
         return;
     end
     self:CallChoseFormation(_TroopID);
@@ -632,7 +632,7 @@ function AiArmy:GetArmyPosition()
     if table.getn(self.Troops) == 0 then
         Position = self.HomePosition;
     else
-        Position = QuestTools.GetGeometricFocus(unpack(self.Troops));
+        Position = GetGeometricFocus(unpack(self.Troops));
     end
     self.ArmyPositionCache = Position;
     return Position;
@@ -682,7 +682,7 @@ function AiArmy:DefaultGetArmyFront()
             end
         end
         local Rotation = self:CallGetArmyOrientation();
-        local Position = QuestTools.GetCirclePosition(
+        local Position = GetCirclePosition(
             ArmyPosition, math.sqrt(MaxDistance) * 1.5, Rotation
         );
         -- Uncomment for debug reasons
@@ -740,9 +740,9 @@ function AiArmy:GetArmyBlockPositonMap(_Position)
 
         local n = table.getn(Temp);
         for i= 1, n do
-            local FormationPos = QuestTools.GetCirclePosition(Position, getModLi(i), 0 + Rotation);
-            FormationPos = QuestTools.GetCirclePosition(FormationPos, getModRei(i), 0 + Rotation + 270);
-            FormationPos = QuestTools.GetReachablePosition(Temp[i], FormationPos);
+            local FormationPos = GetCirclePosition(Position, getModLi(i), 0 + Rotation);
+            FormationPos = GetCirclePosition(FormationPos, getModRei(i), 0 + Rotation + 270);
+            FormationPos = GetReachablePosition(Temp[i], FormationPos);
             PositionMap[Temp[i]] = FormationPos;
         end
     end
@@ -898,7 +898,7 @@ function AiArmy:DispatchTroopsToProducers(_Troops)
         local TroopType = Logic.GetEntityType(Troops[i]);
         for k, v in pairs(self.Producers) do
             if Logic.IsHero(v) == 0 then
-                if v and v:IsAlive() and not QuestTools.IsInTable(Troops[i], v.Troops.Created) then
+                if v and v:IsAlive() and not IsInTable(Troops[i], v.Troops.Created) then
                     if v.IsSpawner and v:IsInTypeList(TroopType) then
                         AiArmy:MoveTroop(Troops[i], v.ApproachPosition, true);
                         self:SetTroopSpeed(Troops[i], 1.0);
@@ -929,7 +929,7 @@ function AiArmy:GetSpawnerProducers()
     local SpawnerList = {};
     for k, v in pairs(self.Producers) do
         if v and v.IsSpawner then
-            if QuestTools.SameSector(self.HomePosition, v.ApproachPosition) then
+            if SameSector(self.HomePosition, v.ApproachPosition) then
                 table.insert(SpawnerList, v);
             end
         end
@@ -1076,7 +1076,7 @@ function AiArmy:GetTroopBaseSpeed(_TroopID)
     if not self:IsTroopAlive(_TroopID) then
         return Speed;
     end
-    for k, v in pairs(QuestTools.GetEntityCategoriesAsString(_TroopID)) do
+    for k, v in pairs(GetEntityCategoriesAsString(_TroopID)) do
         if UnitBaseSpeed[v] and Speed < UnitBaseSpeed[v] then
             Speed = UnitBaseSpeed[v];
         end
@@ -1395,7 +1395,7 @@ function AiArmy:NextBehavior()
     if not Behavior then
         Behavior = self.BehaviorQueue[1];
         if not Behavior then
-            if QuestTools.GetDistance(self:GetArmyPosition(), self.HomePosition) <= 1000 then
+            if GetDistance(self:GetArmyPosition(), self.HomePosition) <= 1000 then
                 Behavior = AiArmyBehavior:New("Idle", false);
             else
                 Behavior = AiArmyBehavior:New("Retreat", false);
@@ -1712,7 +1712,7 @@ inherit(AiArmyBehavior.Move, AiArmyBehavior.AbstractBehavior);
 
 function AiArmyBehavior.Move:Run(_Army)
     local LastIdx = table.getn(self.m_Target);
-    if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= 2000 then
+    if GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= 2000 then
         _Army:ClearTargets();
         return true;
     end
@@ -1720,7 +1720,7 @@ function AiArmyBehavior.Move:Run(_Army)
     _Army:NormalizedArmySpeed();
     _Army:Assemble(500);
     if self.m_Target.Current < table.getn(self.m_Target) then
-        if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[self.m_Target.Current]) <= self.m_Distance then
+        if GetDistance(_Army:GetArmyPosition(), self.m_Target[self.m_Target.Current]) <= self.m_Distance then
             self.m_Target.Current = self.m_Target.Current +1;
         end
     end
@@ -1749,7 +1749,7 @@ inherit(AiArmyBehavior.Attack, AiArmyBehavior.Move);
 
 function AiArmyBehavior.Attack:Run(_Army)
     local LastIdx = table.getn(self.m_Target);
-    if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= 2000 then
+    if GetDistance(_Army:GetArmyPosition(), self.m_Target[LastIdx]) <= 2000 then
         local Range = _Army.RodeLength + _Army.OuterRange;
         local Target = self.m_Target[LastIdx];
         _Army:InsertBehavior(AiArmyBehavior:New("Retreat"));
@@ -1775,7 +1775,7 @@ function AiArmyBehavior.Attack:Run(_Army)
     _Army:NormalizedArmySpeed();
     _Army:Assemble(500);
     if self.m_Target.Current < table.getn(self.m_Target) then
-        if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Target[self.m_Target.Current]) <= self.m_Distance then
+        if GetDistance(_Army:GetArmyPosition(), self.m_Target[self.m_Target.Current]) <= self.m_Distance then
             self.m_Target.Current = self.m_Target.Current +1;
         end
     end
@@ -1830,10 +1830,10 @@ inherit(AiArmyBehavior.Guard, AiArmyBehavior.AbstractBehavior);
 
 function AiArmyBehavior.Guard:Run(_Army)
     -- enter area to defend
-    if QuestTools.GetDistance(_Army:GetArmyPosition(), self.m_Position) >= 500 then
+    if GetDistance(_Army:GetArmyPosition(), self.m_Position) >= 500 then
         _Army:MoveAsBlock(self.m_Position, false, false);
         _Army:NormalizedArmySpeed();
-        if QuestTools.AreEnemiesInArea(_Army.PlayerID, _Army:GetArmyPosition(), 4000) then
+        if AreEnemiesInArea(_Army.PlayerID, _Army:GetArmyPosition(), 4000) then
             _Army:InsertBehavior(AiArmyBehavior:New(
                 "Battle",
                 _Army:GetArmyPosition(),
@@ -1848,7 +1848,7 @@ function AiArmyBehavior.Guard:Run(_Army)
 
     -- defend area against enemy
     local Area = _Army.RodeLength + _Army.OuterRange;
-    if QuestTools.AreEnemiesInArea(_Army.PlayerID, _Army:GetArmyPosition(), Area) then
+    if AreEnemiesInArea(_Army.PlayerID, _Army:GetArmyPosition(), Area) then
         _Army:InsertBehavior(AiArmyBehavior:New(
             "Battle",
             _Army:GetArmyPosition(),
@@ -1907,7 +1907,7 @@ end
 inherit(AiArmyBehavior.Retreat, AiArmyBehavior.AbstractBehavior);
 
 function AiArmyBehavior.Retreat:Run(_Army)
-    if QuestTools.GetDistance(_Army:GetArmyPosition(), _Army.HomePosition) <= 2000 then
+    if GetDistance(_Army:GetArmyPosition(), _Army.HomePosition) <= 2000 then
         _Army:InsertBehavior(AiArmyBehavior:New("Refill"), 2);
         return true;
     end
@@ -1954,7 +1954,7 @@ function AiArmyBehavior.Refill:Run(_Army)
     else
         -- group at home position
         for i= 1, table.getn(_Army.Troops), 1 do
-            if QuestTools.GetDistance(_Army.Troops[i], _Army.HomePosition) >= 1500 then
+            if GetDistance(_Army.Troops[i], _Army.HomePosition) >= 1500 then
                 _Army:MoveTroop(_Army.Troops[i], _Army.HomePosition, false);
             end
         end
@@ -1987,7 +1987,7 @@ function AiArmyBehavior.Refill:Run(_Army)
             if v and v:IsAlive() then
                 ProducerInTable = true;
                 if table.getn(_Army.Troops) < _Army.TroopCount then
-                    if QuestTools.SameSector(_Army.HomePosition, v.ApproachPosition) then
+                    if SameSector(_Army.HomePosition, v.ApproachPosition) then
                         local ID = v:GetTroop();
                         if ID > 0 then
                             _Army:CallChoseFormation(ID);
@@ -2137,7 +2137,7 @@ end
 function AiArmy:DefaultGetTargetThreatFactor(_TargetID, _TroopID)
     local Factor = 1.0;
     local Priority = self:GetTargetCostFactors(_TargetID);
-    for k, v in pairs(QuestTools.GetEntityCategoriesAsString(_TargetID)) do
+    for k, v in pairs(GetEntityCategoriesAsString(_TargetID)) do
         if Priority[v] then
             if Priority[v] > 0 then
                 Factor = Factor * ((1/Priority[v]) or 1);

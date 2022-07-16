@@ -650,7 +650,7 @@ end
 -- @local
 --
 function QuestSystemBehavior:OverwriteMapClosingFunctions()
-    if QuestTools.GetExtensionNumber() <= 2 then
+    if GetExtensionNumber() <= 2 then
         GUIAction_RestartMap_Orig_QuestSystemBehavior = GUIAction_RestartMap;
         GUIAction_RestartMap = function()
             QuestSystemBehavior:UnloadS5Hook();
@@ -693,7 +693,7 @@ function QuestSystemBehavior:UnloadS5Hook()
         Message("ERROR: Can not find CppLogic!");
         return;
     end
-    if QuestTools.GetExtensionNumber() <= 2 and CppLogic then
+    if GetExtensionNumber() <= 2 and CppLogic then
         if string.find(Folders.Map, "externalmap") then
             CppLogic.Logic.RemoveTopArchive();
         end
@@ -814,7 +814,7 @@ function b_Goal_MapScriptFunction:CustomFunction(_Quest)
 end
 
 function b_Goal_MapScriptFunction:Reset(_Quest)
-    QuestTools.SaveCall{ResetBehaviorProgress, self};
+    SaveCall{ResetBehaviorProgress, self};
 end
 
 function b_Goal_MapScriptFunction:Debug(_Quest)
@@ -1803,7 +1803,7 @@ function b_Goal_DestroyEnemiesInArea:GetGoalTable()
 end
 
 function b_Goal_DestroyEnemiesInArea:CustomFunction(_Quest)
-    if not QuestTools.AreEnemiesInArea(_Quest.m_Receiver, GetPosition(self.Data.Position), self.Data.AreaSize) then
+    if not AreEnemiesInArea(_Quest.m_Receiver, GetPosition(self.Data.Position), self.Data.AreaSize) then
         return true;
     end
 end
@@ -1979,7 +1979,7 @@ function b_Reprisal_Briefing:GetReprisalTable()
 end
 
 function b_Reprisal_Briefing:CustomFunction(_Quest)
-    _Quest.m_FailureBriefing = QuestTools.SaveCall{
+    _Quest.m_FailureBriefing = SaveCall{
         _G[self.Data.Briefing],
         _Quest.m_Receiver,
         ErrorHandler = function() return -1; end
@@ -2553,7 +2553,7 @@ function b_Reward_Briefing:AddParameter(_Index, _Parameter)
 end
 
 function b_Reward_Briefing:CustomFunction(_Quest)
-    _Quest.m_SuccessBriefing = QuestTools.SaveCall{
+    _Quest.m_SuccessBriefing = SaveCall{
         _G[self.Data.Briefing],
         _Quest.m_Receiver,
         ErrorHandler = function() return -1; end
@@ -3183,7 +3183,7 @@ end
 
 function b_Reward_MoveAndVanish:CustomFunction(_Quest)
     self:Reset(_Quest);
-    self.Data.JobID = QuestTools.MoveAndVanish(self.Data.Entity, self.Data.Target);
+    self.Data.JobID = MoveAndVanish(self.Data.Entity, self.Data.Target);
 end
 
 function b_Reward_MoveAndVanish:Debug(_Quest)
@@ -3863,7 +3863,7 @@ function b_Goal_DestroyPlayer:CustomFunction(_Quest)
             AiController:DestroyPlayer(self.Data.PlayerID);
         end
 
-        local PlayerEntities = QuestTools.GetPlayerEntities(self.Data.PlayerID, 0);
+        local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
         for i= 1, table.getn(PlayerEntities), 1 do 
             if Logic.IsSettler(PlayerEntities[i]) == 1 or Logic.IsBuilding(PlayerEntities[i]) == 1 then
                 if Logic.GetEntityHealth(PlayerEntities[i]) > 0 then
@@ -4611,7 +4611,7 @@ function b_Reward_AI_CreateAIPlayer:GetRewardTable()
 end
 
 function b_Reward_AI_CreateAIPlayer:CustomFunction(_Quest)
-    QuestTools.SaveCall{
+    SaveCall{
         CreateAIPlayer,
         self.Data.PlayerID,
         self.Data.TechLevel,
@@ -4642,7 +4642,7 @@ function b_Reward_AI_CreateAIPlayer:Debug(_Quest)
     end
 
     -- Most expensive check last
-    local PlayerEntities = QuestTools.GetPlayerEntities(self.Data.PlayerID, 0);
+    local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
     for i= 1, table.getn(PlayerEntities), 1 do
         if Logic.IsBuilding(PlayerEntities[i]) == 1 then
             return false;
@@ -4690,7 +4690,7 @@ function b_Reward_AI_DestroyAIPlayer:GetRewardTable()
 end
 
 function b_Reward_AI_DestroyAIPlayer:CustomFunction(_Quest)
-    QuestTools.SaveCall{DestroyAIPlayer, self.Data.PlayerID};
+    SaveCall{DestroyAIPlayer, self.Data.PlayerID};
 end
 
 function b_Reward_AI_DestroyAIPlayer:Debug(_Quest)
@@ -4760,7 +4760,7 @@ function b_Reward_AI_SetupAIPlayer:GetRewardTable()
 end
 
 function b_Reward_AI_SetupAIPlayer:CustomFunction(_Quest)
-    QuestTools.SaveCall{
+    SaveCall{
         CreateAIPlayer,
         self.Data.PlayerID,
         self.Data.TechLevel,
@@ -4799,7 +4799,7 @@ function b_Reward_AI_SetupAIPlayer:Debug(_Quest)
     end
 
     -- Most expensive check last
-    local PlayerEntities = QuestTools.GetPlayerEntities(self.Data.PlayerID, 0);
+    local PlayerEntities = GetPlayerEntities(self.Data.PlayerID, 0);
     for i= 1, table.getn(PlayerEntities), 1 do
         if Logic.IsBuilding(PlayerEntities[i]) == 1 then
             return false;
@@ -4867,7 +4867,7 @@ function b_Reward_AI_ConstructBuilding:Debug(_Quest)
         dbg(_Quest, self, "Player " ..tostring(self.Data.PlayerID).. " does not have an AI!");
         return true;
     end
-    if not QuestTools.IsInTable(self.Data.BuildingType, Entities) then
+    if not IsInTable(self.Data.BuildingType, Entities) then
         dbg(_Quest, self, "Chosen type does not exist!");
         return true;
     end
@@ -4933,7 +4933,7 @@ function b_Reward_AI_CreateArmy:GetRewardTable()
 end
 
 function b_Reward_AI_CreateArmy:CustomFunction(_Quest)
-    local Army = QuestTools.SaveCall{
+    local Army = SaveCall{
         CreateAIPlayerArmy,
         self.Data.ArmyName,
         self.Data.PlayerID,
@@ -5053,7 +5053,7 @@ function b_Reward_AI_CreateSpawnArmy:CustomFunction(_Quest)
         end
     end
     -- Create army
-    local Army = QuestTools.SaveCall{
+    local Army = SaveCall{
         CreateAIPlayerSpawnArmy,
         self.Data.ArmyName, 
         self.Data.PlayerID, 
@@ -5137,7 +5137,7 @@ end
 
 function b_Reward_AI_DestroyArmy:CustomFunction(_Quest)
     if AiControllerArmyNameToID[self.Data.ArmyName] then
-        QuestTools.SaveCall{ArmyDisband, self.Data.ArmyName, true, false};
+        SaveCall{ArmyDisband, self.Data.ArmyName, true, false};
     end
 end
 
@@ -5192,7 +5192,7 @@ end
 
 function b_Reward_AI_EnableArmyPatrol:CustomFunction(_Quest)
     if AiControllerArmyNameToID[self.Data.ArmyName] then
-        QuestTools.SaveCall{ArmySetExemtFromPatrol, self.Data.ArmyName, not self.Data.Flag};
+        SaveCall{ArmySetExemtFromPatrol, self.Data.ArmyName, not self.Data.Flag};
     end
 end
 
@@ -5243,7 +5243,7 @@ end
 
 function b_Reward_AI_EnableArmyAttack:CustomFunction(_Quest)
     if AiControllerArmyNameToID[self.Data.ArmyName] then
-        QuestTools.SaveCall{ArmySetExemtFromAttack, self.Data.ArmyName, not self.Data.Flag};
+        SaveCall{ArmySetExemtFromAttack, self.Data.ArmyName, not self.Data.Flag};
     end
 end
 

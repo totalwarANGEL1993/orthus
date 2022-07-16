@@ -857,7 +857,7 @@ function QuestBriefing:PrintHeadline(_Text)
         Text = copy(Text);
     end
     -- Localize text
-    local Language = QuestTools.GetLanguage();
+    local Language = GetLanguage();
     if type(Text) == "table" then
         Text = Text[Language];
     end
@@ -881,7 +881,7 @@ function QuestBriefing:PrintText(_Text)
         Text = copy(Text);
     end
     -- Localize text
-    local Language = QuestTools.GetLanguage();
+    local Language = GetLanguage();
     if type(Text) == "table" then
         Text = Text[Language];
     end
@@ -895,7 +895,7 @@ function QuestBriefing:PrintText(_Text)
 end
 
 function QuestBriefing:PrintOptions(_Page)
-    local Language = QuestTools.GetLanguage();
+    local Language = GetLanguage();
     if _Page.MC then
         Mouse.CursorShow();
         for i= 1, table.getn(_Page.MC), 1 do

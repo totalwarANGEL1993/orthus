@@ -60,7 +60,7 @@ function RemoteBuildPlaceWall(_Entity, _Direction, _Mode, _Variant)
         AiWallConstruction:SetPlacementMode(PlayerID, _Variant);
     end
     local Costs = AiWallConstruction:WallSegmendGetCosts(PlayerID);
-    QuestTools.AddResourcesToPlayer(PlayerID, Costs);
+    AddResourcesToPlayer(PlayerID, Costs);
     local CornerID, WallID = AiWallConstruction:PlaceSegment(PlayerID, x, y, _Direction);
     return CornerID, WallID;
 end
@@ -85,7 +85,7 @@ function RemoteBuildUpgradeCorner(_Entity)
         [ResourceType.Stone] = 200,
         [ResourceType.Wood]  = 200,
     };
-    QuestTools.AddResourcesToPlayer(PlayerID, Costs);
+    AddResourcesToPlayer(PlayerID, Costs);
     AiWallConstruction:WallSegmendPlace(
         GetID(_Entity),
         PlacementAction.UpgradeCorner
@@ -296,19 +296,19 @@ function AiWallConstruction:CreateControllerJobs()
     end);
 
     -- Inflict damage to walls
-    QuestTools.StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, function()
+    StartInlineJob(Events.LOGIC_EVENT_EVERY_TURN, function()
         AiWallConstruction:WallBehaviorManager();
     end);
 
     -- Control wall segments (health and construction)
-    QuestTools.StartInlineJob(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, function()
+    StartInlineJob(Events.LOGIC_EVENT_ENTITY_HURT_ENTITY, function()
         local AttackerID = Event.GetEntityID1();
         local AttackedID = Event.GetEntityID2();
         AiWallConstruction:EntityAttackedManager(AttackerID, AttackedID);
     end);
 
     -- Control wall segments (health and construction)
-    QuestTools.StartInlineJob(Events.LOGIC_EVENT_ENTITY_CREATED, function()
+    StartInlineJob(Events.LOGIC_EVENT_ENTITY_CREATED, function()
         local EntityID = Event.GetEntityID();
         local PlayerID = Logic.EntityGetPlayer(EntityID);
         -- TODO: Not needed here?
@@ -404,7 +404,7 @@ function AiWallConstruction:WallBehaviorManager()
                 if self.m_Walls[k].CurrentHealth > 0 then
                     local MaxHealth = self.Data:Get(EntityType, PlayerID, "MaxHealth");
                     if self.Data[EntityType] and MaxHealth > self.m_Walls[k].CurrentHealth then
-                        if not QuestTools.AreEnemiesInArea(PlayerID, {X= x, Y= y}, 5000) then
+                        if not AreEnemiesInArea(PlayerID, {X= x, Y= y}, 5000) then
                             local Factor = self.Data:Get(EntityType, PlayerID, "HealthFactor") or 0.001;
                             if Factor > 0 then
                                 self.m_Walls[k].CurrentHealth = math.min(
@@ -455,7 +455,7 @@ function AiWallConstruction:WallBehaviorManager()
                 end
                 
                 self.m_Walls[k].ConstructionProgress = math.min(1, ProgressTime / FinishTime);
-                QuestTools.SetBuildingHeight(k, self.m_Walls[k].ConstructionProgress);
+                SetBuildingHeight(k, self.m_Walls[k].ConstructionProgress);
                 if self.m_Walls[k].ConstructionProgress == 1 then
                     self.m_Walls[k].CurrentHealth = AiWallConstruction.Data:Get(EntityType, PlayerID, "MaxHealth");
                     GameCallback_OnBuildingConstructionComplete(k, PlayerID);
@@ -611,11 +611,11 @@ function AiWallConstruction:WallSegmendCalculatePosition(_EntityID, _Action)
     end
 
     local Position1 = {X= PosX1, Y= PosY1};
-    if not QuestTools.IsValidPosition(Position1) then
+    if not IsValidPosition(Position1) then
         return;
     end
     local Position2 = {X= PosX2, Y= PosY2};
-    if not QuestTools.IsValidPosition(Position2) then
+    if not IsValidPosition(Position2) then
         return;
     end
     if self.Mapping.GateType[SegmentType] and self:IsAnyWallGateNear(PosX1, PosY1, 1000) then
@@ -637,7 +637,7 @@ function AiWallConstruction:WallSegmendStartCornerUpgrade(_EntityID)
         if self.m_Walls[_EntityID].UpgradeProgress == -1 then
             self.m_Walls[_EntityID].UpgradeProgress = 0;
             self.m_Walls[_EntityID].UpgradeStartTime = Logic.GetTime() * 10;
-            QuestTools.RemoveResourcesFromPlayer(PlayerID, {
+            RemoveResourcesFromPlayer(PlayerID, {
                 [ResourceType.Stone] = 200,
                 [ResourceType.Wood]  = 200,
             });
@@ -659,7 +659,7 @@ function AiWallConstruction:WallSegmendStopCornerUpgrade(_EntityID)
             self.m_Walls[_EntityID].UpgradeProgress = -1;
             Logic.SetEntityScriptingValue(_EntityID, 20, 0);
             DestroyEntity(self.m_Walls[_EntityID].ConstructionSiteID);
-            QuestTools.AddResourcesToPlayer(PlayerID, {
+            AddResourcesToPlayer(PlayerID, {
                 [ResourceType.Stone] = 200,
                 [ResourceType.Wood]  = 200,
             });
@@ -691,7 +691,7 @@ end
 
 function AiWallConstruction:WallSegmendRegisterExisting()
     for i= 1, table.getn(Score.Player), 1 do
-        local PlayerEntities = QuestTools.GetPlayerEntities(i, 0);
+        local PlayerEntities = GetPlayerEntities(i, 0);
         for j= 1, table.getn(PlayerEntities), 1 do
             local Type = Logic.GetEntityType(PlayerEntities[j]);
             if self.Data[Type] and not self.m_Walls[PlayerEntities[j]] then
@@ -754,7 +754,7 @@ function AiWallConstruction:WallSegmendSold(_EntityID)
         for i= 2, table.getn(Costs), 2 do
             Costs[i] = math.floor(Costs[i] / 2);
         end
-        QuestTools.AddResourcesToPlayer(PlayerID, Costs);
+        AddResourcesToPlayer(PlayerID, Costs);
     end
     Logic.CreateEffect(GGL_Effects.FXCrushBuilding, x, y, 0);
     DestroyEntity(_EntityID);
@@ -764,15 +764,15 @@ function AiWallConstruction:WallSegmendConstructed(_PlayerID, _WallType, _Corner
     local WallID, CornerID;
     
     local Position1 = {X= _X1, Y= _Y1};
-    if not _X1 or not QuestTools.IsValidPosition(Position1) then
+    if not _X1 or not IsValidPosition(Position1) then
         return 0;
     end
     local Position2 = {X= _X2, Y= _Y2};
-    if not _X2 or not QuestTools.IsValidPosition(Position2) then
+    if not _X2 or not IsValidPosition(Position2) then
         return 0;
     end
 
-    if not QuestTools.AreEnemiesInArea(_PlayerID, Position1, 5000) then
+    if not AreEnemiesInArea(_PlayerID, Position1, 5000) then
         if  not self:IsAnyWallNear(_X1, _Y1, 250) and not self:IsAreaOffLimitsForPlayer(_PlayerID, _X1, _Y1) 
         and self:IsShallowEnough(_X1, _Y1, 250) then
             WallID = Logic.CreateEntity(_WallType, _X1, _Y1, _Orientation, _PlayerID);
@@ -783,11 +783,11 @@ function AiWallConstruction:WallSegmendConstructed(_PlayerID, _WallType, _Corner
         end
     end
     if self.Data[_WallType] and IsExisting(WallID) then
-        QuestTools.RemoveResourcesFromPlayer(_PlayerID, self.Data:Get(_WallType, _PlayerID, "Costs"));
+        RemoveResourcesFromPlayer(_PlayerID, self.Data:Get(_WallType, _PlayerID, "Costs"));
         self:WallSegmendRegister(WallID);
     end
     if self.Data[_CornerType] and IsExisting(CornerID) then
-        QuestTools.RemoveResourcesFromPlayer(_PlayerID, self.Data:Get(_CornerType, _PlayerID, "Costs"));
+        RemoveResourcesFromPlayer(_PlayerID, self.Data:Get(_CornerType, _PlayerID, "Costs"));
         self:WallSegmendRegister(CornerID);
     end
     return CornerID, WallID;
@@ -973,7 +973,7 @@ end
 function AiWallConstruction:IsAreaOffLimitsForPlayer(_PlayerID, _X, _Y)
     for k, v in pairs(self.m_AreaLimitation[_PlayerID]) do
         -- TODO: Use polygone?
-        if QuestTools.GetDistance({X= _X, Y= _Y}, k) <= v then
+        if GetDistance({X= _X, Y= _Y}, k) <= v then
             return true;
         end
     end
@@ -1124,15 +1124,15 @@ function AiWallConstruction:OverrideInterfaceTooltip()
                     if ToolTip then
                         local Costs = AiWallConstruction:WallSegmendGetCosts(PlayerID);
                         local CostString = InterfaceTool_CreateCostString(Costs);
-                        local DescString = QuestTools.GetLocalizedTextInTable(ToolTip);
-                        local KeyString = QuestTools.GetLocalizedTextInTable(ToolTip.Hotkey);
+                        local DescString = GetLocalizedTextInTable(ToolTip);
+                        local KeyString = GetLocalizedTextInTable(ToolTip.Hotkey);
                         XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomCosts, CostString);
                         XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, DescString);
                         XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomShortCut, KeyString);
                     end
                 else
                     local DescTable  = AiWallConstruction.Text.Tooltip.DisabledConstruction;
-                    local DescString = QuestTools.GetLocalizedTextInTable(DescTable);
+                    local DescString = GetLocalizedTextInTable(DescTable);
                     XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomCosts, "");
                     XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomText, DescString);
                     XGUIEng.SetText(gvGUI_WidgetID.TooltipBottomShortCut, "");
@@ -1513,13 +1513,13 @@ function AiWallConstruction:FeedbackPlaceSegment(_EntityID, _Action)
     if not X1 or not X2 or not self:IsShallowEnough(X1, Y1, 250)
     or self:IsAreaOffLimitsForPlayer(PlayerID, X1, Y1)
     or self:IsAnyWallNear(X1, Y1, 250) then
-        local Text = QuestTools.GetLocalizedTextInTable(self.Text.Message.GeneralImpossible);
+        local Text = GetLocalizedTextInTable(self.Text.Message.GeneralImpossible);
         Message(Text);
         Sound.PlayFeedbackSound(Sounds.Leader_LEADER_NO_rnd_01);
         return;
     end
-    if QuestTools.AreEnemiesInArea(PlayerID, {X= X1, Y= Y1}, 5000) then
-        local Text = QuestTools.GetLocalizedTextInTable(self.Text.Message.EnemyToClose);
+    if AreEnemiesInArea(PlayerID, {X= X1, Y= Y1}, 5000) then
+        local Text = GetLocalizedTextInTable(self.Text.Message.EnemyToClose);
         Message(Text);
         Sound.PlayFeedbackSound(Sounds.Leader_LEADER_NO_rnd_01);
         return;

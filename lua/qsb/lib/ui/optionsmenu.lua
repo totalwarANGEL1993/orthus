@@ -316,7 +316,7 @@ OptionMenuPage = {
 };
 
 function OptionMenuPage:construct(_Identifier, _Parent, _Title, _Description, _OnClose, _NoBack, _Options)
-    local Language = QuestTools.GetLanguage();
+    local Language = GetLanguage();
     if type(_Title) == "table" then
         _Title = _Title[Language];
     end
@@ -415,7 +415,7 @@ OptionMenuOption = {
 };
 
 function OptionMenuOption:construct(_Index, _Key, _Text, _Target, _Data)
-    local Language = QuestTools.GetLanguage();
+    local Language = GetLanguage();
     if type(_Text) == "table" then
         _Text = _Text[Language];
     end

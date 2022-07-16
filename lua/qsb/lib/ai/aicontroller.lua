@@ -79,7 +79,7 @@ function CreateAIPlayer(_PlayerID, _TechLevel, _SerfAmount, _HomePosition, _Stre
     end
 
     if not AiController.Players[_PlayerID] then
-        local PlayerEntities = QuestTools.GetPlayerEntities(_PlayerID, 0);
+        local PlayerEntities = GetPlayerEntities(_PlayerID, 0);
         for i= 1, table.getn(PlayerEntities), 1 do
             if Logic.IsBuilding(PlayerEntities[i]) == 1 then
                 AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Strength, _TechLevel, _Construct, _Rebuild);
@@ -681,7 +681,7 @@ function ArmySetController(_Army, _Function, ...)
     ArmySetHiddenFromAI(_Army, true);
 
     if Army then
-        local ID = QuestTools.StartSimpleJobEx(_Function, Army.ArmyID, unpack(arg));
+        local ID = StartSimpleJobEx(_Function, Army.ArmyID, unpack(arg));
         AiControllerCustomJobID[Army.ArmyID] = ID
         return ID;
     end
@@ -728,10 +728,10 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
     end
 
     -- Find default target and patrol points
-    for k, v in pairs(QuestTools.GetEntitiesByPrefix("Player" .._PlayerID.. "_AttackTarget")) do
+    for k, v in pairs(GetEntitiesByPrefix("Player" .._PlayerID.. "_AttackTarget")) do
         self:AddAttackTarget(_PlayerID, v);
     end
-    for k, v in pairs(QuestTools.GetEntitiesByPrefix("Player" .._PlayerID.. "_PatrolPoint")) do
+    for k, v in pairs(GetEntitiesByPrefix("Player" .._PlayerID.. "_PatrolPoint")) do
         self:AddDefenceTarget(_PlayerID, v);
     end
     self:CreateDefaultDefenceTargets(_PlayerID);
@@ -942,7 +942,7 @@ end
 
 function AiController:AddAttackTarget(_PlayerID, _Entity)
     if self.Players[_PlayerID] then
-        if not QuestTools.IsInTable(_Entity, self.Players[_PlayerID].AttackPos) then
+        if not IsInTable(_Entity, self.Players[_PlayerID].AttackPos) then
             table.insert(self.Players[_PlayerID].AttackPos, _Entity);
         end
     end
@@ -960,7 +960,7 @@ end
 
 function AiController:AddDefenceTarget(_PlayerID, _Entity)
     if self.Players[_PlayerID] then
-        if not QuestTools.IsInTable(_Entity, self.Players[_PlayerID].DefencePos) then
+        if not IsInTable(_Entity, self.Players[_PlayerID].DefencePos) then
             table.insert(self.Players[_PlayerID].DefencePos, _Entity);
         end
         for i= 1, table.getn(self.Players[_PlayerID].Armies), 1 do
@@ -998,9 +998,9 @@ function AiController:CreateDefaultDefenceTargets(_PlayerID)
         for i= -45, 315, 90 do
             local Home = self.Players[_PlayerID].HomePosition;
             local Area = self.Players[_PlayerID].RodeLength;
-            local Position = QuestTools.GetReachablePosition(
+            local Position = GetReachablePosition(
                 Home,
-                QuestTools.GetCirclePosition(Home, Area, i)
+                GetCirclePosition(Home, Area, i)
             );
             if Position then
                 local ID = Logic.CreateEntity(
@@ -1095,7 +1095,7 @@ function AiController:ControlPlayerAssault(_PlayerID, _Position)
         and not Army.IsExemtFromAttack
         and (not IsAttacking and not IsBattling and not IsRetreating and not IsRefilling)
         and not Army:IsDead() 
-        and QuestTools.GetReachablePosition(Army.HomePosition, _Position) ~= nil then
+        and GetReachablePosition(Army.HomePosition, _Position) ~= nil then
             Army:InsertBehavior(AiArmyBehavior:New("Attack", _Position, 2000));
             Army:InvalidateCurrentBehavior();
             break;
@@ -1116,7 +1116,7 @@ function AiController:CreateDefendBehavior(_PlayerID, _Army, _Purge)
             -- find reachable points
             local Reachable = {};
             for k, v in pairs(self.Players[_PlayerID].DefencePos) do
-                local Position = QuestTools.GetReachablePosition(Army.HomePosition, v);
+                local Position = GetReachablePosition(Army.HomePosition, v);
                 if Position then
                     table.insert(Reachable, {v, Position});
                 end
@@ -1245,7 +1245,7 @@ function AiController:UpdateRecruitersOfArmy(_PlayerID, _Index)
         self.Players[_PlayerID].Armies[_Index].Producers = {};
         for k, v in pairs(self.Players[_PlayerID].Producers) do
             if v and not v.IsSpawner then
-                if QuestTools.SameSector(Army.HomePosition, v.ApproachPosition) then
+                if SameSector(Army.HomePosition, v.ApproachPosition) then
                     table.insert(self.Players[_PlayerID].Armies[_Index].Producers, v);
                 end
             end
@@ -1275,13 +1275,13 @@ function AiController:AddProducerBuilding(_PlayerID, _Entity)
     end
     -- Check recruiter
     if AiTroopRecruiterList[_Entity] then
-        if not HomePosition or QuestTools.SameSector(HomePosition, AiTroopRecruiterList[_Entity].ApproachPosition) then
+        if not HomePosition or SameSector(HomePosition, AiTroopRecruiterList[_Entity].ApproachPosition) then
             table.insert(self.Players[_PlayerID].Producers, AiTroopRecruiterList[_Entity]);
             return;
         end
     end
     -- Create new recruiter
-    if not HomePosition or QuestTools.GetReachablePosition(HomePosition, _Entity) ~= nil then
+    if not HomePosition or GetReachablePosition(HomePosition, _Entity) ~= nil then
         local Recruiter = self:CreateRecruiter(_PlayerID, _Entity);
         if Recruiter then
             table.insert(self.Players[_PlayerID].Producers, Recruiter);
@@ -1300,7 +1300,7 @@ function AiController:FindProducerBuildings(_PlayerID)
 end
 
 function AiController:CreateRecruiter(_PlayerID, _Entity)
-    local ScriptName = QuestTools.CreateNameForEntity(_Entity);
+    local ScriptName = CreateNameForEntity(_Entity);
     if AiTroopRecruiterList[ScriptName] and AiTroopRecruiterList[ScriptName]:IsAlive() then
         if not AiTroopRecruiterList[ScriptName].IsSpawner then
             return AiTroopRecruiterList[ScriptName];
@@ -1336,7 +1336,7 @@ function AiController:CreateRecruiter(_PlayerID, _Entity)
             local PlayerID = Logic.EntityGetPlayer(GetID(self.ScriptName));
             local UnitList = {};
             for k, v in pairs(self.Troops.Types) do
-                if QuestTools.IsInTable(v, AiController.Players[PlayerID].UnitsToBuild) then
+                if IsInTable(v, AiController.Players[PlayerID].UnitsToBuild) then
                     table.insert(UnitList, v);
                 end
             end
@@ -1350,58 +1350,58 @@ function AiController:GetPossibleRecruiters(_PlayerID)
     local Candidates = {};
     
     -- Barracks
-    local Barracks1 = QuestTools.FindAllEntities(_PlayerID, Entities.PB_Barracks1);
+    local Barracks1 = FindAllEntities(_PlayerID, Entities.PB_Barracks1);
     for i= 1, table.getn(Barracks1) do
         if Logic.IsConstructionComplete(Barracks1[i]) == 1 then
-            table.insert(Candidates, QuestTools.CreateNameForEntity(Barracks1[i]));
+            table.insert(Candidates, CreateNameForEntity(Barracks1[i]));
         end
     end
-    local Barracks2 = QuestTools.FindAllEntities(_PlayerID, Entities.PB_Barracks2);
+    local Barracks2 = FindAllEntities(_PlayerID, Entities.PB_Barracks2);
     for i= 1, table.getn(Barracks2) do
         if Logic.IsConstructionComplete(Barracks2[i]) == 1 then
-            table.insert(Candidates, QuestTools.CreateNameForEntity(Barracks2[i]));
+            table.insert(Candidates, CreateNameForEntity(Barracks2[i]));
         end
     end
 
     -- Archery
-    local Archery1 = QuestTools.FindAllEntities(_PlayerID, Entities.PB_Archery1);
+    local Archery1 = FindAllEntities(_PlayerID, Entities.PB_Archery1);
     for i= 1, table.getn(Archery1) do
         if Logic.IsConstructionComplete(Archery1[i]) == 1 then
-            table.insert(Candidates, QuestTools.CreateNameForEntity(Archery1[i]));
+            table.insert(Candidates, CreateNameForEntity(Archery1[i]));
         end
     end
-    local Archery2 = QuestTools.FindAllEntities(_PlayerID, Entities.PB_Archery2);
+    local Archery2 = FindAllEntities(_PlayerID, Entities.PB_Archery2);
     for i= 1, table.getn(Archery2) do
         if Logic.IsConstructionComplete(Archery2[i]) == 1 then
-            table.insert(Candidates, QuestTools.CreateNameForEntity(Archery2[i]));
+            table.insert(Candidates, CreateNameForEntity(Archery2[i]));
         end
     end
 
     -- Stable
-    local Stable1 = QuestTools.FindAllEntities(_PlayerID, Entities.PB_Stable1);
+    local Stable1 = FindAllEntities(_PlayerID, Entities.PB_Stable1);
     for i= 1, table.getn(Stable1) do
         if Logic.IsConstructionComplete(Stable1[i]) == 1 then
-            table.insert(Candidates, QuestTools.CreateNameForEntity(Stable1[i]));
+            table.insert(Candidates, CreateNameForEntity(Stable1[i]));
         end
     end
-    local Stable2 = QuestTools.FindAllEntities(_PlayerID, Entities.PB_Stable2);
+    local Stable2 = FindAllEntities(_PlayerID, Entities.PB_Stable2);
     for i= 1, table.getn(Stable2) do
         if Logic.IsConstructionComplete(Stable2[i]) == 1 then
-            table.insert(Candidates, QuestTools.CreateNameForEntity(Stable2[i]));
+            table.insert(Candidates, CreateNameForEntity(Stable2[i]));
         end
     end
 
     -- Foundry
-    local Foundry1 = QuestTools.FindAllEntities(_PlayerID, Entities.PB_Foundry1);
+    local Foundry1 = FindAllEntities(_PlayerID, Entities.PB_Foundry1);
     for i= 1, table.getn(Foundry1) do
         if Logic.IsConstructionComplete(Foundry1[i]) == 1 then
-            table.insert(Candidates, QuestTools.CreateNameForEntity(Foundry1[i]));
+            table.insert(Candidates, CreateNameForEntity(Foundry1[i]));
         end
     end
-    local Foundry2 = QuestTools.FindAllEntities(_PlayerID, Entities.PB_Foundry2);
+    local Foundry2 = FindAllEntities(_PlayerID, Entities.PB_Foundry2);
     for i= 1, table.getn(Foundry2) do
         if Logic.IsConstructionComplete(Foundry2[i]) == 1 then
-            table.insert(Candidates, QuestTools.CreateNameForEntity(Foundry2[i]));
+            table.insert(Candidates, CreateNameForEntity(Foundry2[i]));
         end
     end
 

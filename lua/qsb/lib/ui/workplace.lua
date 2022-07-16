@@ -72,7 +72,7 @@ function WorkplaceUtilization:PrepareWorkerAmountEvent()
 		if CNetwork and not CNetwork.IsAllowedToManipulatePlayer(name, PlayerID) then
             return;
         end
-		local ScriptName = QuestTools.CreateNameForEntity(_BuildingID);
+		local ScriptName = CreateNameForEntity(_BuildingID);
 		WorkplaceUtilization.WorkplaceStates[ScriptName] = _State;
 		Logic.SetCurrentMaxNumWorkersInBuilding(_BuildingID, _Amount);
 	end);
@@ -158,7 +158,7 @@ function WorkplaceUtilization:OverrideInterfaceTooltip()
     GUITooltip_NormalButton_Orig_WorkplaceMod = GUITooltip_NormalButton
 	GUITooltip_NormalButton = function(a)
 		GUITooltip_NormalButton_Orig_WorkplaceMod(a);
-        local lang = QuestTools.GetLanguage();
+        local lang = GetLanguage();
 
 		if a == "MenuBuildingGeneric/setworkerfew" then
 			if not(WorkplaceUtilization.UseMod == true) then
@@ -204,7 +204,7 @@ function WorkplaceUtilization:OverrideInterfaceTooltip()
     GUITooltip_ResearchTechnologies_Orig_WorkplaceMod = GUITooltip_ResearchTechnologies
 	GUITooltip_ResearchTechnologies = function(a,b,c,d)
 		GUITooltip_ResearchTechnologies_Orig_WorkplaceMod(a,b,c,d);
-		local lang = QuestTools.GetLanguage();
+		local lang = GetLanguage();
 
 		if a == Technologies.GT_Literacy then
 			if Logic.GetTechnologyState(1,a) == 0 then
@@ -288,7 +288,7 @@ function WorkplaceUtilization:OverrideInterfaceUpdate()
 	GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod = GameCallback_OnBuildingUpgradeComplete
 	GameCallback_OnBuildingUpgradeComplete = function(_OldID, _NewID)
 		GameCallback_OnBuildingUpgradeComplete_Orig_WorkplaceMod(_OldID, _NewID);
-		local ScriptName = QuestTools.CreateNameForEntity(_NewID);
+		local ScriptName = CreateNameForEntity(_NewID);
 		if WorkplaceUtilization.WorkplaceStates[ScriptName] then
 			local MaxNumberOfworkers = Logic.GetMaxNumWorkersInBuilding(_NewID);
 			local CurrentWorkerAmount = 0;
@@ -316,7 +316,7 @@ function WorkplaceUtilization:UpdateDisplay()
 	if sel then
 		local inTable = false;
 		for k,v in pairs(self.WorkplaceStates)do
-			local eName = QuestTools.CreateNameForEntity(sel);
+			local eName = CreateNameForEntity(sel);
 			if eName == tostring(k) then
 				inTable = true;
 				if IsExisting(eName)then

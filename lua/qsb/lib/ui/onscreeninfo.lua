@@ -171,7 +171,7 @@ end
 
 function OnScreenInfo:IsUsingOnScreenInfoProgressBar(_Quest)
     for i= 1, table.getn(_Quest.m_Objectives), 1 do
-        if QuestTools.IsInTable(_Quest.m_Objectives[i][1], OnScreenInfo.ProgressBarBehavior) then
+        if IsInTable(_Quest.m_Objectives[i][1], OnScreenInfo.ProgressBarBehavior) then
             return true;
         end
     end

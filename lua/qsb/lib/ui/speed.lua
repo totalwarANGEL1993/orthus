@@ -132,7 +132,7 @@ function GameSpeedSwitch:OverrideGUI()
         GUITooltip_Generic_Orig_GameSpeed = GUITooltip_Generic;
         GUITooltip_Generic = function(a)
             if a == "MenuMap/OnlineHelp" then
-                local Language = QuestTools.GetLanguage();
+                local Language = GetLanguage();
                 local Text;
                 if GameSpeedSwitch.m_SpeedUpAllowed then
                     local Template = {
