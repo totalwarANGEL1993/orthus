@@ -30,7 +30,7 @@
 
 -- Quests and tools --
 
-StageQuestResultType = {
+NestedQuestResultType = {
     Success = 1,
     Failure = 2,
     Ignored = 3,
@@ -124,7 +124,7 @@ end
 -- quests have always the same receiver as the master quest. It is possible to
 -- infinitely stack sub quests into each other.
 --
--- <b>Note:</b> Staged quests can be used to structure the mission. Those quests
+-- <b>Note:</b> Nested quests can be used to structure the mission. Those quests
 -- can be manipulated as normal quests can.
 --
 -- @param[type=table] _Data Quest table
@@ -133,8 +133,8 @@ end
 -- @within Methods
 -- @see CreateQuest
 --
--- @usage CreateStagedQuest {
--- 	Name 		= "StagedTraderQuest",
+-- @usage CreateNestedQuest {
+-- 	Name 		= "NestedTraderQuest",
 -- 	Description = {
 -- 		Title = "Die Händler abklappern",
 -- 		Text  = "Sprecht mit allen Händlern und sichert Euch Handelsverträge.",
@@ -168,13 +168,13 @@ end
 -- 		},
 -- 		{
 -- 			Goal_InstantSuccess(),
--- 			Trigger_QuestSuccess("StagedTraderQuest@Stage3", 5),
+-- 			Trigger_QuestSuccess("NestedTraderQuest@Stage3", 5),
 -- 		}
 -- 	},
 -- 	Trigger_Time(5),
 -- };
 --
-function CreateStagedQuest(_Data)
+function CreateNestedQuest(_Data)
     if not _Data.Name then
         Message("DEBUG: One quest has no name!");
         return;
@@ -189,7 +189,7 @@ function CreateStagedQuest(_Data)
         -- configure stage
         _Data.Stages[i].Name = _Data.Stages[i].Name or QuestName.. "@Stage" ..i;
         _Data.Stages[i].Receiver = _Data.Receiver;
-        _Data.Stages[i].Expected = _Data.Stages[i].Expected or StageQuestResultType.Success;
+        _Data.Stages[i].Expected = _Data.Stages[i].Expected or NestedQuestResultType.Success;
         if _Data.Stages[i].Description then
             _Data.Stages[i].Description.Type = FRAGMENTQUEST_OPEN;
             _Data.Stages[i].Description.Info = 1;
@@ -202,7 +202,7 @@ function CreateStagedQuest(_Data)
             table.insert(_Data, Goal_WinQuest(_Data.Stages[i].Name));
         else
             -- Create links for failure type
-            if _Data.Stages[i].Expected == StageQuestResultType.Failure then
+            if _Data.Stages[i].Expected == NestedQuestResultType.Failure then
                 -- link to previous fragment
                 if QuestSystemBehavior:DoesStageContainReprisalQuestBriefing(_Data.Stages[i-1]) then
                     table.insert(_Data.Stages[i], Trigger_Briefing(LastQuestName, "Failure"));
@@ -214,7 +214,7 @@ function CreateStagedQuest(_Data)
             end
 
             -- Create links for success type
-            if _Data.Stages[i].Expected == StageQuestResultType.Success then
+            if _Data.Stages[i].Expected == NestedQuestResultType.Success then
                 -- link to previous fragment
                 if QuestSystemBehavior:DoesStageContainRewardQuestBriefing(_Data.Stages[i-1]) then
                     table.insert(_Data.Stages[i], Trigger_Briefing(LastQuestName, "Success"));
@@ -226,7 +226,7 @@ function CreateStagedQuest(_Data)
             end
 
             -- Create links for ignored result
-            if _Data.Stages[i].Expected == StageQuestResultType.Ignored then
+            if _Data.Stages[i].Expected == NestedQuestResultType.Ignored then
                 -- link to previous fragment
                 if QuestSystemBehavior:DoesStageContainRewardQuestBriefing(_Data.Stages[i-1])
                 or QuestSystemBehavior:DoesStageContainRewardQuestBriefing(_Data.Stages[i-1]) then
@@ -240,19 +240,19 @@ function CreateStagedQuest(_Data)
 
             -- handle failure and success of master
             if i == table.getn(_Data.Stages) then
-                if _Data.Stages[i].Expected == StageQuestResultType.Failure then
+                if _Data.Stages[i].Expected == NestedQuestResultType.Failure then
                     table.insert(_Data.Stages[i], Reprisal_QuestSucceed(QuestName));
-                elseif _Data.Stages[i].Expected == StageQuestResultType.Success then
+                elseif _Data.Stages[i].Expected == NestedQuestResultType.Success then
                     table.insert(_Data.Stages[i], Reward_QuestSucceed(QuestName));
                 else
                     table.insert(_Data.Stages[i], Reward_QuestSucceed(QuestName));
                     table.insert(_Data.Stages[i], Reprisal_QuestSucceed(QuestName));
                 end
             end
-            if _Data.Stages[i].Expected == StageQuestResultType.Failure then
+            if _Data.Stages[i].Expected == NestedQuestResultType.Failure then
                 table.insert(_Data.Stages[i], Reward_QuestFail(QuestName));
             end
-            if _Data.Stages[i].Expected == StageQuestResultType.Success then
+            if _Data.Stages[i].Expected == NestedQuestResultType.Success then
                 table.insert(_Data.Stages[i], Reprisal_QuestFail(QuestName));
             end
         end
@@ -262,7 +262,7 @@ function CreateStagedQuest(_Data)
         table.insert(QuestSystemBehavior.Data.QuestNameToStages[QuestName], LastQuestName);
         -- onion quests are bad style but I will support it
         if _Data.Stages[i].Stages then
-            CreateStagedQuest(_Data.Stages[i]);
+            CreateNestedQuest(_Data.Stages[i]);
         end
         CreateQuest(_Data.Stages[i]);
     end
@@ -321,11 +321,11 @@ end
 
 
 ---
--- Fails the staged quest.
+-- Fails the Nested quest.
 -- @param _QuestName Quest name or ID
 -- @within Methods
 --
-function FailStagedQuest(_QuestName)
+function FailNestedQuest(_QuestName)
     if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
         FailQuest(_QuestName);
         return;
@@ -347,11 +347,11 @@ function StartQuest(_Quest)
 end
 
 ---
--- Triggers the staged quest.
+-- Triggers the Nested quest.
 -- @param _QuestName Quest name or ID
 -- @within Methods
 --
-function StartStagedQuest(_QuestName)
+function StartNestedQuest(_QuestName)
     if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
         StartQuest(_QuestName);
         return;
@@ -373,11 +373,11 @@ function StopQuest(_Quest)
 end
 
 ---
--- Interrupts the staged quest.
+-- Interrupts the Nested quest.
 -- @param _QuestName Quest name or ID
 -- @within Methods
 --
-function StopStagedQuest(_QuestName)
+function StopNestedQuest(_QuestName)
     if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
         StopQuest(_QuestName);
         return;
@@ -400,11 +400,11 @@ function ResetQuest(_Quest)
 end
 
 ---
--- Resets the staged quest.
+-- Resets the Nested quest.
 -- @param _QuestName Quest name or ID
 -- @within Methods
 --
-function ResetStagedQuest(_QuestName)
+function ResetNestedQuest(_QuestName)
     if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
         ResetQuest(_QuestName);
         return;
@@ -429,11 +429,11 @@ function RestartQuest(_Quest)
 end
 
 ---
--- Resets the staged quest and activates it immediately.
+-- Resets the Nested quest and activates it immediately.
 -- @param _QuestName Quest name or ID
 -- @within Methods
 --
-function RestartStagedQuest(_QuestName)
+function RestartNestedQuest(_QuestName)
     for i= 1, table.getn(QuestSystemBehavior.Data.QuestNameToStages[_QuestName]), 1 do
         StopQuest(QuestSystemBehavior.Data.QuestNameToStages[_QuestName][i]);
         if i == 1 then
@@ -456,11 +456,11 @@ function WinQuest(_Quest)
 end
 
 ---
--- Wins the staged quest.
+-- Wins the Nested quest.
 -- @param _QuestName Quest name or ID
 -- @within Methods
 --
-function WinStagedQuest(_QuestName)
+function WinNestedQuest(_QuestName)
     if not QuestSystemBehavior.Data.QuestNameToStages[_QuestName] then
         WinQuest(_QuestName);
         return;
@@ -542,7 +542,7 @@ function QuestSystemBehavior:CreateScriptEvents()
                     Message("Succeed quest: " ..command[2]);
                 end     
                 if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
-                    WinStagedQuest(QuestName);
+                    WinNestedQuest(QuestName);
                 else
                     WinQuest(QuestName);
                 end
@@ -551,7 +551,7 @@ function QuestSystemBehavior:CreateScriptEvents()
                     Message("Fail quest: " ..command[2]);
                 end
                 if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
-                    FailStagedQuest(QuestName);
+                    FailNestedQuest(QuestName);
                 else
                     FailQuest(QuestName);
                 end
@@ -560,7 +560,7 @@ function QuestSystemBehavior:CreateScriptEvents()
                     Message("Stop quest: " ..command[2]);
                 end           
                 if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
-                    StopStagedQuest(QuestName);
+                    StopNestedQuest(QuestName);
                 else
                     StopQuest(QuestName);
                 end
@@ -583,7 +583,7 @@ function QuestSystemBehavior:CreateScriptEvents()
                     Message("Start quest: " ..command[2]);
                 end
                 if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
-                    StartStagedQuest(QuestName);
+                    StartNestedQuest(QuestName);
                 else
                     StartQuest(QuestName);
                 end
@@ -592,7 +592,7 @@ function QuestSystemBehavior:CreateScriptEvents()
                     Message("Restart quest: " ..command[2]);
                 end
                 if QuestSystemBehavior.Data.QuestNameToStages[QuestName] then
-                    RestartStagedQuest(QuestName);
+                    RestartNestedQuest(QuestName);
                 else
                     RestartQuest(QuestName);
                 end

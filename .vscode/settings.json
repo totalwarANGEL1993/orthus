@@ -104,6 +104,11 @@
         "mcbPacker",
         "Counter",
         "MapLocal_StartCountDown",
-        "MapLocal_StopCountDown"
+        "MapLocal_StopCountDown",
+        "CxTools",
+        "mcbSaveDuringBriefingAllowed",
+        "mcbDelay",
+        "TriggerFix",
+        "TriggerFix_action"
     ]
 }
