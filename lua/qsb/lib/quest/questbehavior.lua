@@ -1927,6 +1927,53 @@ QuestSystemBehavior:RegisterBehavior(b_Reprisal_Defeat);
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Another player loses the game.
+-- @param[type=number] _PlayerID Target player
+-- @within Reprisals
+--
+function Reprisal_DefeatOtherPlayer(...)
+    return b_Reprisal_DefeatOtherPlayer:New(unpack(arg));
+end
+
+b_Reprisal_DefeatOtherPlayer = {
+    Data = {
+        Name = "Reprisal_DefeatOtherPlayer",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reprisal_DefeatOtherPlayer:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    end
+end
+
+function b_Reprisal_DefeatOtherPlayer:GetReprisalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reprisal_DefeatOtherPlayer:CustomFunction(_Quest)
+    if GUI.GetPlayerID() == self.Data.PlayerID then
+        Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_BadPlay_rnd_01);
+    end
+    Logic.PlayerSetGameStateToLost(self.Data.PlayerID);
+    if Network.Manager_DoesExist() == 0 then
+        Trigger.DisableTriggerSystem(1);
+    end
+end
+
+function b_Reprisal_DefeatOtherPlayer:Debug(_Quest)
+    if not self.Data.PlayerID or self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "Player ID must be between 1 and 8!");
+        return true;
+    end
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reprisal_DefeatOtherPlayer);
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- The receiver wins the game.
 -- @within Reprisals
 --
@@ -1949,6 +1996,53 @@ function b_Reprisal_Victory:GetReprisalTable()
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reprisal_Victory);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Another player wins the game.
+-- @param[type=number] _PlayerID Target player
+-- @within Reprisals
+--
+function Reprisal_VictoryOtherPlayer(...)
+    return b_Reprisal_VictoryOtherPlayer:New(unpack(arg));
+end
+
+b_Reprisal_VictoryOtherPlayer = {
+    Data = {
+        Name = "Reprisal_VictoryOtherPlayer",
+        Type = Callbacks.MapScriptFunction
+    },
+};
+
+function b_Reprisal_VictoryOtherPlayer:AddParameter(_Index, _Parameter)
+    if _Index == 1 then
+        self.Data.PlayerID = _Parameter;
+    end
+end
+
+function b_Reprisal_VictoryOtherPlayer:GetReprisalTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+function b_Reprisal_VictoryOtherPlayer:CustomFunction(_Quest)
+    if GUI.GetPlayerID() == self.Data.PlayerID then
+        Sound.PlayFeedbackSound(Sounds.VoicesMentor_COMMENT_GoodPlay_rnd_01);
+    end
+    Logic.PlayerSetGameStateToWon(self.Data.PlayerID);
+    if XNetwork.Manager_DoesExist() == 0 then
+        Trigger.DisableTriggerSystem(1);
+    end
+end
+
+function b_Reprisal_VictoryOtherPlayer:Debug(_Quest)
+    if not self.Data.PlayerID or self.Data.PlayerID < 1 or self.Data.PlayerID > 8 then
+        dbg(_Quest, self, "Player ID must be between 1 and 8!");
+        return true;
+    end
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reprisal_VictoryOtherPlayer);
 
 -- -------------------------------------------------------------------------- --
 
@@ -2510,6 +2604,28 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_Defeat);
 -- -------------------------------------------------------------------------- --
 
 ---
+-- Another player loses the game.
+-- @param[type=number] _PlayerID Target player
+-- @within Rewards
+--
+function Reward_DefeatOtherPlayer(...)
+    return b_Reward_DefeatOtherPlayer:New(unpack(arg));
+end
+
+b_Reward_DefeatOtherPlayer = copy(b_Reprisal_DefeatOtherPlayer);
+b_Reward_DefeatOtherPlayer.Data.Name = "Reward_DefeatOtherPlayer";
+b_Reward_DefeatOtherPlayer.Data.Type = Callbacks.Defeat;
+b_Reward_DefeatOtherPlayer.GetReprisalTable = nil;
+
+function b_Reward_DefeatOtherPlayer:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_DefeatOtherPlayer);
+
+-- -------------------------------------------------------------------------- --
+
+---
 -- The receiver wins the game.
 -- @within Rewards
 --
@@ -2527,6 +2643,28 @@ function b_Reward_Victory:GetRewardTable()
 end
 
 QuestSystemBehavior:RegisterBehavior(b_Reward_Victory);
+
+-- -------------------------------------------------------------------------- --
+
+---
+-- Another player wins the game.
+-- @param[type=number] _PlayerID Target player
+-- @within Rewards
+--
+function Reward_VictoryOtherPlayer(...)
+    return b_Reward_VictoryOtherPlayer:New(unpack(arg));
+end
+
+b_Reward_VictoryOtherPlayer = copy(b_Reprisal_VictoryOtherPlayer);
+b_Reward_VictoryOtherPlayer.Data.Name = "Reward_VictoryOtherPlayer";
+b_Reward_VictoryOtherPlayer.Data.Type = Callbacks.Defeat;
+b_Reward_VictoryOtherPlayer.GetReprisalTable = nil;
+
+function b_Reward_VictoryOtherPlayer:GetRewardTable()
+    return {self.Data.Type, {self.CustomFunction, self}};
+end
+
+QuestSystemBehavior:RegisterBehavior(b_Reward_VictoryOtherPlayer);
 
 -- -------------------------------------------------------------------------- --
 
@@ -4831,7 +4969,7 @@ QuestSystemBehavior:RegisterBehavior(b_Reward_AI_SetupAIPlayer);
 -- @within Rewards
 --
 function Reward_AI_ConstructBuilding(...)
-    return b_Reward_AI_CreateArmy:New(unpack(arg));
+    return b_Reward_AI_ConstructBuilding:New(unpack(arg));
 end
 
 b_Reward_AI_ConstructBuilding = {
@@ -5055,13 +5193,13 @@ function b_Reward_AI_CreateSpawnArmy:CustomFunction(_Quest)
     -- Create army
     local Army = SaveCall{
         CreateAIPlayerSpawnArmy,
-        self.Data.ArmyName, 
-        self.Data.PlayerID, 
-        self.Data.Strength, 
-        self.Data.Position, 
+        self.Data.ArmyName,
+        self.Data.PlayerID,
+        self.Data.Strength,
+        self.Data.Position,
         self.Data.LifeThread,
-        self.Data.RodeLength, 
-        self.Data.RespawnTime, 
+        self.Data.RodeLength,
+        self.Data.RespawnTime,
         unpack(TroopTypes)
     };
     if not Army then
