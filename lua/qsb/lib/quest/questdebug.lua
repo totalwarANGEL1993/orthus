@@ -54,10 +54,10 @@ function QuestDebug:Activate(_CheckQuests, _DebugKeys, _DebugShell, _QuestTrace)
     self:CreateCheats();
     self:CreateCheatMethods();
     self:ActivateConsole();
-    self:OverrideQuestSystemTriggerQuest();
+    self:OverrideQuestSystemToCheckBehavior();
 end
 
-function QuestDebug:OverrideQuestSystemTriggerQuest()
+function QuestDebug:OverrideQuestSystemToCheckBehavior()
     QuestTemplate.TriggerOriginal = QuestTemplate.Trigger;
     QuestTemplate.Trigger = function(self)
         if QuestDebug.m_CheckQuests then
@@ -77,25 +77,20 @@ function QuestDebug:OverrideQuestSystemTriggerQuest()
                     end
                 end
             end
-            for i= 1, table.getn(self.m_Rewards), 1 do
-                if self.m_Rewards[i][1] == Callbacks.MapScriptFunction and self.m_Rewards[i][2][2].Debug then
-                    if self.m_Rewards[i][2][2]:Debug(self) then
-                        self:Interrupt();
-                        return;
-                    end
-                end
-            end
-            for i= 1, table.getn(self.m_Reprisals), 1 do
-                if self.m_Reprisals[i][1] == Callbacks.MapScriptFunction and self.m_Reprisals[i][2][2].Debug then
-                    if self.m_Reprisals[i][2][2]:Debug(self) then
-                        self:Interrupt();
-                        return;
-                    end
+        end 
+        QuestTemplate.TriggerOriginal(self);
+    end
+
+    QuestTemplate.ApplyCallbacksOriginal = QuestTemplate.ApplyCallbacks;
+    QuestTemplate.ApplyCallbacks = function(self, _Behavior, _ResultType)
+        if _Behavior[1] == Callbacks.MapScriptFunction then
+            if _Behavior[2][2].Debug then
+                if _Behavior[2][2]:Debug(self) then
+                    return;
                 end
             end
         end
-        
-        QuestTemplate.TriggerOriginal(self);
+        QuestTemplate.ApplyCallbacksOriginal(self, _Behavior, _ResultType);
     end
 end
 
