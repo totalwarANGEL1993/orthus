@@ -885,8 +885,8 @@ function CreateNameForEntity(_eID)
         assert(type(_eID) == "number");
         local name = Logic.GetEntityName(_eID);
         if (type(name) ~= "string" or name == "" ) then
-            EntityNameCounter = EntityNameCounter + 1;
-            name = "eName_"..EntityNameCounter;
+            QuestTools.EntityNameCounter = QuestTools.EntityNameCounter + 1;
+            name = "eName_"..QuestTools.EntityNameCounter;
             Logic.SetEntityName(_eID,name);
         end
         return name;
@@ -983,13 +983,13 @@ function MoveOnWaypoints(_Entity, _Vanish, ...)
     end
 
     local ID = GetID(_Entity);
-    WaypointData[ID] = {
+    QuestTools.WaypointData[ID] = {
         Vanish = _Vanish == true,
         Current = 1,
     };
     for i= 1, table.getn(arg), 1 do
         table.insert(
-            WaypointData[ID],
+            QuestTools.WaypointData[ID],
             {arg[i].Target,
              arg[i].Distance or 50,
              arg[i].IgnoreBlocking == true,
@@ -999,11 +999,11 @@ function MoveOnWaypoints(_Entity, _Vanish, ...)
     end
 
     local JobID = StartSimpleHiResJobEx(function(_ID)
-        if not IsExisting(_ID) or not WaypointData[_ID] then
+        if not IsExisting(_ID) or not QuestTools.WaypointData[_ID] then
             return true;
         end
-        local Index = WaypointData[_ID].Current;
-        local Data  = WaypointData[_ID][Index];
+        local Index = QuestTools.WaypointData[_ID].Current;
+        local Data  = QuestTools.WaypointData[_ID][Index];
 
         local Task = Logic.GetCurrentTaskList(_ID);
         if not string.find(Task or "", "WALK") then
@@ -1017,19 +1017,19 @@ function MoveOnWaypoints(_Entity, _Vanish, ...)
         end
 
         if IsNear(_ID, Data[1], Data[2]) then
-            if WaypointData[_ID][Index][4] > 0 then
-                WaypointData[_ID][Index][4] = Data[4] -1;
+            if QuestTools.WaypointData[_ID][Index][4] > 0 then
+                QuestTools.WaypointData[_ID][Index][4] = Data[4] -1;
                 if string.find(Task or "", "WALK") then
                     Logic.SetTaskList(_ID, TaskLists.TL_NPC_IDLE);
                 end
             else
-                WaypointData[_ID].Current = Index +1;
+                QuestTools.WaypointData[_ID].Current = Index +1;
                 if Data[5] then
                     Data[5](Data);
                 end
             end
-            if Index == table.getn(WaypointData[_ID]) then
-                if WaypointData[_ID].Vanish then
+            if Index == table.getn(QuestTools.WaypointData[_ID]) then
+                if QuestTools.WaypointData[_ID].Vanish then
                     local PlayerID = Logic.EntityGetPlayer(_ID);
                     local Orientation = Logic.GetEntityOrientation(_ID);
                     local ScriptName = Logic.GetEntityName(_ID);
@@ -1038,7 +1038,7 @@ function MoveOnWaypoints(_Entity, _Vanish, ...)
                     local NewID = Logic.CreateEntity(Entities.XD_ScriptEntity, x, y, Orientation, PlayerID);
                     Logic.SetEntityName(NewID, ScriptName);
                 end
-                WaypointData[_ID] = nil;
+                QuestTools.WaypointData[_ID] = nil;
                 return true;
             end
         end
@@ -1124,10 +1124,10 @@ end
 -- @within Jobs
 --
 function StartInlineJob(_EventType, _Function, ...)
-    InlineJobs.Counter = InlineJobs.Counter +1;
-    _G["QuestTools_InlineJob_Data_" ..InlineJobs.Counter] = copy(arg);
-    _G["QuestTools_InlineJob_Function_" ..InlineJobs.Counter] = _Function;
-    _G["QuestTools_InlineJob_Executor_" ..InlineJobs.Counter] = function(i)
+    QuestTools.InlineJobs.Counter = QuestTools.InlineJobs.Counter +1;
+    _G["QuestTools_InlineJob_Data_" ..QuestTools.InlineJobs.Counter] = copy(arg);
+    _G["QuestTools_InlineJob_Function_" ..QuestTools.InlineJobs.Counter] = _Function;
+    _G["QuestTools_InlineJob_Executor_" ..QuestTools.InlineJobs.Counter] = function(i)
         if _G["QuestTools_InlineJob_Function_" ..i](unpack(_G["QuestTools_InlineJob_Data_" ..i])) then
             return true;
         end
@@ -1135,10 +1135,10 @@ function StartInlineJob(_EventType, _Function, ...)
     return Trigger.RequestTrigger(
         _EventType,
         "",
-        "QuestTools_InlineJob_Executor_" ..InlineJobs.Counter,
+        "QuestTools_InlineJob_Executor_" ..QuestTools.InlineJobs.Counter,
         1,
         {},
-        {InlineJobs.Counter}
+        {QuestTools.InlineJobs.Counter}
     );
 end
 StartInlineJob = StartInlineJob;
