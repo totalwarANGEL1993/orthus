@@ -89,7 +89,7 @@ AiTroopSpawner = {
     Enabled = true,
     Delay = 30,
     Troops = {
-        Maximum = 999,
+        Maximum = 9999,
         Selector = function(self)
             local Size = table.getn(self.Troops.Types);
             return self.Troops.Types[math.random(1, Size)];
@@ -112,15 +112,30 @@ function AiTroopSpawner:IsManagedByProducer(_TroopID)
     return IsInTable(_TroopID, self.Troops.Created) == true;
 end
 
+---
+-- Changes the active flag of the spawner.
+-- @param[type=boolean] _Flag Spawner is active
+-- @within AiTroopSpawner
+--
 function AiTroopSpawner:SetEnabled(_Flag)
     self.Enabled = _Flag == true;
     return self;
 end
 
+---
+-- Returns the position where troops are spawned.
+-- @return[type=number] ID of approach position
+-- @within AiTroopSpawner
+--
 function AiTroopSpawner:GetApproachPosition()
     return self.ApproachPosition;
 end
 
+---
+-- Creates a new approach position at the location.
+-- @param[type=table] _Position Location of approach position
+-- @within AiTroopSpawner
+--
 function AiTroopSpawner:SetApproachPosition(_Position)
     DestroyEntity(self.ApproachPosition);
     local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, _Position.X, _Position.Y, 0, 0, 0, 0);
@@ -134,7 +149,7 @@ end
 function AiTroopSpawner:Initalize()
     if not self.Initalized then
         self.Initalized = true;
-        
+
         -- Save approach position
         self:SetApproachPosition(GetPosition(self.ScriptName));
 
@@ -185,12 +200,25 @@ function AiTroopSpawner:HandleSoldierRefill()
     end
 end
 
+---
+-- Returns if the spawner ist existing.
+-- @return[type=boolean] Spawner is existing
+-- @within AiTroopSpawner
+--
 function AiTroopSpawner:IsAlive()
     return IsExisting(self.ScriptName);
 end
 
+---
+-- Adds an troop type to the spawner.
+-- @param[type=number] _Type Type to spawn
+-- @param[type=number] _Exp  Experience
+-- @within AiTroopSpawner
+--
 function AiTroopSpawner:AddType(_Type, _Exp)
-    table.insert(self.Troops.Types, {_Type, _Exp});
+    if not self:IsInTypeList(_Type) then
+        table.insert(self.Troops.Types, {_Type, _Exp});
+    end
     return self;
 end
 
@@ -203,6 +231,10 @@ function AiTroopSpawner:IsInTypeList(_Type)
     return false;
 end
 
+---
+-- Clears the type list of the spawner.
+-- @within AiTroopSpawner
+--
 function AiTroopSpawner:ClearTypes()
     self.Troops.Types = {};
     return self;
@@ -213,6 +245,11 @@ function AiTroopSpawner:SetMaxTroops(_Max)
     return self;
 end
 
+---
+-- Changes the delay between spawned troops.
+-- @param[type=number] _Time Time between spawns
+-- @within AiTroopSpawner
+--
 function AiTroopSpawner:SetDelay(_Time)
     self.Delay = _Time;
     return self;

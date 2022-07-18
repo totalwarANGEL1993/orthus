@@ -138,10 +138,20 @@ function AiTroopRecruiter:construct(_ScriptName)
 end;
 class(AiTroopRecruiter);
 
+---
+-- Returns if the recruiter ist existing.
+-- @return[type=boolean] Recruiter is existing
+-- @within AiTroopRecruiter
+--
 function AiTroopRecruiter:IsAlive()
     return IsExisting(self.ScriptName);
 end
 
+---
+-- Adds an troop type to the recruiter.
+-- @param[type=number] _Type Type to recruit
+-- @within AiTroopRecruiter
+--
 function AiTroopRecruiter:AddType(_Type)
     if not IsInTable(_Type, self.Troops.Types) then
         table.insert(self.Troops.Types, _Type);
@@ -149,6 +159,11 @@ function AiTroopRecruiter:AddType(_Type)
     return self;
 end
 
+---
+-- Adds an troop type to the recruiter.
+-- @param[type=table] _List List of types
+-- @within AiTroopRecruiter
+--
 function AiTroopRecruiter:AddTypes(_List)
     for i= 1, table.getn(_List), 1 do
         self:AddType(_List[i]);
@@ -156,16 +171,30 @@ function AiTroopRecruiter:AddTypes(_List)
     return self;
 end
 
+---
+-- Clears the type list of the recruiter.
+-- @within AiTroopRecruiter
+--
 function AiTroopRecruiter:ClearTypes()
     self.Troops.Types = {};
     return self;
 end
 
+---
+-- Sets if the AI is cheating costs at this recruiter building.
+-- @param[type=boolean] _Flag Cheat costs
+-- @within AiTroopRecruiter
+--
 function AiTroopRecruiter:SetCheatCosts(_Flag)
     self.Cheat = _Flag;
     return self;
 end
 
+---
+-- Changes the active flag of the recruiter.
+-- @param[type=boolean] _Flag Recruiter is active
+-- @within AiTroopRecruiter
+--
 function AiTroopRecruiter:SetEnabled(_Flag)
     self.Enabled = _Flag == true;
     return self;
@@ -176,6 +205,11 @@ function AiTroopRecruiter:SetDelay(_Time)
     return self;
 end
 
+---
+-- Sets the troop selector function of the recruiter.
+-- @param[type=function] _Selector Selector function
+-- @within AiTroopRecruiter
+--
 function AiTroopRecruiter:SetSelector(_Selector)
     self.Troops.Selector = _Selector;
     return self;
@@ -185,10 +219,20 @@ function AiTroopRecruiter:IsManagedByProducer(_TroopID)
     return IsInTable(_TroopID, self.Troops.Created) == true;
 end
 
+---
+-- Returns the position where troops are recruited.
+-- @return[type=number] ID of approach position
+-- @within AiTroopRecruiter
+--
 function AiTroopRecruiter:GetApproachPosition()
     return self.ApproachPosition;
 end
 
+---
+-- Creates a new approach position at the location.
+-- @param[type=table] _Position Location of approach position
+-- @within AiTroopRecruiter
+--
 function AiTroopRecruiter:SetApproachPosition(_Position)
     DestroyEntity(self.ApproachPosition);
     local ID = AI.Entity_CreateFormation(8, Entities.PU_Serf, 0, 0, _Position.X, _Position.Y, 0, 0, 0, 0);
@@ -328,7 +372,7 @@ end
 -- If there is no troops ready 0 is returned.
 --
 -- @return[type=number] ID of troop or 0 if not available
--- @within AiTroopSpawner
+-- @within AiTroopRecruiter
 --
 function AiTroopRecruiter:GetTroop()
     for i= table.getn(self.Troops.Created), 1, -1 do
@@ -385,7 +429,7 @@ end
 -- Creates an new unit.
 --
 -- @param[type=string] _IgnoreCreated Ignore already created units
--- @within AiTroopSpawner
+-- @within AiTroopRecruiter
 --
 function AiTroopRecruiter:CreateTroop(_IgnoreCreated)
     if self:IsReady() then

@@ -3391,7 +3391,6 @@ QuestSystemBehavior:RegisterBehavior(b_Trigger_MapScriptFunction);
 
 ---
 -- Does never trigger the quest.
--- @param[type=string] _FunctionName function to call
 -- @within Triggers
 --
 function Trigger_NeverTriggered(...)
@@ -3406,9 +3405,6 @@ b_Trigger_NeverTriggered = {
 };
 
 function b_Trigger_NeverTriggered:AddParameter(_Index, _Parameter)
-    if _Index == 1 then
-        self.Data.CustomFunction = _Parameter;
-    end
 end
 
 function b_Trigger_NeverTriggered:GetTriggerTable()

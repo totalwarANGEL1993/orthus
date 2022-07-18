@@ -1365,12 +1365,12 @@ FoundationTopTypeToFoundationType = {
 function AiArmy:CalculateStrength(_WithIncomming)
     local CurStrength = 0;
     local MaxStrength = self.TroopCount;
-    
+
     local Troops = copy(self.Troops, {});
     if _WithIncomming then
         Troops = copy(self.IncommingTroops, Troops);
     end
-    
+
     for i= table.getn(Troops), 1, -1 do
         if Logic.IsLeader(Troops[i]) == 1 then
             local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(Troops[i]);

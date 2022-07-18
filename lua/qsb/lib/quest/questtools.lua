@@ -275,18 +275,18 @@ end
 -- @param[type=number] _Percent Amount of health
 -- @within Entities
 --
-function SetHealth(_Entity, _Percent)
+function SetHealthWrapper(_Entity, _Percent)
     local ID = GetID(_Entity);
     if Logic.IsLeader(ID) == 1 then
         local Soldiers = {Logic.GetSoldiersAttachedToLeader(ID)};
         for i= 2, Soldiers[1]+1, 1 do
-            SetHealthWrapper(Soldiers[i], _Percent);
+            SetHealthOrig(Soldiers[i], _Percent);
         end
     end
-    SetHealthWrapper(ID, _Percent);
+    SetHealthOrig(ID, _Percent);
 end
-SetHealthWrapper = SetHealth;
-SetHealth = SetHealth;
+SetHealthOrig = SetHealth;
+SetHealth = SetHealthWrapper;
 
 ---
 -- Sets the sub task index of the entity.
@@ -641,6 +641,15 @@ function GetReachablePosition(_Entity, _Target)
     return nil;
 end
 
+function IsDeadWrapper(_input)
+    if type(_input) == "table" and not _input.created then
+        _input.created = not IsDeadOrig(_input);
+        return false;
+    end
+    return IsDeadOrig(_input);
+end
+IsDeadOrig = IsDead;
+
 ---
 -- Checks if an army or entity is dead. If an Blue Byte army has not been
 -- created yet then it will not falsely assumed to be dead.
@@ -651,15 +660,7 @@ end
 -- @return[type=boolean] Army or entity is dead
 -- @within Entities
 --
-function IsDead(_input)
-    if type(_input) == "table" and not _input.created then
-        _input.created = not IsDeadOrig(_input);
-        return false;
-    end
-    return IsDeadOrig(_input);
-end
-IsDeadOrig = IsDead;
-IsDead = IsDead;
+IsDead = IsDeadWrapper;
 
 ---
 -- Checks if the position table contains a valid position on the map.
