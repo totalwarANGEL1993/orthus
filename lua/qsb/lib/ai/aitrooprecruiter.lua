@@ -381,7 +381,9 @@ function AiTroopRecruiter:GetTroop()
             local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
             local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
             if CurrentSoldiers == MaxSoldiers then
-                return table.remove(self.Troops.Created, i);
+                table.remove(self.Troops.Created, i);
+                GameCallback_OnRecruiterProducedUnit(self.ScriptName, ID);
+                return ID;
             else
                 if Logic.LeaderGetBarrack(ID) == 0 then
                     return -1;
@@ -615,5 +617,20 @@ function AiTroopRecruiter:IsSuitableBuilding(_Type)
         end
     end
     return false;
+end
+
+-- Callbacks ---------------------------------------------------------------- --
+
+---
+-- Game callback after a producer has created a new unit.
+--
+-- <b>Note:</b> The callback does not actually trigger when the unit is
+-- created but when it is requested by an army (or who ever has called the
+-- :GetTroop method).
+--
+-- @param[type=string] _ScriptName Script name of recruiter
+-- @param[type=number] _ID         ID of unit leader
+--
+function GameCallback_OnRecruiterProducedUnit(_ScriptName, _ID)
 end
 

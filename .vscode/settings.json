@@ -109,6 +109,9 @@
         "mcbSaveDuringBriefingAllowed",
         "mcbDelay",
         "TriggerFix",
-        "TriggerFix_action"
+        "TriggerFix_action",
+        "GameCallback_QSB_SpawnerCreatedUnit",
+        "GameCallback_QSB_Spawner_NewUnit",
+        "GameCallback_QSB_Recruiter_NewUnit"
     ]
 }

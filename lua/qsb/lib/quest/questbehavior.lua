@@ -107,6 +107,20 @@ end
 -- Creates an quest together with an array of fragment quests from the given
 -- table. The fragments will be executed one after another. If the last fragment
 -- is over the quest is finally completed.
+-- @param[type=number] _Factor Max zoom factor
+--
+function SetMaxZoomFactor(_Factor)
+    if type(_Factor) ~= "number" or _Factor < 1.0 or _Factor > 3.0 then
+        return;
+    end
+    QuestSystemBehavior.Data.ZoomFactorMax = _Factor;
+    Camera.ZoomSetFactorMax(_Factor);
+end
+
+---
+-- Creates an quest together with an array of fragment quests from the given
+-- table. The fragments will be executed one after another. If the last fragment
+-- is over the quest is finally completed.
 --
 -- Possible entries for the master quest:
 -- <ul>
@@ -478,7 +492,8 @@ QuestSystemBehavior = {
         RegisteredQuestBehaviors = {},
         SystemInitalized = false,
         S5HookInitalized = false,
-        Version = "1.4.0",
+        Version = "Beta 1.6.0",
+        ZoomFactorMax = 1.5,
 
         QuestNameToStages = {},
         PlayerColorAssigment = {},
@@ -506,7 +521,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
 
         AddOnSaveLoadedAction(function()
             QuestSystemBehavior:UpdatePlayerColorAssigment()
-            Camera.ZoomSetFactorMax(2.0);
+            Camera.ZoomSetFactorMax(QuestSystemBehavior.Data.ZoomFactorMax);
         end);
         if CppLogic then
             self.Data.CurrentMapName = Framework.GetCurrentMapName();
@@ -516,7 +531,7 @@ function QuestSystemBehavior:PrepareQuestSystem()
             QuestSystemBehavior:InstallS5Hook();
         end
 
-        Camera.ZoomSetFactorMax(2.0);
+        Camera.ZoomSetFactorMax(QuestSystemBehavior.Data.ZoomFactorMax);
         QuestSystem:InstallQuestSystem();
         self:CreateBehaviorConstructors();
         self:OverwriteMapClosingFunctions();
@@ -6135,6 +6150,9 @@ QuestSystemBehavior:RegisterBehavior(b_Goal_MultipleChoiceSelection);
 
 -- Callbacks ---------------------------------------------------------------- --
 
+---
+-- Callback after quest system has been loaded.
+--
 GameCallback_OnQuestSystemLoaded = function()
 end
 

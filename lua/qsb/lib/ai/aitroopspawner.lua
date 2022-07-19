@@ -283,7 +283,9 @@ function AiTroopSpawner:GetTroop()
             local CurrentSoldiers = Logic.LeaderGetNumberOfSoldiers(ID);
             local MaxSoldiers = Logic.LeaderGetMaxNumberOfSoldiers(ID);
             if CurrentSoldiers == MaxSoldiers then
-                return table.remove(self.Troops.Created, i);
+                table.remove(self.Troops.Created, i);
+                GameCallback_QSB_OnSpawnerProducedNewUnit(self.ScriptName, ID);
+                return ID;
             else
                 return -1;
             end
@@ -327,5 +329,20 @@ function AiTroopSpawner:CreateTroop(_IgnoreCreated, _Initial)
             end
         end
     end
+end
+
+-- Callbacks ---------------------------------------------------------------- --
+
+---
+-- Game callback after a spawner has created a new unit.
+--
+-- <b>Note:</b> The callback does not actually trigger when the unit is
+-- created but when it is requested by an army (or who ever has called the
+-- :GetTroop method).
+--
+-- @param[type=string] _ScriptName Script name of spawner
+-- @param[type=number] _ID         ID of unit leader
+--
+function GameCallback_QSB_OnSpawnerProducedNewUnit(_ScriptName, _ID)
 end
 

@@ -1891,11 +1891,21 @@ function AddDisplayName(_ScriptName, _DisplayName)
     QuestSystem.NamedEntityNames[_ScriptName] = _DisplayName;
 end
 
--- -------------------------------------------------------------------------- --
+-- Callbacks ---------------------------------------------------------------- --
 
 -- Allows tributes... You are not documented, you are just here. ;)
 function GameCallback_FulfillTribute(_PlayerID, _TributeID)
 	return 1
+end
+
+---
+-- Game callback after a quest changed the state.
+--
+-- @param[type=number] _QuestID ID of quest
+-- @param[type=number] _State   New state
+-- @param[type=number] _Result  Quest result
+--
+function GameCallback_OnQuestStatusChanged(_QuestID, _State, _Result)
 end
 
 -- -------------------------------------------------------------------------- --
