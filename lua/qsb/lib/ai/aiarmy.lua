@@ -45,13 +45,13 @@ AiArmy = {
     IsHiddenFromAI       = false,
     IsExemtFromAttack    = false,
     IsExemtFromPatrol    = false,
-    IsIgnoringProducer   = false,
     IsDirectlyTargeting  = true,
 
     BehaviorQueue        = {},
     CurrentBehavior      = nil,
     AssembleTimer        = 0,
     HomePosition         = nil,
+    DefeatedCondition    = nil
 }
 
 AiArmyControllerJobId = nil;
@@ -360,6 +360,31 @@ function AiArmy:Disband(_DestroyTroops, _KillProducer)
 end
 
 ---
+-- Changes the respawning property of the army.
+--
+-- An army must always be respawning OR recruiting but can not be both. When
+-- this property is changed all not matching producers are dropped.
+--
+-- @param[type=boolean] _Flag Army is respawning
+-- @within Properties
+--
+function AiArmy:SetIsRespawningArmy(_Flag)
+    self.IsRespawningArmy = _Flag == true;
+    for i= table.getn(self.Producers), 1, -1 do
+        if self.Producers[i].IsRecruiter and self.IsRespawningArmy then
+            table.remove(self.Producers, i);
+        end
+        if self.Producers[i].IsSpawner and not self.IsRespawningArmy then
+            table.remove(self.Producers, i);
+        end
+    end
+end
+
+function AiArmy:SetInitialSpawned(_Flag)
+    self.InitialSpawned = _Flag == true;
+end
+
+---
 -- Checks if an army is dead.
 --
 -- An army is dead when all of their producers are destroyed. Additionally the
@@ -374,18 +399,10 @@ function AiArmy:IsDead()
     if self.ArmyIsDead == true then
         return true;
     end
-    for k, v in pairs(self.Producers) do
-        if v and IsExisting(v.ScriptName) then
-            return false;
-        end
-    end
     if not self.IsRespawningArmy then
         return false;
     end
-    if self.IsIgnoringProducer then
-        return table.getn(self.Troops) == 0 and table.getn(self.IncommingTroops) == 0;
-    end
-    return true;
+    return self:CallDefeatedCondition();
 end
 
 ---
@@ -397,6 +414,40 @@ end
 function AiArmy:SetIsDead(_Flag)
     self.ArmyIsDead = _Flag == true;
     return self;
+end
+
+---
+-- Sets the function that decides if the army is dead.
+--
+-- <b>Note:</b> This will only affect armies that are configured to be a
+-- respawning army. Armies that are supposed to be recruited can not be
+-- defeated without defeating the AI player first.
+--
+-- @param[type=boolean] _Flag Army defeated flag
+-- @within Properties
+--
+function AiArmy:SetArmyDefeatedCondition(_Function)
+    self.DefeatedCondition = _Function;
+end
+
+function AiArmy:CallDefeatedCondition()
+    if not self.InitialSpawned then
+        return false;
+    end
+    self.ArmyIsDead = self:DefaultDefeatedCondition() == true;
+    if self.DefeatedCondition then
+        self.ArmyIsDead = self:DefeatedCondition() == true;
+    end
+    return self.ArmyIsDead;
+end
+
+function AiArmy:DefaultDefeatedCondition()
+    for k, v in pairs(self.Producers) do
+        if v:IsAlive() then
+            return false;
+        end
+    end
+    return true;
 end
 
 ---
@@ -923,18 +974,6 @@ function AiArmy:DispatchTroopsToProducers(_Troops)
         AiArmyTroopIDToArmyID[Troops[i]] = nil;
         DestroyEntity(Troops[i]);
     end
-end
-
-function AiArmy:GetSpawnerProducers()
-    local SpawnerList = {};
-    for k, v in pairs(self.Producers) do
-        if v and v.IsSpawner then
-            if SameSector(self.HomePosition, v.ApproachPosition) then
-                table.insert(SpawnerList, v);
-            end
-        end
-    end
-    return SpawnerList;
 end
 
 function AiArmy:CountUnpickedProducerTroops()
@@ -1961,11 +2000,10 @@ function AiArmyBehavior.Refill:Run(_Army)
         -- Initial spawn
         if _Army.IsRespawningArmy then
             if not _Army.InitialSpawned then
-                local Spawner = _Army:GetSpawnerProducers();
-                for i= table.getn(Spawner), 1, -1 do
-                    if Spawner[i]:IsAlive() and table.getn(_Army.Troops) < _Army.TroopCount then
-                        Spawner[i]:CreateTroop(true, true);
-                        local ID = Spawner[i]:GetTroop();
+                for i= table.getn(_Army.Producers), 1, -1 do
+                    if _Army.Producers[i]:IsAlive() and table.getn(_Army.Troops) < _Army.TroopCount then
+                        _Army.Producers[i]:CreateTroop(true, true);
+                        local ID = _Army.Producers[i]:GetTroop();
                         if ID > 0 then
                             _Army:CallChoseFormation(ID);
                             AiArmyTroopIDToArmyID[ID] = _Army.ArmyID;
@@ -1976,16 +2014,14 @@ function AiArmyBehavior.Refill:Run(_Army)
                     end
                 end
                 if table.getn(_Army.Troops) >= _Army.TroopCount then
-                    _Army.InitialSpawned = true;
+                    _Army:SetInitialSpawned(true);
                 end
                 return;
             end
         end
         -- normal spawn/recruitment
-        local ProducerInTable = false;
         for k, v in pairs(_Army.Producers) do
             if v and v:IsAlive() then
-                ProducerInTable = true;
                 if table.getn(_Army.Troops) < _Army.TroopCount then
                     if SameSector(_Army.HomePosition, v.ApproachPosition) then
                         local ID = v:GetTroop();

@@ -393,8 +393,8 @@ end
 ---
 -- Removes an troop producer from the army.
 --
--- <b>Note</b>: Destroyed producers will be automatically discarded by the army.
--- You won't need to remove them manually.
+-- <b>Note</b>: When controlled by the default AI controller producers do not
+-- have to be removed manually.
 --
 -- @param               _Army     Name or ID of army
 -- @param[type=boolean] _Producer Name of Producer
@@ -778,7 +778,7 @@ function AiController:CreatePlayer(_PlayerID, _SerfAmount, _HomePosition, _Stren
         }
     };
     SetupPlayerAi(_PlayerID, Description);
-    
+
     -- Employ armies
     self:FindProducerBuildings(_PlayerID);
     self:EmployArmies(_PlayerID);
