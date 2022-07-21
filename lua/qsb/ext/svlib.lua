@@ -4,9 +4,14 @@
 -- #    Author:   schmeling65                                               # --
 -- ########################################################################## --
 
-SVLib = {
-    HistoryFlag = (XNetwork.Manager_IsNATReady ~= nil and 1) or 0;
-}
+SVLib = {}
+
+--Test auf HistoryEdition oder GoldEdition
+if XNetwork.Manager_IsNATReady then
+	SVLib.HistoryFlag =  1
+else
+	SVLib.HistoryFlag =  0
+end
 
 --Setzt ein Entity unsichtbar/sichtbar
 function SVLib.SetInvisibility(_id,_flag)
@@ -20,7 +25,7 @@ function SVLib.SetInvisibility(_id,_flag)
 		if SVLib.HistoryFlag == 1 then
 			Logic.SetEntityScriptingValue(_id, -26, 65793)
 		elseif SVLib.HistoryFlag == 0 then
-			Logic.SetEntityScriptingValue(_idtemp, -30, 65793)
+			Logic.SetEntityScriptingValue(_id, -30, 65793)
 		end
 	end
 end
@@ -138,12 +143,31 @@ function SVLib.GetPercentageAtBuilding(_id)
 	return Int2Float(Logic.GetEntityScriptingValue(_id,20))
 end
 
+--Setzt die SpielerID einer Entity. Ändert NICHT die EntityID. Farbe der Entity wird nicht verändert, nur Lebensbalkenfarbe
+-- _playerID PlayerID 0 <= int <= 8/16(Kimis Server)
+-- mcb: verwenden auf eigene gefahr: listen im player object werden nicht aktualisiert, kann zu unvorhergesehenem verhalten führen!
+function SVLib.SetPlayerID(_id,_playerID)
+	if SVLib.HistoryFlag == 1 then
+		return Logic.SetEntityScriptingValue(_id,-44,_playerID)
+	else
+		return Logic.SetEntityScriptingValue(_id,-52,_playerID)
+	end
+end
 
-
+--Gibt den Spieler einer Entity zurück
+--return PlayerID 0 <= int <= 8/16(Kimis Server)
+function SVLib.GetPlayerID(_id)
+	if SVLib.HistoryFlag == 1 then
+		return Logic.GetEntityScriptingValue(_id,-44)
+	else
+		return Logic.GetEntityScriptingValue(_id,-52)
+	end
+end
 
 
 --Utility Funktionen
 
+---@diagnostic disable-next-line: lowercase-global
 function qmod(a, b)
 	return a - math.floor(a/b)*b
 end
@@ -178,10 +202,11 @@ function Int2Float(num)
 	return fraction * math.pow(2, exp) * sign
 end
 
+---@diagnostic disable-next-line: lowercase-global
 function bitsInt(num)
 	local t={}
 	while num>0 do
-		rest=qmod(num, 2)
+		local rest=qmod(num, 2)
 		table.insert(t,1,rest)
 		num=(num-rest)/2
 	end
@@ -189,6 +214,7 @@ function bitsInt(num)
 	return t
 end
 
+---@diagnostic disable-next-line: lowercase-global
 function bitsFrac(num, t)
 	for i = 1, 48 do
 		num = num * 2
