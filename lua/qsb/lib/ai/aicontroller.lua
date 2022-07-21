@@ -214,6 +214,7 @@ function CreateAIPlayerSpawnArmy(_ArmyName, _PlayerID, _Strength, _Position, _Sp
         local Producer = CreateTroopGenerator {
 			ScriptName = _Spawner[i],
 			Delay      = _RespawnTime,
+			Spawnpoint = _Position,
 			Types      = EntityTypes
 		};
         Army:AddProducer(Producer);

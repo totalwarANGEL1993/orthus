@@ -1166,7 +1166,7 @@ end
 
 function AiArmy:Assemble(_Area)
     local IsScattered = false;
-    if self.AssembleTimer >= 30 then
+    if self.AssembleTimer >= 15 then
         self.AssembleTimer = 0;
         local PositionMap = self:GetArmyBlockPositonMap(self:GetArmyPosition());
         local TroopCount = table.getn(self.Troops);
@@ -1253,7 +1253,7 @@ function AiArmy:CannonTroopAttackTarget(_TroopID, _EnemyID)
         if self.IsDirectlyTargeting then
             self:MoveTroop(_TroopID, _EnemyID, true);
         else
-            self:TroopAttackMove(_TroopID, _EnemyID, true);
+            self:TroopAttack(_TroopID, _EnemyID, true);
         end
     end
 end
