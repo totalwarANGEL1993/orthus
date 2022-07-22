@@ -1095,7 +1095,7 @@ function AiController:ControlPlayerAssault(_PlayerID, _Position)
         if  not Army.IsHiddenFromAI
         and not Army.IsExemtFromAttack
         and (not IsAttacking and not IsBattling and not IsRetreating and not IsRefilling)
-        and not Army:IsDead() 
+        and not Army:IsDead()
         and GetReachablePosition(Army.HomePosition, _Position) ~= nil then
             Army:InsertBehavior(AiArmyBehavior:New("Attack", _Position, 2000));
             Army:InvalidateCurrentBehavior();

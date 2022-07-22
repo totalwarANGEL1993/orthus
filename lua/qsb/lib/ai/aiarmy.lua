@@ -133,19 +133,21 @@ function AiArmy:ArmyAttackedReactionController(_Attacker, _Attacked)
         for j= 1, table.getn(AiArmyList), 1 do
             if not AiArmyList[j]:IsDead() then
                 if not AiArmyList[j]:IsExecutingBehavior("Battle") then
-                    local VictimID = _Attacked[i];
-                    if Logic.IsEntityInCategory(VictimID, EntityCategories.Soldier) == 1 then
-                        VictimID = SoldierGetLeader(VictimID);
-                    end
-                    if VictimID and IsInTable(VictimID, AiArmyList[j].Troops) then
-                        AiArmyList[j]:InsertBehavior(AiArmyBehavior:New(
-                            "Battle",
-                            GetPosition(_Attacker),
-                            4000
-                        ));
-                        AiArmyList[j]:InvalidateCurrentBehavior();
-                        AiArmyList[j]:NextBehavior();
-                        break;
+                    if Logic.IsEntityInCategory(_Attacker, EntityCategories.Military) == 1 then
+                        local VictimID = _Attacked[i];
+                        if Logic.IsEntityInCategory(VictimID, EntityCategories.Soldier) == 1 then
+                            VictimID = SoldierGetLeader(VictimID);
+                        end
+                        if VictimID and IsInTable(VictimID, AiArmyList[j].Troops) then
+                            AiArmyList[j]:InsertBehavior(AiArmyBehavior:New(
+                                "Battle",
+                                GetPosition(_Attacker),
+                                4000
+                            ));
+                            AiArmyList[j]:InvalidateCurrentBehavior();
+                            AiArmyList[j]:NextBehavior();
+                            break;
+                        end
                     end
                 end
             end
@@ -1760,6 +1762,7 @@ function AiArmyBehavior.Move:Run(_Army)
     _Army:Assemble(500);
     if self.m_Target.Current < table.getn(self.m_Target) then
         if GetDistance(_Army:GetArmyPosition(), self.m_Target[self.m_Target.Current]) <= self.m_Distance then
+            _Army:MoveAsBlock(self.m_Target[self.m_Target.Current], false, true);
             self.m_Target.Current = self.m_Target.Current +1;
         end
     end
@@ -1815,6 +1818,7 @@ function AiArmyBehavior.Attack:Run(_Army)
     _Army:Assemble(500);
     if self.m_Target.Current < table.getn(self.m_Target) then
         if GetDistance(_Army:GetArmyPosition(), self.m_Target[self.m_Target.Current]) <= self.m_Distance then
+            _Army:MoveAsBlock(self.m_Target[self.m_Target.Current], true, true);
             self.m_Target.Current = self.m_Target.Current +1;
         end
     end
