@@ -4,7 +4,7 @@
 -- #    Author:   totalwarANGEL                                             # --
 -- ########################################################################## --
 
----
+--
 -- Loads libraries used by the QSB if they are not already present.
 --
 -- Libraries loaded (in this order):

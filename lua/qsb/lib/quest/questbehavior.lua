@@ -5718,7 +5718,7 @@ end
 function b_Trigger_QuestInterrupted:CustomFunction(_Quest)
     self.Data.Waittime = self.Data.Waittime or 0;
     local QuestID = GetQuestID(self.Data.QuestName);
-    if QuestSystem.Quests[QuestID] and QuestSystem.Quests[QuestID].m_State == QuestStates.Over and QuestSystem.Quests[QuestID].m_Result == QuestStates.Interrupted then
+    if QuestSystem.Quests[QuestID] and QuestSystem.Quests[QuestID].m_State == QuestStates.Over and QuestSystem.Quests[QuestID].m_Result == QuestResults.Interrupted then
         self.Data.StartTime = self.Data.StartTime or Logic.GetTime();
         if self.Data.Waittime + self.Data.StartTime < Logic.GetTime() then
             return true;

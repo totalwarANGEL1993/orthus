@@ -167,7 +167,6 @@ end
 
 --Utility Funktionen
 
----@diagnostic disable-next-line: lowercase-global
 function qmod(a, b)
 	return a - math.floor(a/b)*b
 end
@@ -202,7 +201,6 @@ function Int2Float(num)
 	return fraction * math.pow(2, exp) * sign
 end
 
----@diagnostic disable-next-line: lowercase-global
 function bitsInt(num)
 	local t={}
 	while num>0 do
@@ -214,7 +212,6 @@ function bitsInt(num)
 	return t
 end
 
----@diagnostic disable-next-line: lowercase-global
 function bitsFrac(num, t)
 	for i = 1, 48 do
 		num = num * 2

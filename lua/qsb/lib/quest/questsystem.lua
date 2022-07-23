@@ -910,8 +910,10 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         if QuestID == 0 then
             return;
         end
-        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided and QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
-            QuestSystem.Quests[QuestID]:Success();
+        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided then
+            if QuestSystem.Quests[QuestID].m_State ~= QuestStates.Over then
+                QuestSystem.Quests[QuestID]:Success();
+            end
         end
 
     elseif _Behavior[1] == Callbacks.QuestFail then
@@ -919,8 +921,10 @@ function QuestTemplate:ApplyCallbacks(_Behavior, _ResultType)
         if QuestID == 0 then
             return;
         end
-        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided and QuestSystem.Quests[QuestID].m_State == QuestStates.Active then
-            QuestSystem.Quests[QuestID]:Fail();
+        if QuestSystem.Quests[QuestID].m_Result == QuestResults.Undecided then
+            if QuestSystem.Quests[QuestID].m_State ~= QuestStates.Active then
+                QuestSystem.Quests[QuestID]:Fail();
+            end
         end
 
     elseif _Behavior[1] == Callbacks.QuestInterrupt then
